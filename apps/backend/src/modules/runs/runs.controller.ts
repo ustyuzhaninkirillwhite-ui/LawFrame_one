@@ -297,11 +297,15 @@ function parseCreateRunArtifactRequest(
   };
 }
 
-function parseRunRequest(body: unknown): RunPreflightRequest & RunCreateRequest {
+function parseRunRequest(
+  body: unknown,
+): RunPreflightRequest & RunCreateRequest {
   const value = asRecord(body ?? {});
 
   return {
-    ...(value.profileId !== undefined ? { profileId: optionalString(value.profileId) } : {}),
+    ...(value.profileId !== undefined
+      ? { profileId: optionalString(value.profileId) }
+      : {}),
     ...(value.idempotencyKey !== undefined
       ? { idempotencyKey: optionalString(value.idempotencyKey) }
       : {}),
@@ -311,13 +315,13 @@ function parseRunRequest(body: unknown): RunPreflightRequest & RunCreateRequest 
             ...(Array.isArray(asRecord(value.inputs).documentIds)
               ? {
                   documentIds:
-                    optionalStringArray(asRecord(value.inputs).documentIds) ?? [],
+                    optionalStringArray(asRecord(value.inputs).documentIds) ??
+                    [],
                 }
               : {}),
             ...(asRecord(value.inputs).params !== undefined
               ? {
-                  params:
-                    optionalRecord(asRecord(value.inputs).params) ?? {},
+                  params: optionalRecord(asRecord(value.inputs).params) ?? {},
                 }
               : {}),
           },

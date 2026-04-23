@@ -17,7 +17,10 @@ import { AuditService } from '../audit/audit.service';
 import { ClausesService } from '../clauses/clauses.service';
 import { DatabaseService } from '../database/database.service';
 import { DocumentTemplatesService } from '../document-templates/document-templates.service';
-import { validateGeneratedDocument, type RequestMeta } from '../stage7-support/stage7.helpers';
+import {
+  validateGeneratedDocument,
+  type RequestMeta,
+} from '../stage7-support/stage7.helpers';
 
 interface ValidationReportRow {
   readonly id: string;
@@ -204,10 +207,18 @@ export class DocumentValidationService {
       documentTypeSections: input.documentTypeSections ?? [],
       approvalRouteBound: input.approvalRouteBound,
     });
-    const blockingIssueCount = issues.filter((issue) => issue.severity === 'error').length;
-    const warningCount = issues.filter((issue) => issue.severity === 'warning').length;
+    const blockingIssueCount = issues.filter(
+      (issue) => issue.severity === 'error',
+    ).length;
+    const warningCount = issues.filter(
+      (issue) => issue.severity === 'warning',
+    ).length;
     const status: DocumentValidationReportDetail['status'] =
-      blockingIssueCount > 0 ? 'invalid' : warningCount > 0 ? 'warning' : 'valid';
+      blockingIssueCount > 0
+        ? 'invalid'
+        : warningCount > 0
+          ? 'warning'
+          : 'valid';
 
     let reportId = input.existingReportId ?? null;
 

@@ -123,7 +123,9 @@ export class RunCommandService {
       {
         mode: 'full_run',
         ...(input.inputs ? { inputs: input.inputs } : {}),
-        ...(input.profileId !== undefined ? { profileId: input.profileId } : {}),
+        ...(input.profileId !== undefined
+          ? { profileId: input.profileId }
+          : {}),
         ...(input.idempotencyKey !== undefined
           ? { idempotencyKey: input.idempotencyKey }
           : {}),
@@ -238,7 +240,10 @@ export class RunCommandService {
     runId: string,
     meta: RequestMeta,
   ) {
-    const snapshot = await this.runSnapshotService.getRunSnapshot(access, runId);
+    const snapshot = await this.runSnapshotService.getRunSnapshot(
+      access,
+      runId,
+    );
 
     if (!snapshot.allowedActions.includes('cancel')) {
       throw new AppHttpException(
@@ -309,7 +314,10 @@ export class RunCommandService {
       metadata: {},
     });
 
-    const nextSnapshot = await this.runSnapshotService.getRunSnapshot(access, runId);
+    const nextSnapshot = await this.runSnapshotService.getRunSnapshot(
+      access,
+      runId,
+    );
     await this.liveEventsService.recordEvent({
       workspaceId: access.activeWorkspace!.id,
       runId,
@@ -348,7 +356,11 @@ export class RunCommandService {
     );
 
     if (!original) {
-      throw new AppHttpException('RUN_NOT_FOUND', 404, 'Workflow run was not found.');
+      throw new AppHttpException(
+        'RUN_NOT_FOUND',
+        404,
+        'Workflow run was not found.',
+      );
     }
 
     return this.createRun(
@@ -387,7 +399,11 @@ export class RunCommandService {
     );
 
     if (!step) {
-      throw new AppHttpException('RUN_STEP_NOT_FOUND', 404, 'Run step was not found.');
+      throw new AppHttpException(
+        'RUN_STEP_NOT_FOUND',
+        404,
+        'Run step was not found.',
+      );
     }
 
     const classified = this.runErrorClassifierService.classify({
@@ -446,7 +462,10 @@ export class RunCommandService {
       },
     });
 
-    const nextSnapshot = await this.runSnapshotService.getRunSnapshot(access, runId);
+    const nextSnapshot = await this.runSnapshotService.getRunSnapshot(
+      access,
+      runId,
+    );
     await this.liveEventsService.recordEvent({
       workspaceId: access.activeWorkspace!.id,
       runId,

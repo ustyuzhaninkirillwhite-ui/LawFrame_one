@@ -127,7 +127,8 @@ export class DeliveryService {
     const webhookUrl = this.parseConfiguredWebhookUrl();
     const webhookUrlConfigured = webhookUrl !== null;
     const sandbox = await this.inspectSandboxReceiver(webhookUrl);
-    const tokenConfigured = this.env.LEXFRAME_DELIVERY_WEBHOOK_TOKEN.trim().length > 0;
+    const tokenConfigured =
+      this.env.LEXFRAME_DELIVERY_WEBHOOK_TOKEN.trim().length > 0;
     const fromEmail = this.env.LEXFRAME_DELIVERY_FROM_EMAIL.trim();
     const dependencies: DeliveryIntegrationStatus['dependencies'] = [
       {
@@ -276,10 +277,7 @@ export class DeliveryService {
       deliveryRequestId,
     );
 
-    if (
-      existing.approval_task_id &&
-      existing.status === 'waiting_approval'
-    ) {
+    if (existing.approval_task_id && existing.status === 'waiting_approval') {
       await this.approvalsService.approveTask(
         actor,
         access,
@@ -1338,7 +1336,9 @@ export class DeliveryService {
           payload.service === undefined ||
           payload.service === 'lexframe-delivery-sandbox',
         captureCount:
-          typeof payload.captureCount === 'number' ? payload.captureCount : null,
+          typeof payload.captureCount === 'number'
+            ? payload.captureCount
+            : null,
         lastCaptureId:
           typeof payload.lastCaptureId === 'string'
             ? payload.lastCaptureId
@@ -1444,7 +1444,7 @@ function classifyDeliveryError(error: unknown) {
     provider: 'delivery-webhook',
     errorCode: 'READINESS_GATE_BLOCKED',
     responsePayload: {
-        message: 'Неизвестная ошибка транспорта отправки.',
+      message: 'Неизвестная ошибка транспорта отправки.',
     },
     finishedAt,
   };

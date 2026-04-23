@@ -42,7 +42,9 @@ export class SecurityOperationsService {
     private readonly auditService: AuditService,
   ) {}
 
-  async listAlerts(workspaceId: string | null): Promise<readonly SecurityAlert[]> {
+  async listAlerts(
+    workspaceId: string | null,
+  ): Promise<readonly SecurityAlert[]> {
     const result = await this.databaseService.query<SecurityAlertRow>(
       `
         select

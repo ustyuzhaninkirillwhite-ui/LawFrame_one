@@ -123,7 +123,11 @@ export class ClausesService {
     );
 
     if (!row) {
-      throw new AppHttpException('CLAUSE_CREATE_FAILED', 500, 'Clause was not created.');
+      throw new AppHttpException(
+        'CLAUSE_CREATE_FAILED',
+        500,
+        'Clause was not created.',
+      );
     }
 
     await this.auditService.record({
@@ -188,7 +192,11 @@ export class ClausesService {
     );
 
     if (!row) {
-      throw new AppHttpException('CLAUSE_NOT_FOUND', 404, 'Clause was not found.');
+      throw new AppHttpException(
+        'CLAUSE_NOT_FOUND',
+        404,
+        'Clause was not found.',
+      );
     }
 
     await this.auditService.record({
@@ -331,7 +339,13 @@ export class ClausesService {
           created_at,
           updated_at
       `,
-      [id, input.phrase?.trim() ?? null, input.rationale ?? null, actor.id, access.activeWorkspace!.id],
+      [
+        id,
+        input.phrase?.trim() ?? null,
+        input.rationale ?? null,
+        actor.id,
+        access.activeWorkspace!.id,
+      ],
     );
 
     if (!row) {

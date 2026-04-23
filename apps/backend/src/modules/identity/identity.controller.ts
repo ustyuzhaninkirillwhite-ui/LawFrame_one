@@ -99,7 +99,12 @@ export class IdentityController {
 
   @Post('admin/security/sessions/:sessionId/revoke')
   @HttpCode(200)
-  @UseGuards(AuthGuard, WorkspaceContextGuard, PermissionGuard, AdminReauthGuard)
+  @UseGuards(
+    AuthGuard,
+    WorkspaceContextGuard,
+    PermissionGuard,
+    AdminReauthGuard,
+  )
   @RequiredPermissions('session.revoke')
   revokeSession(
     @LexframeRequestContext() context: LexframeRequest['lexframe'],
@@ -116,7 +121,7 @@ export class IdentityController {
       context.access,
       sessionId,
       typeof (body as { reason?: unknown })?.reason === 'string'
-        ? (body as { reason?: string }).reason ?? null
+        ? ((body as { reason?: string }).reason ?? null)
         : null,
       request.headers['x-request-id'] ?? null,
       request.headers['x-trace-id'] ?? null,
@@ -125,7 +130,12 @@ export class IdentityController {
 
   @Post('admin/security/users/:userId/revoke-all-sessions')
   @HttpCode(200)
-  @UseGuards(AuthGuard, WorkspaceContextGuard, PermissionGuard, AdminReauthGuard)
+  @UseGuards(
+    AuthGuard,
+    WorkspaceContextGuard,
+    PermissionGuard,
+    AdminReauthGuard,
+  )
   @RequiredPermissions('session.revoke')
   revokeAllSessions(
     @LexframeRequestContext() context: LexframeRequest['lexframe'],
@@ -142,7 +152,7 @@ export class IdentityController {
       context.access,
       userId,
       typeof (body as { reason?: unknown })?.reason === 'string'
-        ? (body as { reason?: string }).reason ?? null
+        ? ((body as { reason?: string }).reason ?? null)
         : null,
       request.headers['x-request-id'] ?? null,
       request.headers['x-trace-id'] ?? null,
@@ -165,7 +175,12 @@ export class IdentityController {
   }
 
   @Patch('admin/security/workspace-policies')
-  @UseGuards(AuthGuard, WorkspaceContextGuard, PermissionGuard, AdminReauthGuard)
+  @UseGuards(
+    AuthGuard,
+    WorkspaceContextGuard,
+    PermissionGuard,
+    AdminReauthGuard,
+  )
   @RequiredPermissions('workspace.security.manage')
   updateWorkspaceSecuritySettings(
     @LexframeRequestContext() context: LexframeRequest['lexframe'],

@@ -177,7 +177,9 @@ describe('DocumentsService', () => {
     });
 
     expect(client.query).toHaveBeenCalled();
-    expect(client.query.mock.calls[0]?.[0]).toContain('insert into app.documents');
+    expect(client.query.mock.calls[0]?.[0]).toContain(
+      'insert into app.documents',
+    );
     expect(client.query.mock.calls[1]?.[0]).toContain(
       'insert into app.document_versions',
     );

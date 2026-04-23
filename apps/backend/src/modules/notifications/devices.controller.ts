@@ -55,7 +55,9 @@ export class DevicesController {
   }
 }
 
-function parseDeviceRegistrationRequest(body: unknown): DeviceRegistrationRequest {
+function parseDeviceRegistrationRequest(
+  body: unknown,
+): DeviceRegistrationRequest {
   if (!body || typeof body !== 'object') {
     throw new AppHttpException(
       'VALIDATION_ERROR',
@@ -78,7 +80,10 @@ function parseDeviceRegistrationRequest(body: unknown): DeviceRegistrationReques
     );
   }
 
-  if (typeof value.deviceToken !== 'string' || value.deviceToken.trim().length === 0) {
+  if (
+    typeof value.deviceToken !== 'string' ||
+    value.deviceToken.trim().length === 0
+  ) {
     throw new AppHttpException(
       'VALIDATION_ERROR',
       400,

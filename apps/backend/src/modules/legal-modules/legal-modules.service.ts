@@ -190,13 +190,17 @@ export class LegalModulesService {
 
     for (const code of input.inputCodes) {
       if (!allowedInputs.has(code)) {
-        issues.push(`Input ${code} is not allowed for module ${input.moduleCode}`);
+        issues.push(
+          `Input ${code} is not allowed for module ${input.moduleCode}`,
+        );
       }
     }
 
     for (const code of input.outputCodes) {
       if (!allowedOutputs.has(code)) {
-        issues.push(`Output ${code} is not allowed for module ${input.moduleCode}`);
+        issues.push(
+          `Output ${code} is not allowed for module ${input.moduleCode}`,
+        );
       }
     }
 
@@ -204,9 +208,7 @@ export class LegalModulesService {
       detail.code === 'delivery.email-draft' &&
       input.requiresApproval !== true
     ) {
-      issues.push(
-        'External delivery steps must keep requiresApproval=true.',
-      );
+      issues.push('External delivery steps must keep requiresApproval=true.');
     }
 
     return {

@@ -9,13 +9,25 @@ import { AdminReauthGuard } from '../../common/guards/admin-reauth.guard';
 import { AuthGuard } from '../../common/guards/auth.guard';
 import { PermissionGuard } from '../../common/guards/permission.guard';
 import { WorkspaceContextGuard } from '../../common/guards/workspace-context.guard';
-import { Body, Controller, Get, HttpCode, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  Param,
+  Patch,
+  Post,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { SecurityOperationsService } from './security-operations.service';
 
 @Controller('admin/security')
 @UseGuards(AuthGuard, WorkspaceContextGuard, PermissionGuard)
 export class SecurityOperationsController {
-  constructor(private readonly securityOperationsService: SecurityOperationsService) {}
+  constructor(
+    private readonly securityOperationsService: SecurityOperationsService,
+  ) {}
 
   @Get('alerts')
   @RequiredPermissions('incident.read')
@@ -50,7 +62,9 @@ export class SecurityOperationsController {
 
   @Get('incidents')
   @RequiredPermissions('incident.read')
-  listIncidents(@LexframeRequestContext() context: LexframeRequest['lexframe']) {
+  listIncidents(
+    @LexframeRequestContext() context: LexframeRequest['lexframe'],
+  ) {
     return this.securityOperationsService.listIncidents(
       context?.access?.activeWorkspace?.id ?? null,
     );

@@ -289,9 +289,13 @@ export class DocumentTypesService {
             nextVersion,
             JSON.stringify(input.structure ?? currentVersion?.structure ?? []),
             JSON.stringify(
-              input.attachmentDefaults ?? currentVersion?.attachmentDefaults ?? [],
+              input.attachmentDefaults ??
+                currentVersion?.attachmentDefaults ??
+                [],
             ),
-            JSON.stringify(input.validationRules ?? currentVersion?.validationRules ?? {}),
+            JSON.stringify(
+              input.validationRules ?? currentVersion?.validationRules ?? {},
+            ),
             actor.id,
           ],
         );
@@ -333,7 +337,9 @@ export class DocumentTypesService {
     return this.get(access, id);
   }
 
-  async listStructures(access: AccessContext): Promise<readonly DocumentStructureRecord[]> {
+  async listStructures(
+    access: AccessContext,
+  ): Promise<readonly DocumentStructureRecord[]> {
     const result = await this.databaseService.query<DocumentStructureRow>(
       `
         select
@@ -366,16 +372,20 @@ export class DocumentTypesService {
     const workspaceId = access.activeWorkspace!.id;
     const versionId =
       input.documentTypeVersionId ??
-      (await this.databaseService.one<{ readonly active_version_id: string | null }>(
-        `
+      (
+        await this.databaseService.one<{
+          readonly active_version_id: string | null;
+        }>(
+          `
           select active_version_id
           from app.document_types
           where id = $1
             and workspace_id = $2
           limit 1
         `,
-        [input.documentTypeId, workspaceId],
-      ))?.active_version_id;
+          [input.documentTypeId, workspaceId],
+        )
+      )?.active_version_id;
 
     if (!versionId) {
       throw new AppHttpException(
@@ -573,7 +583,9 @@ export class DocumentTypesService {
   }
 
   private async getNextVersionNumber(documentTypeId: string): Promise<number> {
-    const row = await this.databaseService.one<{ readonly next_version: number }>(
+    const row = await this.databaseService.one<{
+      readonly next_version: number;
+    }>(
       `
         select coalesce(max(version), 0) + 1 as next_version
         from app.document_type_versions
@@ -639,7 +651,9 @@ function groupStructureRows(
     if (current) {
       grouped.set(row.document_type_version_id, {
         ...current,
-        sections: [...current.sections, section].sort((left, right) => left.order - right.order),
+        sections: [...current.sections, section].sort(
+          (left, right) => left.order - right.order,
+        ),
         updatedAt: row.updated_at,
       });
       continue;

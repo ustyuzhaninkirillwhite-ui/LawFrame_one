@@ -138,12 +138,17 @@ export class LegalModulesController {
   }
 }
 
-function parseValidateStepRequest(body: unknown): ValidateLegalModuleStepRequest {
+function parseValidateStepRequest(
+  body: unknown,
+): ValidateLegalModuleStepRequest {
   const value = asRecord(body);
 
   return {
     moduleCode: expectString(value.moduleCode, 'Module code is required.'),
-    inputCodes: expectStringArray(value.inputCodes, 'Input codes are required.'),
+    inputCodes: expectStringArray(
+      value.inputCodes,
+      'Input codes are required.',
+    ),
     outputCodes: expectStringArray(
       value.outputCodes,
       'Output codes are required.',
@@ -186,7 +191,10 @@ function parseCreateVersionRequest(body: unknown) {
     inputSchema: expectIoSchemaArray(value.inputSchema),
     outputSchema: expectIoSchemaArray(value.outputSchema),
     requirements: expectRequirementArray(value.requirements),
-    runtimeMapping: asLooseRecord(value.runtimeMapping, 'Runtime mapping is required.'),
+    runtimeMapping: asLooseRecord(
+      value.runtimeMapping,
+      'Runtime mapping is required.',
+    ),
     examples: expectStringArray(value.examples, 'Examples are required.'),
   };
 }
@@ -211,7 +219,9 @@ function expectIoSchemaArray(value: unknown): readonly LegalModuleIoSchema[] {
   });
 }
 
-function expectRequirementArray(value: unknown): readonly TemplateRequirement[] {
+function expectRequirementArray(
+  value: unknown,
+): readonly TemplateRequirement[] {
   if (!Array.isArray(value)) {
     throw new AppHttpException(
       'VALIDATION_ERROR',
@@ -266,7 +276,7 @@ function expectRequirementArray(value: unknown): readonly TemplateRequirement[] 
 }
 
 function expectStringArray(value: unknown, message: string): readonly string[] {
-  if (!Array.isArray(value) || value.some((entry) => typeof entry !== 'string')) {
+  if (!isStringArray(value)) {
     throw new AppHttpException('VALIDATION_ERROR', 400, message);
   }
 
@@ -293,7 +303,10 @@ function asRecord(value: unknown): Record<string, unknown> {
   return value as Record<string, unknown>;
 }
 
-function asLooseRecord(value: unknown, message: string): Record<string, unknown> {
+function asLooseRecord(
+  value: unknown,
+  message: string,
+): Record<string, unknown> {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) {
     throw new AppHttpException('VALIDATION_ERROR', 400, message);
   }
@@ -306,4 +319,10 @@ function requestMeta(request: LexframeRequest) {
     requestId: request.headers['x-request-id'] ?? null,
     traceId: request.headers['x-trace-id'] ?? null,
   };
+}
+
+function isStringArray(value: unknown): value is readonly string[] {
+  return (
+    Array.isArray(value) && value.every((entry) => typeof entry === 'string')
+  );
 }

@@ -38,7 +38,9 @@ export class AutomationLibraryController {
 
   @Get('library')
   @RequiredPermissions('automation.read')
-  listTemplates(@LexframeRequestContext() context: LexframeRequest['lexframe']) {
+  listTemplates(
+    @LexframeRequestContext() context: LexframeRequest['lexframe'],
+  ) {
     return this.automationLibraryService.listTemplates(context?.access ?? null);
   }
 
@@ -60,7 +62,10 @@ export class AutomationLibraryController {
     @LexframeRequestContext() context: LexframeRequest['lexframe'],
     @Param('id') id: string,
   ) {
-    return this.automationLibraryService.getTemplate(context?.access ?? null, id);
+    return this.automationLibraryService.getTemplate(
+      context?.access ?? null,
+      id,
+    );
   }
 
   @Post('automation-templates')
@@ -217,7 +222,9 @@ export class AutomationLibraryController {
 
   @Get('automations')
   @RequiredPermissions('automation.read')
-  listInstalled(@LexframeRequestContext() context: LexframeRequest['lexframe']) {
+  listInstalled(
+    @LexframeRequestContext() context: LexframeRequest['lexframe'],
+  ) {
     if (!context?.access) {
       throw new Error('Workspace access context was not attached.');
     }
@@ -235,7 +242,10 @@ export class AutomationLibraryController {
       throw new Error('Workspace access context was not attached.');
     }
 
-    return this.automationLibraryService.getInstalledAutomation(context.access, id);
+    return this.automationLibraryService.getInstalledAutomation(
+      context.access,
+      id,
+    );
   }
 
   @Post('installed-automations/:id/fork-to-template')
@@ -330,7 +340,10 @@ export class AutomationLibraryController {
       throw new Error('Workspace access context was not attached.');
     }
 
-    return this.automationLibraryService.getPublicationRequest(context.access, id);
+    return this.automationLibraryService.getPublicationRequest(
+      context.access,
+      id,
+    );
   }
 
   @Get('moderation/publication-requests')
@@ -354,13 +367,7 @@ export class AutomationLibraryController {
     @Body() body: unknown,
     @Req() request: LexframeRequest,
   ) {
-    return this.reviewPublicationRequest(
-      context,
-      id,
-      body,
-      request,
-      'approve',
-    );
+    return this.reviewPublicationRequest(context, id, body, request, 'approve');
   }
 
   @Post('moderation/publication-requests/:id/reject')
@@ -372,13 +379,7 @@ export class AutomationLibraryController {
     @Body() body: unknown,
     @Req() request: LexframeRequest,
   ) {
-    return this.reviewPublicationRequest(
-      context,
-      id,
-      body,
-      request,
-      'reject',
-    );
+    return this.reviewPublicationRequest(context, id, body, request, 'reject');
   }
 
   @Post('moderation/publication-requests/:id/request-changes')
@@ -421,9 +422,7 @@ export class AutomationLibraryController {
   }
 }
 
-function parseTemplateQuery(
-  value: unknown,
-): {
+function parseTemplateQuery(value: unknown): {
   q?: string;
   scope?: AutomationTemplateScope;
   owner?: AutomationTemplateOwner;
@@ -456,7 +455,9 @@ function parseTemplateQuery(
   return output;
 }
 
-function parseCreateTemplateRequest(body: unknown): CreateAutomationTemplateRequest {
+function parseCreateTemplateRequest(
+  body: unknown,
+): CreateAutomationTemplateRequest {
   const value = asRecord(body);
   const scope = value.scope;
 
@@ -481,17 +482,23 @@ function parseCreateTemplateRequest(body: unknown): CreateAutomationTemplateRequ
       value.requiredPermissions,
       'Required permissions are required.',
     ) as CreateAutomationTemplateRequest['requiredPermissions'],
-    moduleCodes: expectStringArray(value.moduleCodes, 'Module codes are required.'),
+    moduleCodes: expectStringArray(
+      value.moduleCodes,
+      'Module codes are required.',
+    ),
     workflow: asLooseRecord(value.workflow, 'Workflow payload is required.'),
     requirements: expectRequirementArray(value.requirements),
     sourceTemplateId:
-      typeof value.sourceTemplateId === 'string' && value.sourceTemplateId.trim().length > 0
+      typeof value.sourceTemplateId === 'string' &&
+      value.sourceTemplateId.trim().length > 0
         ? value.sourceTemplateId.trim()
         : undefined,
   };
 }
 
-function parseUpdateTemplateRequest(body: unknown): UpdateAutomationTemplateRequest {
+function parseUpdateTemplateRequest(
+  body: unknown,
+): UpdateAutomationTemplateRequest {
   const value = asRecord(body);
   const output: {
     title?: string;
@@ -561,7 +568,8 @@ function parseInstallRequest(body: unknown) {
     approvalPolicy?: 'manual' | 'auto_with_gate';
   } = {
     workspaceId:
-      typeof value.workspaceId === 'string' && value.workspaceId.trim().length > 0
+      typeof value.workspaceId === 'string' &&
+      value.workspaceId.trim().length > 0
         ? value.workspaceId.trim()
         : undefined,
     profileId:
@@ -572,7 +580,10 @@ function parseInstallRequest(body: unknown) {
           : undefined,
     documentIds:
       value.documentIds !== undefined
-        ? expectStringArray(value.documentIds, 'Document ids must be a string array.')
+        ? expectStringArray(
+            value.documentIds,
+            'Document ids must be a string array.',
+          )
         : undefined,
     connectionIds:
       value.connectionIds !== undefined
@@ -626,7 +637,9 @@ function parseApplySourceUpdateRequest(body: unknown) {
   };
 }
 
-function parseSubmitPublicationRequest(body: unknown): SubmitPublicationRequest {
+function parseSubmitPublicationRequest(
+  body: unknown,
+): SubmitPublicationRequest {
   const value = asRecord(body);
 
   return {
@@ -658,7 +671,9 @@ function parseModerationDecision(
   };
 }
 
-function expectRequirementArray(value: unknown): readonly TemplateRequirement[] {
+function expectRequirementArray(
+  value: unknown,
+): readonly TemplateRequirement[] {
   if (!Array.isArray(value)) {
     throw new AppHttpException(
       'VALIDATION_ERROR',
@@ -714,7 +729,7 @@ function expectRequirementArray(value: unknown): readonly TemplateRequirement[] 
 }
 
 function expectStringArray(value: unknown, message: string): readonly string[] {
-  if (!Array.isArray(value) || value.some((entry) => typeof entry !== 'string')) {
+  if (!isStringArray(value)) {
     throw new AppHttpException('VALIDATION_ERROR', 400, message);
   }
 
@@ -741,7 +756,10 @@ function asRecord(value: unknown): Record<string, unknown> {
   return value as Record<string, unknown>;
 }
 
-function asLooseRecord(value: unknown, message: string): Record<string, unknown> {
+function asLooseRecord(
+  value: unknown,
+  message: string,
+): Record<string, unknown> {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) {
     throw new AppHttpException('VALIDATION_ERROR', 400, message);
   }
@@ -772,4 +790,10 @@ function requestMeta(request: LexframeRequest) {
     requestId: request.headers['x-request-id'] ?? null,
     traceId: request.headers['x-trace-id'] ?? null,
   };
+}
+
+function isStringArray(value: unknown): value is readonly string[] {
+  return (
+    Array.isArray(value) && value.every((entry) => typeof entry === 'string')
+  );
 }

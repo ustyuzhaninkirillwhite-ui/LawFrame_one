@@ -1,5 +1,13 @@
 import type { LexframeRequest } from '../../common/types/lexframe-request';
-import { Controller, Get, HttpCode, Param, Post, Query, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  HttpCode,
+  Param,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { LexframeRequestContext } from '../../common/decorators/lexframe-request.decorator';
 import { RequiredPermissions } from '../../common/decorators/required-permissions.decorator';
 import { AuthGuard } from '../../common/guards/auth.guard';
@@ -44,7 +52,11 @@ export class NotificationsController {
       throw new Error('Workspace access context was not attached.');
     }
 
-    return this.notificationsService.markRead(context.access, context.actor.id, id);
+    return this.notificationsService.markRead(
+      context.access,
+      context.actor.id,
+      id,
+    );
   }
 
   @Post('read-all')
@@ -55,6 +67,9 @@ export class NotificationsController {
       throw new Error('Workspace access context was not attached.');
     }
 
-    return this.notificationsService.markAllRead(context.access, context.actor.id);
+    return this.notificationsService.markAllRead(
+      context.access,
+      context.actor.id,
+    );
   }
 }

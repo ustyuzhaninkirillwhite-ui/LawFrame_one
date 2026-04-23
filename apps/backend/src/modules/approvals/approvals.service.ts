@@ -76,7 +76,9 @@ export class ApprovalsService {
     private readonly liveEventsService: LiveEventsService,
   ) {}
 
-  async listRoutes(access: AccessContext): Promise<readonly ApprovalRouteSummary[]> {
+  async listRoutes(
+    access: AccessContext,
+  ): Promise<readonly ApprovalRouteSummary[]> {
     const result = await this.databaseService.query<ApprovalRouteRow>(
       `
         select
@@ -98,7 +100,10 @@ export class ApprovalsService {
     return Promise.all(result.rows.map((row) => this.buildRoute(row)));
   }
 
-  async getRoute(access: AccessContext, id: string): Promise<ApprovalRouteDetail> {
+  async getRoute(
+    access: AccessContext,
+    id: string,
+  ): Promise<ApprovalRouteDetail> {
     const row = await this.getRouteRow(id, access.activeWorkspace!.id);
     return this.buildRoute(row);
   }
@@ -189,7 +194,9 @@ export class ApprovalsService {
           input.name?.trim() ?? null,
           input.description ?? null,
           input.status ?? null,
-          input.appliesToDocumentTypes ? JSON.stringify(input.appliesToDocumentTypes) : null,
+          input.appliesToDocumentTypes
+            ? JSON.stringify(input.appliesToDocumentTypes)
+            : null,
           actor.id,
         ],
       );
@@ -217,7 +224,9 @@ export class ApprovalsService {
     return this.getRoute(access, id);
   }
 
-  async listTasks(access: AccessContext): Promise<readonly ApprovalTaskSummary[]> {
+  async listTasks(
+    access: AccessContext,
+  ): Promise<readonly ApprovalTaskSummary[]> {
     const result = await this.databaseService.query<ApprovalTaskRow>(
       `
         select
@@ -380,7 +389,14 @@ export class ApprovalsService {
         )
         values ($1, $2, $3, $4, 'changes_requested', $5, $6, '{}'::jsonb)
       `,
-      [randomUUID(), id, access.activeWorkspace!.id, row.workflow_run_id, input.comment ?? null, actor.id],
+      [
+        randomUUID(),
+        id,
+        access.activeWorkspace!.id,
+        row.workflow_run_id,
+        input.comment ?? null,
+        actor.id,
+      ],
     );
 
     if (row.workflow_run_id) {
@@ -592,7 +608,7 @@ export class ApprovalsService {
       userId: row.approver_user_id,
       type: 'approval.created',
       title: row.title,
-        body: 'Задача согласования требует рассмотрения.',
+      body: 'Задача согласования требует рассмотрения.',
       severity: 'warning',
       actionUrl: '/approvals',
       entityType: 'approval_task',
@@ -799,7 +815,7 @@ export class ApprovalsService {
       userId: row.approver_user_id,
       type: 'approval.created',
       title: row.title,
-        body: 'Задача согласования требует рассмотрения.',
+      body: 'Задача согласования требует рассмотрения.',
       severity: 'warning',
       actionUrl: '/approvals',
       entityType: 'approval_task',
@@ -939,7 +955,15 @@ export class ApprovalsService {
         )
         values ($1, $2, $3, $4, $5, $6, $7, '{}'::jsonb)
       `,
-      [randomUUID(), id, access.activeWorkspace!.id, row.workflow_run_id, status, input.comment ?? null, actor.id],
+      [
+        randomUUID(),
+        id,
+        access.activeWorkspace!.id,
+        row.workflow_run_id,
+        status,
+        input.comment ?? null,
+        actor.id,
+      ],
     );
 
     if (row.workflow_run_id) {
@@ -1006,7 +1030,10 @@ export class ApprovalsService {
       actorUserId: actor.id,
       actorEmail: actor.email,
       workspaceId: access.activeWorkspace!.id,
-      action: status === 'approved' ? 'approval.task.approved' : 'approval.task.rejected',
+      action:
+        status === 'approved'
+          ? 'approval.task.approved'
+          : 'approval.task.rejected',
       entityType: 'approval_task',
       entityId: id,
       result: 'success',
@@ -1113,7 +1140,9 @@ export class ApprovalsService {
     return row;
   }
 
-  private async loadSteps(routeId: string): Promise<readonly ApprovalRouteStep[]> {
+  private async loadSteps(
+    routeId: string,
+  ): Promise<readonly ApprovalRouteStep[]> {
     const result = await this.databaseService.query<ApprovalRouteStepRow>(
       `
         select
@@ -1144,7 +1173,9 @@ export class ApprovalsService {
     }));
   }
 
-  private async buildRoute(row: ApprovalRouteRow): Promise<ApprovalRouteDetail> {
+  private async buildRoute(
+    row: ApprovalRouteRow,
+  ): Promise<ApprovalRouteDetail> {
     return {
       id: row.id,
       workspaceId: row.workspace_id,

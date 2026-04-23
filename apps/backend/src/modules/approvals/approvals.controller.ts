@@ -212,32 +212,55 @@ export class ApprovalsController {
   }
 }
 
-function parseCreateApprovalRouteRequest(body: unknown): CreateApprovalRouteRequest {
+function parseCreateApprovalRouteRequest(
+  body: unknown,
+): CreateApprovalRouteRequest {
   const value = asRecord(body);
 
   return {
     name: expectString(value.name, 'Approval route name is required.'),
     description: optionalString(value.description),
-    appliesToDocumentTypes: optionalStringArray(value.appliesToDocumentTypes) ?? [],
+    appliesToDocumentTypes:
+      optionalStringArray(value.appliesToDocumentTypes) ?? [],
     steps: parseApprovalRouteSteps(value.steps),
   };
 }
 
-function parseUpdateApprovalRouteRequest(body: unknown): UpdateApprovalRouteRequest {
+function parseUpdateApprovalRouteRequest(
+  body: unknown,
+): UpdateApprovalRouteRequest {
   const value = asRecord(body);
 
   return {
-    ...(value.name !== undefined ? { name: expectString(value.name, 'Approval route name must be a string.') } : {}),
-    ...(value.description !== undefined ? { description: optionalString(value.description) } : {}),
-    ...(value.status !== undefined ? { status: expectRouteStatus(value.status) } : {}),
-    ...(value.appliesToDocumentTypes !== undefined
-      ? { appliesToDocumentTypes: optionalStringArray(value.appliesToDocumentTypes) ?? [] }
+    ...(value.name !== undefined
+      ? {
+          name: expectString(
+            value.name,
+            'Approval route name must be a string.',
+          ),
+        }
       : {}),
-    ...(value.steps !== undefined ? { steps: parseApprovalRouteSteps(value.steps) } : {}),
+    ...(value.description !== undefined
+      ? { description: optionalString(value.description) }
+      : {}),
+    ...(value.status !== undefined
+      ? { status: expectRouteStatus(value.status) }
+      : {}),
+    ...(value.appliesToDocumentTypes !== undefined
+      ? {
+          appliesToDocumentTypes:
+            optionalStringArray(value.appliesToDocumentTypes) ?? [],
+        }
+      : {}),
+    ...(value.steps !== undefined
+      ? { steps: parseApprovalRouteSteps(value.steps) }
+      : {}),
   };
 }
 
-function parseApprovalTaskDecisionRequest(body: unknown): ApprovalTaskDecisionRequest {
+function parseApprovalTaskDecisionRequest(
+  body: unknown,
+): ApprovalTaskDecisionRequest {
   if (body === undefined || body === null || body === '') {
     return {};
   }
@@ -272,18 +295,26 @@ function parseApprovalRouteSteps(value: unknown): readonly ApprovalRouteStep[] {
     const step = asRecord(entry);
 
     return {
-      stepId: expectString(step.stepId, `Approval step ${index + 1} requires stepId.`),
+      stepId: expectString(
+        step.stepId,
+        `Approval step ${index + 1} requires stepId.`,
+      ),
       order: optionalNumber(step.order) ?? index + 1,
       approverRole: optionalString(step.approverRole),
       approverUserId: optionalString(step.approverUserId),
-      title: expectString(step.title, `Approval step ${index + 1} requires title.`),
+      title: expectString(
+        step.title,
+        `Approval step ${index + 1} requires title.`,
+      ),
       requiresComment: Boolean(step.requiresComment),
       dueInHours: optionalNumber(step.dueInHours) ?? null,
     };
   });
 }
 
-function expectRouteStatus(value: unknown): NonNullable<UpdateApprovalRouteRequest['status']> {
+function expectRouteStatus(
+  value: unknown,
+): NonNullable<UpdateApprovalRouteRequest['status']> {
   if (value === 'draft' || value === 'active' || value === 'archived') {
     return value;
   }
@@ -297,8 +328,14 @@ function parseWorkflowRuntimeApprovalRequestExecuteRequest(
   const value = asRecord(body);
 
   return {
-    workflowRunId: expectString(value.workflowRunId, 'Workflow run id is required.'),
-    generationJobId: expectString(value.generationJobId, 'Generation job id is required.'),
+    workflowRunId: expectString(
+      value.workflowRunId,
+      'Workflow run id is required.',
+    ),
+    generationJobId: expectString(
+      value.generationJobId,
+      'Generation job id is required.',
+    ),
     approvalRouteId: optionalString(value.approvalRouteId),
     title: expectString(value.title, 'Approval task title is required.'),
   };

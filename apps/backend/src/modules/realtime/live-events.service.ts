@@ -1,5 +1,8 @@
 import { loadServerEnv } from '@lexframe/config';
-import type { DashboardEvent, DashboardEventListResponse } from '@lexframe/contracts';
+import type {
+  DashboardEvent,
+  DashboardEventListResponse,
+} from '@lexframe/contracts';
 import { Injectable } from '@nestjs/common';
 import type { PoolClient, QueryResultRow } from 'pg';
 import { randomUUID } from 'node:crypto';
@@ -126,7 +129,9 @@ export class LiveEventsService {
   }
 
   async getSnapshotVersion(workspaceId: string, userId?: string | null) {
-    const row = await this.databaseService.one<{ readonly sequence_id: string | null }>(
+    const row = await this.databaseService.one<{
+      readonly sequence_id: string | null;
+    }>(
       `
         select max(sequence_id)::text as sequence_id
         from app.live_events
@@ -185,7 +190,7 @@ export class LiveEventsService {
       snapshotVersion,
       events,
       nextSequence:
-        events.length === limit ? events.at(-1)?.sequenceId ?? null : null,
+        events.length === limit ? (events.at(-1)?.sequenceId ?? null) : null,
     };
   }
 

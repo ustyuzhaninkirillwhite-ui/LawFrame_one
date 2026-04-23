@@ -6,18 +6,16 @@ import type {
   LegalSearchResponse,
   LegalSearchResult,
   LegalSourceSummary,
-  LegalSourceType,
-  LegalSourceVisibility,
-} from "@lexframe/contracts";
+} from '@lexframe/contracts';
 import type {
   AccessContext,
   AuthenticatedActor,
-} from "../../common/types/lexframe-request";
-import { loadServerEnv } from "@lexframe/config";
-import { Injectable } from "@nestjs/common";
-import { AuditService } from "../audit/audit.service";
-import { AppHttpException } from "../../common/errors/app-http.exception";
-import { DatabaseService } from "../database/database.service";
+} from '../../common/types/lexframe-request';
+import { loadServerEnv } from '@lexframe/config';
+import { Injectable } from '@nestjs/common';
+import { AuditService } from '../audit/audit.service';
+import { AppHttpException } from '../../common/errors/app-http.exception';
+import { DatabaseService } from '../database/database.service';
 
 interface RequestMeta {
   readonly requestId: string | null;
@@ -28,15 +26,15 @@ interface SearchRow {
   readonly source_id: string;
   readonly workspace_id: string | null;
   readonly document_id: string | null;
-  readonly source_type: LegalSourceSummary["sourceType"];
+  readonly source_type: LegalSourceSummary['sourceType'];
   readonly jurisdiction: string | null;
   readonly title: string;
   readonly canonical_url: string | null;
   readonly external_id: string | null;
-  readonly license_status: LegalSourceSummary["licenseStatus"];
-  readonly visibility: LegalSourceSummary["visibility"];
-  readonly classification: LegalSourceSummary["classification"];
-  readonly status: LegalSourceSummary["status"];
+  readonly license_status: LegalSourceSummary['licenseStatus'];
+  readonly visibility: LegalSourceSummary['visibility'];
+  readonly classification: LegalSourceSummary['classification'];
+  readonly status: LegalSourceSummary['status'];
   readonly owner_workspace_id: string | null;
   readonly owner_user_id: string | null;
   readonly source_metadata: Record<string, unknown>;
@@ -46,16 +44,16 @@ interface SearchRow {
   readonly provider_id: string;
   readonly provider_code: string;
   readonly provider_name: string;
-  readonly provider_type: LegalSourceSummary["provider"]["providerType"];
+  readonly provider_type: LegalSourceSummary['provider']['providerType'];
   readonly provider_jurisdiction: string | null;
-  readonly provider_access_mode: LegalSourceSummary["provider"]["accessMode"];
+  readonly provider_access_mode: LegalSourceSummary['provider']['accessMode'];
   readonly provider_is_enabled: boolean;
   readonly indexed_at: string | null;
   readonly has_embeddings: boolean;
   readonly chunk_id: string;
   readonly document_version_id: string;
   readonly chunk_no: number;
-  readonly chunk_type: LegalChunkSummary["chunkType"];
+  readonly chunk_type: LegalChunkSummary['chunkType'];
   readonly chunk_text: string;
   readonly text_hash: string;
   readonly page_from: number | null;
@@ -63,7 +61,7 @@ interface SearchRow {
   readonly char_start: number | null;
   readonly char_end: number | null;
   readonly chunk_metadata: Record<string, unknown>;
-  readonly security_scope: LegalChunkSummary["securityScope"];
+  readonly security_scope: LegalChunkSummary['securityScope'];
   readonly embedding_model: string | null;
   readonly embedding_hash: string | null;
 }
@@ -98,9 +96,9 @@ export class LegalSearchService {
 
     if (!workspaceId) {
       throw new AppHttpException(
-        "WORKSPACE_CONTEXT_REQUIRED",
+        'WORKSPACE_CONTEXT_REQUIRED',
         400,
-        "Для юридического поиска требуется активное рабочее пространство.",
+        'Для юридического поиска требуется активное рабочее пространство.',
       );
     }
 
@@ -108,9 +106,11 @@ export class LegalSearchService {
     const total = candidates.length;
     const offset = clampNonNegative(input.offset ?? 0);
     const limit = clampLimit(input.limit ?? 12);
-    const results = candidates.slice(offset, offset + limit).map((candidate, index) =>
-      mapCandidateToResult(candidate, offset + index + 1),
-    );
+    const results = candidates
+      .slice(offset, offset + limit)
+      .map((candidate, index) =>
+        mapCandidateToResult(candidate, offset + index + 1),
+      );
 
     if (results.length > 0) {
       await this.databaseService.query(
@@ -127,10 +127,10 @@ export class LegalSearchService {
       actorUserId: actor.id,
       actorEmail: actor.email,
       workspaceId,
-      action: "legal.search.performed",
-      entityType: "legal_search",
+      action: 'legal.search.performed',
+      entityType: 'legal_search',
       entityId: null,
-      result: "success",
+      result: 'success',
       requestId: meta.requestId,
       traceId: meta.traceId,
       metadata: {
@@ -148,7 +148,7 @@ export class LegalSearchService {
       results,
       debug: {
         indexAlias: this.env.OPENSEARCH_INDEX_ALIAS,
-        normalized: input.mode !== "keyword",
+        normalized: input.mode !== 'keyword',
         aclApplied: true,
       },
     };
@@ -160,13 +160,13 @@ export class LegalSearchService {
     input: {
       readonly sourceIds?: readonly string[];
       readonly query?: string;
-      readonly filters?: LegalSearchQuery["filters"];
+      readonly filters?: LegalSearchQuery['filters'];
       readonly limit: number;
     },
   ): Promise<readonly SearchCandidate[]> {
     return this.loadCandidates(actor, access, {
-      query: input.query ?? "",
-      mode: input.query && input.query.trim().length > 0 ? "hybrid" : "keyword",
+      query: input.query ?? '',
+      mode: input.query && input.query.trim().length > 0 ? 'hybrid' : 'keyword',
       filters: input.filters,
       limit: input.limit,
       offset: 0,
@@ -183,15 +183,15 @@ export class LegalSearchService {
 
     if (!workspaceId) {
       throw new AppHttpException(
-        "WORKSPACE_CONTEXT_REQUIRED",
+        'WORKSPACE_CONTEXT_REQUIRED',
         400,
-        "Для юридического поиска требуется активное рабочее пространство.",
+        'Для юридического поиска требуется активное рабочее пространство.',
       );
     }
 
     const values: unknown[] = [workspaceId, actor.id];
     const conditions = [
-      buildAccessClause("s", 1, 2),
+      buildAccessClause('s', 1, 2),
       "s.status in ('processed', 'indexed', 'pending_processing')",
     ];
     const normalizedQuery = input.query.trim();
@@ -311,7 +311,7 @@ export class LegalSearchService {
           on s.id = c.source_id
         inner join app.legal_source_providers p
           on p.id = s.provider_id
-        where ${conditions.join(" and ")}
+        where ${conditions.join(' and ')}
         order by s.updated_at desc, c.chunk_no asc
         limit 200
       `,
@@ -362,7 +362,7 @@ function buildAccessClause(
 function mapRowToCandidate(
   row: SearchRow,
   normalizedQuery: string,
-  mode: LegalSearchQuery["mode"],
+  mode: LegalSearchQuery['mode'],
 ): SearchCandidate {
   const sourceMetadata = normalizeMetadata(row.source_metadata);
   const chunkMetadata = normalizeMetadata(row.chunk_metadata);
@@ -385,17 +385,27 @@ function mapRowToCandidate(
     embeddingHash: row.embedding_hash,
     indexedAt: row.indexed_at,
   };
-  const lexicalScore = computeLexicalScore(normalizedQuery, row.title, row.chunk_text, source);
-  const semanticScore = computeSemanticScore(normalizedQuery, row.chunk_text, mode);
+  const lexicalScore = computeLexicalScore(
+    normalizedQuery,
+    row.title,
+    row.chunk_text,
+    source,
+  );
+  const semanticScore = computeSemanticScore(
+    normalizedQuery,
+    row.chunk_text,
+    mode,
+  );
   const combinedScore =
-    mode === "keyword"
+    mode === 'keyword'
       ? lexicalScore
-      : mode === "semantic"
+      : mode === 'semantic'
         ? semanticScore
         : lexicalScore * 0.65 + semanticScore * 0.35;
-  const highlights = normalizedQuery.length > 0
-    ? buildHighlights(normalizedQuery, row.chunk_text)
-    : [];
+  const highlights =
+    normalizedQuery.length > 0
+      ? buildHighlights(normalizedQuery, row.chunk_text)
+      : [];
   const snippet = buildSnippet(normalizedQuery, row.chunk_text);
   const citation: LegalCitation = {
     citationId: buildCitationId(row.chunk_id),
@@ -452,13 +462,13 @@ function mapSource(
     status: row.status,
     ownerWorkspaceId: row.owner_workspace_id,
     ownerUserId: row.owner_user_id,
-    court: readMetadataString(metadata, "court"),
+    court: readMetadataString(metadata, 'court'),
     caseNumber:
-      readMetadataString(metadata, "caseNumber") ??
-      readMetadataString(metadata, "case_number"),
+      readMetadataString(metadata, 'caseNumber') ??
+      readMetadataString(metadata, 'case_number'),
     decisionDate:
-      readMetadataString(metadata, "decisionDate") ??
-      readMetadataString(metadata, "decision_date"),
+      readMetadataString(metadata, 'decisionDate') ??
+      readMetadataString(metadata, 'decision_date'),
     hasEmbeddings: row.has_embeddings,
     indexedAt: row.indexed_at,
     lastUsedAt: row.last_used_at,
@@ -487,7 +497,9 @@ function mapCandidateToResult(
   };
 }
 
-function buildFacets(candidates: readonly SearchCandidate[]): readonly LegalSearchFacet[] {
+function buildFacets(
+  candidates: readonly SearchCandidate[],
+): readonly LegalSearchFacet[] {
   const sourceTypeCounts = new Map<string, number>();
   const courtCounts = new Map<string, number>();
   const visibilityCounts = new Map<string, number>();
@@ -501,9 +513,9 @@ function buildFacets(candidates: readonly SearchCandidate[]): readonly LegalSear
   }
 
   return [
-    mapFacet("sourceType", "Source type", sourceTypeCounts),
-    mapFacet("court", "Court", courtCounts),
-    mapFacet("visibility", "Visibility", visibilityCounts),
+    mapFacet('sourceType', 'Source type', sourceTypeCounts),
+    mapFacet('court', 'Court', courtCounts),
+    mapFacet('visibility', 'Visibility', visibilityCounts),
   ].filter((facet) => facet.buckets.length > 0);
 }
 
@@ -547,17 +559,11 @@ function computeLexicalScore(
     score += 0.4;
   }
 
-  if (
-    source.caseNumber &&
-    source.caseNumber.toLowerCase().includes(query)
-  ) {
+  if (source.caseNumber && source.caseNumber.toLowerCase().includes(query)) {
     score += 0.65;
   }
 
-  if (
-    source.court &&
-    source.court.toLowerCase().includes(query)
-  ) {
+  if (source.court && source.court.toLowerCase().includes(query)) {
     score += 0.15;
   }
 
@@ -576,9 +582,9 @@ function computeLexicalScore(
 function computeSemanticScore(
   query: string,
   text: string,
-  mode: LegalSearchQuery["mode"],
+  mode: LegalSearchQuery['mode'],
 ) {
-  if (mode === "keyword") {
+  if (mode === 'keyword') {
     return 0;
   }
 
@@ -592,14 +598,16 @@ function computeSemanticScore(
   }
 
   const loweredText = text.toLowerCase();
-  const hitCount = queryTokens.filter((token) => loweredText.includes(token)).length;
+  const hitCount = queryTokens.filter((token) =>
+    loweredText.includes(token),
+  ).length;
   const density = Math.min(text.length / 1200, 1);
 
   return Math.min((hitCount / queryTokens.length) * 0.9 + density * 0.1, 1);
 }
 
 function buildSnippet(query: string, text: string) {
-  const clean = text.replace(/\s+/g, " ").trim();
+  const clean = text.replace(/\s+/g, ' ').trim();
   if (query.length === 0) {
     return clean.slice(0, 280);
   }
@@ -644,7 +652,9 @@ function readMetadataString(
   key: string,
 ): string | null {
   const value = metadata[key];
-  return typeof value === "string" && value.trim().length > 0 ? value.trim() : null;
+  return typeof value === 'string' && value.trim().length > 0
+    ? value.trim()
+    : null;
 }
 
 function roundScore(value: number) {

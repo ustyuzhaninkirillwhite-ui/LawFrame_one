@@ -28,16 +28,17 @@ export class RunPreflightService {
     automationId: string,
     input: RunPreflightRequest,
   ): Promise<RunPreflightReport> {
-    const automation = await this.databaseService.one<InstalledAutomationPreflightRow>(
-      `
+    const automation =
+      await this.databaseService.one<InstalledAutomationPreflightRow>(
+        `
         select id, title, required_inputs
         from app.installed_automations
         where id = $1
           and workspace_id = $2
         limit 1
       `,
-      [automationId, access.activeWorkspace!.id],
-    );
+        [automationId, access.activeWorkspace!.id],
+      );
 
     if (!automation) {
       throw new AppHttpException(
@@ -95,7 +96,9 @@ export class RunPreflightService {
         label: 'Execution profile',
         category: 'profile',
         status:
-          requiresProfile(requiredInputs) && !input.profileId ? 'blocked' : 'ready',
+          requiresProfile(requiredInputs) && !input.profileId
+            ? 'blocked'
+            : 'ready',
         message:
           requiresProfile(requiredInputs) && !input.profileId
             ? 'This automation requires a legal work profile.'
@@ -125,7 +128,9 @@ export class RunPreflightService {
       checks,
       requiredInputs,
       warnings: runtime.warnings,
-      missingConnectionCodes: runtime.missingConnections.map((item) => item.code),
+      missingConnectionCodes: runtime.missingConnections.map(
+        (item) => item.code,
+      ),
       traceId: randomUUID(),
     };
   }

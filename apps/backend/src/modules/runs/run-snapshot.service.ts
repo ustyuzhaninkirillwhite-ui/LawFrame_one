@@ -142,7 +142,11 @@ export class RunSnapshotService {
     );
 
     if (!run) {
-      throw new AppHttpException('RUN_NOT_FOUND', 404, 'Workflow run was not found.');
+      throw new AppHttpException(
+        'RUN_NOT_FOUND',
+        404,
+        'Workflow run was not found.',
+      );
     }
 
     const [steps, artifacts, approvalTasks, deliveryRequests, inputs] =
@@ -168,7 +172,12 @@ export class RunSnapshotService {
       errorMessage: run.error_message,
       startedAt: run.started_at,
       finishedAt: run.finished_at,
-      allowedActions: computeAllowedActions(run.status, steps, deliveryRequests, artifacts),
+      allowedActions: computeAllowedActions(
+        run.status,
+        steps,
+        deliveryRequests,
+        artifacts,
+      ),
       inputs: inputs
         ? {
             profileId: inputs.profile_id,
@@ -252,9 +261,9 @@ export class RunSnapshotService {
           startedAt: row.started_at,
           finishedAt: row.finished_at,
           errorCode: row.error_code,
-          artifactRefs: (await this.loadArtifacts(row.id, access.activeWorkspace!.id)).map(
-            (artifact) => artifact.id,
-          ),
+          artifactRefs: (
+            await this.loadArtifacts(row.id, access.activeWorkspace!.id)
+          ).map((artifact) => artifact.id),
           approvalState: row.approval_state,
         } satisfies RunSummary;
       }),
@@ -480,7 +489,9 @@ function computeAllowedActions(
   }
 
   if (
-    ['failed', 'cancelled', 'expired', 'completed_with_warnings'].includes(status)
+    ['failed', 'cancelled', 'expired', 'completed_with_warnings'].includes(
+      status,
+    )
   ) {
     actions.add('retry_run');
   }

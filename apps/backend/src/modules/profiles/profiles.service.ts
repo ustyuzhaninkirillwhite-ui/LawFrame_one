@@ -159,8 +159,12 @@ export class ProfilesService {
     }
 
     const versions = await this.listVersions(profileId);
-    const currentVersion = versions.find((entry) => entry.id === profile.current_version_id);
-    const validation = this.validateProfileContent(currentVersion?.content ?? {});
+    const currentVersion = versions.find(
+      (entry) => entry.id === profile.current_version_id,
+    );
+    const validation = this.validateProfileContent(
+      currentVersion?.content ?? {},
+    );
 
     return {
       ...mapProfileRow(profile),
@@ -215,8 +219,12 @@ export class ProfilesService {
           returning id
         `,
         [
-          input.profileType === 'system' ? null : (input.workspaceId ?? workspaceId),
-          input.profileType === 'personal' ? (input.ownerUserId ?? actor.id) : null,
+          input.profileType === 'system'
+            ? null
+            : (input.workspaceId ?? workspaceId),
+          input.profileType === 'personal'
+            ? (input.ownerUserId ?? actor.id)
+            : null,
           input.profileType,
           input.name.trim(),
           input.description ?? null,
@@ -243,7 +251,9 @@ export class ProfilesService {
         `,
         [
           profileId,
-          input.profileType === 'system' ? null : (input.workspaceId ?? workspaceId),
+          input.profileType === 'system'
+            ? null
+            : (input.workspaceId ?? workspaceId),
           JSON.stringify(validation.normalizedContent),
           hashJson(validation.normalizedContent),
           input.changeNote ?? null,
@@ -287,7 +297,10 @@ export class ProfilesService {
     input: UpdateLegalWorkProfileDraftRequest,
     meta: RequestMeta,
   ): Promise<LegalWorkProfileDetail> {
-    const profile = await this.getProfileRow(profileId, access.activeWorkspace!.id);
+    const profile = await this.getProfileRow(
+      profileId,
+      access.activeWorkspace!.id,
+    );
     const currentVersion = await this.getCurrentVersion(profile);
     const nextContent = sortJson({
       ...(currentVersion?.content ?? {}),
@@ -306,7 +319,12 @@ export class ProfilesService {
             updated_at = timezone('utc', now())
           where id = $1
         `,
-        [profileId, input.name?.trim() ?? null, input.description ?? null, actor.id],
+        [
+          profileId,
+          input.name?.trim() ?? null,
+          input.description ?? null,
+          actor.id,
+        ],
       );
 
       if (!currentVersion || currentVersion.status === 'published') {
@@ -398,7 +416,10 @@ export class ProfilesService {
     profileId: string,
     meta: RequestMeta,
   ): Promise<LegalWorkProfileDetail> {
-    const profile = await this.getProfileRow(profileId, access.activeWorkspace!.id);
+    const profile = await this.getProfileRow(
+      profileId,
+      access.activeWorkspace!.id,
+    );
     const currentVersion = await this.getCurrentVersion(profile);
 
     if (!currentVersion) {
@@ -461,7 +482,10 @@ export class ProfilesService {
     input: RestoreLegalWorkProfileVersionRequest,
     meta: RequestMeta,
   ): Promise<LegalWorkProfileDetail> {
-    const profile = await this.getProfileRow(profileId, access.activeWorkspace!.id);
+    const profile = await this.getProfileRow(
+      profileId,
+      access.activeWorkspace!.id,
+    );
     const version = await this.databaseService.one<ProfileVersionRow>(
       `
         select
@@ -639,7 +663,9 @@ export class ProfilesService {
     });
   }
 
-  validateProfileContent(content: Record<string, unknown>): ProfileValidationResult {
+  validateProfileContent(
+    content: Record<string, unknown>,
+  ): ProfileValidationResult {
     const normalizedContent = sortJson(content) as Record<string, unknown>;
     const issues: Array<ProfileValidationResult['issues'][number]> = [];
 
@@ -679,7 +705,10 @@ export class ProfilesService {
     readonly automationOverrides?: Record<string, unknown>;
   }): Promise<EffectiveProfileSnapshotSummary> {
     const candidates = await this.databaseService.query<
-      ProfileRow & { readonly content: Record<string, unknown> | null; readonly version_id: string | null }
+      ProfileRow & {
+        readonly content: Record<string, unknown> | null;
+        readonly version_id: string | null;
+      }
     >(
       `
         select
@@ -727,7 +756,10 @@ export class ProfilesService {
       }
 
       const lockedPaths = extractLockedPaths(merged);
-      merged = deepMerge(merged, row.content, lockedPaths) as Record<string, unknown>;
+      merged = deepMerge(merged, row.content, lockedPaths) as Record<
+        string,
+        unknown
+      >;
       sourceProfileVersionIds.push(row.version_id);
     }
 
@@ -857,8 +889,12 @@ export class ProfilesService {
     );
   }
 
-  private async getNextProfileVersionNumber(profileId: string): Promise<number> {
-    const row = await this.databaseService.one<{ readonly next_version: number }>(
+  private async getNextProfileVersionNumber(
+    profileId: string,
+  ): Promise<number> {
+    const row = await this.databaseService.one<{
+      readonly next_version: number;
+    }>(
       `
         select coalesce(max(version), 0) + 1 as next_version
         from app.legal_work_profile_versions
@@ -907,9 +943,7 @@ function mapProfileVersionRow(
   };
 }
 
-function mapSnapshotRow(
-  row: SnapshotRow,
-): EffectiveProfileSnapshotSummary {
+function mapSnapshotRow(row: SnapshotRow): EffectiveProfileSnapshotSummary {
   return {
     id: row.id,
     workspaceId: row.workspace_id,

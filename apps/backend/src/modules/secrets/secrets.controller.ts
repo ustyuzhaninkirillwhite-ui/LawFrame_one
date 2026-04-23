@@ -5,7 +5,16 @@ import { AdminReauthGuard } from '../../common/guards/admin-reauth.guard';
 import { AuthGuard } from '../../common/guards/auth.guard';
 import { PermissionGuard } from '../../common/guards/permission.guard';
 import { WorkspaceContextGuard } from '../../common/guards/workspace-context.guard';
-import { Body, Controller, Get, HttpCode, Param, Post, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  Param,
+  Post,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { SecretsService } from './secrets.service';
 
 @Controller('admin/security/secrets')

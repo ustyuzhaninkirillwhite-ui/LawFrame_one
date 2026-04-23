@@ -131,7 +131,12 @@ export class WorkspacesController {
   }
 
   @Patch('workspaces/:workspaceId/members/:memberId/role')
-  @UseGuards(AuthGuard, WorkspaceContextGuard, PermissionGuard, AdminReauthGuard)
+  @UseGuards(
+    AuthGuard,
+    WorkspaceContextGuard,
+    PermissionGuard,
+    AdminReauthGuard,
+  )
   @RequiredPermissions('workspace.member.update_role')
   changeRole(
     @LexframeRequestContext() context: LexframeRequest['lexframe'],
@@ -158,7 +163,12 @@ export class WorkspacesController {
   }
 
   @Delete('workspaces/:workspaceId/members/:memberId')
-  @UseGuards(AuthGuard, WorkspaceContextGuard, PermissionGuard, AdminReauthGuard)
+  @UseGuards(
+    AuthGuard,
+    WorkspaceContextGuard,
+    PermissionGuard,
+    AdminReauthGuard,
+  )
   @RequiredPermissions('workspace.member.remove')
   removeMember(
     @LexframeRequestContext() context: LexframeRequest['lexframe'],

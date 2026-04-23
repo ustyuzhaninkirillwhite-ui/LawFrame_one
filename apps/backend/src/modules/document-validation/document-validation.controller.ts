@@ -107,7 +107,13 @@ function parseWorkflowRuntimeDocumentValidationExecuteRequest(
   const value = asRecord(body);
 
   return {
-    workflowRunId: expectString(value.workflowRunId, 'Workflow run id is required.'),
-    generationJobId: expectString(value.generationJobId, 'Generation job id is required.'),
+    workflowRunId: expectString(
+      value.workflowRunId,
+      'Workflow run id is required.',
+    ),
+    generationJobId: expectString(
+      value.generationJobId,
+      'Generation job id is required.',
+    ),
   };
 }

@@ -23,7 +23,6 @@ import { WorkspaceContextGuard } from '../../common/guards/workspace-context.gua
 import {
   asRecord,
   expectString,
-  optionalRecord,
   optionalString,
   requestMeta,
 } from '../stage7-support/stage7.helpers';
@@ -32,7 +31,9 @@ import { DocumentTemplatesService } from './document-templates.service';
 @Controller()
 @UseGuards(AuthGuard, WorkspaceContextGuard, PermissionGuard)
 export class DocumentTemplatesController {
-  constructor(private readonly documentTemplatesService: DocumentTemplatesService) {}
+  constructor(
+    private readonly documentTemplatesService: DocumentTemplatesService,
+  ) {}
 
   @Get('document-templates')
   @RequiredPermissions('document.template.read')
@@ -144,7 +145,10 @@ function parseCreateDocumentTemplateRequest(
     workspaceId: optionalString(value.workspaceId),
     ownerUserId: optionalString(value.ownerUserId),
     documentTypeId: optionalString(value.documentTypeId),
-    sourceDocumentId: expectString(value.sourceDocumentId, 'Source document id is required.'),
+    sourceDocumentId: expectString(
+      value.sourceDocumentId,
+      'Source document id is required.',
+    ),
     sourceDocumentVersionId: expectString(
       value.sourceDocumentVersionId,
       'Source document version id is required.',
@@ -152,8 +156,12 @@ function parseCreateDocumentTemplateRequest(
     title: expectString(value.title, 'Template title is required.'),
     description: optionalString(value.description),
     visibility: expectVisibility(value.visibility),
-    placeholders: Array.isArray(value.placeholders) ? value.placeholders as CreateDocumentTemplateRequest['placeholders'] : [],
-    mappings: Array.isArray(value.mappings) ? value.mappings as CreateDocumentTemplateRequest['mappings'] : [],
+    placeholders: Array.isArray(value.placeholders)
+      ? (value.placeholders as CreateDocumentTemplateRequest['placeholders'])
+      : [],
+    mappings: Array.isArray(value.mappings)
+      ? (value.mappings as CreateDocumentTemplateRequest['mappings'])
+      : [],
   };
 }
 
@@ -163,15 +171,31 @@ function parseUpdateDocumentTemplateRequest(
   const value = asRecord(body);
 
   return {
-    ...(value.title !== undefined ? { title: expectString(value.title, 'Template title must be a string.') } : {}),
-    ...(value.description !== undefined ? { description: optionalString(value.description) } : {}),
-    ...(value.documentTypeId !== undefined ? { documentTypeId: optionalString(value.documentTypeId) } : {}),
-    ...(value.visibility !== undefined ? { visibility: expectVisibility(value.visibility) } : {}),
+    ...(value.title !== undefined
+      ? { title: expectString(value.title, 'Template title must be a string.') }
+      : {}),
+    ...(value.description !== undefined
+      ? { description: optionalString(value.description) }
+      : {}),
+    ...(value.documentTypeId !== undefined
+      ? { documentTypeId: optionalString(value.documentTypeId) }
+      : {}),
+    ...(value.visibility !== undefined
+      ? { visibility: expectVisibility(value.visibility) }
+      : {}),
     ...(value.placeholders !== undefined
-      ? { placeholders: Array.isArray(value.placeholders) ? value.placeholders as UpdateDocumentTemplateRequest['placeholders'] : [] }
+      ? {
+          placeholders: Array.isArray(value.placeholders)
+            ? (value.placeholders as UpdateDocumentTemplateRequest['placeholders'])
+            : [],
+        }
       : {}),
     ...(value.mappings !== undefined
-      ? { mappings: Array.isArray(value.mappings) ? value.mappings as UpdateDocumentTemplateRequest['mappings'] : [] }
+      ? {
+          mappings: Array.isArray(value.mappings)
+            ? (value.mappings as UpdateDocumentTemplateRequest['mappings'])
+            : [],
+        }
       : {}),
   };
 }

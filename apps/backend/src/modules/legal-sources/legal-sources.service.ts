@@ -7,16 +7,16 @@ import type {
   LegalSourceProviderSummary,
   LegalSourceSummary,
   LegalSourceVersionSummary,
-} from "@lexframe/contracts";
+} from '@lexframe/contracts';
 import type {
   AccessContext,
   AuthenticatedActor,
-} from "../../common/types/lexframe-request";
-import { Injectable } from "@nestjs/common";
-import { AppHttpException } from "../../common/errors/app-http.exception";
-import { AuditService } from "../audit/audit.service";
-import { DatabaseService } from "../database/database.service";
-import { LegalIndexingService } from "../legal-indexing/legal-indexing.service";
+} from '../../common/types/lexframe-request';
+import { Injectable } from '@nestjs/common';
+import { AppHttpException } from '../../common/errors/app-http.exception';
+import { AuditService } from '../audit/audit.service';
+import { DatabaseService } from '../database/database.service';
+import { LegalIndexingService } from '../legal-indexing/legal-indexing.service';
 
 interface RequestMeta {
   readonly requestId: string | null;
@@ -27,15 +27,15 @@ interface SourceSummaryRow {
   readonly source_id: string;
   readonly workspace_id: string | null;
   readonly document_id: string | null;
-  readonly source_type: LegalSourceSummary["sourceType"];
+  readonly source_type: LegalSourceSummary['sourceType'];
   readonly jurisdiction: string | null;
   readonly title: string;
   readonly canonical_url: string | null;
   readonly external_id: string | null;
-  readonly license_status: LegalSourceSummary["licenseStatus"];
-  readonly visibility: LegalSourceSummary["visibility"];
-  readonly classification: LegalSourceSummary["classification"];
-  readonly status: LegalSourceSummary["status"];
+  readonly license_status: LegalSourceSummary['licenseStatus'];
+  readonly visibility: LegalSourceSummary['visibility'];
+  readonly classification: LegalSourceSummary['classification'];
+  readonly status: LegalSourceSummary['status'];
   readonly owner_workspace_id: string | null;
   readonly owner_user_id: string | null;
   readonly metadata: Record<string, unknown>;
@@ -45,9 +45,9 @@ interface SourceSummaryRow {
   readonly provider_id: string;
   readonly provider_code: string;
   readonly provider_name: string;
-  readonly provider_type: LegalSourceProviderSummary["providerType"];
+  readonly provider_type: LegalSourceProviderSummary['providerType'];
   readonly provider_jurisdiction: string | null;
-  readonly provider_access_mode: LegalSourceProviderSummary["accessMode"];
+  readonly provider_access_mode: LegalSourceProviderSummary['accessMode'];
   readonly provider_is_enabled: boolean;
   readonly indexed_at: string | null;
   readonly has_embeddings: boolean;
@@ -61,7 +61,7 @@ interface VersionRow {
   readonly mime_type: string | null;
   readonly file_size: string | number | null;
   readonly language: string | null;
-  readonly status: LegalSourceVersionSummary["status"];
+  readonly status: LegalSourceVersionSummary['status'];
   readonly text_hash: string | null;
   readonly embedding_hash: string | null;
   readonly published_at: string | null;
@@ -74,7 +74,7 @@ interface AccessRow {
   readonly workspace_id: string | null;
   readonly user_id: string | null;
   readonly role_required: string | null;
-  readonly access_level: LegalSourceAccessEntry["accessLevel"];
+  readonly access_level: LegalSourceAccessEntry['accessLevel'];
   readonly expires_at: string | null;
   readonly granted_by: string | null;
   readonly created_at: string;
@@ -86,7 +86,7 @@ interface ImportJobRow {
   readonly workspace_id: string | null;
   readonly source_id: string | null;
   readonly document_id: string | null;
-  readonly status: LegalImportJob["status"];
+  readonly status: LegalImportJob['status'];
   readonly input_type: string;
   readonly input_ref: string | null;
   readonly total_items: number;
@@ -103,7 +103,7 @@ interface ImportJobRow {
 interface ExtractionRow {
   readonly id: string;
   readonly document_version_id: string;
-  readonly status: LegalExtractionJob["status"];
+  readonly status: LegalExtractionJob['status'];
   readonly extractor: string;
   readonly attempt: number;
   readonly error_code: string | null;
@@ -118,7 +118,7 @@ interface ChunkRow {
   readonly source_id: string;
   readonly document_version_id: string;
   readonly chunk_no: number;
-  readonly chunk_type: LegalChunkSummary["chunkType"];
+  readonly chunk_type: LegalChunkSummary['chunkType'];
   readonly text: string;
   readonly text_hash: string;
   readonly page_from: number | null;
@@ -126,7 +126,7 @@ interface ChunkRow {
   readonly char_start: number | null;
   readonly char_end: number | null;
   readonly metadata: Record<string, unknown>;
-  readonly security_scope: LegalChunkSummary["securityScope"];
+  readonly security_scope: LegalChunkSummary['securityScope'];
   readonly embedding_model: string | null;
   readonly embedding_hash: string | null;
   readonly indexed_at: string | null;
@@ -143,7 +143,7 @@ export class LegalSourcesService {
   createImportJob(
     actor: AuthenticatedActor,
     access: AccessContext,
-    input: Parameters<LegalIndexingService["createImportFromDocument"]>[2],
+    input: Parameters<LegalIndexingService['createImportFromDocument']>[2],
     meta: RequestMeta,
   ) {
     return this.legalIndexingService.createImportFromDocument(
@@ -166,9 +166,9 @@ export class LegalSourcesService {
 
     if (!workspaceId) {
       throw new AppHttpException(
-        "WORKSPACE_CONTEXT_REQUIRED",
+        'WORKSPACE_CONTEXT_REQUIRED',
         400,
-        "Active workspace is required for legal sources.",
+        'Active workspace is required for legal sources.',
       );
     }
 
@@ -214,7 +214,7 @@ export class LegalSourcesService {
         from app.legal_sources s
         inner join app.legal_source_providers p
           on p.id = s.provider_id
-        where ${buildSourceAccessClause("s", 1, 2)}
+        where ${buildSourceAccessClause('s', 1, 2)}
         order by s.updated_at desc, s.created_at desc
       `,
       [workspaceId, actor.id],
@@ -232,9 +232,9 @@ export class LegalSourcesService {
 
     if (!workspaceId) {
       throw new AppHttpException(
-        "WORKSPACE_CONTEXT_REQUIRED",
+        'WORKSPACE_CONTEXT_REQUIRED',
         400,
-        "Active workspace is required for legal source detail.",
+        'Active workspace is required for legal source detail.',
       );
     }
 
@@ -281,7 +281,7 @@ export class LegalSourcesService {
         inner join app.legal_source_providers p
           on p.id = s.provider_id
         where s.id = $3
-          and ${buildSourceAccessClause("s", 1, 2)}
+          and ${buildSourceAccessClause('s', 1, 2)}
         limit 1
       `,
       [workspaceId, actor.id, sourceId],
@@ -289,9 +289,9 @@ export class LegalSourcesService {
 
     if (!summaryRow) {
       throw new AppHttpException(
-        "LEGAL_SOURCE_NOT_FOUND",
+        'LEGAL_SOURCE_NOT_FOUND',
         404,
-        "Legal source was not found in the active workspace.",
+        'Legal source was not found in the active workspace.',
       );
     }
 
@@ -313,16 +313,16 @@ export class LegalSourcesService {
       chunks,
       metadata: normalizeMetadata(summaryRow.metadata),
       availableActions: {
-        canManage: access.permissions.includes("legal_sources.manage"),
+        canManage: access.permissions.includes('legal_sources.manage'),
         canRetry:
-          access.permissions.includes("legal_sources.manage") &&
-          ["pending_processing", "index_failed"].includes(summaryRow.status),
+          access.permissions.includes('legal_sources.manage') &&
+          ['pending_processing', 'index_failed'].includes(summaryRow.status),
         canArchive:
-          access.permissions.includes("legal_sources.manage") &&
-          summaryRow.status !== "archived",
+          access.permissions.includes('legal_sources.manage') &&
+          summaryRow.status !== 'archived',
         canUseInRag:
-          access.permissions.includes("legal_rag.use") &&
-          ["processed", "indexed"].includes(summaryRow.status),
+          access.permissions.includes('legal_rag.use') &&
+          ['processed', 'indexed'].includes(summaryRow.status),
       },
     };
 
@@ -341,10 +341,10 @@ export class LegalSourcesService {
       actorUserId: actor.id,
       actorEmail: actor.email,
       workspaceId,
-      action: "legal.source.opened",
-      entityType: "legal_source",
+      action: 'legal.source.opened',
+      entityType: 'legal_source',
       entityId: sourceId,
-      result: "success",
+      result: 'success',
       metadata: {
         chunks: chunks.length,
         provider: detail.provider.code,
@@ -354,7 +354,9 @@ export class LegalSourcesService {
     return detail;
   }
 
-  private async listVersions(sourceId: string): Promise<readonly LegalSourceVersionSummary[]> {
+  private async listVersions(
+    sourceId: string,
+  ): Promise<readonly LegalSourceVersionSummary[]> {
     const result = await this.databaseService.query<VersionRow>(
       `
         select
@@ -428,7 +430,9 @@ export class LegalSourcesService {
     }));
   }
 
-  private async listImportJobs(sourceId: string): Promise<readonly LegalImportJob[]> {
+  private async listImportJobs(
+    sourceId: string,
+  ): Promise<readonly LegalImportJob[]> {
     const result = await this.databaseService.query<ImportJobRow>(
       `
         select
@@ -516,7 +520,9 @@ export class LegalSourcesService {
     }));
   }
 
-  private async listChunks(sourceId: string): Promise<readonly LegalChunkSummary[]> {
+  private async listChunks(
+    sourceId: string,
+  ): Promise<readonly LegalChunkSummary[]> {
     const result = await this.databaseService.query<ChunkRow>(
       `
         select
@@ -622,13 +628,13 @@ function mapSourceSummary(row: SourceSummaryRow): LegalSourceSummary {
     status: row.status,
     ownerWorkspaceId: row.owner_workspace_id,
     ownerUserId: row.owner_user_id,
-    court: readMetadataString(metadata, "court"),
+    court: readMetadataString(metadata, 'court'),
     caseNumber:
-      readMetadataString(metadata, "caseNumber") ??
-      readMetadataString(metadata, "case_number"),
+      readMetadataString(metadata, 'caseNumber') ??
+      readMetadataString(metadata, 'case_number'),
     decisionDate:
-      readMetadataString(metadata, "decisionDate") ??
-      readMetadataString(metadata, "decision_date"),
+      readMetadataString(metadata, 'decisionDate') ??
+      readMetadataString(metadata, 'decision_date'),
     hasEmbeddings: row.has_embeddings,
     indexedAt: row.indexed_at,
     lastUsedAt: row.last_used_at,
@@ -648,5 +654,7 @@ function readMetadataString(
   key: string,
 ): string | null {
   const value = metadata[key];
-  return typeof value === "string" && value.trim().length > 0 ? value.trim() : null;
+  return typeof value === 'string' && value.trim().length > 0
+    ? value.trim()
+    : null;
 }

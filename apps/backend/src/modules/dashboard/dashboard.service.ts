@@ -59,23 +59,34 @@ export class DashboardService {
     access: AccessContext,
   ): Promise<DashboardSnapshot> {
     const workspaceId = access.activeWorkspace!.id;
-    const [runs, approvals, recommendations, unreadNotificationsCount, recentArtifacts, systemStatus, snapshotVersion] =
-      await Promise.all([
-        this.runSnapshotService.listRuns(access),
-        this.approvalsService.listTasks(access),
-        this.recommendationsService.list(actor, access),
-        this.notificationsService.countUnread(access, actor.id),
-        this.loadRecentArtifacts(workspaceId),
-        this.getSystemStatus(),
-        this.liveEventsService.getSnapshotVersion(workspaceId, actor.id),
-      ]);
+    const [
+      runs,
+      approvals,
+      recommendations,
+      unreadNotificationsCount,
+      recentArtifacts,
+      systemStatus,
+      snapshotVersion,
+    ] = await Promise.all([
+      this.runSnapshotService.listRuns(access),
+      this.approvalsService.listTasks(access),
+      this.recommendationsService.list(actor, access),
+      this.notificationsService.countUnread(access, actor.id),
+      this.loadRecentArtifacts(workspaceId),
+      this.getSystemStatus(),
+      this.liveEventsService.getSnapshotVersion(workspaceId, actor.id),
+    ]);
 
     return {
       snapshotVersion,
       generatedAt: new Date().toISOString(),
-      activeRuns: runs.filter((item) => ACTIVE_RUN_STATUSES.has(item.status)).slice(0, 6),
+      activeRuns: runs
+        .filter((item) => ACTIVE_RUN_STATUSES.has(item.status))
+        .slice(0, 6),
       failedRuns: runs.filter((item) => item.status === 'failed').slice(0, 6),
-      pendingApprovals: approvals.filter((item) => item.status === 'pending').slice(0, 8),
+      pendingApprovals: approvals
+        .filter((item) => item.status === 'pending')
+        .slice(0, 8),
       recentArtifacts,
       recommendations: recommendations.slice(0, 6),
       unreadNotificationsCount,
@@ -99,7 +110,9 @@ export class DashboardService {
     return this.runtimeHealthService.getSystemStatus();
   }
 
-  private async loadRecentArtifacts(workspaceId: string): Promise<readonly RunArtifact[]> {
+  private async loadRecentArtifacts(
+    workspaceId: string,
+  ): Promise<readonly RunArtifact[]> {
     const result = await this.databaseService.query<ArtifactRow>(
       `
         select

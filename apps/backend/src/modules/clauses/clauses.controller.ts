@@ -43,7 +43,10 @@ export class ClausesController {
       throw new Error('Workspace access context was not attached.');
     }
 
-    return this.clausesService.listClauses(context.access, context.actor?.id ?? null);
+    return this.clausesService.listClauses(
+      context.access,
+      context.actor?.id ?? null,
+    );
   }
 
   @Post('clauses')
@@ -89,12 +92,17 @@ export class ClausesController {
 
   @Get('phrase-rules')
   @RequiredPermissions('profile.read')
-  listPhraseRules(@LexframeRequestContext() context: LexframeRequest['lexframe']) {
+  listPhraseRules(
+    @LexframeRequestContext() context: LexframeRequest['lexframe'],
+  ) {
     if (!context?.access) {
       throw new Error('Workspace access context was not attached.');
     }
 
-    return this.clausesService.listPhraseRules(context.access, context.actor?.id ?? null);
+    return this.clausesService.listPhraseRules(
+      context.access,
+      context.actor?.id ?? null,
+    );
   }
 
   @Post('phrase-rules')
@@ -160,10 +168,18 @@ function parseUpdateClauseLibraryItemRequest(
   const value = asRecord(body);
 
   return {
-    ...(value.title !== undefined ? { title: expectString(value.title, 'Clause title must be a string.') } : {}),
-    ...(value.tags !== undefined ? { tags: optionalStringArray(value.tags) ?? [] } : {}),
-    ...(value.richText !== undefined ? { richText: optionalRecord(value.richText) ?? {} } : {}),
-    ...(value.status !== undefined ? { status: expectClauseStatus(value.status) } : {}),
+    ...(value.title !== undefined
+      ? { title: expectString(value.title, 'Clause title must be a string.') }
+      : {}),
+    ...(value.tags !== undefined
+      ? { tags: optionalStringArray(value.tags) ?? [] }
+      : {}),
+    ...(value.richText !== undefined
+      ? { richText: optionalRecord(value.richText) ?? {} }
+      : {}),
+    ...(value.status !== undefined
+      ? { status: expectClauseStatus(value.status) }
+      : {}),
   };
 }
 
@@ -183,12 +199,18 @@ function parseUpdatePhraseRuleRequest(body: unknown): UpdatePhraseRuleRequest {
   const value = asRecord(body);
 
   return {
-    ...(value.phrase !== undefined ? { phrase: expectString(value.phrase, 'Phrase must be a string.') } : {}),
-    ...(value.rationale !== undefined ? { rationale: optionalString(value.rationale) } : {}),
+    ...(value.phrase !== undefined
+      ? { phrase: expectString(value.phrase, 'Phrase must be a string.') }
+      : {}),
+    ...(value.rationale !== undefined
+      ? { rationale: optionalString(value.rationale) }
+      : {}),
   };
 }
 
-function expectClauseScope(value: unknown): CreateClauseLibraryItemRequest['scope'] {
+function expectClauseScope(
+  value: unknown,
+): CreateClauseLibraryItemRequest['scope'] {
   if (value === 'system' || value === 'workspace' || value === 'personal') {
     return value;
   }
@@ -196,7 +218,9 @@ function expectClauseScope(value: unknown): CreateClauseLibraryItemRequest['scop
   throw new Error('Clause scope must be system, workspace or personal.');
 }
 
-function expectClauseStatus(value: unknown): NonNullable<UpdateClauseLibraryItemRequest['status']> {
+function expectClauseStatus(
+  value: unknown,
+): NonNullable<UpdateClauseLibraryItemRequest['status']> {
   if (value === 'draft' || value === 'published' || value === 'archived') {
     return value;
   }

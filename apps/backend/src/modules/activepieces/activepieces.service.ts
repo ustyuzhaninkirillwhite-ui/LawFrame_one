@@ -1491,12 +1491,10 @@ export class ActivepiecesService {
       return existingByRemoteProject;
     }
 
-    let row:
-      | {
-          readonly id: string;
-          readonly external_project_id: string;
-        }
-      | null = null;
+    let row: {
+      readonly id: string;
+      readonly external_project_id: string;
+    } | null = null;
 
     try {
       row = await this.databaseService.one<{
@@ -2564,9 +2562,7 @@ export class ActivepiecesService {
           ? payload.projectId
           : null,
       platformId:
-        platform && typeof platform.id === 'string'
-          ? platform.id
-          : null,
+        platform && typeof platform.id === 'string' ? platform.id : null,
       tokenType: payload ? 'jwt' : 'unknown',
     };
   }
@@ -2580,11 +2576,11 @@ export class ActivepiecesService {
     }
 
     try {
-      const parsed = JSON.parse(
+      const parsed: unknown = JSON.parse(
         Buffer.from(payload, 'base64url').toString('utf8'),
       );
 
-      return typeof parsed === 'object' && parsed !== null ? parsed : null;
+      return isRecord(parsed) ? parsed : null;
     } catch {
       return null;
     }
@@ -2801,4 +2797,8 @@ function isUniqueConstraintError(error: unknown, constraint: string) {
       : null;
 
   return code === '23505' && constraintName === constraint;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }

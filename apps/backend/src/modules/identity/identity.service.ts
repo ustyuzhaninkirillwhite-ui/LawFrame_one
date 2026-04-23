@@ -200,8 +200,11 @@ export class IdentityService {
       access.activeWorkspace.id,
     );
 
-    const needsMfa =
-      this.requiresMfaForAccess(settings, access.permissions, actor);
+    const needsMfa = this.requiresMfaForAccess(
+      settings,
+      access.permissions,
+      actor,
+    );
 
     return {
       state: needsMfa ? 'needs_mfa' : 'ready',
@@ -257,7 +260,9 @@ export class IdentityService {
     const access = await this.resolveAccessContext(actor, preferredWorkspaceId);
     const session = await this.ensureSessionAvailable(actor);
     const settings = access?.activeWorkspace?.id
-      ? await this.getWorkspaceSecuritySettingsInternal(access.activeWorkspace.id)
+      ? await this.getWorkspaceSecuritySettingsInternal(
+          access.activeWorkspace.id,
+        )
       : null;
     const activeSessionCount = await this.countActiveSessions(actor.id);
 
@@ -342,7 +347,12 @@ export class IdentityService {
           revoked_at,
           revoked_reason
       `,
-      [sessionId, reason ?? 'revoked_by_admin', actor.id, access.activeWorkspace?.id],
+      [
+        sessionId,
+        reason ?? 'revoked_by_admin',
+        actor.id,
+        access.activeWorkspace?.id,
+      ],
     );
 
     if (!row) {
@@ -391,7 +401,11 @@ export class IdentityService {
           and ($2::uuid is null or workspace_id = $2)
           and revoked_at is null
       `,
-      [userId, access.activeWorkspace?.id ?? null, reason ?? 'revoked_all_by_admin'],
+      [
+        userId,
+        access.activeWorkspace?.id ?? null,
+        reason ?? 'revoked_all_by_admin',
+      ],
     );
 
     await this.auditService.record({
@@ -431,7 +445,8 @@ export class IdentityService {
     requestId: string | null,
     traceId: string | null,
   ): Promise<WorkspaceSecuritySettings> {
-    const current = await this.getWorkspaceSecuritySettingsInternal(workspaceId);
+    const current =
+      await this.getWorkspaceSecuritySettingsInternal(workspaceId);
     const row = await this.databaseService.one<WorkspaceSecuritySettingsRow>(
       `
         insert into app.workspace_security_settings (
@@ -475,7 +490,11 @@ export class IdentityService {
         workspaceId,
         input.requireMfaForAdmins ?? current?.require_mfa_for_admins ?? true,
         input.requireMfaForAll ?? current?.require_mfa_for_all ?? false,
-        [...(input.allowedEmailDomains ?? current?.allowed_email_domains ?? [])],
+        [
+          ...(input.allowedEmailDomains ??
+            current?.allowed_email_domains ??
+            []),
+        ],
         input.ssoRequired ?? current?.sso_required ?? false,
         input.sessionMaxAgeMinutes ??
           current?.session_max_age_minutes ??
@@ -552,7 +571,8 @@ export class IdentityService {
         actor.id,
         access?.activeWorkspace?.id ?? null,
         actor.sessionId,
-        input.challengeType ?? (actor.assuranceLevel === 'aal2' ? 'mfa' : 'password'),
+        input.challengeType ??
+          (actor.assuranceLevel === 'aal2' ? 'mfa' : 'password'),
         input.reason,
       ],
     );
@@ -969,7 +989,9 @@ export class IdentityService {
   }
 
   private async countActiveSessions(userId: string): Promise<number> {
-    const row = await this.databaseService.one<{ readonly total: string | number }>(
+    const row = await this.databaseService.one<{
+      readonly total: string | number;
+    }>(
       `
         select count(*) as total
         from app.user_sessions

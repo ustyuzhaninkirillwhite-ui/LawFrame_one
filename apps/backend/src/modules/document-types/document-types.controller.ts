@@ -103,7 +103,9 @@ export class DocumentTypesController {
 
   @Get('document-structures')
   @RequiredPermissions('document.template.read')
-  listStructures(@LexframeRequestContext() context: LexframeRequest['lexframe']) {
+  listStructures(
+    @LexframeRequestContext() context: LexframeRequest['lexframe'],
+  ) {
     if (!context?.access) {
       throw new Error('Workspace access context was not attached.');
     }
@@ -147,7 +149,9 @@ export class DocumentTypesController {
   }
 }
 
-function parseCreateDocumentTypeRequest(body: unknown): CreateDocumentTypeRequest {
+function parseCreateDocumentTypeRequest(
+  body: unknown,
+): CreateDocumentTypeRequest {
   const value = asRecord(body);
 
   return {
@@ -162,12 +166,19 @@ function parseCreateDocumentTypeRequest(body: unknown): CreateDocumentTypeReques
   };
 }
 
-function parseUpdateDocumentTypeRequest(body: unknown): UpdateDocumentTypeRequest {
+function parseUpdateDocumentTypeRequest(
+  body: unknown,
+): UpdateDocumentTypeRequest {
   const value = asRecord(body);
 
   return {
     ...(value.name !== undefined
-      ? { name: expectString(value.name, 'Document type name must be a string.') }
+      ? {
+          name: expectString(
+            value.name,
+            'Document type name must be a string.',
+          ),
+        }
       : {}),
     ...(value.jurisdiction !== undefined
       ? { jurisdiction: optionalString(value.jurisdiction) }
@@ -179,7 +190,10 @@ function parseUpdateDocumentTypeRequest(body: unknown): UpdateDocumentTypeReques
       ? { structure: parseStructureSections(value.structure) }
       : {}),
     ...(value.attachmentDefaults !== undefined
-      ? { attachmentDefaults: optionalStringArray(value.attachmentDefaults) ?? [] }
+      ? {
+          attachmentDefaults:
+            optionalStringArray(value.attachmentDefaults) ?? [],
+        }
       : {}),
     ...(value.validationRules !== undefined
       ? { validationRules: optionalRecord(value.validationRules) ?? {} }
@@ -193,7 +207,10 @@ function parseCreateDocumentStructureRequest(
   const value = asRecord(body);
 
   return {
-    documentTypeId: expectString(value.documentTypeId, 'Document type id is required.'),
+    documentTypeId: expectString(
+      value.documentTypeId,
+      'Document type id is required.',
+    ),
     documentTypeVersionId: optionalString(value.documentTypeVersionId),
     sections: parseStructureSections(value.sections),
   };
@@ -209,7 +226,9 @@ function parseUpdateDocumentStructureRequest(
   };
 }
 
-function parseStructureSections(value: unknown): readonly DocumentStructureSection[] {
+function parseStructureSections(
+  value: unknown,
+): readonly DocumentStructureSection[] {
   if (!Array.isArray(value)) {
     throw new Error('Structure sections must be an array.');
   }
@@ -222,7 +241,10 @@ function parseStructureSections(value: unknown): readonly DocumentStructureSecti
         section.sectionId,
         `Structure section ${index + 1} requires sectionId.`,
       ),
-      title: expectString(section.title, `Structure section ${index + 1} requires title.`),
+      title: expectString(
+        section.title,
+        `Structure section ${index + 1} requires title.`,
+      ),
       kind: expectSectionKind(section.kind),
       required: Boolean(section.required),
       order: typeof section.order === 'number' ? section.order : index,

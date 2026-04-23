@@ -174,7 +174,9 @@ describe('DeliveryService', () => {
       lastCaptureId: 'capture_03',
     });
     expect(
-      status.dependencies.find((dependency) => dependency.code === 'sandbox-receiver'),
+      status.dependencies.find(
+        (dependency) => dependency.code === 'sandbox-receiver',
+      ),
     ).toMatchObject({
       state: 'ready',
     });

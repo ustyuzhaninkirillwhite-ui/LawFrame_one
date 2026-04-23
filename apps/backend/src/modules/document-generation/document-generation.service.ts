@@ -68,9 +68,27 @@ interface DocumentSummaryRow {
   readonly version_original_filename: string | null;
   readonly version_mime_type: string | null;
   readonly version_size_bytes: number | null;
-  readonly version_scan_status: 'not_started' | 'queued' | 'clean' | 'infected' | 'manual_review_required' | 'not_configured' | null;
-  readonly version_preview_status: 'not_started' | 'queued' | 'ready' | 'failed' | null;
-  readonly version_extraction_status: 'not_started' | 'queued' | 'ready' | 'failed' | 'requires_ocr' | null;
+  readonly version_scan_status:
+    | 'not_started'
+    | 'queued'
+    | 'clean'
+    | 'infected'
+    | 'manual_review_required'
+    | 'not_configured'
+    | null;
+  readonly version_preview_status:
+    | 'not_started'
+    | 'queued'
+    | 'ready'
+    | 'failed'
+    | null;
+  readonly version_extraction_status:
+    | 'not_started'
+    | 'queued'
+    | 'ready'
+    | 'failed'
+    | 'requires_ocr'
+    | null;
   readonly version_created_at: string | null;
   readonly version_completed_at: string | null;
 }
@@ -106,7 +124,10 @@ export class DocumentGenerationService {
     meta: RequestMeta,
   ): Promise<DocumentGenerationJobDetail> {
     const workspaceId = access.activeWorkspace!.id;
-    const template = await this.documentTemplatesService.get(access, input.templateId);
+    const template = await this.documentTemplatesService.get(
+      access,
+      input.templateId,
+    );
     const version = await this.documentTemplatesService.getVersion(
       input.templateId,
       input.templateVersionId ?? template.activeVersionId,
@@ -118,13 +139,19 @@ export class DocumentGenerationService {
       runId: input.workflowRunId ?? null,
       previewId: input.templateId,
     });
-    const phraseRules = await this.clausesService.listPhraseRules(access, actor.id);
+    const phraseRules = await this.clausesService.listPhraseRules(
+      access,
+      actor.id,
+    );
     const context = buildGenerationContext({
       profile: snapshot.effectiveContent,
       generationInput: input.input,
       documentType: input.documentTypeId ? { id: input.documentTypeId } : null,
     });
-    const evaluated = evaluateMappings(version.mappings, context as Record<string, unknown>);
+    const evaluated = evaluateMappings(
+      version.mappings,
+      context as Record<string, unknown>,
+    );
     const renderedText = stableStringify({
       templateId: input.templateId,
       templateVersionId: version.id,
@@ -140,7 +167,8 @@ export class DocumentGenerationService {
           title: `Preview: ${template.title}`,
           description: `Preview generated from ${template.title}.`,
           kind: 'draft_document',
-          mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          mimeType:
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
           filename: `${slugify(template.title)}-preview.docx`,
         },
       );
@@ -239,17 +267,19 @@ export class DocumentGenerationService {
         ],
       );
 
-      const report = await this.documentValidationService.createOrReplaceReport({
-        workspaceId,
-        generationJobId: jobId,
-        documentId: createdPreview.documentId,
-        documentVersionId: createdPreview.versionId,
-        placeholders: version.placeholders,
-        missingFieldCodes: evaluated.missing,
-        renderedText,
-        approvalRouteBound: Boolean(input.approvalRouteId),
-        phraseRules,
-      });
+      const report = await this.documentValidationService.createOrReplaceReport(
+        {
+          workspaceId,
+          generationJobId: jobId,
+          documentId: createdPreview.documentId,
+          documentVersionId: createdPreview.versionId,
+          placeholders: version.placeholders,
+          missingFieldCodes: evaluated.missing,
+          renderedText,
+          approvalRouteBound: Boolean(input.approvalRouteId),
+          phraseRules,
+        },
+      );
 
       await client.query(
         `
@@ -322,9 +352,15 @@ export class DocumentGenerationService {
     }
 
     const [previewDocument, finalDocument, artifacts] = await Promise.all([
-      row.preview_document_id ? this.loadDocumentSummary(row.preview_document_id) : null,
-      row.final_document_id ? this.loadDocumentSummary(row.final_document_id) : null,
-      row.workflow_run_id ? this.loadRunArtifacts(row.workflow_run_id) : Promise.resolve([]),
+      row.preview_document_id
+        ? this.loadDocumentSummary(row.preview_document_id)
+        : null,
+      row.final_document_id
+        ? this.loadDocumentSummary(row.final_document_id)
+        : null,
+      row.workflow_run_id
+        ? this.loadRunArtifacts(row.workflow_run_id)
+        : Promise.resolve([]),
     ]);
 
     return {
@@ -366,7 +402,9 @@ export class DocumentGenerationService {
         generationJobId: job.id,
         routeId: job.approvalRouteId,
         workflowRunId: job.workflowRunId,
-        title: input.approvalDecisionComment?.trim() || `Approve finalization for ${job.id}`,
+        title:
+          input.approvalDecisionComment?.trim() ||
+          `Approve finalization for ${job.id}`,
         meta,
       });
 
@@ -398,49 +436,50 @@ export class DocumentGenerationService {
       return this.getJob(access, job.id);
     }
 
-    const finalJobId = await this.databaseService.transaction(async (client) => {
-      const previewDocument = job.previewDocument;
+    const finalJobId = await this.databaseService.transaction(
+      async (client) => {
+        const previewDocument = job.previewDocument;
 
-      if (!previewDocument?.currentVersion) {
-        throw new AppHttpException(
-          'DOCUMENT_PREVIEW_NOT_FOUND',
-          409,
-          'Preview document must exist before finalization.',
-        );
-      }
+        if (!previewDocument?.currentVersion) {
+          throw new AppHttpException(
+            'DOCUMENT_PREVIEW_NOT_FOUND',
+            409,
+            'Preview document must exist before finalization.',
+          );
+        }
 
-      const createdFinal = await this.createDocumentRecord(
-        client,
-        access.activeWorkspace!.id,
-        actor.id,
-        {
-          title: previewDocument.title.replace(/^Preview:\s*/, 'Final: '),
-          description: previewDocument.description,
-          kind: 'generated_document',
-          mimeType: previewDocument.currentVersion.mimeType,
-          filename: previewDocument.currentVersion.originalFilename.replace(
-            '-preview',
-            '-final',
-          ),
-        },
-      );
-
-      let artifactId: string | null = null;
-
-      if (job.workflowRunId) {
-        artifactId = await this.createArtifact(
+        const createdFinal = await this.createDocumentRecord(
           client,
-          job.workflowRunId,
           access.activeWorkspace!.id,
-          createdFinal.documentId,
-          createdFinal.versionId,
-          'final_document',
-          previewDocument.title.replace(/^Preview:\s*/, 'Final: '),
+          actor.id,
+          {
+            title: previewDocument.title.replace(/^Preview:\s*/, 'Final: '),
+            description: previewDocument.description,
+            kind: 'generated_document',
+            mimeType: previewDocument.currentVersion.mimeType,
+            filename: previewDocument.currentVersion.originalFilename.replace(
+              '-preview',
+              '-final',
+            ),
+          },
         );
-      }
 
-      await client.query(
-        `
+        let artifactId: string | null = null;
+
+        if (job.workflowRunId) {
+          artifactId = await this.createArtifact(
+            client,
+            job.workflowRunId,
+            access.activeWorkspace!.id,
+            createdFinal.documentId,
+            createdFinal.versionId,
+            'final_document',
+            previewDocument.title.replace(/^Preview:\s*/, 'Final: '),
+          );
+        }
+
+        await client.query(
+          `
           insert into app.document_generation_outputs (
             generation_job_id,
             workspace_id,
@@ -452,17 +491,17 @@ export class DocumentGenerationService {
           )
           values ($1, $2, $3, 'final_document', $4, $5, '{}'::jsonb)
         `,
-        [
-          job.id,
-          access.activeWorkspace!.id,
-          artifactId,
-          createdFinal.documentId,
-          createdFinal.versionId,
-        ],
-      );
+          [
+            job.id,
+            access.activeWorkspace!.id,
+            artifactId,
+            createdFinal.documentId,
+            createdFinal.versionId,
+          ],
+        );
 
-      await client.query(
-        `
+        await client.query(
+          `
           update app.document_generation_jobs
           set
             status = 'finalized',
@@ -471,12 +510,12 @@ export class DocumentGenerationService {
             updated_at = timezone('utc', now())
           where id = $1
         `,
-        [job.id, createdFinal.documentId, createdFinal.versionId],
-      );
+          [job.id, createdFinal.documentId, createdFinal.versionId],
+        );
 
-      if (job.workflowRunId) {
-        await client.query(
-          `
+        if (job.workflowRunId) {
+          await client.query(
+            `
             update app.workflow_runs
             set approval_state = case
               when approval_route_id is null then approval_state
@@ -484,12 +523,13 @@ export class DocumentGenerationService {
             end
             where id = $1
           `,
-          [job.workflowRunId],
-        );
-      }
+            [job.workflowRunId],
+          );
+        }
 
-      return job.id;
-    });
+        return job.id;
+      },
+    );
 
     await this.auditService.record({
       actorUserId: actor.id,
@@ -529,7 +569,9 @@ export class DocumentGenerationService {
     );
   }
 
-  private async loadDocumentSummary(documentId: string): Promise<DocumentSummary | null> {
+  private async loadDocumentSummary(
+    documentId: string,
+  ): Promise<DocumentSummary | null> {
     const row = await this.databaseService.one<DocumentSummaryRow>(
       `
         select
@@ -614,7 +656,9 @@ export class DocumentGenerationService {
     });
   }
 
-  private async loadRunArtifacts(runId: string): Promise<readonly RunArtifact[]> {
+  private async loadRunArtifacts(
+    runId: string,
+  ): Promise<readonly RunArtifact[]> {
     const result = await this.databaseService.query<ArtifactRow>(
       `
         select
@@ -753,7 +797,14 @@ export class DocumentGenerationService {
         values ($1, $2, $3, $4, $5, $6, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'automation_result')
         returning id
       `,
-      [workflowRunId, workspaceId, documentId, documentVersionId, artifactType, title],
+      [
+        workflowRunId,
+        workspaceId,
+        documentId,
+        documentVersionId,
+        artifactType,
+        title,
+      ],
     );
 
     return artifact.rows[0]!.id;

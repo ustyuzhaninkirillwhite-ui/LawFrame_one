@@ -127,7 +127,8 @@ function parseDocumentGenerationPreviewRequest(
     input: {
       facts: optionalRecord(asRecord(value.input).facts) ?? {},
       params: optionalRecord(asRecord(value.input).params) ?? {},
-      sourceDocumentIds: optionalStringArray(asRecord(value.input).sourceDocumentIds) ?? [],
+      sourceDocumentIds:
+        optionalStringArray(asRecord(value.input).sourceDocumentIds) ?? [],
     },
     aiSectionCodes: optionalStringArray(value.aiSectionCodes) ?? [],
   };
@@ -159,7 +160,10 @@ function parseWorkflowRuntimeDocumentTemplateExecuteRequest(
       value.installedAutomationId,
       'Installed automation id is required.',
     ),
-    workflowRunId: expectString(value.workflowRunId, 'Workflow run id is required.'),
+    workflowRunId: expectString(
+      value.workflowRunId,
+      'Workflow run id is required.',
+    ),
     templateId: expectString(value.templateId, 'Template id is required.'),
     templateVersionId: optionalString(value.templateVersionId),
     profileId: optionalString(value.profileId),

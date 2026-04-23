@@ -104,13 +104,15 @@ export class NotificationsService {
 
     return {
       items,
-      nextCursor: hasMore ? items.at(-1)?.createdAt ?? null : null,
+      nextCursor: hasMore ? (items.at(-1)?.createdAt ?? null) : null,
       unreadCount,
     };
   }
 
   async countUnread(access: AccessContext, actorUserId: string) {
-    const row = await this.databaseService.one<{ readonly unread_count: string }>(
+    const row = await this.databaseService.one<{
+      readonly unread_count: string;
+    }>(
       `
         select count(*)::text as unread_count
         from app.notifications
@@ -169,7 +171,10 @@ export class NotificationsService {
     await this.liveEventsService.recordEvent({
       workspaceId: access.activeWorkspace!.id,
       userId: row.user_id ?? actorUserId,
-      topics: buildNotificationTopics(access.activeWorkspace!.id, row.user_id ?? actorUserId),
+      topics: buildNotificationTopics(
+        access.activeWorkspace!.id,
+        row.user_id ?? actorUserId,
+      ),
       eventType: 'notification.updated',
       entityType: 'notification',
       entityId: notification.id,
@@ -319,7 +324,8 @@ export class NotificationsService {
         input.body,
         input.severity ?? 'info',
         input.priority ?? 'normal',
-        input.actionUrl ?? deriveActionUrl(input.entityType ?? null, input.entityId ?? null),
+        input.actionUrl ??
+          deriveActionUrl(input.entityType ?? null, input.entityId ?? null),
         input.entityType ?? null,
         input.entityId ?? null,
         JSON.stringify(input.metadata ?? {}),
@@ -333,7 +339,10 @@ export class NotificationsService {
       await this.liveEventsService.recordEvent({
         workspaceId: input.workspaceId,
         userId: input.userId ?? null,
-        topics: buildNotificationTopics(input.workspaceId, input.userId ?? null),
+        topics: buildNotificationTopics(
+          input.workspaceId,
+          input.userId ?? null,
+        ),
         eventType: 'notification.created',
         entityType: 'notification',
         entityId: notification.id,

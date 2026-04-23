@@ -1,4 +1,7 @@
-import type { AuditEventSummary, AuditExportRequest } from '@lexframe/contracts';
+import type {
+  AuditEventSummary,
+  AuditExportRequest,
+} from '@lexframe/contracts';
 import { Injectable } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
 

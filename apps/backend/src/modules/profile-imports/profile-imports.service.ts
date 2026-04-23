@@ -56,7 +56,11 @@ export class ProfileImportsService {
           and d.workspace_id = $3
         limit 1
       `,
-      [input.sourceDocumentId, input.sourceDocumentVersionId, access.activeWorkspace!.id],
+      [
+        input.sourceDocumentId,
+        input.sourceDocumentVersionId,
+        access.activeWorkspace!.id,
+      ],
     );
 
     if (!source) {

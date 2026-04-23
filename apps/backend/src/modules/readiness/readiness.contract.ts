@@ -42,7 +42,9 @@ export function isRequiredReadinessService(
   profile: ReadinessProfile,
   service: ReadinessServiceCode,
 ) {
-  return getReadinessProfileDefinition(profile).requiredServices.includes(service);
+  return getReadinessProfileDefinition(profile).requiredServices.includes(
+    service,
+  );
 }
 
 export function getReadinessProfileContract() {
@@ -77,7 +79,9 @@ function resolveContractPath() {
 
   const match = candidates.find((candidate) => existsSync(candidate));
   if (!match) {
-    throw new Error('Readiness profile contract config/readiness/profiles.json was not found.');
+    throw new Error(
+      'Readiness profile contract config/readiness/profiles.json was not found.',
+    );
   }
 
   return match;

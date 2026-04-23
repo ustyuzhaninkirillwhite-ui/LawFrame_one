@@ -12,6 +12,8 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@fontsource/ibm-plex-sans": "^5.2.8",
+    "@fontsource/ibm-plex-serif": "^5.2.7",
     "@lexframe/api-client": "workspace:*",
     "@lexframe/config": "workspace:*",
     "@lexframe/contracts": "workspace:*",

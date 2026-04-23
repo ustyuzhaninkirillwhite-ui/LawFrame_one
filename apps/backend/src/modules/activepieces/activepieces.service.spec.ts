@@ -179,12 +179,10 @@ describe('ActivepiecesService', () => {
   it('reuses an existing remote project binding when local CE returns a shared project id', async () => {
     const { service, databaseService } = createService();
 
-    databaseService.one
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce({
-        id: 'binding_shared_project',
-        external_project_id: 'proj_shared_ce',
-      });
+    databaseService.one.mockResolvedValueOnce(null).mockResolvedValueOnce({
+      id: 'binding_shared_project',
+      external_project_id: 'proj_shared_ce',
+    });
 
     jest
       .spyOn(service as any, 'ensureRemoteProject')

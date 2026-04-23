@@ -46,7 +46,9 @@ export class ComplianceController {
 
   @Get('dsr')
   @RequiredPermissions('compliance.read')
-  listDsrRequests(@LexframeRequestContext() context: LexframeRequest['lexframe']) {
+  listDsrRequests(
+    @LexframeRequestContext() context: LexframeRequest['lexframe'],
+  ) {
     return this.complianceService.listDsrRequests(
       context?.access?.activeWorkspace?.id ?? null,
     );

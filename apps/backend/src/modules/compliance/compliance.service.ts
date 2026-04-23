@@ -115,7 +115,9 @@ export class ComplianceService {
     }));
   }
 
-  async listDsrRequests(workspaceId: string | null): Promise<readonly DsrRequest[]> {
+  async listDsrRequests(
+    workspaceId: string | null,
+  ): Promise<readonly DsrRequest[]> {
     const result = await this.databaseService.query<DsrRequestRow>(
       `
         select
@@ -178,7 +180,8 @@ export class ComplianceService {
     const dsrRequests = await this.listDsrRequests(workspaceId);
     return {
       policies,
-      dsrRequestsOpen: dsrRequests.filter((item) => item.status !== 'completed').length,
+      dsrRequestsOpen: dsrRequests.filter((item) => item.status !== 'completed')
+        .length,
     };
   }
 }

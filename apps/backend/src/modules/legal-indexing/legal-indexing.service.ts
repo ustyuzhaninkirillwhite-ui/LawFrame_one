@@ -5,18 +5,18 @@ import type {
   LegalImportJob,
   LegalImportJobStatus,
   LegalSourceVisibility,
-} from "@lexframe/contracts";
+} from '@lexframe/contracts';
 import type {
   AccessContext,
   AuthenticatedActor,
-} from "../../common/types/lexframe-request";
-import type { PoolClient } from "pg";
-import { loadServerEnv } from "@lexframe/config";
-import { Injectable } from "@nestjs/common";
-import { createHash, randomUUID } from "node:crypto";
-import { AppHttpException } from "../../common/errors/app-http.exception";
-import { AuditService } from "../audit/audit.service";
-import { DatabaseService } from "../database/database.service";
+} from '../../common/types/lexframe-request';
+import type { PoolClient } from 'pg';
+import { loadServerEnv } from '@lexframe/config';
+import { Injectable } from '@nestjs/common';
+import { createHash, randomUUID } from 'node:crypto';
+import { AppHttpException } from '../../common/errors/app-http.exception';
+import { AuditService } from '../audit/audit.service';
+import { DatabaseService } from '../database/database.service';
 
 interface RequestMeta {
   readonly requestId: string | null;
@@ -91,13 +91,13 @@ interface ChunkSeed {
 }
 
 const SUPPORTED_EXTRACTION_MIME_TYPES = new Set([
-  "application/pdf",
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-  "text/plain",
+  'application/pdf',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'text/plain',
 ]);
 
-const DEFAULT_EMBEDDING_MODEL = "lexframe-stage6-mvp";
-const DEFAULT_INDEX_VERSION = "legal_chunks_v1";
+const DEFAULT_EMBEDDING_MODEL = 'lexframe-stage6-mvp';
+const DEFAULT_INDEX_VERSION = 'legal_chunks_v1';
 
 @Injectable()
 export class LegalIndexingService {
@@ -114,17 +114,17 @@ export class LegalIndexingService {
       namespace: this.env.TEMPORAL_NAMESPACE,
       address: this.env.TEMPORAL_ADDRESS,
       workflows: [
-        "LegalSourceImportWorkflow",
-        "LegalExtractNormalizeWorkflow",
-        "LegalEmbedIndexWorkflow",
-        "LegalRagAnalyzeWorkflow",
-        "LegalReindexWorkflow",
+        'LegalSourceImportWorkflow',
+        'LegalExtractNormalizeWorkflow',
+        'LegalEmbedIndexWorkflow',
+        'LegalRagAnalyzeWorkflow',
+        'LegalReindexWorkflow',
       ] as const,
       index: {
         alias: this.env.OPENSEARCH_INDEX_ALIAS,
         physicalIndex: DEFAULT_INDEX_VERSION,
         searchPipeline: this.env.OPENSEARCH_SEARCH_PIPELINE,
-        analyzer: "legal_ru",
+        analyzer: 'legal_ru',
       },
     };
   }
@@ -139,9 +139,9 @@ export class LegalIndexingService {
 
     if (!workspaceId) {
       throw new AppHttpException(
-        "WORKSPACE_CONTEXT_REQUIRED",
+        'WORKSPACE_CONTEXT_REQUIRED',
         400,
-        "Для импорта юридического источника требуется активное рабочее пространство.",
+        'Для импорта юридического источника требуется активное рабочее пространство.',
       );
     }
 
@@ -151,9 +151,9 @@ export class LegalIndexingService {
 
     if (!document.current_version_id || !document.version_no) {
       throw new AppHttpException(
-        "DOCUMENT_VERSION_NOT_READY",
+        'DOCUMENT_VERSION_NOT_READY',
         409,
-        "Перед запуском юридического импорта требуется текущая версия документа.",
+        'Перед запуском юридического импорта требуется текущая версия документа.',
       );
     }
 
@@ -164,7 +164,9 @@ export class LegalIndexingService {
     const legalDocumentVersionId = existingLegalVersion?.id ?? randomUUID();
     const importJobId = randomUUID();
     const extractionJobId = randomUUID();
-    const textContent = await this.loadNormalizedText(document.current_version_id);
+    const textContent = await this.loadNormalizedText(
+      document.current_version_id,
+    );
     const normalizedText = this.resolveNormalizedText(document, textContent);
     const supportsExtraction = document.mime_type
       ? SUPPORTED_EXTRACTION_MIME_TYPES.has(document.mime_type)
@@ -174,17 +176,16 @@ export class LegalIndexingService {
       !requiresOcr && normalizedText
         ? this.chunkNormalizedText(normalizedText, input.classification)
         : [];
-    const now = new Date().toISOString();
     const errorSummary = requiresOcr
-      ? "Для этого типа документа требуется OCR fallback."
+      ? 'Для этого типа документа требуется OCR fallback.'
       : normalizedText === null
-        ? "Извлечённый текст недоступен. Импорт создал только оболочку источника."
+        ? 'Извлечённый текст недоступен. Импорт создал только оболочку источника.'
         : null;
     const importStatus: LegalImportJobStatus = requiresOcr
-      ? "partially_failed"
-      : "completed";
-    const sourceStatus = requiresOcr ? "pending_processing" : "indexed";
-    const extractionStatus = requiresOcr ? "requires_ocr" : "completed";
+      ? 'partially_failed'
+      : 'completed';
+    const sourceStatus = requiresOcr ? 'pending_processing' : 'indexed';
+    const extractionStatus = requiresOcr ? 'requires_ocr' : 'completed';
     const visibility = resolveVisibility(input.classification, provider.code);
     const baseMetadata = normalizeRecord(input.metadata);
     const sourceMetadata = {
@@ -197,35 +198,29 @@ export class LegalIndexingService {
       storageBucket: document.storage_bucket,
       storagePath: document.storage_path,
       usedPlaceholderText: textContent === null && normalizedText !== null,
-      ...(typeof baseMetadata.caseNumber === "string"
+      ...(typeof baseMetadata.caseNumber === 'string'
         ? {}
         : {
-            caseNumber: extractCaseNumber(
-              document.title,
-              document.description,
-            ),
+            caseNumber: extractCaseNumber(document.title, document.description),
           }),
     };
 
     await this.databaseService.transaction(async (client) => {
-      await this.upsertLegalSource(
-        client,
-        {
-          id: sourceId,
-          workspaceId,
-          documentId: document.document_id,
-          providerId: provider.id,
-          sourceType: input.documentType,
-          title: document.title,
-          classification: input.classification,
-          visibility,
-          status: sourceStatus,
-          ownerWorkspaceId: workspaceId,
-          ownerUserId: document.owner_id,
-          createdByUserId: actor.id,
-          metadata: sourceMetadata,
-        },
-      );
+      await this.upsertLegalSource(client, {
+        id: sourceId,
+        workspaceId,
+        documentId: document.document_id,
+        providerId: provider.id,
+        sourceType: input.documentType,
+        title: document.title,
+        classification: input.classification,
+        visibility,
+        status: sourceStatus,
+        ownerWorkspaceId: workspaceId,
+        ownerUserId: document.owner_id,
+        createdByUserId: actor.id,
+        metadata: sourceMetadata,
+      });
 
       await client.query(
         `
@@ -314,9 +309,10 @@ export class LegalIndexingService {
         `delete from app.legal_document_texts where document_version_id = $1`,
         [legalDocumentVersionId],
       );
-      await client.query(`delete from app.legal_chunks where document_version_id = $1`, [
-        legalDocumentVersionId,
-      ]);
+      await client.query(
+        `delete from app.legal_chunks where document_version_id = $1`,
+        [legalDocumentVersionId],
+      );
 
       if (normalizedText) {
         await client.query(
@@ -382,7 +378,7 @@ export class LegalIndexingService {
           legalDocumentVersionId,
           workspaceId,
           extractionStatus,
-          requiresOcr ? "requires_ocr" : null,
+          requiresOcr ? 'requires_ocr' : null,
           errorSummary,
           normalizedText ? hashText(normalizedText) : null,
         ],
@@ -530,10 +526,10 @@ export class LegalIndexingService {
       actorUserId: actor.id,
       actorEmail: actor.email,
       workspaceId,
-      action: "legal.source.imported",
-      entityType: "legal_source",
+      action: 'legal.source.imported',
+      entityType: 'legal_source',
       entityId: sourceId,
-      result: requiresOcr ? "error" : "success",
+      result: requiresOcr ? 'error' : 'success',
       requestId: meta.requestId,
       traceId: meta.traceId,
       metadata: {
@@ -548,7 +544,10 @@ export class LegalIndexingService {
     return this.getImportJob(workspaceId, importJobId);
   }
 
-  async getImportJob(workspaceId: string, importJobId: string): Promise<LegalImportJob> {
+  async getImportJob(
+    workspaceId: string,
+    importJobId: string,
+  ): Promise<LegalImportJob> {
     const row = await this.databaseService.one<ImportJobRow>(
       `
         select
@@ -579,9 +578,9 @@ export class LegalIndexingService {
 
     if (!row) {
       throw new AppHttpException(
-        "LEGAL_IMPORT_JOB_NOT_FOUND",
+        'LEGAL_IMPORT_JOB_NOT_FOUND',
         404,
-        "Задача юридического импорта не найдена в активном рабочем пространстве.",
+        'Задача юридического импорта не найдена в активном рабочем пространстве.',
       );
     }
 
@@ -589,19 +588,22 @@ export class LegalIndexingService {
   }
 
   private resolveDocumentId(input: CreateLegalImportJobRequest) {
-    if (typeof input.documentId === "string" && input.documentId.trim().length > 0) {
+    if (
+      typeof input.documentId === 'string' &&
+      input.documentId.trim().length > 0
+    ) {
       return input.documentId.trim();
     }
 
     const uploadId = input.files?.[0]?.uploadId;
-    if (typeof uploadId === "string" && uploadId.trim().length > 0) {
+    if (typeof uploadId === 'string' && uploadId.trim().length > 0) {
       return uploadId.trim();
     }
 
     throw new AppHttpException(
-      "DOCUMENT_ID_REQUIRED",
+      'DOCUMENT_ID_REQUIRED',
       400,
-      "Импорт MVP этапа 6 сейчас требует существующий ID документа этапа 2.",
+      'Импорт MVP этапа 6 сейчас требует существующий ID документа этапа 2.',
     );
   }
 
@@ -619,9 +621,9 @@ export class LegalIndexingService {
 
     if (!provider) {
       throw new AppHttpException(
-        "LEGAL_SOURCE_PROVIDER_NOT_FOUND",
+        'LEGAL_SOURCE_PROVIDER_NOT_FOUND',
         404,
-        "Провайдер юридического источника недоступен.",
+        'Провайдер юридического источника недоступен.',
       );
     }
 
@@ -665,9 +667,9 @@ export class LegalIndexingService {
 
     if (!document) {
       throw new AppHttpException(
-        "DOCUMENT_NOT_FOUND",
+        'DOCUMENT_NOT_FOUND',
         404,
-        "Исходный документ не найден в активном рабочем пространстве.",
+        'Исходный документ не найден в активном рабочем пространстве.',
       );
     }
 
@@ -708,21 +710,26 @@ export class LegalIndexingService {
       return null;
     }
 
-    return chunks.rows.map((row) => row.content.trim()).join("\n\n").trim() || null;
+    return (
+      chunks.rows
+        .map((row) => row.content.trim())
+        .join('\n\n')
+        .trim() || null
+    );
   }
 
   private resolveNormalizedText(
     document: DocumentImportRow,
     extractedText: string | null,
   ): string | null {
-    if (typeof extractedText === "string" && extractedText.trim().length > 0) {
+    if (typeof extractedText === 'string' && extractedText.trim().length > 0) {
       return extractedText.trim();
     }
 
-    const fallback = [document.title, document.description ?? ""]
+    const fallback = [document.title, document.description ?? '']
       .map((value) => value.trim())
       .filter((value) => value.length > 0)
-      .join("\n\n")
+      .join('\n\n')
       .trim();
 
     return fallback.length > 0 && document.mime_type
@@ -741,14 +748,20 @@ export class LegalIndexingService {
       .map((value) => value.trim())
       .filter((value) => value.length > 0);
     const seeds: ChunkSeed[] = [];
-    let current = "";
+    let current = '';
     let chunkNo = 0;
 
     for (const paragraph of paragraphs) {
-      const nextValue = current.length === 0 ? paragraph : `${current}\n\n${paragraph}`;
+      const nextValue =
+        current.length === 0 ? paragraph : `${current}\n\n${paragraph}`;
       if (nextValue.length > 900 && current.length > 0) {
         seeds.push(
-          this.buildChunkSeed(chunkNo, current, classification, seeds.length + 1),
+          this.buildChunkSeed(
+            chunkNo,
+            current,
+            classification,
+            seeds.length + 1,
+          ),
         );
         chunkNo += 1;
         current = paragraph;
@@ -758,7 +771,9 @@ export class LegalIndexingService {
     }
 
     if (current.length > 0) {
-      seeds.push(this.buildChunkSeed(chunkNo, current, classification, seeds.length + 1));
+      seeds.push(
+        this.buildChunkSeed(chunkNo, current, classification, seeds.length + 1),
+      );
     }
 
     if (seeds.length === 0) {
@@ -798,11 +813,11 @@ export class LegalIndexingService {
       readonly workspaceId: string;
       readonly documentId: string;
       readonly providerId: string;
-      readonly sourceType: CreateLegalImportJobRequest["documentType"];
+      readonly sourceType: CreateLegalImportJobRequest['documentType'];
       readonly title: string;
       readonly classification: DataClassification;
       readonly visibility: LegalSourceVisibility;
-      readonly status: "indexed" | "pending_processing";
+      readonly status: 'indexed' | 'pending_processing';
       readonly ownerWorkspaceId: string;
       readonly ownerUserId: string;
       readonly createdByUserId: string;
@@ -908,41 +923,41 @@ function resolveVisibility(
   classification: DataClassification,
   providerCode: string,
 ): LegalSourceVisibility {
-  if (classification === "public" && providerCode === "product_curated") {
-    return "public";
+  if (classification === 'public' && providerCode === 'product_curated') {
+    return 'public';
   }
 
-  if (classification === "public" && providerCode === "workspace_private") {
-    return "workspace_private";
+  if (classification === 'public' && providerCode === 'workspace_private') {
+    return 'workspace_private';
   }
 
-  return "workspace_private";
+  return 'workspace_private';
 }
 
 function inferChunkType(text: string): LegalChunkType {
   const value = text.toLowerCase();
 
   if (/установил|обстоятельств|факт/i.test(value)) {
-    return "facts";
+    return 'facts';
   }
 
   if (/суд считает|приходит к выводу|мотив/i.test(value)) {
-    return "court_reasoning";
+    return 'court_reasoning';
   }
 
   if (/решил|постановил|определил/i.test(value)) {
-    return "operative_part";
+    return 'operative_part';
   }
 
   if (/довод|требован|позици/i.test(value)) {
-    return "claims";
+    return 'claims';
   }
 
   if (/ст\.|статья|пункт|постановление/i.test(value)) {
-    return "citations";
+    return 'citations';
   }
 
-  return "unknown";
+  return 'unknown';
 }
 
 function normalizeRecord(
@@ -969,11 +984,11 @@ function extractCaseNumber(...parts: readonly (string | null | undefined)[]) {
     }
   }
 
-    return null;
-  }
+  return null;
+}
 
 function hashText(value: string) {
-  return createHash("sha256").update(value).digest("hex");
+  return createHash('sha256').update(value).digest('hex');
 }
 
 function estimateTokens(value: string) {

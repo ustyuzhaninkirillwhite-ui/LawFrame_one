@@ -1,8 +1,8 @@
-import type { AiProviderPolicy, DataClassification } from "@lexframe/contracts";
-import type { AiPolicyContext } from "../../common/types/lexframe-request";
-import { AppHttpException } from "../../common/errors/app-http.exception";
-import { Injectable } from "@nestjs/common";
-import { DatabaseService } from "../database/database.service";
+import type { AiProviderPolicy, DataClassification } from '@lexframe/contracts';
+import type { AiPolicyContext } from '../../common/types/lexframe-request';
+import { AppHttpException } from '../../common/errors/app-http.exception';
+import { Injectable } from '@nestjs/common';
+import { DatabaseService } from '../database/database.service';
 
 interface WorkspaceAiPolicyRow {
   readonly workspace_id: string;
@@ -75,7 +75,9 @@ export class AiPolicyService {
       cometapiPublicEnabled: row.cometapi_public_enabled,
       plaintextOptIn: row.plaintext_opt_in,
       sensitiveLogging: row.sensitive_logging,
-      monthlyBudgetUsd: Number(row.monthly_budget_usd ?? DEFAULT_POLICY.monthlyBudgetUsd),
+      monthlyBudgetUsd: Number(
+        row.monthly_budget_usd ?? DEFAULT_POLICY.monthlyBudgetUsd,
+      ),
       requestsPerMinuteLimit:
         row.requests_per_minute_limit ?? DEFAULT_POLICY.requestsPerMinuteLimit,
     };
@@ -111,7 +113,8 @@ export class AiPolicyService {
       workspaceId: row.workspace_id,
       provider: row.provider,
       model: row.model,
-      allowedDataClasses: (row.allowed_data_classes ?? []) as readonly DataClassification[],
+      allowedDataClasses: (row.allowed_data_classes ??
+        []) as readonly DataClassification[],
       requiresZdr: row.requires_zdr,
       requiresRedaction: row.requires_redaction,
       storePrompts: row.store_prompts,
@@ -125,7 +128,9 @@ export class AiPolicyService {
     workspaceId: string,
     policy: AiPolicyContext,
   ): Promise<void> {
-    const result = await this.databaseService.one<{ readonly cost_usd: string | number }>(
+    const result = await this.databaseService.one<{
+      readonly cost_usd: string | number;
+    }>(
       `
         select coalesce(sum(cost_usd), 0) as cost_usd
         from app.ai_cost_usage
@@ -139,9 +144,9 @@ export class AiPolicyService {
 
     if (currentUsage >= policy.monthlyBudgetUsd) {
       throw new AppHttpException(
-        "AI_BUDGET_EXCEEDED",
+        'AI_BUDGET_EXCEEDED',
         429,
-        "Месячный лимит бюджета ИИ для этого рабочего пространства исчерпан.",
+        'Месячный лимит бюджета ИИ для этого рабочего пространства исчерпан.',
         {
           currentUsage,
           monthlyBudgetUsd: policy.monthlyBudgetUsd,
@@ -154,7 +159,9 @@ export class AiPolicyService {
     workspaceId: string,
     policy: AiPolicyContext,
   ): Promise<void> {
-    const result = await this.databaseService.one<{ readonly total: string | number }>(
+    const result = await this.databaseService.one<{
+      readonly total: string | number;
+    }>(
       `
         select count(*) as total
         from app.ai_requests
@@ -168,9 +175,9 @@ export class AiPolicyService {
 
     if (total >= policy.requestsPerMinuteLimit) {
       throw new AppHttpException(
-        "AI_BUDGET_EXCEEDED",
+        'AI_BUDGET_EXCEEDED',
         429,
-        "Достигнут лимит частоты ИИ-запросов для этого рабочего пространства.",
+        'Достигнут лимит частоты ИИ-запросов для этого рабочего пространства.',
         {
           total,
           limit: policy.requestsPerMinuteLimit,

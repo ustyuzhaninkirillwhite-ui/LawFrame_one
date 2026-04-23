@@ -8,7 +8,13 @@ import { ApprovalsController } from './approvals.controller';
 import { ApprovalsService } from './approvals.service';
 
 @Module({
-  imports: [DatabaseModule, AuditModule, IdentityModule, NotificationsModule, RealtimeModule],
+  imports: [
+    DatabaseModule,
+    AuditModule,
+    IdentityModule,
+    NotificationsModule,
+    RealtimeModule,
+  ],
   controllers: [ApprovalsController],
   providers: [ApprovalsService],
   exports: [ApprovalsService],

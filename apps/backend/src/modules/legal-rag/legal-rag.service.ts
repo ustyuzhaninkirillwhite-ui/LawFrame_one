@@ -6,20 +6,20 @@ import type {
   LegalAnalysisOutput,
   RagAnalyzeRequest,
   RagRequestSummary,
-} from "@lexframe/contracts";
+} from '@lexframe/contracts';
 import type {
   AccessContext,
   AuthenticatedActor,
-} from "../../common/types/lexframe-request";
-import type { SearchCandidate } from "../legal-search/legal-search.service";
-import { Injectable } from "@nestjs/common";
-import { createHash } from "node:crypto";
-import { AppHttpException } from "../../common/errors/app-http.exception";
-import { AIGatewayService } from "../ai-gateway/ai-gateway.service";
-import { AiProviderRegistry } from "../ai-gateway/ai-provider.adapters";
-import { AuditService } from "../audit/audit.service";
-import { DatabaseService } from "../database/database.service";
-import { LegalSearchService } from "../legal-search/legal-search.service";
+} from '../../common/types/lexframe-request';
+import type { SearchCandidate } from '../legal-search/legal-search.service';
+import { Injectable } from '@nestjs/common';
+import { createHash } from 'node:crypto';
+import { AppHttpException } from '../../common/errors/app-http.exception';
+import { AIGatewayService } from '../ai-gateway/ai-gateway.service';
+import { AiProviderRegistry } from '../ai-gateway/ai-provider.adapters';
+import { AuditService } from '../audit/audit.service';
+import { DatabaseService } from '../database/database.service';
+import { LegalSearchService } from '../legal-search/legal-search.service';
 
 interface RequestMeta {
   readonly requestId: string | null;
@@ -35,17 +35,17 @@ interface RagRequestRow {
   readonly query_hash: string;
   readonly selected_source_ids: readonly string[] | null;
   readonly selected_document_ids: readonly string[] | null;
-  readonly ai_route: RagRequestSummary["aiRoute"];
+  readonly ai_route: RagRequestSummary['aiRoute'];
   readonly data_classification: DataClassification;
-  readonly status: RagRequestSummary["status"];
+  readonly status: RagRequestSummary['status'];
   readonly created_at: string;
   readonly updated_at: string;
   readonly completed_at: string | null;
 }
 
 interface RagOutputRow {
-  readonly validation_status: RagRequestSummary["validationStatus"];
-  readonly citation_validation_status: RagRequestSummary["citationValidationStatus"];
+  readonly validation_status: RagRequestSummary['validationStatus'];
+  readonly citation_validation_status: RagRequestSummary['citationValidationStatus'];
   readonly unsupported_count: number;
   readonly risk_flags: readonly string[] | null;
   readonly output_json: LegalAnalysisOutput | null;
@@ -71,18 +71,22 @@ export class LegalRagService {
 
     if (!workspaceId) {
       throw new AppHttpException(
-        "WORKSPACE_CONTEXT_REQUIRED",
+        'WORKSPACE_CONTEXT_REQUIRED',
         400,
-        "Для юридического RAG требуется активное рабочее пространство.",
+        'Для юридического RAG требуется активное рабочее пространство.',
       );
     }
 
-    const contextCandidates = await this.buildContextCandidates(actor, access, input);
+    const contextCandidates = await this.buildContextCandidates(
+      actor,
+      access,
+      input,
+    );
     const classification = deriveClassification(contextCandidates);
     const routePlan = await this.aiGatewayService.planStructuredRoute({
       access,
       classification,
-      taskType: "document_analysis",
+      taskType: 'document_analysis',
       hasDocuments:
         contextCandidates.length > 0 ||
         (input.workspaceDocumentIds?.length ?? 0) > 0,
@@ -93,7 +97,7 @@ export class LegalRagService {
       input,
       routePlan.route,
       classification,
-      routePlan.blocked ? "blocked" : "running",
+      routePlan.blocked ? 'blocked' : 'running',
     );
 
     if (routePlan.blocked) {
@@ -101,10 +105,10 @@ export class LegalRagService {
         actorUserId: actor.id,
         actorEmail: actor.email,
         workspaceId,
-        action: "ai_route_blocked",
-        entityType: "rag_request",
+        action: 'ai_route_blocked',
+        entityType: 'rag_request',
         entityId: requestId,
-        result: "denied",
+        result: 'denied',
         requestId: meta.requestId,
         traceId: meta.traceId,
         metadata: {
@@ -124,9 +128,9 @@ export class LegalRagService {
     const adapter = this.aiProviderRegistry.get(routePlan.provider!);
     const response = await adapter.generateStructured({
       provider: routePlan.provider!,
-      model: routePlan.model ?? "local-mock",
+      model: routePlan.model ?? 'local-mock',
       prompt,
-      schemaId: "lexframe.legal_analysis.v1",
+      schemaId: 'lexframe.legal_analysis.v1',
       fallback,
     });
     const validated = validateAnalysisOutput(
@@ -192,15 +196,17 @@ export class LegalRagService {
       [requestId],
     );
 
-    for (const sourceId of new Set(contextCandidates.map((item) => item.source.id))) {
+    for (const sourceId of new Set(
+      contextCandidates.map((item) => item.source.id),
+    )) {
       await this.auditService.record({
         actorUserId: actor.id,
         actorEmail: actor.email,
         workspaceId,
-        action: "legal_source_used_in_rag",
-        entityType: "legal_source",
+        action: 'legal_source_used_in_rag',
+        entityType: 'legal_source',
         entityId: sourceId,
-        result: "success",
+        result: 'success',
         requestId: meta.requestId,
         traceId: meta.traceId,
         metadata: {
@@ -214,10 +220,10 @@ export class LegalRagService {
       actorUserId: actor.id,
       actorEmail: actor.email,
       workspaceId,
-      action: "legal.rag.completed",
-      entityType: "rag_request",
+      action: 'legal.rag.completed',
+      entityType: 'rag_request',
       entityId: requestId,
-      result: "success",
+      result: 'success',
       requestId: meta.requestId,
       traceId: meta.traceId,
       metadata: {
@@ -262,9 +268,9 @@ export class LegalRagService {
 
     if (!requestRow) {
       throw new AppHttpException(
-        "RAG_REQUEST_NOT_FOUND",
+        'RAG_REQUEST_NOT_FOUND',
         404,
-        "Юридический RAG-запрос не найден в активном рабочем пространстве.",
+        'Юридический RAG-запрос не найден в активном рабочем пространстве.',
       );
     }
 
@@ -295,9 +301,9 @@ export class LegalRagService {
       aiRoute: requestRow.ai_route,
       dataClassification: requestRow.data_classification,
       status: requestRow.status,
-      validationStatus: outputRow?.validation_status ?? "warning",
+      validationStatus: outputRow?.validation_status ?? 'warning',
       citationValidationStatus:
-        outputRow?.citation_validation_status ?? "warning",
+        outputRow?.citation_validation_status ?? 'warning',
       unsupportedCount: Number(outputRow?.unsupported_count ?? 0),
       riskFlags: outputRow?.risk_flags ?? [],
       output: outputRow?.output_json ?? null,
@@ -317,42 +323,38 @@ export class LegalRagService {
     const groups: SearchCandidate[][] = [];
 
     if (
-      input.sourceSelection.mode === "selected_only" ||
-      input.sourceSelection.mode === "selected_and_search"
+      input.sourceSelection.mode === 'selected_only' ||
+      input.sourceSelection.mode === 'selected_and_search'
     ) {
       if (selectedIds.length > 0) {
-        groups.push(
-          [
-            ...(
-              await this.legalSearchService.loadContextCandidates(actor, access, {
-                sourceIds: selectedIds,
-                limit: limit * 2,
-              })
-            ),
-          ],
-        );
+        groups.push([
+          ...(await this.legalSearchService.loadContextCandidates(
+            actor,
+            access,
+            {
+              sourceIds: selectedIds,
+              limit: limit * 2,
+            },
+          )),
+        ]);
       }
     }
 
     if (
-      input.sourceSelection.mode === "search_only" ||
-      input.sourceSelection.mode === "selected_and_search"
+      input.sourceSelection.mode === 'search_only' ||
+      input.sourceSelection.mode === 'selected_and_search'
     ) {
-      groups.push(
-        [
-          ...(
-            await this.legalSearchService.loadContextCandidates(actor, access, {
-              sourceIds:
-                input.sourceSelection.mode === "selected_and_search"
-                  ? selectedIds
-                  : undefined,
-              query: input.sourceSelection.searchQuery ?? input.question,
-              filters: input.sourceSelection.filters,
-              limit: limit * 3,
-            })
-          ),
-        ],
-      );
+      groups.push([
+        ...(await this.legalSearchService.loadContextCandidates(actor, access, {
+          sourceIds:
+            input.sourceSelection.mode === 'selected_and_search'
+              ? selectedIds
+              : undefined,
+          query: input.sourceSelection.searchQuery ?? input.question,
+          filters: input.sourceSelection.filters,
+          limit: limit * 3,
+        })),
+      ]);
     }
 
     const merged = groups.flat();
@@ -386,11 +388,13 @@ export class LegalRagService {
     userId: string,
     workspaceId: string,
     input: RagAnalyzeRequest,
-    route: RagRequestSummary["aiRoute"],
+    route: RagRequestSummary['aiRoute'],
     classification: DataClassification,
-    status: RagRequestSummary["status"],
+    status: RagRequestSummary['status'],
   ) {
-    const requestId = cryptoHash(`${workspaceId}:${userId}:${Date.now()}:${input.question}`).slice(0, 32);
+    const requestId = cryptoHash(
+      `${workspaceId}:${userId}:${Date.now()}:${input.question}`,
+    ).slice(0, 32);
     await this.databaseService.query(
       `
         insert into app.rag_requests (
@@ -487,7 +491,7 @@ export class LegalRagService {
           candidate.chunk.documentVersionId,
           rank,
           candidate.combinedScore,
-          candidate.highlights[0] ?? "context_builder",
+          candidate.highlights[0] ?? 'context_builder',
           estimateTokens(candidate.chunk.text),
           candidate.citation.citationId,
         ],
@@ -504,23 +508,23 @@ function deriveClassification(
     candidates.map((candidate) => candidate.source.classification),
   );
 
-  if (classifications.has("legal_secret")) {
-    return "legal_secret";
+  if (classifications.has('legal_secret')) {
+    return 'legal_secret';
   }
 
   if (
-    classifications.has("confidential") ||
-    classifications.has("personal_data") ||
-    classifications.has("client_material")
+    classifications.has('confidential') ||
+    classifications.has('personal_data') ||
+    classifications.has('client_material')
   ) {
-    return "confidential";
+    return 'confidential';
   }
 
-  if (classifications.has("internal")) {
-    return "internal";
+  if (classifications.has('internal')) {
+    return 'internal';
   }
 
-  return "public";
+  return 'public';
 }
 
 function buildFallbackAnalysis(
@@ -528,33 +532,42 @@ function buildFallbackAnalysis(
   contextCandidates: readonly SearchCandidate[],
 ): LegalAnalysisOutput {
   const citations = contextCandidates.map((candidate) => candidate.citation);
-  const facts: LegalAnalysisFact[] = contextCandidates.slice(0, 3).map((candidate) => ({
-    text: candidate.snippet,
-    citations: [candidate.citation.citationId],
-  }));
+  const facts: LegalAnalysisFact[] = contextCandidates
+    .slice(0, 3)
+    .map((candidate) => ({
+      text: candidate.snippet,
+      citations: [candidate.citation.citationId],
+    }));
   const legalIssues: LegalAnalysisIssue[] =
     contextCandidates.length > 0
       ? [
           {
             issue: question,
             analysis:
-              "Контекст найденной практики нужно соотнести с фактами дела и процессуальной стадией. Вывод ниже ограничен доступными источниками.",
+              'Контекст найденной практики нужно соотнести с фактами дела и процессуальной стадией. Вывод ниже ограничен доступными источниками.',
             citations: [contextCandidates[0]!.citation.citationId],
           },
         ]
       : [];
-  const argumentsList: LegalAnalysisArgument[] = uniqueBySource(contextCandidates)
+  const argumentsList: LegalAnalysisArgument[] = uniqueBySource(
+    contextCandidates,
+  )
     .slice(0, 3)
     .map((candidate, index) => ({
       position:
         index === 0
-          ? "Основной аргумент"
+          ? 'Основной аргумент'
           : index === 1
-            ? "Дополнительный аргумент"
-            : "Резервный аргумент",
+            ? 'Дополнительный аргумент'
+            : 'Резервный аргумент',
       analysis: candidate.snippet,
       supportingSources: [candidate.source.title],
-      strength: candidate.combinedScore >= 0.95 ? "high" : candidate.combinedScore >= 0.6 ? "medium" : "low",
+      strength:
+        candidate.combinedScore >= 0.95
+          ? 'high'
+          : candidate.combinedScore >= 0.6
+            ? 'medium'
+            : 'low',
       citations: [candidate.citation.citationId],
     }));
 
@@ -570,11 +583,13 @@ function buildFallbackAnalysis(
     unsupportedClaims:
       contextCandidates.length > 0
         ? []
-        : ["Недостаточно подтвержденных источников для аргументированного вывода."],
+        : [
+            'Недостаточно подтвержденных источников для аргументированного вывода.',
+          ],
     riskFlags:
       contextCandidates.length > 0
-        ? ["server_validated_citations"]
-        : ["no_context", "server_validated_citations"],
+        ? ['server_validated_citations']
+        : ['no_context', 'server_validated_citations'],
   };
 }
 
@@ -587,15 +602,15 @@ function buildPrompt(
       (candidate, index) =>
         `[${index + 1}] ${candidate.citation.citationId} | ${candidate.source.title}\n${candidate.chunk.text}`,
     )
-    .join("\n\n");
+    .join('\n\n');
 
   return [
     `Task: ${input.taskType}`,
     `Question: ${input.question}`,
-      "Отвечай строго в формате подтверждённого юридического анализа со стабильными ID источников.",
-      "Контекст:",
-      contextText || "Контекст не предоставлен.",
-  ].join("\n\n");
+    'Отвечай строго в формате подтверждённого юридического анализа со стабильными ID источников.',
+    'Контекст:',
+    contextText || 'Контекст не предоставлен.',
+  ].join('\n\n');
 }
 
 function validateAnalysisOutput(
@@ -605,16 +620,22 @@ function validateAnalysisOutput(
   includeUnsupportedClaims: boolean,
 ): {
   readonly output: LegalAnalysisOutput;
-  readonly validationStatus: RagRequestSummary["validationStatus"];
-  readonly citationValidationStatus: RagRequestSummary["citationValidationStatus"];
+  readonly validationStatus: RagRequestSummary['validationStatus'];
+  readonly citationValidationStatus: RagRequestSummary['citationValidationStatus'];
 } {
-  const validIds = new Set(contextCandidates.map((candidate) => candidate.citation.citationId));
-  const citations = output.citations.filter((citation) => validIds.has(citation.citationId));
+  const validIds = new Set(
+    contextCandidates.map((candidate) => candidate.citation.citationId),
+  );
+  const citations = output.citations.filter((citation) =>
+    validIds.has(citation.citationId),
+  );
   const invalidCitationSeen = output.citations.length !== citations.length;
   const unsupportedClaims = [...output.unsupportedClaims];
   const facts: LegalAnalysisFact[] = [];
   for (const fact of output.facts) {
-    const validCitations = fact.citations.filter((citation) => validIds.has(citation));
+    const validCitations = fact.citations.filter((citation) =>
+      validIds.has(citation),
+    );
     if (requireCitations && validCitations.length === 0) {
       unsupportedClaims.push(fact.text);
       continue;
@@ -628,7 +649,9 @@ function validateAnalysisOutput(
 
   const legalIssues: LegalAnalysisIssue[] = [];
   for (const issue of output.legalIssues) {
-    const validCitations = issue.citations.filter((citation) => validIds.has(citation));
+    const validCitations = issue.citations.filter((citation) =>
+      validIds.has(citation),
+    );
     if (requireCitations && validCitations.length === 0) {
       unsupportedClaims.push(issue.analysis);
       continue;
@@ -642,7 +665,9 @@ function validateAnalysisOutput(
 
   const argumentsList: LegalAnalysisArgument[] = [];
   for (const argument of output.arguments) {
-    const validCitations = argument.citations.filter((citation) => validIds.has(citation));
+    const validCitations = argument.citations.filter((citation) =>
+      validIds.has(citation),
+    );
     if (requireCitations && validCitations.length === 0) {
       unsupportedClaims.push(argument.analysis);
       continue;
@@ -660,9 +685,11 @@ function validateAnalysisOutput(
   const riskFlags = Array.from(
     new Set([
       ...output.riskFlags,
-      ...(invalidCitationSeen ? ["invalid_citation_detected"] : []),
-      ...(nextUnsupportedClaims.length > 0 ? ["unsupported_claims_present"] : []),
-      "server_validated_citations",
+      ...(invalidCitationSeen ? ['invalid_citation_detected'] : []),
+      ...(nextUnsupportedClaims.length > 0
+        ? ['unsupported_claims_present']
+        : []),
+      'server_validated_citations',
     ]),
   );
 
@@ -676,9 +703,8 @@ function validateAnalysisOutput(
       unsupportedClaims: nextUnsupportedClaims,
       riskFlags,
     },
-    validationStatus:
-      nextUnsupportedClaims.length > 0 ? "warning" : "valid",
-    citationValidationStatus: invalidCitationSeen ? "warning" : "valid",
+    validationStatus: nextUnsupportedClaims.length > 0 ? 'warning' : 'valid',
+    citationValidationStatus: invalidCitationSeen ? 'warning' : 'valid',
   };
 }
 
@@ -699,7 +725,7 @@ function clampContextLimit(value: number) {
 }
 
 function cryptoHash(value: string) {
-  return createHash("sha256").update(value).digest("hex");
+  return createHash('sha256').update(value).digest('hex');
 }
 
 function estimateTokens(value: string) {

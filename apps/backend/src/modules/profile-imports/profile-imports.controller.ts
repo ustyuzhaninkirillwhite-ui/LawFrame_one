@@ -1,12 +1,24 @@
 import type { CreateProfileImportJobRequest } from '@lexframe/contracts';
 import type { LexframeRequest } from '../../common/types/lexframe-request';
-import { Body, Controller, HttpCode, Post, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  HttpCode,
+  Post,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { LexframeRequestContext } from '../../common/decorators/lexframe-request.decorator';
 import { RequiredPermissions } from '../../common/decorators/required-permissions.decorator';
 import { AuthGuard } from '../../common/guards/auth.guard';
 import { PermissionGuard } from '../../common/guards/permission.guard';
 import { WorkspaceContextGuard } from '../../common/guards/workspace-context.guard';
-import { asRecord, expectString, optionalString, requestMeta } from '../stage7-support/stage7.helpers';
+import {
+  asRecord,
+  expectString,
+  optionalString,
+  requestMeta,
+} from '../stage7-support/stage7.helpers';
 import { ProfileImportsService } from './profile-imports.service';
 
 @Controller()
@@ -41,7 +53,10 @@ function parseCreateProfileImportJobRequest(
   const value = asRecord(body);
 
   return {
-    sourceDocumentId: expectString(value.sourceDocumentId, 'Source document id is required.'),
+    sourceDocumentId: expectString(
+      value.sourceDocumentId,
+      'Source document id is required.',
+    ),
     sourceDocumentVersionId: expectString(
       value.sourceDocumentVersionId,
       'Source document version id is required.',

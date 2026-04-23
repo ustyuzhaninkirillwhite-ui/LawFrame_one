@@ -199,11 +199,22 @@ function parseUpdateLegalWorkProfileDraftRequest(
 
   return {
     ...(value.name !== undefined
-      ? { name: expectString(value.name, 'Profile name must be a non-empty string.') }
+      ? {
+          name: expectString(
+            value.name,
+            'Profile name must be a non-empty string.',
+          ),
+        }
       : {}),
-    ...(value.description !== undefined ? { description: optionalString(value.description) } : {}),
-    ...(value.content !== undefined ? { content: optionalRecord(value.content) ?? {} } : {}),
-    ...(value.changeNote !== undefined ? { changeNote: optionalString(value.changeNote) } : {}),
+    ...(value.description !== undefined
+      ? { description: optionalString(value.description) }
+      : {}),
+    ...(value.content !== undefined
+      ? { content: optionalRecord(value.content) ?? {} }
+      : {}),
+    ...(value.changeNote !== undefined
+      ? { changeNote: optionalString(value.changeNote) }
+      : {}),
   };
 }
 

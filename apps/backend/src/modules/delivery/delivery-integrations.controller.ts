@@ -1,6 +1,4 @@
-import type {
-  DeliverySandboxTestRequest,
-} from '@lexframe/contracts';
+import type { DeliverySandboxTestRequest } from '@lexframe/contracts';
 import type { LexframeRequest } from '../../common/types/lexframe-request';
 import {
   Body,

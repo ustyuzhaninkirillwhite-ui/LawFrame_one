@@ -1,7 +1,7 @@
-import type { LexframeRequest } from "../../common/types/lexframe-request";
-import { AppHttpException } from "../../common/errors/app-http.exception";
-import { CanActivate, ExecutionContext, Injectable } from "@nestjs/common";
-import { AiPolicyService } from "./ai-policy.service";
+import type { LexframeRequest } from '../../common/types/lexframe-request';
+import { AppHttpException } from '../../common/errors/app-http.exception';
+import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
+import { AiPolicyService } from './ai-policy.service';
 
 @Injectable()
 export class AiAccessGuard implements CanActivate {
@@ -13,9 +13,9 @@ export class AiAccessGuard implements CanActivate {
 
     if (!workspaceId) {
       throw new AppHttpException(
-        "WORKSPACE_CONTEXT_REQUIRED",
+        'WORKSPACE_CONTEXT_REQUIRED',
         403,
-        "Для операций ИИ требуется контекст рабочего пространства.",
+        'Для операций ИИ требуется контекст рабочего пространства.',
       );
     }
 
@@ -23,9 +23,9 @@ export class AiAccessGuard implements CanActivate {
 
     if (!policy.aiEnabled) {
       throw new AppHttpException(
-        "AI_POLICY_BLOCKED",
+        'AI_POLICY_BLOCKED',
         403,
-        "ИИ-функции отключены для этого рабочего пространства.",
+        'ИИ-функции отключены для этого рабочего пространства.',
       );
     }
 

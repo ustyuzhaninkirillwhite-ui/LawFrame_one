@@ -65,7 +65,9 @@ interface TemplateSummaryRow {
   readonly workflow: Record<string, unknown> | null;
   readonly requirements: readonly TemplateRequirement[] | null;
   readonly required_inputs: readonly string[] | null;
-  readonly validation_status: AutomationTemplateVersionSummary['validationStatus'] | null;
+  readonly validation_status:
+    | AutomationTemplateVersionSummary['validationStatus']
+    | null;
   readonly validation_issues: readonly string[] | null;
 }
 
@@ -302,10 +304,7 @@ export class AutomationLibraryService {
       );
     }
 
-    const validation = await this.validateWorkflowPayload(
-      input.workflow,
-      false,
-    );
+    const validation = await this.validateWorkflowPayload(input.workflow);
 
     if (!validation.ok) {
       throw new AppHttpException(
@@ -320,7 +319,10 @@ export class AutomationLibraryService {
 
     const templateId = randomUUID();
     const versionId = randomUUID();
-    const moduleCodes = extractWorkflowModuleCodes(input.workflow, input.moduleCodes);
+    const moduleCodes = extractWorkflowModuleCodes(
+      input.workflow,
+      input.moduleCodes,
+    );
     const requiredInputs = extractWorkflowInputs(input.workflow);
 
     await this.databaseService.transaction(async (client) => {
@@ -524,10 +526,7 @@ export class AutomationLibraryService {
     requestMeta: RequestMeta,
   ): Promise<AutomationTemplateVersionSummary> {
     const template = await this.getEditableTemplate(access, templateId);
-    const validation = await this.validateWorkflowPayload(
-      input.workflow,
-      template.scope === 'public',
-    );
+    const validation = await this.validateWorkflowPayload(input.workflow);
     const moduleCodes = extractWorkflowModuleCodes(input.workflow);
     const requiredInputs = extractWorkflowInputs(input.workflow);
     const versionId = randomUUID();
@@ -662,10 +661,7 @@ export class AutomationLibraryService {
       );
     }
 
-    return this.validateWorkflowPayload(
-      version.workflow,
-      version.scope === 'public',
-    );
+    return this.validateWorkflowPayload(version.workflow);
   }
 
   async publishTemplateDraft(
@@ -722,7 +718,7 @@ export class AutomationLibraryService {
       );
     }
 
-    const validation = await this.validateWorkflowPayload(version.workflow, false);
+    const validation = await this.validateWorkflowPayload(version.workflow);
 
     if (!validation.ok) {
       throw new AppHttpException(
@@ -849,7 +845,8 @@ export class AutomationLibraryService {
       )
       .map((requirement) => requirement.code.replace(/^connection\./, ''));
     const disabledReason =
-      deriveRequirementBlocker(resolvedRequirements) ?? template.disabled_reason;
+      deriveRequirementBlocker(resolvedRequirements) ??
+      template.disabled_reason;
     const installedAutomationId = randomUUID();
 
     await this.databaseService.query(
@@ -1091,7 +1088,9 @@ export class AutomationLibraryService {
     }
 
     const rows = await Promise.all(
-      detail.relatedTemplateIds.map((id) => this.getVisibleTemplateRow(access, id)),
+      detail.relatedTemplateIds.map((id) =>
+        this.getVisibleTemplateRow(access, id),
+      ),
     );
 
     return rows.map((row) => mapTemplateSummary(row, access));
@@ -1156,7 +1155,10 @@ export class AutomationLibraryService {
     input: ForkAutomationTemplateRequest,
     requestMeta: RequestMeta,
   ): Promise<AutomationTemplateDetail> {
-    const installed = await this.getInstalledAutomationRow(access, automationId);
+    const installed = await this.getInstalledAutomationRow(
+      access,
+      automationId,
+    );
     const workspaceId = access.activeWorkspace?.id;
 
     if (!workspaceId) {
@@ -1306,7 +1308,10 @@ export class AutomationLibraryService {
     access: AccessContext,
     automationId: string,
   ): Promise<InstalledAutomationSourceDiff> {
-    const installed = await this.getInstalledAutomationRow(access, automationId);
+    const installed = await this.getInstalledAutomationRow(
+      access,
+      automationId,
+    );
     const currentSourceVersion = await this.databaseService.one<
       TemplateVersionRow & { readonly template_id: string }
     >(
@@ -1340,7 +1345,9 @@ export class AutomationLibraryService {
       );
     }
 
-    const latestVersion = await this.getCurrentTemplateVersion(currentSourceVersion.template_id);
+    const latestVersion = await this.getCurrentTemplateVersion(
+      currentSourceVersion.template_id,
+    );
 
     if (!latestVersion) {
       throw new AppHttpException(
@@ -1381,7 +1388,10 @@ export class AutomationLibraryService {
     input: ApplyInstalledAutomationSourceUpdateRequest,
     requestMeta: RequestMeta,
   ): Promise<InstalledAutomationDetail> {
-    const installed = await this.getInstalledAutomationRow(access, automationId);
+    const installed = await this.getInstalledAutomationRow(
+      access,
+      automationId,
+    );
     const targetVersion = await this.databaseService.one<
       TemplateVersionRow & {
         readonly template_id: string;
@@ -1454,7 +1464,10 @@ export class AutomationLibraryService {
               requirement.status !== 'ready',
           )
           .map((requirement) => requirement.code.replace(/^connection\./, '')),
-        buildNextGate(targetVersion.compatibility_status, targetVersion.requirements ?? []),
+        buildNextGate(
+          targetVersion.compatibility_status,
+          targetVersion.requirements ?? [],
+        ),
         JSON.stringify(targetVersion.workflow),
         installed.id,
       ],
@@ -1499,7 +1512,6 @@ export class AutomationLibraryService {
 
     const validation = await this.validateWorkflowPayload(
       currentVersion.workflow,
-      true,
     );
 
     if (!validation.ok) {
@@ -1677,8 +1689,9 @@ export class AutomationLibraryService {
     decision: ModerationDecision,
     requestMeta: RequestMeta,
   ): Promise<PublicationRequest> {
-    const publicationRequest = await this.databaseService.one<PublicationRequestRow>(
-      `
+    const publicationRequest =
+      await this.databaseService.one<PublicationRequestRow>(
+        `
         select
           id,
           template_id,
@@ -1694,8 +1707,8 @@ export class AutomationLibraryService {
         where id = $1
         limit 1
       `,
-      [requestId],
-    );
+        [requestId],
+      );
 
     if (!publicationRequest) {
       throw new AppHttpException(
@@ -2164,7 +2177,6 @@ export class AutomationLibraryService {
 
   private async validateWorkflowPayload(
     workflow: Record<string, unknown>,
-    isPublicTemplate: boolean,
   ): Promise<WorkflowValidationSummary> {
     const result = await this.databaseService.query<ModuleRegistryRow>(
       `
@@ -2217,8 +2229,8 @@ function mapTemplateSummary(
     scope: row.scope,
     version: row.version ?? 'draft',
     readiness: row.readiness,
-    requiredPermissions:
-      (row.required_permissions ?? []) as AutomationTemplateSummary['requiredPermissions'],
+    requiredPermissions: (row.required_permissions ??
+      []) as AutomationTemplateSummary['requiredPermissions'],
     moduleCodes: row.module_codes ?? [],
     description: row.description,
     publicationStatus: row.publication_status,
@@ -2336,13 +2348,11 @@ function extractWorkflowModuleCodes(
   workflow: Record<string, unknown>,
   fallback: readonly string[] = [],
 ): readonly string[] {
-  const steps = Array.isArray(workflow.steps) ? workflow.steps : [];
+  const steps: readonly unknown[] = Array.isArray(workflow.steps)
+    ? workflow.steps
+    : [];
   const moduleCodes = steps
-    .map((step) =>
-      typeof step === 'object' && step !== null && typeof step.moduleCode === 'string'
-        ? step.moduleCode
-        : null,
-    )
+    .map((step) => getStringProperty(step, 'moduleCode'))
     .filter((value): value is string => Boolean(value));
 
   if (moduleCodes.length === 0) {
@@ -2352,16 +2362,27 @@ function extractWorkflowModuleCodes(
   return [...new Set(moduleCodes)];
 }
 
-function extractWorkflowInputs(workflow: Record<string, unknown>): readonly string[] {
-  const inputs = Array.isArray(workflow.inputs) ? workflow.inputs : [];
+function extractWorkflowInputs(
+  workflow: Record<string, unknown>,
+): readonly string[] {
+  const inputs: readonly unknown[] = Array.isArray(workflow.inputs)
+    ? workflow.inputs
+    : [];
 
   return inputs
-    .map((entry) =>
-      typeof entry === 'object' && entry !== null && typeof entry.code === 'string'
-        ? entry.code
-        : null,
-    )
+    .map((entry) => getStringProperty(entry, 'code'))
     .filter((value): value is string => Boolean(value));
+}
+
+function getStringProperty(value: unknown, key: string): string | null {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    return null;
+  }
+
+  const record = value as Record<string, unknown>;
+  const property = record[key];
+
+  return typeof property === 'string' ? property : null;
 }
 
 function resolveInstalledRequirements(
@@ -2376,7 +2397,11 @@ function resolveInstalledRequirements(
   return requirements.map((requirement) => {
     let status = requirement.status;
 
-    if (requirement.kind === 'profile' && !input.profileId && !requirement.optional) {
+    if (
+      requirement.kind === 'profile' &&
+      !input.profileId &&
+      !requirement.optional
+    ) {
       status = 'missing';
     }
 
@@ -2429,7 +2454,8 @@ function deriveRequirementBlocker(
   requirements: readonly TemplateRequirement[],
 ): string | null {
   const blocker = requirements.find(
-    (requirement) => requirement.status === 'blocked' || requirement.status === 'missing',
+    (requirement) =>
+      requirement.status === 'blocked' || requirement.status === 'missing',
   );
 
   return blocker ? `${blocker.label} is ${blocker.status}.` : null;
@@ -2465,7 +2491,10 @@ function difference(
   return [...new Set([...leftOnly, ...rightOnly])];
 }
 
-function buildPublicTemplateCode(code: string, sourceTemplateId: string): string {
+function buildPublicTemplateCode(
+  code: string,
+  sourceTemplateId: string,
+): string {
   return `public.${code.replace(/[^a-z0-9._-]+/gi, '-')}.${sourceTemplateId.slice(0, 8)}`;
 }
 

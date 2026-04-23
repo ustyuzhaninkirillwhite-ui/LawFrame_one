@@ -18,7 +18,6 @@ import { AuditService } from '../audit/audit.service';
 import { DatabaseService } from '../database/database.service';
 import {
   extractPlaceholders,
-  hashJson,
   type RequestMeta,
 } from '../stage7-support/stage7.helpers';
 
@@ -58,7 +57,9 @@ export class DocumentTemplatesService {
     private readonly auditService: AuditService,
   ) {}
 
-  async list(access: AccessContext): Promise<readonly DocumentTemplateDetail[]> {
+  async list(
+    access: AccessContext,
+  ): Promise<readonly DocumentTemplateDetail[]> {
     const result = await this.databaseService.query<TemplateRow>(
       `
         select
@@ -89,7 +90,10 @@ export class DocumentTemplatesService {
     return Promise.all(result.rows.map((row) => this.buildDetail(row)));
   }
 
-  async get(access: AccessContext, id: string): Promise<DocumentTemplateDetail> {
+  async get(
+    access: AccessContext,
+    id: string,
+  ): Promise<DocumentTemplateDetail> {
     const row = await this.getTemplateRow(id, access.activeWorkspace!.id);
     return this.buildDetail(row);
   }
@@ -123,7 +127,9 @@ export class DocumentTemplatesService {
         `,
         [
           workspaceId,
-          input.visibility === 'personal' ? actor.id : (input.ownerUserId ?? null),
+          input.visibility === 'personal'
+            ? actor.id
+            : (input.ownerUserId ?? null),
           input.documentTypeId ?? null,
           input.sourceDocumentId,
           input.sourceDocumentVersionId,
@@ -245,9 +251,12 @@ export class DocumentTemplatesService {
               id,
               template.workspace_id,
               version,
-              currentVersion?.source_document_version_id ?? template.source_document_version_id,
+              currentVersion?.source_document_version_id ??
+                template.source_document_version_id,
               currentVersion?.preview_document_version_id ?? null,
-              JSON.stringify(input.placeholders ?? currentVersion?.placeholders ?? []),
+              JSON.stringify(
+                input.placeholders ?? currentVersion?.placeholders ?? [],
+              ),
               JSON.stringify(input.mappings ?? currentVersion?.mappings ?? []),
               actor.id,
             ],
@@ -343,7 +352,10 @@ export class DocumentTemplatesService {
         JSON.stringify(version.placeholders ?? []),
       ].join(' '),
     );
-    const merged = dedupePlaceholders([...(version.placeholders ?? []), ...derived]);
+    const merged = dedupePlaceholders([
+      ...(version.placeholders ?? []),
+      ...derived,
+    ]);
 
     await this.databaseService.query(
       `
@@ -588,7 +600,9 @@ export class DocumentTemplatesService {
     );
   }
 
-  private async getVersions(templateId: string): Promise<readonly DocumentTemplateVersionSummary[]> {
+  private async getVersions(
+    templateId: string,
+  ): Promise<readonly DocumentTemplateVersionSummary[]> {
     const result = await this.databaseService.query<TemplateVersionRow>(
       `
         select
@@ -620,7 +634,9 @@ export class DocumentTemplatesService {
   }
 
   private async getNextVersionNumber(templateId: string): Promise<number> {
-    const row = await this.databaseService.one<{ readonly next_version: number }>(
+    const row = await this.databaseService.one<{
+      readonly next_version: number;
+    }>(
       `
         select coalesce(max(version), 0) + 1 as next_version
         from app.document_template_versions

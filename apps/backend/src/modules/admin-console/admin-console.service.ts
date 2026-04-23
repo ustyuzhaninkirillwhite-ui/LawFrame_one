@@ -35,7 +35,8 @@ export class AdminConsoleService {
     return {
       secrets,
       openAlerts: alerts.filter((item) => item.status === 'open').length,
-      openIncidents: incidents.filter((item) => item.status !== 'closed').length,
+      openIncidents: incidents.filter((item) => item.status !== 'closed')
+        .length,
       releaseGates: gates.rows,
       criticalAlerts: alerts.filter((item) => item.severity === 'critical'),
     };
