@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lexframe.local/schemas/document-generation-request.schema.json",
+  "title": "DocumentGenerationPreviewRequest",
+  "type": "object",
+  "required": ["templateId", "input"],
+  "properties": {
+    "templateId": {
+      "type": "string",
+      "minLength": 2
+    },
+    "templateVersionId": {
+      "type": ["string", "null"]
+    },
+    "profileId": {
+      "type": ["string", "null"]
+    },
+    "documentTypeId": {
+      "type": ["string", "null"]
+    },
+    "approvalRouteId": {
+      "type": ["string", "null"]
+    },
+    "workflowRunId": {
+      "type": ["string", "null"]
+    },
+    "input": {
+      "type": "object",
+      "properties": {
+        "facts": { "type": "object", "additionalProperties": true },
+        "params": { "type": "object", "additionalProperties": true },
+        "sourceDocumentIds": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 2 }
+        }
+      },
+      "additionalProperties": false
+    },
+    "aiSectionCodes": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    }
+  },
+  "additionalProperties": false
+}

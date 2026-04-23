@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "lexframe.ai.workflow_planner_input.v1",
+  "title": "LexFrame AI Workflow Planner Input",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "schemaId", "message", "documents", "templates", "profile", "questions"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "const": "workflow_planning_v1"
+    },
+    "schemaId": {
+      "type": "string",
+      "const": "lexframe.ai.workflow_planner_input.v1"
+    },
+    "message": {
+      "type": "string",
+      "minLength": 1
+    },
+    "documents": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "title", "classification"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "title": { "type": "string", "minLength": 1 },
+          "classification": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "templates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "title", "code"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "title": { "type": "string", "minLength": 1 },
+          "code": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "profile": {
+      "type": ["object", "null"]
+    },
+    "questions": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    }
+  }
+}

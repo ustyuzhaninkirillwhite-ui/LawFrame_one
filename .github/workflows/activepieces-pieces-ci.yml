@@ -1,0 +1,30 @@
+name: activepieces-pieces-ci
+
+on:
+  pull_request:
+  push:
+    branches:
+      - develop
+      - main
+
+jobs:
+  pieces:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Enable Corepack
+        run: corepack enable
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Activepieces pieces gate
+        run: pnpm check:activepieces
+      - name: Upload compatibility notes
+        uses: actions/upload-artifact@v4
+        with:
+          name: activepieces-compatibility
+          path: |
+            packages/activepieces-legal-pieces/COMPATIBILITY.md

@@ -1,0 +1,39 @@
+name: deploy-production
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  release-production:
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Enable Corepack
+        run: corepack enable
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Build workspace
+        run: pnpm build
+      - name: Create production release manifest
+        env:
+          LEXFRAME_DEPLOY_ENV: production
+          LEXFRAME_CONTRACTS_VERSION: stage12-bootstrap
+          LEXFRAME_RELEASE_SHA: ${{ github.sha }}
+          LEXFRAME_SMOKE_REPORT_PATH: artifacts/production-smoke.json
+        run: node scripts/create-release-manifest.mjs
+      - name: Upload release manifest
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-manifest-production
+          path: artifacts/release-manifest.json

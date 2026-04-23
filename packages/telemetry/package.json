@@ -1,0 +1,16 @@
+{
+  "name": "@lexframe/telemetry",
+  "version": "0.1.0",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "src/index.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint \"src/**/*.ts\"",
+    "test": "node -e \"console.log('telemetry: no runtime tests')\""
+  },
+  "dependencies": {
+    "@lexframe/contracts": "workspace:*"
+  }
+}

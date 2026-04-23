@@ -1,0 +1,113 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lexframe.local/schemas/legal-work-profile.schema.json",
+  "title": "LegalWorkProfile",
+  "type": "object",
+  "required": [
+    "styleGuide",
+    "documentStructures",
+    "clausePreferences",
+    "forbiddenPhrases",
+    "preferredPhrases",
+    "approvalRoutes",
+    "aiGenerationPolicy",
+    "documentValidationRules"
+  ],
+  "properties": {
+    "styleGuide": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "documentStructures": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["documentTypeCode", "sections"],
+        "properties": {
+          "documentTypeCode": { "type": "string", "minLength": 2 },
+          "sections": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["sectionId", "title", "required"],
+              "properties": {
+                "sectionId": { "type": "string", "minLength": 2 },
+                "title": { "type": "string", "minLength": 2 },
+                "required": { "type": "boolean" },
+                "locked": { "type": "boolean" }
+              },
+              "additionalProperties": true
+            }
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "clausePreferences": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["clauseId"],
+        "properties": {
+          "clauseId": { "type": "string", "minLength": 2 },
+          "priority": { "type": "integer", "minimum": 0 }
+        },
+        "additionalProperties": true
+      }
+    },
+    "forbiddenPhrases": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "preferredPhrases": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "approvalRoutes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "steps"],
+        "properties": {
+          "name": { "type": "string", "minLength": 2 },
+          "description": { "type": ["string", "null"] },
+          "steps": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["stepId", "order", "title", "requiresComment"],
+              "properties": {
+                "stepId": { "type": "string", "minLength": 2 },
+                "order": { "type": "integer", "minimum": 1 },
+                "title": { "type": "string", "minLength": 2 },
+                "requiresComment": { "type": "boolean" }
+              },
+              "additionalProperties": true
+            }
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "aiGenerationPolicy": {
+      "type": "object",
+      "required": ["allowedSectionCodes", "blockedSectionCodes"],
+      "properties": {
+        "allowedSectionCodes": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "blockedSectionCodes": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      },
+      "additionalProperties": true
+    },
+    "documentValidationRules": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

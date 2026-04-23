@@ -1,0 +1,5 @@
+clickhouse-connect==0.8.15
+confluent-kafka==2.8.2
+pm4py==2.7.14
+psycopg[binary]==3.2.3
+requests==2.32.3

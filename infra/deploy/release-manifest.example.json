@@ -1,0 +1,50 @@
+{
+  "schemaVersion": "lexframe.release_manifest.v1",
+  "generatedAt": "2026-04-22T12:00:00.000Z",
+  "environment": "staging",
+  "commitSha": "abcdef1234567890",
+  "contractsVersion": "stage12-bootstrap",
+  "images": [
+    {
+      "service": "backend",
+      "image": "ghcr.io/example/lexframe/backend",
+      "digest": "sha256:backend"
+    },
+    {
+      "service": "web",
+      "image": "ghcr.io/example/lexframe/web",
+      "digest": "sha256:web"
+    },
+    {
+      "service": "mining-worker",
+      "image": "ghcr.io/example/lexframe/mining-worker",
+      "digest": "sha256:mining"
+    }
+  ],
+  "migrations": [
+    "000031_stage11_release_gates.sql"
+  ],
+  "pieceVersions": [
+    {
+      "packageName": "@lexframe/activepieces-legal-pieces",
+      "version": "0.1.0"
+    }
+  ],
+  "aiAssets": {
+    "promptVersions": [
+      "workflow_planning_v1",
+      "workflow_patch_v1",
+      "redaction_preview_v1"
+    ],
+    "schemaVersions": [
+      "lexframe.workflow.v1",
+      "lexframe.workflow_patch.v1",
+      "ai_redaction_preview_v1"
+    ]
+  },
+  "build": {
+    "backendArtifact": "artifacts/backend.tgz",
+    "frontendArtifact": "artifacts/web.tgz",
+    "smokeReportPath": "artifacts/smoke-report.json"
+  }
+}

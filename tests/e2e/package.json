@@ -1,0 +1,26 @@
+{
+  "name": "@lexframe/e2e",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "node -e \"console.log('e2e: no build step')\"",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint \"**/*.ts\"",
+    "test": "playwright test",
+    "test:stage9": "playwright test recommendations-live.spec.ts",
+    "test:stage10": "playwright test dashboard-live.spec.ts",
+    "test:stage10:realtime-integrated": "playwright test stage10-realtime-integrated.spec.ts",
+    "test:stage1": "playwright test auth-workspace-rbac.spec.ts",
+    "test:stage11": "playwright test stage11-security-control-plane.spec.ts",
+    "test:stage2:storage-integrated": "playwright test stage2-storage-integrated.spec.ts",
+    "test:stage4:activepieces-integrated": "playwright test stage4-activepieces-integrated.spec.ts",
+    "test:stage5:ai-gateway-policy": "playwright test stage5-ai-gateway-policy.spec.ts",
+    "test:stage6:search-integrated": "playwright test stage6-search-integrated.spec.ts",
+    "test:stage8:delivery-sandbox": "playwright test stage8-delivery-sandbox.spec.ts"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.52.0",
+    "@types/node": "^24.0.0",
+    "typescript": "^5.8.3"
+  }
+}

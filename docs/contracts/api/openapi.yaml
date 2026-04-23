@@ -1,0 +1,7099 @@
+openapi: 3.1.0
+info:
+  title: LexFrame Stage 8 API
+  version: 0.8.0
+  description: Canonical HTTP contract for the LexFrame stage 8 execution core, embedded builder, approval inbox, artifact handling, delivery and notifications.
+servers:
+  - url: http://localhost:3100
+paths:
+  /auth/bootstrap:
+    post:
+      operationId: bootstrapAuth
+      tags: [Auth]
+      responses:
+        "200":
+          description: Profile ensured and auth bootstrap completed.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status]
+                properties:
+                  status:
+                    type: string
+                    const: ok
+  /session/context:
+    get:
+      operationId: getSessionContext
+      tags: [Session]
+      parameters:
+        - in: header
+          name: x-workspace-id
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Session context
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionContext"
+  /account/security:
+    get:
+      operationId: getAccountSecurity
+      tags: [Security]
+      responses:
+        "200":
+          description: Security posture of the current account/session.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SecurityAccountState"
+  /workspaces:
+    get:
+      operationId: listWorkspaces
+      tags: [Workspace]
+      responses:
+        "200":
+          description: Workspace list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WorkspaceSummary"
+    post:
+      operationId: createWorkspace
+      tags: [Workspace]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateWorkspaceRequest"
+      responses:
+        "200":
+          description: Created workspace summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkspaceSummary"
+  /workspaces/{workspaceId}:
+    get:
+      operationId: getWorkspace
+      tags: [Workspace]
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceId"
+      responses:
+        "200":
+          description: Workspace summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkspaceSummary"
+    patch:
+      operationId: updateWorkspace
+      tags: [Workspace]
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateWorkspaceRequest"
+      responses:
+        "200":
+          description: Updated workspace summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkspaceSummary"
+  /workspaces/{workspaceId}/switch:
+    post:
+      operationId: switchWorkspace
+      tags: [Workspace]
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceId"
+      responses:
+        "200":
+          description: Refreshed session context for the new workspace
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionContext"
+  /workspaces/{workspaceId}/members:
+    get:
+      operationId: listWorkspaceMembers
+      tags: [Workspace]
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceId"
+      responses:
+        "200":
+          description: Workspace members
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WorkspaceMember"
+  /workspaces/{workspaceId}/members/{memberId}/role:
+    patch:
+      operationId: changeWorkspaceMemberRole
+      tags: [Workspace]
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceId"
+        - $ref: "#/components/parameters/MemberId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateWorkspaceMemberRoleRequest"
+      responses:
+        "200":
+          description: Updated workspace member
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkspaceMember"
+  /workspaces/{workspaceId}/members/{memberId}:
+    delete:
+      operationId: removeWorkspaceMember
+      tags: [Workspace]
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceId"
+        - $ref: "#/components/parameters/MemberId"
+      responses:
+        "200":
+          description: Member removal result
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status]
+                properties:
+                  status:
+                    type: string
+                    const: removed
+  /workspaces/{workspaceId}/invitations:
+    get:
+      operationId: listWorkspaceInvitations
+      tags: [Workspace]
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceId"
+      responses:
+        "200":
+          description: Workspace invitations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WorkspaceInvitation"
+    post:
+      operationId: createWorkspaceInvitation
+      tags: [Workspace]
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateWorkspaceInvitationRequest"
+      responses:
+        "200":
+          description: Created workspace invitation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkspaceInvitation"
+  /workspaces/{workspaceId}/invitations/{invitationId}:
+    delete:
+      operationId: revokeWorkspaceInvitation
+      tags: [Workspace]
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceId"
+        - $ref: "#/components/parameters/InvitationId"
+      responses:
+        "200":
+          description: Invitation revocation result
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status]
+                properties:
+                  status:
+                    type: string
+                    const: revoked
+  /workspace-invitations/accept:
+    post:
+      operationId: acceptWorkspaceInvitation
+      tags: [Workspace]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AcceptWorkspaceInvitationRequest"
+      responses:
+        "200":
+          description: Refreshed session context after invitation acceptance
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionContext"
+  /rbac/roles:
+    get:
+      operationId: listRoles
+      tags: [RBAC]
+      responses:
+        "200":
+          description: Role definitions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RoleDefinition"
+  /rbac/permissions:
+    get:
+      operationId: listPermissions
+      tags: [RBAC]
+      responses:
+        "200":
+          description: Permission definitions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PermissionDefinition"
+  /audit/events:
+    get:
+      operationId: listAuditEvents
+      tags: [Audit]
+      responses:
+        "200":
+          description: Recent workspace audit events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AuditEventSummary"
+  /admin/security/overview:
+    get:
+      operationId: getAdminSecurityOverview
+      tags: [Security]
+      responses:
+        "200":
+          description: Stage 11 security overview with release gates and critical alerts
+          content:
+            application/json:
+              schema:
+                type: object
+  /admin/security/sessions:
+    get:
+      operationId: listSecuritySessions
+      tags: [Security]
+      responses:
+        "200":
+          description: Active and revoked workspace sessions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+  /admin/security/sessions/{sessionId}/revoke:
+    post:
+      operationId: revokeSecuritySession
+      tags: [Security]
+      parameters:
+        - in: path
+          name: sessionId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Session revoked
+          content:
+            application/json:
+              schema:
+                type: object
+  /admin/security/workspace-policies:
+    get:
+      operationId: getWorkspaceSecuritySettings
+      tags: [Security]
+      responses:
+        "200":
+          description: Workspace security settings
+          content:
+            application/json:
+              schema:
+                type: object
+    patch:
+      operationId: updateWorkspaceSecuritySettings
+      tags: [Security]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Updated workspace security settings
+          content:
+            application/json:
+              schema:
+                type: object
+  /security/reauth/challenge:
+    post:
+      operationId: createReauthChallenge
+      tags: [Security]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Created reauthentication challenge
+          content:
+            application/json:
+              schema:
+                type: object
+  /security/reauth/verify:
+    post:
+      operationId: verifyReauthChallenge
+      tags: [Security]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Verified reauthentication challenge
+          content:
+            application/json:
+              schema:
+                type: object
+  /admin/security/secrets:
+    get:
+      operationId: listSecretsInventory
+      tags: [Security]
+      responses:
+        "200":
+          description: Secret inventory metadata
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+  /admin/security/audit-events:
+    get:
+      operationId: listAuditEventsAdmin
+      tags: [Security]
+      responses:
+        "200":
+          description: Security admin view of audit events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AuditEventSummary"
+  /admin/security/audit/export:
+    post:
+      operationId: exportAuditEvents
+      tags: [Security]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Exported audit payload
+          content:
+            application/json:
+              schema:
+                type: object
+  /admin/security/ai/policies:
+    get:
+      operationId: listAiProviderPolicies
+      tags: [Security, AI]
+      responses:
+        "200":
+          description: AI provider policy registry
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+  /admin/security/activepieces:
+    get:
+      operationId: getActivepiecesSecurityOverview
+      tags: [Security, Activepieces]
+      responses:
+        "200":
+          description: Activepieces governance overview
+          content:
+            application/json:
+              schema:
+                type: object
+  /admin/security/alerts:
+    get:
+      operationId: listSecurityAlerts
+      tags: [Security]
+      responses:
+        "200":
+          description: Security alerts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+  /admin/security/alerts/{alertId}:
+    patch:
+      operationId: updateSecurityAlert
+      tags: [Security]
+      parameters:
+        - in: path
+          name: alertId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Updated security alert
+          content:
+            application/json:
+              schema:
+                type: object
+  /admin/security/incidents:
+    get:
+      operationId: listSecurityIncidents
+      tags: [Security]
+      responses:
+        "200":
+          description: Security incidents
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+    post:
+      operationId: createSecurityIncident
+      tags: [Security]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Created security incident
+          content:
+            application/json:
+              schema:
+                type: object
+  /admin/security/incidents/{incidentId}:
+    patch:
+      operationId: updateSecurityIncident
+      tags: [Security]
+      parameters:
+        - in: path
+          name: incidentId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Updated security incident
+          content:
+            application/json:
+              schema:
+                type: object
+  /admin/compliance/processing-activities:
+    get:
+      operationId: listComplianceProcessingActivities
+      tags: [Compliance]
+      responses:
+        "200":
+          description: Processing activities
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+  /admin/compliance/retention-policies:
+    get:
+      operationId: listRetentionPolicies
+      tags: [Compliance]
+      responses:
+        "200":
+          description: Retention policies
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+  /admin/compliance/retention/report:
+    get:
+      operationId: getRetentionReport
+      tags: [Compliance]
+      responses:
+        "200":
+          description: Retention and legal hold overview
+          content:
+            application/json:
+              schema:
+                type: object
+  /admin/compliance/dsr:
+    get:
+      operationId: listDsrRequests
+      tags: [Compliance]
+      responses:
+        "200":
+          description: Data subject requests
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+  /admin/compliance/access-reviews:
+    get:
+      operationId: listAccessReviewCampaigns
+      tags: [Compliance]
+      responses:
+        "200":
+          description: Access review campaigns
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+  /library:
+    get:
+      operationId: listLibraryTemplates
+      tags: [Library]
+      responses:
+        "200":
+          description: Library templates
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LibraryTemplateSummary"
+  /legal-modules:
+    get:
+      operationId: listLegalModules
+      tags: [Modules]
+      responses:
+        "200":
+          description: Legal module registry
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LegalModuleSummary"
+  /legal-modules/{code}:
+    get:
+      operationId: getLegalModule
+      tags: [Modules]
+      parameters:
+        - in: path
+          name: code
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Detailed legal module payload
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LegalModuleDetail"
+  /legal-modules/validate-step:
+    post:
+      operationId: validateLegalModuleStep
+      tags: [Modules]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ValidateLegalModuleStepRequest"
+      responses:
+        "200":
+          description: Module step validation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkflowValidationSummary"
+  /admin/legal-modules:
+    get:
+      operationId: listAdminLegalModules
+      tags: [Admin Modules]
+      responses:
+        "200":
+          description: Admin-visible legal module registry
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LegalModuleSummary"
+    post:
+      operationId: createLegalModule
+      tags: [Admin Modules]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code, title, category, description, riskLevel]
+              properties:
+                code:
+                  type: string
+                title:
+                  type: string
+                category:
+                  type: string
+                description:
+                  type: string
+                riskLevel:
+                  type: string
+                  enum: [low, medium, high]
+      responses:
+        "200":
+          description: Created legal module detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LegalModuleDetail"
+  /admin/legal-modules/{code}/versions:
+    post:
+      operationId: createLegalModuleVersion
+      tags: [Admin Modules]
+      parameters:
+        - in: path
+          name: code
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                [
+                  version,
+                  inputSchema,
+                  outputSchema,
+                  requirements,
+                  runtimeMapping,
+                  examples,
+                ]
+              properties:
+                version:
+                  type: string
+                inputSchema:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/LegalModuleIoSchema"
+                outputSchema:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/LegalModuleIoSchema"
+                requirements:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/TemplateRequirement"
+                runtimeMapping:
+                  type: object
+                  additionalProperties: true
+                examples:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        "200":
+          description: Updated legal module detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LegalModuleDetail"
+  /admin/legal-modules/{code}/versions/{version}/publish:
+    post:
+      operationId: publishLegalModuleVersion
+      tags: [Admin Modules]
+      parameters:
+        - in: path
+          name: code
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: version
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Legal module detail after publication
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LegalModuleDetail"
+  /admin/legal-modules/{code}/versions/{version}/deprecate:
+    post:
+      operationId: deprecateLegalModuleVersion
+      tags: [Admin Modules]
+      parameters:
+        - in: path
+          name: code
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: version
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Legal module detail after deprecation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LegalModuleDetail"
+  /automation-templates:
+    get:
+      operationId: listAutomationTemplates
+      tags: [Library]
+      parameters:
+        - in: query
+          name: q
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: scope
+          required: false
+          schema:
+            type: string
+            enum: [product, workspace, public, private]
+        - in: query
+          name: owner
+          required: false
+          schema:
+            type: string
+            enum: [lexframe, workspace, public, private]
+        - in: query
+          name: mine
+          required: false
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: Visible automation templates
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LibraryTemplateSummary"
+    post:
+      operationId: createAutomationTemplate
+      tags: [Library]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAutomationTemplateRequest"
+      responses:
+        "200":
+          description: Created automation template
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AutomationTemplateDetail"
+  /automation-templates/{id}:
+    get:
+      operationId: getAutomationTemplate
+      tags: [Library]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Detailed automation template
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AutomationTemplateDetail"
+    patch:
+      operationId: updateAutomationTemplate
+      tags: [Library]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateAutomationTemplateRequest"
+      responses:
+        "200":
+          description: Updated automation template
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AutomationTemplateDetail"
+  /automation-templates/{id}/versions:
+    post:
+      operationId: createAutomationTemplateVersion
+      tags: [Library]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAutomationTemplateVersionRequest"
+      responses:
+        "200":
+          description: Created draft template version
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AutomationTemplateVersionSummary"
+  /automation-templates/{id}/install:
+    post:
+      operationId: installAutomationTemplate
+      tags: [Library]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InstallAutomationTemplateRequest"
+      responses:
+        "200":
+          description: Installed automation copy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InstalledAutomationDetail"
+  /automation-templates/{id}/fork:
+    post:
+      operationId: forkAutomationTemplate
+      tags: [Library]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ForkAutomationTemplateRequest"
+      responses:
+        "200":
+          description: Forked automation template detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AutomationTemplateDetail"
+  /automation-templates/{id}/related:
+    get:
+      operationId: getRelatedAutomationTemplates
+      tags: [Library]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Related automation templates
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LibraryTemplateSummary"
+  /automation-templates/{id}/submit-publication:
+    post:
+      operationId: submitAutomationTemplatePublication
+      tags: [Moderation]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubmitPublicationRequest"
+      responses:
+        "200":
+          description: Created publication request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicationRequest"
+  /automation-template-versions/{id}/validate:
+    post:
+      operationId: validateAutomationTemplateVersion
+      tags: [Library]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Template workflow validation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkflowValidationSummary"
+  /automation-template-versions/{id}/publish-draft:
+    post:
+      operationId: publishAutomationTemplateDraft
+      tags: [Library]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Template detail after draft publication
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AutomationTemplateDetail"
+  /automations:
+    get:
+      operationId: listInstalledAutomations
+      tags: [Automation]
+      responses:
+        "200":
+          description: Installed automations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/InstalledAutomationDetail"
+  /automations/{id}:
+    get:
+      operationId: getAutomationDetail
+      tags: [Automation]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Automation detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InstalledAutomationDetail"
+  /installed-automations/{id}/fork-to-template:
+    post:
+      operationId: forkInstalledAutomationToTemplate
+      tags: [Automation]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ForkAutomationTemplateRequest"
+      responses:
+        "200":
+          description: New workspace template created from installed automation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AutomationTemplateDetail"
+  /installed-automations/{id}/source-diff:
+    get:
+      operationId: getInstalledAutomationSourceDiff
+      tags: [Automation]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Source diff between pinned and latest template versions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InstalledAutomationSourceDiff"
+  /installed-automations/{id}/apply-source-update:
+    post:
+      operationId: applyInstalledAutomationSourceUpdate
+      tags: [Automation]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApplyInstalledAutomationSourceUpdateRequest"
+      responses:
+        "200":
+          description: Installed automation after applying a source update
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InstalledAutomationDetail"
+  /publication-requests/{id}:
+    get:
+      operationId: getPublicationRequest
+      tags: [Moderation]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Workspace-visible publication request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicationRequest"
+  /moderation/publication-requests:
+    get:
+      operationId: listPublicationRequests
+      tags: [Moderation]
+      responses:
+        "200":
+          description: Moderation queue
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PublicationRequest"
+  /moderation/publication-requests/{id}:
+    get:
+      operationId: getModerationPublicationRequest
+      tags: [Moderation]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Detailed moderation request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicationRequest"
+  /moderation/publication-requests/{id}/approve:
+    post:
+      operationId: approvePublicationRequest
+      tags: [Moderation]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ModerationDecision"
+      responses:
+        "200":
+          description: Reviewed publication request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicationRequest"
+  /moderation/publication-requests/{id}/reject:
+    post:
+      operationId: rejectPublicationRequest
+      tags: [Moderation]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ModerationDecision"
+      responses:
+        "200":
+          description: Reviewed publication request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicationRequest"
+  /moderation/publication-requests/{id}/request-changes:
+    post:
+      operationId: requestPublicationChanges
+      tags: [Moderation]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ModerationDecision"
+      responses:
+        "200":
+          description: Reviewed publication request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicationRequest"
+  /documents:
+    get:
+      operationId: listDocuments
+      tags: [Documents]
+      parameters:
+        - in: query
+          name: q
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: kind
+          required: false
+          schema:
+            $ref: "#/components/schemas/DocumentKind"
+        - in: query
+          name: status
+          required: false
+          schema:
+            $ref: "#/components/schemas/DocumentStatus"
+        - in: query
+          name: classification
+          required: false
+          schema:
+            type: string
+            enum:
+              [
+                public,
+                internal,
+                confidential,
+                legal_secret,
+                personal_data,
+                client_material,
+              ]
+        - in: query
+          name: tag
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: cursor
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Documents list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentListResponse"
+  /documents/upload-intents:
+    post:
+      operationId: createDocumentUploadIntent
+      tags: [Documents]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DocumentUploadIntentRequest"
+      responses:
+        "200":
+          description: Upload intent for a new document
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentUploadIntentResponse"
+  /documents/{documentId}:
+    get:
+      operationId: getDocument
+      tags: [Documents]
+      parameters:
+        - $ref: "#/components/parameters/DocumentId"
+      responses:
+        "200":
+          description: Detailed document payload
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentDetail"
+    delete:
+      operationId: deleteDocument
+      tags: [Documents]
+      parameters:
+        - $ref: "#/components/parameters/DocumentId"
+      responses:
+        "200":
+          description: Document soft-delete result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentMutationResult"
+  /documents/{documentId}/versions:
+    get:
+      operationId: listDocumentVersions
+      tags: [Documents]
+      parameters:
+        - $ref: "#/components/parameters/DocumentId"
+      responses:
+        "200":
+          description: Document versions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DocumentVersionSummary"
+  /documents/{documentId}/versions/upload-intent:
+    post:
+      operationId: createDocumentVersionUploadIntent
+      tags: [Documents]
+      parameters:
+        - $ref: "#/components/parameters/DocumentId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateDocumentVersionUploadIntentRequest"
+      responses:
+        "200":
+          description: Upload intent for a new document version
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentUploadIntentResponse"
+  /documents/{documentId}/versions/{versionId}/complete:
+    post:
+      operationId: completeDocumentUpload
+      tags: [Documents]
+      parameters:
+        - $ref: "#/components/parameters/DocumentId"
+        - $ref: "#/components/parameters/VersionId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CompleteUploadRequest"
+      responses:
+        "200":
+          description: Document detail after upload completion
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentDetail"
+  /documents/{documentId}/versions/{versionId}/make-current:
+    post:
+      operationId: makeDocumentVersionCurrent
+      tags: [Documents]
+      parameters:
+        - $ref: "#/components/parameters/DocumentId"
+        - $ref: "#/components/parameters/VersionId"
+      responses:
+        "200":
+          description: Document detail after version switch
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentDetail"
+  /documents/{documentId}/signed-url:
+    post:
+      operationId: createDocumentSignedUrl
+      tags: [Documents]
+      parameters:
+        - $ref: "#/components/parameters/DocumentId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SignedUrlRequest"
+      responses:
+        "200":
+          description: Signed URL for the selected document asset
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SignedUrlResponse"
+  /documents/{documentId}/archive:
+    post:
+      operationId: archiveDocument
+      tags: [Documents]
+      parameters:
+        - $ref: "#/components/parameters/DocumentId"
+      responses:
+        "200":
+          description: Archive result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentMutationResult"
+  /documents/{documentId}/restore:
+    post:
+      operationId: restoreDocument
+      tags: [Documents]
+      parameters:
+        - $ref: "#/components/parameters/DocumentId"
+      responses:
+        "200":
+          description: Restore result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentMutationResult"
+  /legal-sources:
+    get:
+      operationId: listLegalSources
+      tags: [LegalResearch]
+      responses:
+        "200":
+          description: Accessible legal sources
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LegalSourceSummary"
+  /legal-sources/import-jobs:
+    post:
+      operationId: createLegalImportJob
+      tags: [LegalResearch]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateLegalImportJobRequest"
+      responses:
+        "200":
+          description: Import job created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LegalImportJob"
+  /legal-sources/{sourceId}:
+    get:
+      operationId: getLegalSource
+      tags: [LegalResearch]
+      parameters:
+        - $ref: "#/components/parameters/LegalSourceId"
+      responses:
+        "200":
+          description: Legal source detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LegalSourceDetail"
+  /legal-import-jobs/{jobId}:
+    get:
+      operationId: getLegalImportJob
+      tags: [LegalResearch]
+      parameters:
+        - $ref: "#/components/parameters/LegalImportJobId"
+      responses:
+        "200":
+          description: Legal import job
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LegalImportJob"
+  /legal-search/query:
+    post:
+      operationId: queryLegalSearch
+      tags: [LegalResearch]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LegalSearchQuery"
+      responses:
+        "200":
+          description: Search response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LegalSearchResponse"
+  /legal-rag/analyze:
+    post:
+      operationId: analyzeLegalRag
+      tags: [LegalResearch]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RagAnalyzeRequest"
+      responses:
+        "200":
+          description: RAG request summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RagRequestSummary"
+  /legal-rag/requests/{requestId}:
+    get:
+      operationId: getLegalRagRequest
+      tags: [LegalResearch]
+      parameters:
+        - $ref: "#/components/parameters/RagRequestId"
+      responses:
+        "200":
+          description: Stored RAG request summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RagRequestSummary"
+  /workflow-runtime/legal-search/execute:
+    post:
+      operationId: executeWorkflowRuntimeLegalSearch
+      tags: [WorkflowRuntime]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LegalSearchQuery"
+      responses:
+        "200":
+          description: Runtime search response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LegalSearchResponse"
+  /workflow-runtime/legal-rag/analyze:
+    post:
+      operationId: analyzeWorkflowRuntimeLegalRag
+      tags: [WorkflowRuntime]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RagAnalyzeRequest"
+      responses:
+        "200":
+          description: Runtime RAG request summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RagRequestSummary"
+  /runs:
+    get:
+      operationId: listRuns
+      tags: [Runs]
+      responses:
+        "200":
+          description: Workflow runs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RunSummary"
+  /runs/{runId}/artifacts:
+    get:
+      operationId: listRunArtifacts
+      tags: [Runs]
+      parameters:
+        - $ref: "#/components/parameters/RunId"
+      responses:
+        "200":
+          description: Run artifacts linked to canonical documents
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RunArtifact"
+    post:
+      operationId: createRunArtifact
+      tags: [Runs]
+      parameters:
+        - $ref: "#/components/parameters/RunId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateRunArtifactRequest"
+      responses:
+        "200":
+          description: Created run artifact
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RunArtifact"
+  /activepieces/embed-token:
+    post:
+      operationId: createActivepiecesEmbedToken
+      tags: [Activepieces]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateActivepiecesEmbedTokenRequest"
+      responses:
+        "200":
+          description: Short-lived builder embed token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActivepiecesEmbedTokenResponse"
+  /integrations/activepieces/status:
+    get:
+      operationId: getActivepiecesIntegrationStatus
+      tags: [Activepieces]
+      responses:
+        "200":
+          description: Activepieces runtime integration status for the active workspace.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+                required: [status, dependencies]
+                properties:
+                  status:
+                    type: string
+                  dependencies:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: true
+                  runtime:
+                    type: object
+                    additionalProperties: true
+  /activepieces/run-smoke:
+    post:
+      operationId: runActivepiecesSmoke
+      tags: [Activepieces]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        "200":
+          description: Activepieces runtime smoke execution summary.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+                required: [status]
+                properties:
+                  status:
+                    type: string
+                  runId:
+                    type: string
+                  externalRunId:
+                    type:
+                      - string
+                      - "null"
+  /automations/{id}/runtime/requirements:
+    get:
+      operationId: getAutomationRuntimeRequirements
+      tags: [Activepieces]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Runtime requirements and gating for the installed automation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AutomationRuntimeRequirements"
+  /automations/{id}/runtime/sync:
+    post:
+      operationId: syncAutomationRuntime
+      tags: [Activepieces]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SyncAutomationRuntimeRequest"
+      responses:
+        "200":
+          description: Runtime projection synced into Activepieces
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SyncAutomationRuntimeResponse"
+  /automations/{id}/run:
+    post:
+      operationId: startAutomationRun
+      tags: [Runs]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StartAutomationRunRequest"
+      responses:
+        "200":
+          description: Run created in canonical LexFrame runtime history
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StartAutomationRunResponse"
+  /runtime/connections:
+    get:
+      operationId: listRuntimeConnections
+      tags: [Activepieces]
+      responses:
+        "200":
+          description: Workspace runtime connections
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RuntimeConnectionSummary"
+    post:
+      operationId: upsertRuntimeConnection
+      tags: [Activepieces]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpsertRuntimeConnectionRequest"
+      responses:
+        "200":
+          description: Upserted workspace runtime connection
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RuntimeConnectionSummary"
+  /runtime/activepieces/callbacks/step-event:
+    post:
+      operationId: handleActivepiecesStepEvent
+      tags: [Activepieces Callbacks]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ActivepiecesStepEventCallback"
+      responses:
+        "200":
+          description: Callback processed
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status]
+                properties:
+                  status:
+                    type: string
+                    const: processed
+  /runtime/activepieces/callbacks/run-event:
+    post:
+      operationId: handleActivepiecesRunEvent
+      tags: [Activepieces Callbacks]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ActivepiecesRunEventCallback"
+      responses:
+        "200":
+          description: Callback processed
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status]
+                properties:
+                  status:
+                    type: string
+                    const: processed
+  /events/capture:
+    post:
+      operationId: captureProductEvent
+      tags: [Telemetry]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductEventCaptureRequest"
+      responses:
+        "200":
+          description: Event accepted into outbox or quarantine.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductEventCaptureResponse"
+  /recommendations:
+    get:
+      operationId: listRecommendations
+      tags: [Recommendations]
+      responses:
+        "200":
+          description: Recommendation inbox items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RecommendationListItem"
+  /recommendations/{recommendationId}:
+    get:
+      operationId: getRecommendation
+      tags: [Recommendations]
+      parameters:
+        - in: path
+          name: recommendationId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Recommendation detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecommendationDetail"
+  /recommendations/{recommendationId}/accept:
+    post:
+      operationId: acceptRecommendation
+      tags: [Recommendations]
+      parameters:
+        - in: path
+          name: recommendationId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecommendationAcceptRequest"
+      responses:
+        "200":
+          description: Recommendation converted into workflow draft.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecommendationActionResult"
+  /recommendations/{recommendationId}/dismiss:
+    post:
+      operationId: dismissRecommendation
+      tags: [Recommendations]
+      parameters:
+        - in: path
+          name: recommendationId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecommendationDismissRequest"
+      responses:
+        "200":
+          description: Recommendation dismissed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecommendationActionResult"
+  /recommendations/{recommendationId}/snooze:
+    post:
+      operationId: snoozeRecommendation
+      tags: [Recommendations]
+      parameters:
+        - in: path
+          name: recommendationId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecommendationSnoozeRequest"
+      responses:
+        "200":
+          description: Recommendation snoozed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecommendationActionResult"
+  /recommendations/{recommendationId}/feedback:
+    post:
+      operationId: submitRecommendationFeedback
+      tags: [Recommendations]
+      parameters:
+        - in: path
+          name: recommendationId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecommendationFeedbackRequest"
+      responses:
+        "200":
+          description: Recommendation feedback stored.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecommendationActionResult"
+  /admin/recommendations/patterns:
+    get:
+      operationId: listRecommendationPatterns
+      tags: [Recommendation Admin]
+      responses:
+        "200":
+          description: Team and admin visible recommendation patterns.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RecommendationPatternSummary"
+  /admin/analytics/process-cases:
+    get:
+      operationId: listRecommendationProcessCases
+      tags: [Recommendation Admin]
+      responses:
+        "200":
+          description: Process case snapshots used for explainability.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProcessCaseSummary"
+  /admin/analytics/patterns/{patternId}:
+    get:
+      operationId: getRecommendationPattern
+      tags: [Recommendation Admin]
+      parameters:
+        - in: path
+          name: patternId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Recommendation pattern detail and health snapshot.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecommendationPatternDetail"
+  /health/readiness:
+    get:
+      operationId: getReadinessSnapshot
+      tags: [Readiness]
+      responses:
+        "200":
+          description: Readiness gates
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [gates, workflowDsl, aiGateway, audit]
+                properties:
+                  gates:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ReadinessGate"
+                  workflowDsl:
+                    type: object
+                    additionalProperties: true
+                  aiGateway:
+                    type: object
+                    additionalProperties: true
+                  audit:
+                    type: object
+                    additionalProperties: true
+  /health/readiness/details:
+    get:
+      operationId: getReadinessDetails
+      tags: [Readiness]
+      responses:
+        "200":
+          description: Detailed readiness contract, service states and runtime diagnostics.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+                required:
+                  - gates
+                  - profile
+                  - effectiveProfile
+                  - contractSatisfied
+                  - serviceStatuses
+                  - blockedReasons
+                  - diagnostics
+                properties:
+                  gates:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ReadinessGate"
+                  profile:
+                    type: string
+                  effectiveProfile:
+                    type: string
+                  contractSatisfied:
+                    type: boolean
+                  serviceStatuses:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: true
+                      required: [service, state, required, blockers]
+                      properties:
+                        service:
+                          type: string
+                        state:
+                          type: string
+                        required:
+                          type: boolean
+                        blockers:
+                          type: array
+                          items:
+                            type: string
+                  blockedReasons:
+                    type: array
+                    items:
+                      type: string
+                  diagnostics:
+                    type: object
+                    additionalProperties: true
+  /profiles/current:
+    get:
+      operationId: getCurrentLegalWorkProfile
+      tags: [Profiles]
+      responses:
+        "200":
+          description: Current personal or workspace-scoped legal work profile.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/LegalWorkProfileDetail"
+                  - type: "null"
+  /profiles/effective:
+    get:
+      operationId: getEffectiveLegalWorkProfile
+      tags: [Profiles]
+      responses:
+        "200":
+          description: Effective profile snapshot for the active actor/workspace context.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/EffectiveProfileSnapshotSummary"
+                  - type: "null"
+  /profiles:
+    post:
+      operationId: createLegalWorkProfile
+      tags: [Profiles]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateLegalWorkProfileRequest"
+      responses:
+        "200":
+          description: Created legal work profile.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LegalWorkProfileDetail"
+  /profiles/{profileId}/draft:
+    patch:
+      operationId: updateLegalWorkProfileDraft
+      tags: [Profiles]
+      parameters:
+        - in: path
+          name: profileId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateLegalWorkProfileDraftRequest"
+      responses:
+        "200":
+          description: Updated legal work profile draft.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LegalWorkProfileDetail"
+  /profiles/{profileId}/validate:
+    post:
+      operationId: validateLegalWorkProfile
+      tags: [Profiles]
+      parameters:
+        - in: path
+          name: profileId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Profile validation result.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfileValidationResult"
+  /profiles/{profileId}/publish:
+    post:
+      operationId: publishLegalWorkProfile
+      tags: [Profiles]
+      parameters:
+        - in: path
+          name: profileId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Published legal work profile.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LegalWorkProfileDetail"
+  /profiles/{profileId}/versions:
+    get:
+      operationId: listLegalWorkProfileVersions
+      tags: [Profiles]
+      parameters:
+        - in: path
+          name: profileId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Profile version history.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LegalWorkProfileVersionSummary"
+  /profiles/{profileId}/restore-version:
+    post:
+      operationId: restoreLegalWorkProfileVersion
+      tags: [Profiles]
+      parameters:
+        - in: path
+          name: profileId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RestoreLegalWorkProfileVersionRequest"
+      responses:
+        "200":
+          description: Restored legal work profile draft.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LegalWorkProfileDetail"
+  /profiles/{profileId}/preview-effective:
+    post:
+      operationId: previewEffectiveLegalWorkProfile
+      tags: [Profiles]
+      parameters:
+        - in: path
+          name: profileId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PreviewEffectiveProfileRequest"
+      responses:
+        "200":
+          description: Effective profile preview.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EffectiveProfilePreview"
+  /document-types:
+    get:
+      operationId: listDocumentTypes
+      tags: [Document Authoring]
+      responses:
+        "200":
+          description: Document types.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DocumentTypeSummary"
+    post:
+      operationId: createDocumentType
+      tags: [Document Authoring]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateDocumentTypeRequest"
+      responses:
+        "200":
+          description: Created document type.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentTypeDetail"
+  /document-types/{id}:
+    get:
+      operationId: getDocumentType
+      tags: [Document Authoring]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Document type detail.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentTypeDetail"
+    patch:
+      operationId: updateDocumentType
+      tags: [Document Authoring]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateDocumentTypeRequest"
+      responses:
+        "200":
+          description: Updated document type.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentTypeDetail"
+  /document-structures:
+    get:
+      operationId: listDocumentStructures
+      tags: [Document Authoring]
+      responses:
+        "200":
+          description: Document structures.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DocumentStructureRecord"
+    post:
+      operationId: createDocumentStructure
+      tags: [Document Authoring]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateDocumentStructureRequest"
+      responses:
+        "200":
+          description: Created document structure.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentStructureRecord"
+  /document-structures/{id}:
+    patch:
+      operationId: updateDocumentStructure
+      tags: [Document Authoring]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateDocumentStructureRequest"
+      responses:
+        "200":
+          description: Updated document structure.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentStructureRecord"
+  /clauses:
+    get:
+      operationId: listClauses
+      tags: [Clauses]
+      responses:
+        "200":
+          description: Clause library items.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ClauseLibraryItemSummary"
+    post:
+      operationId: createClause
+      tags: [Clauses]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateClauseLibraryItemRequest"
+      responses:
+        "200":
+          description: Created clause library item.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClauseLibraryItemSummary"
+  /clauses/{id}:
+    patch:
+      operationId: updateClause
+      tags: [Clauses]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateClauseLibraryItemRequest"
+      responses:
+        "200":
+          description: Updated clause library item.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClauseLibraryItemSummary"
+  /phrase-rules:
+    get:
+      operationId: listPhraseRules
+      tags: [Clauses]
+      responses:
+        "200":
+          description: Phrase rules.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PhraseRuleSummary"
+    post:
+      operationId: createPhraseRule
+      tags: [Clauses]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePhraseRuleRequest"
+      responses:
+        "200":
+          description: Created phrase rule.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PhraseRuleSummary"
+  /phrase-rules/{id}:
+    patch:
+      operationId: updatePhraseRule
+      tags: [Clauses]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdatePhraseRuleRequest"
+      responses:
+        "200":
+          description: Updated phrase rule.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PhraseRuleSummary"
+  /document-templates:
+    get:
+      operationId: listDocumentTemplates
+      tags: [Document Templates]
+      responses:
+        "200":
+          description: Document templates.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DocumentTemplateDetail"
+    post:
+      operationId: createDocumentTemplate
+      tags: [Document Templates]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateDocumentTemplateRequest"
+      responses:
+        "200":
+          description: Created document template.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentTemplateDetail"
+  /document-templates/{id}:
+    get:
+      operationId: getDocumentTemplate
+      tags: [Document Templates]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Document template detail.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentTemplateDetail"
+    patch:
+      operationId: updateDocumentTemplate
+      tags: [Document Templates]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateDocumentTemplateRequest"
+      responses:
+        "200":
+          description: Updated document template.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentTemplateDetail"
+  /document-templates/{id}/parse-placeholders:
+    post:
+      operationId: parseDocumentTemplatePlaceholders
+      tags: [Document Templates]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Parsed placeholder inventory for the selected template draft.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ParseDocumentTemplatePlaceholdersResponse"
+  /document-template-versions/{id}/publish-draft:
+    post:
+      operationId: publishDocumentTemplateDraft
+      tags: [Document Templates]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PublishDocumentTemplateVersionRequest"
+      responses:
+        "200":
+          description: Published document template draft.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentTemplateDetail"
+  /document-generation/previews:
+    post:
+      operationId: createDocumentGenerationPreview
+      tags: [Document Generation]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DocumentGenerationPreviewRequest"
+      responses:
+        "200":
+          description: Created document generation preview job.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentGenerationJobDetail"
+  /document-generation/{id}:
+    get:
+      operationId: getDocumentGenerationJob
+      tags: [Document Generation]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Document generation job detail.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentGenerationJobDetail"
+  /document-generation/{id}/finalize:
+    post:
+      operationId: finalizeDocumentGeneration
+      tags: [Document Generation]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FinalizeDocumentGenerationRequest"
+      responses:
+        "200":
+          description: Finalized document generation job.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentGenerationJobDetail"
+  /document-validations/{id}:
+    get:
+      operationId: getDocumentValidationReport
+      tags: [Document Validation]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Validation report detail.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentValidationReportDetail"
+  /document-validations/{id}/recheck:
+    post:
+      operationId: recheckDocumentValidation
+      tags: [Document Validation]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecheckDocumentValidationRequest"
+      responses:
+        "200":
+          description: Recomputed validation report.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentValidationReportDetail"
+  /approval-routes:
+    get:
+      operationId: listApprovalRoutes
+      tags: [Approvals]
+      responses:
+        "200":
+          description: Approval routes.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ApprovalRouteSummary"
+    post:
+      operationId: createApprovalRoute
+      tags: [Approvals]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateApprovalRouteRequest"
+      responses:
+        "200":
+          description: Created approval route.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApprovalRouteDetail"
+  /approval-routes/{id}:
+    get:
+      operationId: getApprovalRoute
+      tags: [Approvals]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Approval route detail.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApprovalRouteDetail"
+    patch:
+      operationId: updateApprovalRoute
+      tags: [Approvals]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateApprovalRouteRequest"
+      responses:
+        "200":
+          description: Updated approval route.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApprovalRouteDetail"
+  /approval-tasks:
+    get:
+      operationId: listApprovalTasks
+      tags: [Approvals]
+      responses:
+        "200":
+          description: Approval tasks inbox.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ApprovalTaskSummary"
+  /approval-tasks/{id}/approve:
+    post:
+      operationId: approveApprovalTask
+      tags: [Approvals]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApprovalTaskDecisionRequest"
+      responses:
+        "200":
+          description: Approved task.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApprovalTaskSummary"
+  /approval-tasks/{id}/reject:
+    post:
+      operationId: rejectApprovalTask
+      tags: [Approvals]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApprovalTaskDecisionRequest"
+      responses:
+        "200":
+          description: Rejected task.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApprovalTaskSummary"
+  /workflow-runtime/document-template/execute:
+    post:
+      operationId: executeWorkflowRuntimeDocumentTemplate
+      tags: [Workflow Runtime]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkflowRuntimeDocumentTemplateExecuteRequest"
+      responses:
+        "200":
+          description: Runtime document template execution result.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentGenerationJobDetail"
+  /workflow-runtime/document-validation/execute:
+    post:
+      operationId: executeWorkflowRuntimeDocumentValidation
+      tags: [Workflow Runtime]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkflowRuntimeDocumentValidationExecuteRequest"
+      responses:
+        "200":
+          description: Runtime validation execution result.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentValidationReportDetail"
+  /workflow-runtime/approval-request/execute:
+    post:
+      operationId: executeWorkflowRuntimeApprovalRequest
+      tags: [Workflow Runtime]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkflowRuntimeApprovalRequestExecuteRequest"
+      responses:
+        "200":
+          description: Runtime approval task creation result.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApprovalTaskSummary"
+  /profile-imports:
+    post:
+      operationId: createProfileImportJob
+      tags: [Profiles]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateProfileImportJobRequest"
+      responses:
+        "200":
+          description: Created profile import job.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfileImportJobSummary"
+  /automations/{id}/runs/preflight:
+    post:
+      operationId: preflightAutomationRun
+      tags: [Runs]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RunPreflightRequest"
+      responses:
+        "200":
+          description: Preflight readiness report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RunPreflightReport"
+  /automations/{id}/runs:
+    post:
+      operationId: createAutomationRun
+      tags: [Runs]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RunCreateRequest"
+      responses:
+        "200":
+          description: Run created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RunCreateResponse"
+  /runs/{runId}:
+    get:
+      operationId: getRun
+      tags: [Runs]
+      parameters:
+        - $ref: "#/components/parameters/RunId"
+      responses:
+        "200":
+          description: Run snapshot
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RunSnapshot"
+  /runs/{runId}/live-snapshot:
+    get:
+      operationId: getRunLiveSnapshot
+      tags: [Runs]
+      parameters:
+        - $ref: "#/components/parameters/RunId"
+      responses:
+        "200":
+          description: Run snapshot with live topics and snapshot version
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RunLiveSnapshot"
+  /runs/{runId}/cancel:
+    post:
+      operationId: cancelRun
+      tags: [Runs]
+      parameters:
+        - $ref: "#/components/parameters/RunId"
+      responses:
+        "200":
+          description: Run cancelled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RunSnapshot"
+  /runs/{runId}/retry:
+    post:
+      operationId: retryRun
+      tags: [Runs]
+      parameters:
+        - $ref: "#/components/parameters/RunId"
+      responses:
+        "200":
+          description: Retry created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RunCreateResponse"
+  /runs/{runId}/steps/{stepId}/retry:
+    post:
+      operationId: retryRunStep
+      tags: [Runs]
+      parameters:
+        - $ref: "#/components/parameters/RunId"
+        - in: path
+          name: stepId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Run snapshot after step retry request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RunSnapshot"
+  /artifacts/{artifactId}/signed-url:
+    post:
+      operationId: createArtifactSignedUrl
+      tags: [Runs]
+      parameters:
+        - in: path
+          name: artifactId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ArtifactSignedUrlRequest"
+      responses:
+        "200":
+          description: Signed URL for artifact document
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SignedUrlResponse"
+  /artifacts/{artifactId}/accept-as-document:
+    post:
+      operationId: acceptArtifactAsDocument
+      tags: [Runs]
+      parameters:
+        - in: path
+          name: artifactId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Artifact accepted as canonical document
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ArtifactAcceptAsDocumentResponse"
+  /approval-tasks/{id}:
+    get:
+      operationId: getApprovalTask
+      tags: [Approvals]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Approval task detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApprovalTaskDetail"
+  /approval-tasks/{id}/request-changes:
+    post:
+      operationId: requestApprovalTaskChanges
+      tags: [Approvals]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApprovalTaskRequestChangesRequest"
+      responses:
+        "200":
+          description: Approval task updated with changes requested
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApprovalTaskDetail"
+  /integrations/delivery/status:
+    get:
+      operationId: getDeliveryIntegrationStatus
+      tags: [Delivery]
+      responses:
+        "200":
+          description: Delivery transport and sandbox receiver status.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+                required: [transport, canSend, dependencies]
+                properties:
+                  transport:
+                    type: string
+                  canSend:
+                    type: boolean
+                  webhookUrlConfigured:
+                    type: boolean
+                  sandbox:
+                    type: object
+                    additionalProperties: true
+                  dependencies:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: true
+  /delivery/sandbox/test:
+    post:
+      operationId: runDeliverySandboxTest
+      tags: [Delivery]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+              properties:
+                subject:
+                  type: string
+                body:
+                  type: string
+                recipientEmails:
+                  type: array
+                  items:
+                    type: string
+                metadata:
+                  type: object
+                  additionalProperties: true
+      responses:
+        "200":
+          description: Delivery sandbox accepted a webhook test payload.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+                required: [status, provider, providerMessageId, sandbox]
+                properties:
+                  status:
+                    type: string
+                  provider:
+                    type: string
+                  providerMessageId:
+                    type: string
+                  responsePayload:
+                    type: object
+                    additionalProperties: true
+                  sandbox:
+                    type: object
+                    additionalProperties: true
+  /delivery-requests/{id}:
+    get:
+      operationId: getDeliveryRequest
+      tags: [Delivery]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Delivery request detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeliveryRequestDetail"
+  /delivery-requests/{id}/preview:
+    post:
+      operationId: previewDeliveryRequest
+      tags: [Delivery]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Delivery preview
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeliveryPreview"
+  /delivery-requests/{id}/approve:
+    post:
+      operationId: approveDeliveryRequest
+      tags: [Delivery]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Delivery request approved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeliveryRequestDetail"
+  /delivery-requests/{id}/send:
+    post:
+      operationId: sendDeliveryRequest
+      tags: [Delivery]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Delivery request sent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeliveryRequestDetail"
+  /delivery-requests/{id}/cancel:
+    post:
+      operationId: cancelDeliveryRequest
+      tags: [Delivery]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Delivery request cancelled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeliveryRequestDetail"
+  /delivery-requests/{id}/retry:
+    post:
+      operationId: retryDeliveryRequest
+      tags: [Delivery]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Delivery request reset for retry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeliveryRequestDetail"
+  /notifications:
+    get:
+      operationId: listNotifications
+      tags: [Notifications]
+      parameters:
+        - in: query
+          name: cursor
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: limit
+          required: false
+          schema:
+            type: integer
+        - in: query
+          name: status
+          required: false
+          schema:
+            type: string
+            enum: [all, unread, read]
+        - in: query
+          name: type
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: User-scoped notifications inbox
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationListResponse"
+  /notifications/{id}/read:
+    post:
+      operationId: markNotificationRead
+      tags: [Notifications]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Notification marked as read
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationSummary"
+  /notifications/read-all:
+    post:
+      operationId: markAllNotificationsRead
+      tags: [Notifications]
+      responses:
+        "200":
+          description: All readable notifications marked as read
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status, updatedCount]
+                properties:
+                  status:
+                    type: string
+                    enum: [ok]
+                  updatedCount:
+                    type: integer
+  /devices/register:
+    post:
+      operationId: registerDevice
+      tags: [Notifications]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeviceRegistrationRequest"
+      responses:
+        "200":
+          description: Device token registered for notifications
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RegisteredDevice"
+  /devices/{id}:
+    delete:
+      operationId: removeDevice
+      tags: [Notifications]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Device token removed
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status]
+                properties:
+                  status:
+                    type: string
+                    enum: [removed]
+  /dashboard/snapshot:
+    get:
+      operationId: getDashboardSnapshot
+      tags: [Dashboard]
+      responses:
+        "200":
+          description: Aggregated realtime dashboard snapshot
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSnapshot"
+  /dashboard/events:
+    get:
+      operationId: listDashboardEvents
+      tags: [Dashboard]
+      parameters:
+        - in: query
+          name: since_sequence
+          required: false
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Live event journal slice for resync and gap recovery
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardEventListResponse"
+  /system/status:
+    get:
+      operationId: getSystemStatus
+      tags: [Dashboard]
+      responses:
+        "200":
+          description: Lightweight operational status summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SystemStatusSummary"
+  /runtime/runs/{runId}/step-events:
+    post:
+      operationId: handleRuntimeStepEvent
+      tags: [Activepieces Callbacks]
+      parameters:
+        - $ref: "#/components/parameters/RunId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ActivepiecesStepEventCallback"
+      responses:
+        "200":
+          description: Runtime step callback processed
+  /runtime/runs/{runId}/artifacts:
+    post:
+      operationId: ingestRuntimeArtifactCanonical
+      tags: [Activepieces Callbacks]
+      parameters:
+        - $ref: "#/components/parameters/RunId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateRunArtifactRequest"
+      responses:
+        "200":
+          description: Runtime artifact ingested
+  /runtime/approval-gates:
+    post:
+      operationId: handleRuntimeApprovalGate
+      tags: [Activepieces Callbacks]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RuntimeApprovalGateCallback"
+      responses:
+        "200":
+          description: Runtime approval gate processed
+  /runtime/delivery-gates:
+    post:
+      operationId: handleRuntimeDeliveryGate
+      tags: [Activepieces Callbacks]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RuntimeDeliveryGateCallback"
+      responses:
+        "200":
+          description: Runtime delivery gate processed
+components:
+  parameters:
+    WorkspaceId:
+      in: path
+      name: workspaceId
+      required: true
+      schema:
+        type: string
+    MemberId:
+      in: path
+      name: memberId
+      required: true
+      schema:
+        type: string
+    InvitationId:
+      in: path
+      name: invitationId
+      required: true
+      schema:
+        type: string
+    DocumentId:
+      in: path
+      name: documentId
+      required: true
+      schema:
+        type: string
+    VersionId:
+      in: path
+      name: versionId
+      required: true
+      schema:
+        type: string
+    RunId:
+      in: path
+      name: runId
+      required: true
+      schema:
+        type: string
+    LegalSourceId:
+      in: path
+      name: sourceId
+      required: true
+      schema:
+        type: string
+    LegalImportJobId:
+      in: path
+      name: jobId
+      required: true
+      schema:
+        type: string
+    RagRequestId:
+      in: path
+      name: requestId
+      required: true
+      schema:
+        type: string
+  schemas:
+    ActorSummary:
+      type: object
+      required: [id, email, fullName, locale, timezone, onboardingStatus]
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+          format: email
+        fullName:
+          type: [string, "null"]
+        locale:
+          type: string
+        timezone:
+          type: string
+        onboardingStatus:
+          type: string
+          enum: [new, email_unconfirmed, ready]
+    WorkspaceSummary:
+      type: object
+      required: [id, slug, name, role, status]
+      properties:
+        id:
+          type: string
+        slug:
+          type: string
+        name:
+          type: string
+        role:
+          type: string
+          enum:
+            [
+              owner,
+              admin,
+              lawyer,
+              assistant,
+              viewer,
+              security_admin,
+              billing_admin,
+            ]
+        status:
+          type: string
+          enum: [active, archived, suspended]
+    SessionContext:
+      type: object
+      required:
+        [
+          state,
+          requestId,
+          actor,
+          activeWorkspace,
+          workspaces,
+          roles,
+          permissions,
+          featureFlags,
+          dataPolicy,
+          security,
+        ]
+      properties:
+        state:
+          type: string
+          enum:
+            [
+              unauthenticated,
+              email_unconfirmed,
+              needs_workspace,
+              needs_mfa,
+              ready,
+            ]
+        requestId:
+          type: string
+        actor:
+          oneOf:
+            - $ref: "#/components/schemas/ActorSummary"
+            - type: "null"
+        activeWorkspace:
+          oneOf:
+            - $ref: "#/components/schemas/WorkspaceSummary"
+            - type: "null"
+        workspaces:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorkspaceSummary"
+        roles:
+          type: array
+          items:
+            type: string
+        permissions:
+          type: array
+          items:
+            type: string
+        featureFlags:
+          type: array
+          items:
+            type: string
+        dataPolicy:
+          type: object
+          required:
+            [aiAllowed, directSupabaseRead, externalDeliveryRequiresApproval]
+          properties:
+            aiAllowed:
+              type: boolean
+            directSupabaseRead:
+              type: boolean
+            externalDeliveryRequiresApproval:
+              type: boolean
+        security:
+          type: object
+          required:
+            [
+              mfaRequired,
+              ssoRequired,
+              sessionRisk,
+              adminActionsRequireReauth,
+              aiSensitiveDataPolicy,
+              externalDeliveryRequiresApproval,
+            ]
+          properties:
+            mfaRequired:
+              type: boolean
+            ssoRequired:
+              type: boolean
+            sessionRisk:
+              type: string
+              enum: [low, medium, high]
+            adminActionsRequireReauth:
+              type: boolean
+            aiSensitiveDataPolicy:
+              type: string
+              enum: [allow, block, zdr_or_block, private_only]
+            externalDeliveryRequiresApproval:
+              type: boolean
+    CreateWorkspaceRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        slug:
+          type: string
+    UpdateWorkspaceRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        status:
+          type: string
+          enum: [active, archived, suspended]
+    WorkspaceMember:
+      type: object
+      required:
+        [id, userId, email, fullName, role, status, joinedAt, lastActiveAt]
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        email:
+          type: string
+          format: email
+        fullName:
+          type: [string, "null"]
+        role:
+          type: string
+        status:
+          type: string
+          enum: [active, removed]
+        joinedAt:
+          type: string
+          format: date-time
+        lastActiveAt:
+          type: [string, "null"]
+          format: date-time
+    CreateWorkspaceInvitationRequest:
+      type: object
+      required: [email, role]
+      properties:
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+          enum:
+            [
+              owner,
+              admin,
+              lawyer,
+              assistant,
+              viewer,
+              security_admin,
+              billing_admin,
+            ]
+        expiresInDays:
+          type: integer
+    WorkspaceInvitation:
+      type: object
+      required:
+        [
+          id,
+          email,
+          role,
+          status,
+          expiresAt,
+          createdAt,
+          acceptedAt,
+          revokedAt,
+          deliveryMode,
+        ]
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+        status:
+          type: string
+          enum: [pending, accepted, revoked, expired]
+        expiresAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        acceptedAt:
+          type: [string, "null"]
+          format: date-time
+        revokedAt:
+          type: [string, "null"]
+          format: date-time
+        deliveryMode:
+          type: string
+          const: mock
+        deliveryPreview:
+          type: object
+          additionalProperties: false
+          properties:
+            acceptToken:
+              type: string
+            acceptUrl:
+              type: string
+              format: uri
+    AcceptWorkspaceInvitationRequest:
+      type: object
+      required: [token]
+      properties:
+        token:
+          type: string
+    UpdateWorkspaceMemberRoleRequest:
+      type: object
+      required: [role]
+      properties:
+        role:
+          type: string
+          enum:
+            [
+              owner,
+              admin,
+              lawyer,
+              assistant,
+              viewer,
+              security_admin,
+              billing_admin,
+            ]
+    RoleDefinition:
+      type: object
+      required: [code, label, description, permissions]
+      properties:
+        code:
+          type: string
+        label:
+          type: string
+        description:
+          type: string
+        permissions:
+          type: array
+          items:
+            type: string
+    PermissionDefinition:
+      type: object
+      required: [code, label, description, scope, highRisk]
+      properties:
+        code:
+          type: string
+        label:
+          type: string
+        description:
+          type: string
+        scope:
+          type: string
+          enum:
+            [
+              workspace,
+              profile,
+              document,
+              module,
+              automation,
+              activepieces,
+              moderation,
+              recommendation,
+              billing,
+              audit,
+            ]
+        highRisk:
+          type: boolean
+    SecurityAccountState:
+      type: object
+      required:
+        [
+          userId,
+          email,
+          emailConfirmed,
+          assuranceLevel,
+          mfaRequiredForAdminActions,
+          currentRoles,
+          activeSessionCount,
+          ssoRequired,
+          sessionRisk,
+        ]
+      properties:
+        userId:
+          type: string
+        email:
+          type: string
+          format: email
+        emailConfirmed:
+          type: boolean
+        assuranceLevel:
+          type: string
+          enum: [aal1, aal2]
+        mfaRequiredForAdminActions:
+          type: boolean
+        currentRoles:
+          type: array
+          items:
+            type: string
+        activeSessionCount:
+          type: integer
+        ssoRequired:
+          type: boolean
+        sessionRisk:
+          type: string
+          enum: [low, medium, high]
+    AuditEventSummary:
+      type: object
+      required:
+        [
+          id,
+          occurredAt,
+          actorUserId,
+          actorEmail,
+          workspaceId,
+          action,
+          entityType,
+          entityId,
+          result,
+          reasonCode,
+          requestId,
+          traceId,
+          eventCategory,
+          sessionId,
+          dataClass,
+          metadata,
+        ]
+      properties:
+        id:
+          type: string
+        occurredAt:
+          type: string
+          format: date-time
+        actorUserId:
+          type: [string, "null"]
+        actorEmail:
+          type: [string, "null"]
+          format: email
+        workspaceId:
+          type: [string, "null"]
+        action:
+          type: string
+        entityType:
+          type: [string, "null"]
+        entityId:
+          type: [string, "null"]
+        result:
+          type: string
+          enum: [success, denied, error]
+        reasonCode:
+          type: [string, "null"]
+        requestId:
+          type: [string, "null"]
+        traceId:
+          type: [string, "null"]
+        eventCategory:
+          type: [string, "null"]
+        sessionId:
+          type: [string, "null"]
+        dataClass:
+          type: [string, "null"]
+        metadata:
+          type: object
+          additionalProperties: true
+    LibraryTemplateSummary:
+      type: object
+      required:
+        [
+          id,
+          code,
+          title,
+          category,
+          status,
+          owner,
+          scope,
+          version,
+          readiness,
+          requiredPermissions,
+          moduleCodes,
+          description,
+          publicationStatus,
+          compatibilityStatus,
+          runtimeSyncState,
+          available,
+          disabledReason,
+        ]
+      properties:
+        id:
+          type: string
+        code:
+          type: string
+        title:
+          type: string
+        category:
+          type: string
+        status:
+          type: string
+          enum: [draft, ready, blocked]
+        owner:
+          type: string
+          enum: [lexframe, workspace, public, private]
+        scope:
+          type: string
+          enum: [product, workspace, public, private]
+        version:
+          type: string
+        readiness:
+          type: string
+        requiredPermissions:
+          type: array
+          items:
+            type: string
+        moduleCodes:
+          type: array
+          items:
+            type: string
+        description:
+          type: string
+        publicationStatus:
+          type: string
+          enum:
+            [not_requested, submitted, approved, rejected, changes_requested]
+        compatibilityStatus:
+          $ref: "#/components/schemas/CompatibilityStatus"
+        runtimeSyncState:
+          $ref: "#/components/schemas/RuntimeSyncState"
+        available:
+          type: boolean
+        disabledReason:
+          type: [string, "null"]
+    RuntimeSyncState:
+      type: string
+      enum: [not_requested, pending, synced, failed]
+    CompatibilityStatus:
+      type: string
+      enum:
+        [compatible, runtime_sync_pending, missing_requirements, policy_blocked]
+    TemplateRequirement:
+      type: object
+      required:
+        [code, label, kind, description, status, optional, sourceDocumentId]
+      properties:
+        code:
+          type: string
+        label:
+          type: string
+        kind:
+          type: string
+          enum: [document, profile, connection, approval, permission]
+        description:
+          type: string
+        status:
+          type: string
+          enum: [ready, missing, blocked]
+        optional:
+          type: boolean
+        sourceDocumentId:
+          type: [string, "null"]
+    LegalModuleIoSchema:
+      type: object
+      required: [code, label, schema]
+      properties:
+        code:
+          type: string
+        label:
+          type: string
+        schema:
+          type: object
+          additionalProperties: true
+    LegalModuleVersionSummary:
+      type: object
+      required:
+        [
+          id,
+          version,
+          status,
+          validationStatus,
+          validationIssues,
+          createdAt,
+          publishedAt,
+        ]
+      properties:
+        id:
+          type: string
+        version:
+          type: string
+        status:
+          type: string
+          enum: [draft, published, deprecated]
+        validationStatus:
+          type: string
+          enum: [valid, invalid]
+        validationIssues:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+          format: date-time
+        publishedAt:
+          type: [string, "null"]
+          format: date-time
+    LegalModuleSummary:
+      type: object
+      required:
+        [
+          code,
+          title,
+          category,
+          description,
+          riskLevel,
+          publishedVersion,
+          status,
+          inputCodes,
+          outputCodes,
+          available,
+          disabledReason,
+          compatibilityStatus,
+        ]
+      properties:
+        code:
+          type: string
+        title:
+          type: string
+        category:
+          type: string
+        description:
+          type: string
+        riskLevel:
+          type: string
+          enum: [low, medium, high]
+        publishedVersion:
+          type: [string, "null"]
+        status:
+          type: string
+          enum: [draft, published, deprecated]
+        inputCodes:
+          type: array
+          items:
+            type: string
+        outputCodes:
+          type: array
+          items:
+            type: string
+        available:
+          type: boolean
+        disabledReason:
+          type: [string, "null"]
+        compatibilityStatus:
+          $ref: "#/components/schemas/CompatibilityStatus"
+    LegalModuleDetail:
+      allOf:
+        - $ref: "#/components/schemas/LegalModuleSummary"
+        - type: object
+          required:
+            [versions, inputs, outputs, requirements, runtimeMapping, examples]
+          properties:
+            versions:
+              type: array
+              items:
+                $ref: "#/components/schemas/LegalModuleVersionSummary"
+            inputs:
+              type: array
+              items:
+                $ref: "#/components/schemas/LegalModuleIoSchema"
+            outputs:
+              type: array
+              items:
+                $ref: "#/components/schemas/LegalModuleIoSchema"
+            requirements:
+              type: array
+              items:
+                $ref: "#/components/schemas/TemplateRequirement"
+            runtimeMapping:
+              type: object
+              additionalProperties: true
+            examples:
+              type: array
+              items:
+                type: string
+    AutomationTemplateVersionSummary:
+      type: object
+      required:
+        [
+          id,
+          version,
+          status,
+          publicationStatus,
+          validationStatus,
+          validationIssues,
+          createdAt,
+          publishedAt,
+          moduleCodes,
+          requiredInputs,
+        ]
+      properties:
+        id:
+          type: string
+        version:
+          type: string
+        status:
+          type: string
+          enum: [draft, published, deprecated]
+        publicationStatus:
+          type: string
+          enum:
+            [not_requested, submitted, approved, rejected, changes_requested]
+        validationStatus:
+          type: string
+          enum: [valid, invalid]
+        validationIssues:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+          format: date-time
+        publishedAt:
+          type: [string, "null"]
+          format: date-time
+        moduleCodes:
+          type: array
+          items:
+            type: string
+        requiredInputs:
+          type: array
+          items:
+            type: string
+    AutomationTemplateDetail:
+      allOf:
+        - $ref: "#/components/schemas/LibraryTemplateSummary"
+        - type: object
+          required:
+            [
+              versions,
+              requirements,
+              workflow,
+              sourceTemplateId,
+              sourceTemplateVersionId,
+              relatedTemplateIds,
+              editable,
+            ]
+          properties:
+            versions:
+              type: array
+              items:
+                $ref: "#/components/schemas/AutomationTemplateVersionSummary"
+            requirements:
+              type: array
+              items:
+                $ref: "#/components/schemas/TemplateRequirement"
+            workflow:
+              type: object
+              additionalProperties: true
+            sourceTemplateId:
+              type: [string, "null"]
+            sourceTemplateVersionId:
+              type: [string, "null"]
+            relatedTemplateIds:
+              type: array
+              items:
+                type: string
+            editable:
+              type: boolean
+    ValidateLegalModuleStepRequest:
+      type: object
+      required: [moduleCode, inputCodes, outputCodes]
+      properties:
+        moduleCode:
+          type: string
+        inputCodes:
+          type: array
+          items:
+            type: string
+        outputCodes:
+          type: array
+          items:
+            type: string
+        requiresApproval:
+          type: boolean
+    WorkflowValidationSummary:
+      type: object
+      required: [ok, issues]
+      properties:
+        ok:
+          type: boolean
+        issues:
+          type: array
+          items:
+            type: string
+    CreateAutomationTemplateRequest:
+      type: object
+      required:
+        [
+          code,
+          title,
+          category,
+          description,
+          scope,
+          requiredPermissions,
+          moduleCodes,
+          workflow,
+          requirements,
+        ]
+      properties:
+        code:
+          type: string
+        title:
+          type: string
+        category:
+          type: string
+        description:
+          type: string
+        scope:
+          type: string
+          enum: [workspace, private]
+        requiredPermissions:
+          type: array
+          items:
+            type: string
+        moduleCodes:
+          type: array
+          items:
+            type: string
+        workflow:
+          type: object
+          additionalProperties: true
+        requirements:
+          type: array
+          items:
+            $ref: "#/components/schemas/TemplateRequirement"
+        sourceTemplateId:
+          type: [string, "null"]
+    UpdateAutomationTemplateRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        category:
+          type: string
+        description:
+          type: string
+        requiredPermissions:
+          type: array
+          items:
+            type: string
+    CreateAutomationTemplateVersionRequest:
+      type: object
+      required: [version, workflow, requirements]
+      properties:
+        version:
+          type: string
+        workflow:
+          type: object
+          additionalProperties: true
+        requirements:
+          type: array
+          items:
+            $ref: "#/components/schemas/TemplateRequirement"
+    InstallAutomationTemplateRequest:
+      type: object
+      properties:
+        workspaceId:
+          type: string
+        profileId:
+          type: [string, "null"]
+        documentIds:
+          type: array
+          items:
+            type: string
+        connectionIds:
+          type: array
+          items:
+            type: string
+        approvalPolicy:
+          type: string
+          enum: [manual, auto_with_gate]
+    ForkAutomationTemplateRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        targetScope:
+          type: string
+          enum: [workspace, private]
+    SubmitPublicationRequest:
+      type: object
+      properties:
+        note:
+          type: string
+    InstalledAutomationDetail:
+      type: object
+      required:
+        [
+          id,
+          title,
+          version,
+          workspaceId,
+          templateId,
+          sourceTemplateVersionId,
+          workflowState,
+          builderState,
+          syncState,
+          compatibilityStatus,
+          available,
+          disabledReason,
+          requiredInputs,
+          requirements,
+          missingConnections,
+          nextGate,
+          runtimeProjectId,
+          runtimeFlowId,
+          syncHash,
+          lastSyncedAt,
+          requirementsSummary,
+          canOpenBuilder,
+          canRun,
+        ]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        version:
+          type: string
+        workspaceId:
+          type: string
+        templateId:
+          type: string
+        sourceTemplateVersionId:
+          type: string
+        workflowState:
+          type: string
+          enum: [draft, compiled, execution_ready]
+        builderState:
+          type: string
+          enum: [unavailable, mock, ready]
+        syncState:
+          $ref: "#/components/schemas/RuntimeSyncState"
+        compatibilityStatus:
+          $ref: "#/components/schemas/CompatibilityStatus"
+        available:
+          type: boolean
+        disabledReason:
+          type: [string, "null"]
+        requiredInputs:
+          type: array
+          items:
+            type: string
+        requirements:
+          type: array
+          items:
+            $ref: "#/components/schemas/TemplateRequirement"
+        missingConnections:
+          type: array
+          items:
+            type: string
+        nextGate:
+          type: string
+        runtimeProjectId:
+          type: [string, "null"]
+        runtimeFlowId:
+          type: [string, "null"]
+        syncHash:
+          type: [string, "null"]
+        lastSyncedAt:
+          type: [string, "null"]
+          format: date-time
+        requirementsSummary:
+          type: object
+          required: [ready, missing, blocked]
+          properties:
+            ready:
+              type: integer
+            missing:
+              type: integer
+            blocked:
+              type: integer
+        canOpenBuilder:
+          type: boolean
+        canRun:
+          type: boolean
+    InstalledAutomationSourceDiff:
+      type: object
+      required:
+        [
+          installedAutomationId,
+          sourceTemplateId,
+          sourceTemplateVersionId,
+          targetTemplateVersionId,
+          hasUpdates,
+          changedModuleCodes,
+          changedRequirementCodes,
+          summary,
+        ]
+      properties:
+        installedAutomationId:
+          type: string
+        sourceTemplateId:
+          type: string
+        sourceTemplateVersionId:
+          type: string
+        targetTemplateVersionId:
+          type: string
+        hasUpdates:
+          type: boolean
+        changedModuleCodes:
+          type: array
+          items:
+            type: string
+        changedRequirementCodes:
+          type: array
+          items:
+            type: string
+        summary:
+          type: string
+    ApplyInstalledAutomationSourceUpdateRequest:
+      type: object
+      required: [targetTemplateVersionId]
+      properties:
+        targetTemplateVersionId:
+          type: string
+    PublicationRequest:
+      type: object
+      required:
+        [
+          id,
+          templateId,
+          templateVersionId,
+          workspaceId,
+          status,
+          submittedAt,
+          reviewedAt,
+          reviewerUserId,
+          reviewNote,
+          publicTemplateId,
+        ]
+      properties:
+        id:
+          type: string
+        templateId:
+          type: string
+        templateVersionId:
+          type: string
+        workspaceId:
+          type: string
+        status:
+          type: string
+          enum: [submitted, approved, rejected, changes_requested]
+        submittedAt:
+          type: string
+          format: date-time
+        reviewedAt:
+          type: [string, "null"]
+          format: date-time
+        reviewerUserId:
+          type: [string, "null"]
+        reviewNote:
+          type: [string, "null"]
+        publicTemplateId:
+          type: [string, "null"]
+    ModerationDecision:
+      type: object
+      required: [decision, note]
+      properties:
+        decision:
+          type: string
+          enum: [approve, reject, request_changes]
+        note:
+          type: string
+    DocumentKind:
+      type: string
+      enum:
+        [
+          case_material,
+          evidence,
+          legal_source,
+          document_template,
+          generated_document,
+          draft_document,
+          delivery_attachment,
+          profile_clause,
+          other,
+        ]
+    DocumentStatus:
+      type: string
+      enum:
+        [
+          upload_pending,
+          uploaded,
+          processing,
+          ready,
+          failed,
+          archived,
+          soft_deleted,
+          hard_delete_pending,
+        ]
+    DocumentSource:
+      type: string
+      enum:
+        [
+          user_upload,
+          automation_result,
+          activepieces_artifact,
+          ai_generated,
+          template_library,
+          profile_library,
+          system_import,
+        ]
+    DocumentObjectRole:
+      type: string
+      enum: [original, preview_pdf, thumbnail, extracted_text, redacted_copy]
+    DocumentJobType:
+      type: string
+      enum:
+        [
+          virus_scan,
+          metadata_extract,
+          text_extract,
+          preview_generate,
+          thumbnail_generate,
+          index_prepare,
+        ]
+    DocumentJobStatus:
+      type: string
+      enum: [queued, running, completed, failed, skipped]
+    DocumentScanStatus:
+      type: string
+      enum:
+        [
+          not_started,
+          queued,
+          clean,
+          infected,
+          manual_review_required,
+          not_configured,
+        ]
+    DocumentPreviewStatus:
+      type: string
+      enum: [not_started, queued, ready, failed]
+    DocumentExtractionStatus:
+      type: string
+      enum: [not_started, queued, ready, failed, requires_ocr]
+    StorageState:
+      type: string
+      enum: [private_bucket, signed_url_only, quarantined, draft]
+    UploadMethod:
+      type: string
+      enum: [direct, backend_proxy, service_ingest]
+    DocumentVersionSummary:
+      type: object
+      required:
+        [
+          id,
+          documentId,
+          versionNo,
+          status,
+          originalFilename,
+          mimeType,
+          sizeBytes,
+          sha256,
+          storageState,
+          scanStatus,
+          previewStatus,
+          extractionStatus,
+          createdAt,
+          completedAt,
+        ]
+      properties:
+        id:
+          type: string
+        documentId:
+          type: string
+        versionNo:
+          type: integer
+        status:
+          $ref: "#/components/schemas/DocumentStatus"
+        originalFilename:
+          type: string
+        mimeType:
+          type: string
+        sizeBytes:
+          type: integer
+        sha256:
+          type: [string, "null"]
+        storageState:
+          $ref: "#/components/schemas/StorageState"
+        scanStatus:
+          $ref: "#/components/schemas/DocumentScanStatus"
+        previewStatus:
+          $ref: "#/components/schemas/DocumentPreviewStatus"
+        extractionStatus:
+          $ref: "#/components/schemas/DocumentExtractionStatus"
+        createdAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: [string, "null"]
+          format: date-time
+    DocumentStorageObject:
+      type: object
+      required: [id, versionId, role, mimeType, sizeBytes, status, createdAt]
+      properties:
+        id:
+          type: string
+        versionId:
+          type: string
+        role:
+          $ref: "#/components/schemas/DocumentObjectRole"
+        mimeType:
+          type: string
+        sizeBytes:
+          type: [integer, "null"]
+        status:
+          $ref: "#/components/schemas/StorageState"
+        createdAt:
+          type: string
+          format: date-time
+    DocumentRelation:
+      type: object
+      required: [id, relationType, targetEntityType, targetEntityId, createdAt]
+      properties:
+        id:
+          type: string
+        relationType:
+          type: string
+        targetEntityType:
+          type: string
+        targetEntityId:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    DocumentProcessingJob:
+      type: object
+      required:
+        [
+          id,
+          versionId,
+          jobType,
+          status,
+          attempts,
+          maxAttempts,
+          lastError,
+          createdAt,
+          updatedAt,
+        ]
+      properties:
+        id:
+          type: string
+        versionId:
+          type: string
+        jobType:
+          $ref: "#/components/schemas/DocumentJobType"
+        status:
+          $ref: "#/components/schemas/DocumentJobStatus"
+        attempts:
+          type: integer
+        maxAttempts:
+          type: integer
+        lastError:
+          type: [string, "null"]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    DocumentSummary:
+      type: object
+      required:
+        [
+          id,
+          workspaceId,
+          ownerId,
+          title,
+          description,
+          kind,
+          status,
+          classification,
+          source,
+          tags,
+          currentVersion,
+          createdAt,
+          updatedAt,
+          archivedAt,
+          deletedAt,
+        ]
+      properties:
+        id:
+          type: string
+        workspaceId:
+          type: string
+        ownerId:
+          type: string
+        title:
+          type: string
+        description:
+          type: [string, "null"]
+        kind:
+          $ref: "#/components/schemas/DocumentKind"
+        status:
+          $ref: "#/components/schemas/DocumentStatus"
+        classification:
+          type: string
+          enum:
+            [
+              public,
+              internal,
+              confidential,
+              legal_secret,
+              personal_data,
+              client_material,
+            ]
+        source:
+          $ref: "#/components/schemas/DocumentSource"
+        tags:
+          type: array
+          items:
+            type: string
+        currentVersion:
+          oneOf:
+            - $ref: "#/components/schemas/DocumentVersionSummary"
+            - type: "null"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        archivedAt:
+          type: [string, "null"]
+          format: date-time
+        deletedAt:
+          type: [string, "null"]
+          format: date-time
+    DocumentDetail:
+      allOf:
+        - $ref: "#/components/schemas/DocumentSummary"
+        - type: object
+          required:
+            [
+              versions,
+              storageObjects,
+              relations,
+              processingJobs,
+              availableActions,
+            ]
+          properties:
+            versions:
+              type: array
+              items:
+                $ref: "#/components/schemas/DocumentVersionSummary"
+            storageObjects:
+              type: array
+              items:
+                $ref: "#/components/schemas/DocumentStorageObject"
+            relations:
+              type: array
+              items:
+                $ref: "#/components/schemas/DocumentRelation"
+            processingJobs:
+              type: array
+              items:
+                $ref: "#/components/schemas/DocumentProcessingJob"
+            availableActions:
+              type: object
+              required:
+                [
+                  canUploadVersion,
+                  canDelete,
+                  canRestore,
+                  canManageTemplate,
+                  canRequestSignedUrl,
+                ]
+              properties:
+                canUploadVersion:
+                  type: boolean
+                canDelete:
+                  type: boolean
+                canRestore:
+                  type: boolean
+                canManageTemplate:
+                  type: boolean
+                canRequestSignedUrl:
+                  type: boolean
+    DocumentListResponse:
+      type: object
+      required: [items, nextCursor]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/DocumentSummary"
+        nextCursor:
+          type: [string, "null"]
+    DocumentUploadIntentRequest:
+      type: object
+      required:
+        [title, kind, classification, originalFilename, mimeType, sizeBytes]
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        kind:
+          $ref: "#/components/schemas/DocumentKind"
+        classification:
+          type: string
+          enum:
+            [
+              public,
+              internal,
+              confidential,
+              legal_secret,
+              personal_data,
+              client_material,
+            ]
+        originalFilename:
+          type: string
+        mimeType:
+          type: string
+        sizeBytes:
+          type: integer
+        tags:
+          type: array
+          items:
+            type: string
+        relations:
+          type: array
+          items:
+            type: object
+            required: [relationType, targetEntityType, targetEntityId]
+            properties:
+              relationType:
+                type: string
+              targetEntityType:
+                type: string
+              targetEntityId:
+                type: string
+    CreateDocumentVersionUploadIntentRequest:
+      type: object
+      required: [originalFilename, mimeType, sizeBytes]
+      properties:
+        originalFilename:
+          type: string
+        mimeType:
+          type: string
+        sizeBytes:
+          type: integer
+    DocumentUploadIntentResponse:
+      type: object
+      required:
+        [
+          documentId,
+          versionId,
+          bucket,
+          storagePath,
+          uploadMethod,
+          maxSizeBytes,
+          allowedMimeTypes,
+          expiresAt,
+        ]
+      properties:
+        documentId:
+          type: string
+        versionId:
+          type: string
+        bucket:
+          type: string
+        storagePath:
+          type: string
+        uploadMethod:
+          $ref: "#/components/schemas/UploadMethod"
+        maxSizeBytes:
+          type: integer
+        allowedMimeTypes:
+          type: array
+          items:
+            type: string
+        expiresAt:
+          type: string
+          format: date-time
+    CompleteUploadRequest:
+      type: object
+      required: [clientReportedSize, clientReportedMimeType]
+      properties:
+        clientReportedSize:
+          type: integer
+        clientReportedMimeType:
+          type: string
+        sha256:
+          type: [string, "null"]
+    SignedUrlRequest:
+      type: object
+      required: [objectRole, purpose]
+      properties:
+        versionId:
+          type: string
+        objectRole:
+          $ref: "#/components/schemas/DocumentObjectRole"
+        purpose:
+          type: string
+          enum: [download, preview]
+        expiresInSeconds:
+          type: integer
+    SignedUrlResponse:
+      type: object
+      required: [documentId, versionId, objectRole, signedUrl, expiresAt]
+      properties:
+        documentId:
+          type: string
+        versionId:
+          type: string
+        objectRole:
+          $ref: "#/components/schemas/DocumentObjectRole"
+        signedUrl:
+          type: string
+          format: uri
+        expiresAt:
+          type: string
+          format: date-time
+    DocumentMutationResult:
+      type: object
+      required: [status, documentId]
+      properties:
+        status:
+          type: string
+          enum: [archived, restored, deleted]
+        documentId:
+          type: string
+    CreateRunArtifactRequest:
+      type: object
+      required: [artifactType, title, mimeType, classification, source]
+      properties:
+        artifactType:
+          type: string
+        title:
+          type: string
+        mimeType:
+          type: string
+        classification:
+          type: string
+          enum:
+            [
+              public,
+              internal,
+              confidential,
+              legal_secret,
+              personal_data,
+              client_material,
+            ]
+        source:
+          $ref: "#/components/schemas/DocumentSource"
+        sourceDocumentId:
+          type: string
+    RunArtifact:
+      type: object
+      required:
+        [
+          id,
+          workflowRunId,
+          documentId,
+          documentVersionId,
+          artifactType,
+          title,
+          mimeType,
+          source,
+          createdAt,
+        ]
+      properties:
+        id:
+          type: string
+        workflowRunId:
+          type: string
+        documentId:
+          type: string
+        documentVersionId:
+          type: string
+        artifactType:
+          type: string
+        title:
+          type: string
+        mimeType:
+          type: string
+        source:
+          $ref: "#/components/schemas/DocumentSource"
+        createdAt:
+          type: string
+          format: date-time
+    RunSummary:
+      type: object
+      required:
+        [
+          id,
+          automationId,
+          title,
+          status,
+          currentStep,
+          progressPercent,
+          traceId,
+          externalRunId,
+          stepStatus,
+          startedAt,
+          finishedAt,
+          errorCode,
+          artifactRefs,
+          approvalState,
+        ]
+      properties:
+        id:
+          type: string
+        automationId:
+          type: string
+        title:
+          type: string
+        status:
+          type: string
+          enum: [queued, running, waiting_approval, completed, failed]
+        currentStep:
+          type: string
+        progressPercent:
+          type: integer
+        traceId:
+          type: string
+        externalRunId:
+          type: [string, "null"]
+        stepStatus:
+          type: array
+          items:
+            type: object
+            required:
+              [stepCode, moduleCode, status, requiresApproval, errorCode]
+            properties:
+              stepCode:
+                type: string
+              moduleCode:
+                type: string
+              status:
+                type: string
+                enum: [queued, running, waiting_approval, completed, failed]
+              requiresApproval:
+                type: boolean
+              errorCode:
+                type: [string, "null"]
+        startedAt:
+          type: [string, "null"]
+          format: date-time
+        finishedAt:
+          type: [string, "null"]
+          format: date-time
+        errorCode:
+          type: [string, "null"]
+        artifactRefs:
+          type: array
+          items:
+            type: string
+        approvalState:
+          type: string
+          enum: [not_required, pending, approved, rejected]
+    LegalSourceProviderSummary:
+      type: object
+      required:
+        [id, code, name, providerType, jurisdiction, accessMode, isEnabled]
+      properties:
+        id:
+          type: string
+        code:
+          type: string
+        name:
+          type: string
+        providerType:
+          type: string
+          enum:
+            [
+              user_upload,
+              workspace_private,
+              product_curated,
+              official_feed,
+              external_paid,
+              manual_import,
+            ]
+        jurisdiction:
+          type: [string, "null"]
+        accessMode:
+          type: string
+          enum: [file_upload, api_import, seeded, manual]
+        isEnabled:
+          type: boolean
+    LegalSourceVersionSummary:
+      type: object
+      required:
+        [
+          id,
+          sourceId,
+          documentVersionId,
+          versionNo,
+          mimeType,
+          fileSize,
+          language,
+          status,
+          textHash,
+          embeddingHash,
+          publishedAt,
+          ingestedAt,
+        ]
+      properties:
+        id:
+          type: string
+        sourceId:
+          type: string
+        documentVersionId:
+          type: [string, "null"]
+        versionNo:
+          type: integer
+        mimeType:
+          type: [string, "null"]
+        fileSize:
+          type: [integer, "null"]
+        language:
+          type: [string, "null"]
+        status:
+          type: string
+          enum:
+            [
+              draft,
+              pending_processing,
+              processed,
+              indexed,
+              index_failed,
+              deprecated,
+              archived,
+              deleted,
+            ]
+        textHash:
+          type: [string, "null"]
+        embeddingHash:
+          type: [string, "null"]
+        publishedAt:
+          type: [string, "null"]
+          format: date-time
+        ingestedAt:
+          type: [string, "null"]
+          format: date-time
+    LegalChunkSummary:
+      type: object
+      required:
+        [
+          id,
+          sourceId,
+          documentVersionId,
+          chunkNo,
+          chunkType,
+          text,
+          textHash,
+          pageFrom,
+          pageTo,
+          charStart,
+          charEnd,
+          metadata,
+          securityScope,
+          embeddingModel,
+          embeddingHash,
+          indexedAt,
+        ]
+      properties:
+        id:
+          type: string
+        sourceId:
+          type: string
+        documentVersionId:
+          type: string
+        chunkNo:
+          type: integer
+        chunkType:
+          type: string
+          enum:
+            [
+              facts,
+              claims,
+              court_reasoning,
+              holding,
+              procedural_history,
+              citations,
+              operative_part,
+              unknown,
+            ]
+        text:
+          type: string
+        textHash:
+          type: string
+        pageFrom:
+          type: [integer, "null"]
+        pageTo:
+          type: [integer, "null"]
+        charStart:
+          type: [integer, "null"]
+        charEnd:
+          type: [integer, "null"]
+        metadata:
+          type: object
+          additionalProperties: true
+        securityScope:
+          type: string
+          enum:
+            [
+              public,
+              product_private,
+              workspace_private,
+              user_private,
+              restricted_provider,
+            ]
+        embeddingModel:
+          type: [string, "null"]
+        embeddingHash:
+          type: [string, "null"]
+        indexedAt:
+          type: [string, "null"]
+          format: date-time
+    LegalSourceAccessEntry:
+      type: object
+      required:
+        [
+          id,
+          sourceId,
+          workspaceId,
+          userId,
+          roleRequired,
+          accessLevel,
+          expiresAt,
+          grantedBy,
+          createdAt,
+        ]
+      properties:
+        id:
+          type: string
+        sourceId:
+          type: string
+        workspaceId:
+          type: [string, "null"]
+        userId:
+          type: [string, "null"]
+        roleRequired:
+          type: [string, "null"]
+        accessLevel:
+          type: string
+          enum: [read, rag, manage]
+        expiresAt:
+          type: [string, "null"]
+          format: date-time
+        grantedBy:
+          type: [string, "null"]
+        createdAt:
+          type: string
+          format: date-time
+    LegalImportJob:
+      type: object
+      required:
+        [
+          id,
+          providerId,
+          workspaceId,
+          sourceId,
+          documentId,
+          status,
+          inputType,
+          inputRef,
+          totalItems,
+          processedItems,
+          failedItems,
+          errorSummary,
+          temporalWorkflowId,
+          startedAt,
+          finishedAt,
+          createdAt,
+          updatedAt,
+        ]
+      properties:
+        id:
+          type: string
+        providerId:
+          type: string
+        workspaceId:
+          type: [string, "null"]
+        sourceId:
+          type: [string, "null"]
+        documentId:
+          type: [string, "null"]
+        status:
+          type: string
+          enum:
+            [
+              queued,
+              fetching,
+              stored,
+              extracting_text,
+              normalizing,
+              chunking,
+              embedding,
+              indexing,
+              completed,
+              failed,
+              partially_failed,
+              cancelled,
+            ]
+        inputType:
+          type: string
+        inputRef:
+          type: [string, "null"]
+        totalItems:
+          type: integer
+        processedItems:
+          type: integer
+        failedItems:
+          type: integer
+        errorSummary:
+          type: [string, "null"]
+        temporalWorkflowId:
+          type: [string, "null"]
+        startedAt:
+          type: [string, "null"]
+          format: date-time
+        finishedAt:
+          type: [string, "null"]
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    LegalExtractionJob:
+      type: object
+      required:
+        [
+          id,
+          documentVersionId,
+          status,
+          extractor,
+          attempt,
+          errorCode,
+          errorMessage,
+          textHash,
+          startedAt,
+          finishedAt,
+        ]
+      properties:
+        id:
+          type: string
+        documentVersionId:
+          type: string
+        status:
+          type: string
+          enum: [queued, running, completed, failed, requires_ocr]
+        extractor:
+          type: string
+        attempt:
+          type: integer
+        errorCode:
+          type: [string, "null"]
+        errorMessage:
+          type: [string, "null"]
+        textHash:
+          type: [string, "null"]
+        startedAt:
+          type: [string, "null"]
+          format: date-time
+        finishedAt:
+          type: [string, "null"]
+          format: date-time
+    LegalSourceSummary:
+      type: object
+      required:
+        [
+          id,
+          workspaceId,
+          documentId,
+          provider,
+          sourceType,
+          jurisdiction,
+          title,
+          canonicalUrl,
+          externalId,
+          licenseStatus,
+          visibility,
+          classification,
+          status,
+          ownerWorkspaceId,
+          ownerUserId,
+          court,
+          caseNumber,
+          decisionDate,
+          hasEmbeddings,
+          indexedAt,
+          lastUsedAt,
+          createdAt,
+          updatedAt,
+        ]
+      properties:
+        id:
+          type: string
+        workspaceId:
+          type: [string, "null"]
+        documentId:
+          type: [string, "null"]
+        provider:
+          $ref: "#/components/schemas/LegalSourceProviderSummary"
+        sourceType:
+          type: string
+          enum:
+            [
+              court_decision,
+              statute,
+              regulation,
+              contract_template,
+              user_document,
+              internal_memo,
+              analysis_result,
+            ]
+        jurisdiction:
+          type: [string, "null"]
+        title:
+          type: string
+        canonicalUrl:
+          type: [string, "null"]
+          format: uri
+        externalId:
+          type: [string, "null"]
+        licenseStatus:
+          type: string
+          enum: [allowed, restricted, unknown, requires_contract, forbidden]
+        visibility:
+          type: string
+          enum:
+            [
+              public,
+              product_private,
+              workspace_private,
+              user_private,
+              restricted_provider,
+            ]
+        classification:
+          type: string
+          enum:
+            [
+              public,
+              internal,
+              confidential,
+              legal_secret,
+              personal_data,
+              client_material,
+            ]
+        status:
+          type: string
+          enum:
+            [
+              draft,
+              pending_processing,
+              processed,
+              indexed,
+              index_failed,
+              deprecated,
+              archived,
+              deleted,
+            ]
+        ownerWorkspaceId:
+          type: [string, "null"]
+        ownerUserId:
+          type: [string, "null"]
+        court:
+          type: [string, "null"]
+        caseNumber:
+          type: [string, "null"]
+        decisionDate:
+          type: [string, "null"]
+        hasEmbeddings:
+          type: boolean
+        indexedAt:
+          type: [string, "null"]
+          format: date-time
+        lastUsedAt:
+          type: [string, "null"]
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    LegalSourceDetail:
+      allOf:
+        - $ref: "#/components/schemas/LegalSourceSummary"
+        - type: object
+          required:
+            [
+              versions,
+              accessEntries,
+              importJobs,
+              extractionJobs,
+              chunks,
+              metadata,
+              availableActions,
+            ]
+          properties:
+            versions:
+              type: array
+              items:
+                $ref: "#/components/schemas/LegalSourceVersionSummary"
+            accessEntries:
+              type: array
+              items:
+                $ref: "#/components/schemas/LegalSourceAccessEntry"
+            importJobs:
+              type: array
+              items:
+                $ref: "#/components/schemas/LegalImportJob"
+            extractionJobs:
+              type: array
+              items:
+                $ref: "#/components/schemas/LegalExtractionJob"
+            chunks:
+              type: array
+              items:
+                $ref: "#/components/schemas/LegalChunkSummary"
+            metadata:
+              type: object
+              additionalProperties: true
+            availableActions:
+              type: object
+              required: [canManage, canRetry, canArchive, canUseInRag]
+              properties:
+                canManage:
+                  type: boolean
+                canRetry:
+                  type: boolean
+                canArchive:
+                  type: boolean
+                canUseInRag:
+                  type: boolean
+    CreateLegalImportJobRequest:
+      type: object
+      required: [providerCode, inputType, documentType, classification]
+      properties:
+        providerCode:
+          type: string
+        workspaceId:
+          type: string
+        inputType:
+          type: string
+          enum: [files, document, seed, external_payload]
+        documentType:
+          type: string
+          enum:
+            [
+              court_decision,
+              statute,
+              regulation,
+              contract_template,
+              user_document,
+              internal_memo,
+              analysis_result,
+            ]
+        classification:
+          type: string
+          enum:
+            [
+              public,
+              internal,
+              confidential,
+              legal_secret,
+              personal_data,
+              client_material,
+            ]
+        files:
+          type: array
+          items:
+            type: object
+            required: [uploadId, title, mimeType]
+            properties:
+              uploadId:
+                type: string
+              title:
+                type: string
+              mimeType:
+                type: string
+        documentId:
+          type: string
+        metadata:
+          type: object
+          additionalProperties: true
+    LegalSearchFilters:
+      type: object
+      properties:
+        sourceType:
+          type: array
+          items:
+            type: string
+            enum:
+              [
+                court_decision,
+                statute,
+                regulation,
+                contract_template,
+                user_document,
+                internal_memo,
+                analysis_result,
+              ]
+        visibility:
+          type: array
+          items:
+            type: string
+            enum:
+              [
+                public,
+                product_private,
+                workspace_private,
+                user_private,
+                restricted_provider,
+              ]
+        court:
+          type: array
+          items:
+            type: string
+        dateFrom:
+          type: string
+          format: date
+        dateTo:
+          type: string
+          format: date
+        category:
+          type: array
+          items:
+            type: string
+        workspaceId:
+          type: string
+        caseNumber:
+          type: string
+    LegalSearchQuery:
+      type: object
+      required: [query, mode]
+      properties:
+        query:
+          type: string
+        mode:
+          type: string
+          enum: [keyword, semantic, hybrid]
+        filters:
+          $ref: "#/components/schemas/LegalSearchFilters"
+        limit:
+          type: integer
+        offset:
+          type: integer
+        selectedSourceIds:
+          type: array
+          items:
+            type: string
+    LegalSearchFacetBucket:
+      type: object
+      required: [value, count]
+      properties:
+        value:
+          type: string
+        count:
+          type: integer
+    LegalSearchFacet:
+      type: object
+      required: [name, label, buckets]
+      properties:
+        name:
+          type: string
+        label:
+          type: string
+        buckets:
+          type: array
+          items:
+            $ref: "#/components/schemas/LegalSearchFacetBucket"
+    LegalCitation:
+      type: object
+      required:
+        [
+          citationId,
+          sourceId,
+          chunkId,
+          documentVersionId,
+          title,
+          quote,
+          pageFrom,
+          pageTo,
+          court,
+          caseNumber,
+          decisionDate,
+          score,
+        ]
+      properties:
+        citationId:
+          type: string
+        sourceId:
+          type: string
+        chunkId:
+          type: string
+        documentVersionId:
+          type: string
+        title:
+          type: string
+        quote:
+          type: string
+        pageFrom:
+          type: [integer, "null"]
+        pageTo:
+          type: [integer, "null"]
+        court:
+          type: [string, "null"]
+        caseNumber:
+          type: [string, "null"]
+        decisionDate:
+          type: [string, "null"]
+        score:
+          type: number
+    LegalSearchResult:
+      type: object
+      required:
+        [
+          rank,
+          score,
+          scoreComponents,
+          source,
+          chunk,
+          snippet,
+          highlights,
+          citation,
+        ]
+      properties:
+        rank:
+          type: integer
+        score:
+          type: number
+        scoreComponents:
+          type: object
+          required: [lexical, semantic, combined]
+          properties:
+            lexical:
+              type: number
+            semantic:
+              type: number
+            combined:
+              type: number
+        source:
+          $ref: "#/components/schemas/LegalSourceSummary"
+        chunk:
+          $ref: "#/components/schemas/LegalChunkSummary"
+        snippet:
+          type: string
+        highlights:
+          type: array
+          items:
+            type: string
+        citation:
+          $ref: "#/components/schemas/LegalCitation"
+    LegalSearchResponse:
+      type: object
+      required: [mode, total, facets, results, debug]
+      properties:
+        mode:
+          type: string
+          enum: [keyword, semantic, hybrid]
+        total:
+          type: integer
+        facets:
+          type: array
+          items:
+            $ref: "#/components/schemas/LegalSearchFacet"
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/LegalSearchResult"
+        debug:
+          type: object
+          required: [indexAlias, normalized, aclApplied]
+          properties:
+            indexAlias:
+              type: string
+            normalized:
+              type: boolean
+            aclApplied:
+              type: boolean
+    RagAnalyzeRequest:
+      type: object
+      required: [taskType, question, sourceSelection]
+      properties:
+        taskType:
+          type: string
+        question:
+          type: string
+        sourceSelection:
+          type: object
+          required: [mode]
+          properties:
+            mode:
+              type: string
+              enum: [selected_only, selected_and_search, search_only]
+            selectedSourceIds:
+              type: array
+              items:
+                type: string
+            searchQuery:
+              type: string
+            filters:
+              $ref: "#/components/schemas/LegalSearchFilters"
+        workspaceDocumentIds:
+          type: array
+          items:
+            type: string
+        options:
+          type: object
+          properties:
+            maxContextChunks:
+              type: integer
+            requireCitations:
+              type: boolean
+            includeUnsupportedClaims:
+              type: boolean
+    LegalAnalysisFact:
+      type: object
+      required: [text, citations]
+      properties:
+        text:
+          type: string
+        citations:
+          type: array
+          items:
+            type: string
+    LegalAnalysisIssue:
+      type: object
+      required: [issue, analysis, citations]
+      properties:
+        issue:
+          type: string
+        analysis:
+          type: string
+        citations:
+          type: array
+          items:
+            type: string
+    LegalAnalysisArgument:
+      type: object
+      required: [position, analysis, supportingSources, strength, citations]
+      properties:
+        position:
+          type: string
+        analysis:
+          type: string
+        supportingSources:
+          type: array
+          items:
+            type: string
+        strength:
+          type: string
+          enum: [low, medium, high]
+        citations:
+          type: array
+          items:
+            type: string
+    LegalAnalysisOutput:
+      type: object
+      required:
+        [
+          summary,
+          facts,
+          legalIssues,
+          arguments,
+          citations,
+          unsupportedClaims,
+          riskFlags,
+        ]
+      properties:
+        summary:
+          type: string
+        facts:
+          type: array
+          items:
+            $ref: "#/components/schemas/LegalAnalysisFact"
+        legalIssues:
+          type: array
+          items:
+            $ref: "#/components/schemas/LegalAnalysisIssue"
+        arguments:
+          type: array
+          items:
+            $ref: "#/components/schemas/LegalAnalysisArgument"
+        citations:
+          type: array
+          items:
+            $ref: "#/components/schemas/LegalCitation"
+        unsupportedClaims:
+          type: array
+          items:
+            type: string
+        riskFlags:
+          type: array
+          items:
+            type: string
+    RagRequestSummary:
+      type: object
+      required:
+        [
+          id,
+          workspaceId,
+          userId,
+          taskType,
+          question,
+          queryHash,
+          selectedSourceIds,
+          selectedDocumentIds,
+          aiRoute,
+          dataClassification,
+          status,
+          validationStatus,
+          citationValidationStatus,
+          unsupportedCount,
+          riskFlags,
+          output,
+          createdAt,
+          updatedAt,
+          completedAt,
+        ]
+      properties:
+        id:
+          type: string
+        workspaceId:
+          type: string
+        userId:
+          type: string
+        taskType:
+          type: string
+        question:
+          type: string
+        queryHash:
+          type: string
+        selectedSourceIds:
+          type: array
+          items:
+            type: string
+        selectedDocumentIds:
+          type: array
+          items:
+            type: string
+        aiRoute:
+          type: string
+          enum: [xai, xai_zdr, cometapi, local_mock, blocked]
+        dataClassification:
+          type: string
+          enum:
+            [
+              public,
+              internal,
+              confidential,
+              legal_secret,
+              personal_data,
+              client_material,
+            ]
+        status:
+          type: string
+          enum: [queued, running, completed, failed, blocked]
+        validationStatus:
+          type: string
+          enum: [valid, invalid, warning]
+        citationValidationStatus:
+          type: string
+          enum: [valid, invalid, warning]
+        unsupportedCount:
+          type: integer
+        riskFlags:
+          type: array
+          items:
+            type: string
+        output:
+          anyOf:
+            - $ref: "#/components/schemas/LegalAnalysisOutput"
+            - type: "null"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: [string, "null"]
+          format: date-time
+    SearchFeedback:
+      type: object
+      required:
+        [
+          id,
+          queryId,
+          resultId,
+          userId,
+          workspaceId,
+          feedbackType,
+          comment,
+          createdAt,
+        ]
+      properties:
+        id:
+          type: string
+        queryId:
+          type: string
+        resultId:
+          type: string
+        userId:
+          type: string
+        workspaceId:
+          type: string
+        feedbackType:
+          type: string
+          enum:
+            [
+              useful,
+              irrelevant,
+              wrong_citation,
+              missing_source,
+              hallucination_suspected,
+              conflicting_sources,
+            ]
+        comment:
+          type: [string, "null"]
+        createdAt:
+          type: string
+          format: date-time
+    CreateSearchFeedbackRequest:
+      type: object
+      required: [queryId, resultId, feedbackType]
+      properties:
+        queryId:
+          type: string
+        resultId:
+          type: string
+        feedbackType:
+          type: string
+          enum:
+            [
+              useful,
+              irrelevant,
+              wrong_citation,
+              missing_source,
+              hallucination_suspected,
+              conflicting_sources,
+            ]
+        comment:
+          type: string
+    ProductEventCaptureRequest:
+      type: object
+      required:
+        [eventName, eventTime, sessionId, traceId, workspaceId, properties]
+      properties:
+        eventName:
+          type: string
+        eventTime:
+          type: string
+          format: date-time
+        sessionId:
+          type: string
+        traceId:
+          type: string
+        workspaceId:
+          type: string
+        resourceType:
+          type: [string, "null"]
+        resourceId:
+          type: [string, "null"]
+        processInstanceId:
+          type: [string, "null"]
+        runId:
+          type: [string, "null"]
+        properties:
+          type: object
+          additionalProperties: true
+        clientEventId:
+          type: [string, "null"]
+        idempotencyKey:
+          type: [string, "null"]
+        source:
+          type: string
+          enum: [frontend, backend, workflow_runtime, analytics]
+    ProductEventCaptureResponse:
+      type: object
+      required: [status, eventId, outboxId, quarantineId, traceId]
+      properties:
+        status:
+          type: string
+          enum: [queued, quarantined]
+        eventId:
+          type: string
+        outboxId:
+          type: [string, "null"]
+        quarantineId:
+          type: [string, "null"]
+        traceId:
+          type: string
+    RecommendationPatternSummary:
+      type: object
+      required:
+        [
+          id,
+          scope,
+          title,
+          strategy,
+          activitySequence,
+          caseCount,
+          distinctUserCount,
+          repeatCount,
+          periodDays,
+          riskLevel,
+          explainabilitySummary,
+          overlapStatus,
+          status,
+          lastSeenAt,
+        ]
+      properties:
+        id:
+          type: string
+        scope:
+          type: string
+          enum: [personal, team]
+        title:
+          type: string
+        strategy:
+          type: string
+          enum: [n_gram, exact_variant, prefixspan, markov, pm4py]
+        activitySequence:
+          type: array
+          items:
+            type: string
+        caseCount:
+          type: integer
+        distinctUserCount:
+          type: integer
+        repeatCount:
+          type: integer
+        periodDays:
+          type: integer
+        riskLevel:
+          type: string
+          enum: [low, medium, high]
+        explainabilitySummary:
+          type: string
+        overlapStatus:
+          type: string
+          enum: [none, existing_automation, installed_template, suppressed]
+        status:
+          type: string
+          enum: [candidate, suppressed, accepted, archived]
+        lastSeenAt:
+          type: string
+          format: date-time
+    RecommendationListItem:
+      type: object
+      required:
+        [
+          id,
+          patternId,
+          scope,
+          title,
+          summary,
+          rationale,
+          activitySequence,
+          sourceEvents,
+          advisoryOnly,
+          riskLevel,
+          repeatCount,
+          periodDays,
+          estimatedTimeSavedMinutes,
+          explainabilitySummary,
+          warnings,
+          availableActions,
+          status,
+          snoozedUntil,
+          lastSeenAt,
+          createdAt,
+          updatedAt,
+        ]
+      properties:
+        id:
+          type: string
+        patternId:
+          type: string
+        scope:
+          type: string
+          enum: [personal, team]
+        title:
+          type: string
+        summary:
+          type: string
+        rationale:
+          type: string
+        activitySequence:
+          type: array
+          items:
+            type: string
+        sourceEvents:
+          type: array
+          items:
+            type: string
+        advisoryOnly:
+          type: boolean
+          const: true
+        riskLevel:
+          type: string
+          enum: [low, medium, high]
+        repeatCount:
+          type: integer
+        periodDays:
+          type: integer
+        estimatedTimeSavedMinutes:
+          type: integer
+        explainabilitySummary:
+          type: string
+        warnings:
+          type: array
+          items:
+            type: string
+        availableActions:
+          type: array
+          items:
+            type: string
+            enum: [accept, dismiss, snooze, feedback]
+        status:
+          type: string
+          enum: [candidate, accepted, dismissed, snoozed]
+        snoozedUntil:
+          type: [string, "null"]
+          format: date-time
+        lastSeenAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    RecommendationCandidate:
+      allOf:
+        - $ref: "#/components/schemas/RecommendationListItem"
+    RecommendationFeedbackEntry:
+      type: object
+      required: [id, actorUserId, feedbackType, note, createdAt]
+      properties:
+        id:
+          type: string
+        actorUserId:
+          type: string
+        feedbackType:
+          type: string
+          enum: [helpful, not_helpful, already_covered, too_risky, not_relevant]
+        note:
+          type: [string, "null"]
+        createdAt:
+          type: string
+          format: date-time
+    RecommendationDetail:
+      allOf:
+        - $ref: "#/components/schemas/RecommendationListItem"
+        - type: object
+          required:
+            [
+              pattern,
+              workflowSkeleton,
+              validationReport,
+              policyReport,
+              runtimePlanPreview,
+              missingInputs,
+              sourceTraceIds,
+              similarTemplateIds,
+              feedbackHistory,
+            ]
+          properties:
+            pattern:
+              $ref: "#/components/schemas/RecommendationPatternSummary"
+            workflowSkeleton:
+              type: object
+              additionalProperties: true
+            validationReport:
+              type: object
+              additionalProperties: true
+            policyReport:
+              type: object
+              additionalProperties: true
+            runtimePlanPreview:
+              type: object
+              additionalProperties: true
+            missingInputs:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+            sourceTraceIds:
+              type: array
+              items:
+                type: string
+            similarTemplateIds:
+              type: array
+              items:
+                type: string
+            feedbackHistory:
+              type: array
+              items:
+                $ref: "#/components/schemas/RecommendationFeedbackEntry"
+    RecommendationAcceptRequest:
+      type: object
+      properties:
+        templatePreference:
+          type: string
+          enum: [private_automation, workspace_template]
+        draftTitle:
+          type: string
+        idempotencyKey:
+          type: [string, "null"]
+    RecommendationDismissRequest:
+      type: object
+      properties:
+        reasonCode:
+          type: [string, "null"]
+        note:
+          type: [string, "null"]
+        suppressPattern:
+          type: boolean
+    RecommendationSnoozeRequest:
+      type: object
+      properties:
+        until:
+          type: [string, "null"]
+          format: date-time
+        days:
+          type: [integer, "null"]
+    RecommendationFeedbackRequest:
+      type: object
+      required: [feedbackType]
+      properties:
+        feedbackType:
+          type: string
+          enum: [helpful, not_helpful, already_covered, too_risky, not_relevant]
+        note:
+          type: [string, "null"]
+    RecommendationActionResult:
+      type: object
+      required:
+        [
+          recommendationId,
+          status,
+          draftId,
+          workflowDraft,
+          notificationId,
+          snoozedUntil,
+          message,
+        ]
+      properties:
+        recommendationId:
+          type: string
+        status:
+          type: string
+          enum: [candidate, accepted, dismissed, snoozed]
+        draftId:
+          type: [string, "null"]
+        workflowDraft:
+          oneOf:
+            - type: object
+              additionalProperties: true
+            - type: "null"
+        notificationId:
+          type: [string, "null"]
+        snoozedUntil:
+          type: [string, "null"]
+          format: date-time
+        message:
+          type: string
+    ProcessCaseSummary:
+      type: object
+      required:
+        [
+          id,
+          scope,
+          caseKey,
+          processInstanceId,
+          sessionId,
+          traceId,
+          runId,
+          actorIds,
+          activitySequence,
+          eventCount,
+          startedAt,
+          finishedAt,
+          durationMs,
+          status,
+        ]
+      properties:
+        id:
+          type: string
+        scope:
+          type: string
+          enum: [personal, team]
+        caseKey:
+          type: string
+        processInstanceId:
+          type: [string, "null"]
+        sessionId:
+          type: [string, "null"]
+        traceId:
+          type: [string, "null"]
+        runId:
+          type: [string, "null"]
+        actorIds:
+          type: array
+          items:
+            type: string
+        activitySequence:
+          type: array
+          items:
+            type: string
+        eventCount:
+          type: integer
+        startedAt:
+          type: string
+          format: date-time
+        finishedAt:
+          type: [string, "null"]
+          format: date-time
+        durationMs:
+          type: [integer, "null"]
+        status:
+          type: string
+          enum: [completed, in_progress, failed, abandoned]
+    RecommendationQualityMetric:
+      type: object
+      required: [name, value, unit, window, warning]
+      properties:
+        name:
+          type: string
+        value:
+          type: number
+        unit:
+          type: string
+          enum: [count, percent, minutes]
+        window:
+          type: string
+          enum: [24h, 7d, 30d]
+        warning:
+          type: boolean
+    RecommendationQualitySnapshot:
+      type: object
+      required:
+        [
+          capturedAt,
+          metrics,
+          miningLagMinutes,
+          quarantineRatePercent,
+          missingTraceRatePercent,
+        ]
+      properties:
+        capturedAt:
+          type: string
+          format: date-time
+        metrics:
+          type: array
+          items:
+            $ref: "#/components/schemas/RecommendationQualityMetric"
+        miningLagMinutes:
+          type: integer
+        quarantineRatePercent:
+          type: number
+        missingTraceRatePercent:
+          type: number
+    RecommendationPatternModuleMapping:
+      type: object
+      required: [activityCode, moduleCode, confidence, resolution]
+      properties:
+        activityCode:
+          type: string
+        moduleCode:
+          type: string
+        confidence:
+          type: number
+        resolution:
+          type: string
+          enum: [deterministic, profile_hint, template_hint, manual_input]
+    RecommendationPatternDetail:
+      allOf:
+        - $ref: "#/components/schemas/RecommendationPatternSummary"
+        - type: object
+          required: [qualitySnapshot, exampleCases, moduleMapping, warnings]
+          properties:
+            qualitySnapshot:
+              $ref: "#/components/schemas/RecommendationQualitySnapshot"
+            exampleCases:
+              type: array
+              items:
+                $ref: "#/components/schemas/ProcessCaseSummary"
+            moduleMapping:
+              type: array
+              items:
+                $ref: "#/components/schemas/RecommendationPatternModuleMapping"
+            warnings:
+              type: array
+              items:
+                type: string
+    ReadinessGate:
+      type: object
+      required: [stage, state, blockers, owner, linkedContracts, linkedTests]
+      properties:
+        stage:
+          type: string
+        state:
+          type: string
+        blockers:
+          type: array
+          items:
+            type: string
+        owner:
+          type: string
+        linkedContracts:
+          type: array
+          items:
+            type: string
+        linkedTests:
+          type: array
+          items:
+            type: string
+    ActivepiecesEmbedTokenResponse:
+      type: object
+      required:
+        [
+          instanceUrl,
+          token,
+          expiresAt,
+          role,
+          piecesFilterType,
+          piecesTags,
+          runtimeProjectId,
+          runtimeFlowId,
+          mode,
+        ]
+      properties:
+        instanceUrl:
+          type: string
+          format: uri
+        token:
+          type: string
+        expiresAt:
+          type: string
+          format: date-time
+        role:
+          type: string
+          enum: [builder, viewer]
+        piecesFilterType:
+          type: string
+          enum: [allowlist]
+        piecesTags:
+          type: array
+          items:
+            type: string
+        runtimeProjectId:
+          type: [string, "null"]
+        runtimeFlowId:
+          type: [string, "null"]
+        mode:
+          type: string
+          enum: [embedded-builder]
+    CreateActivepiecesEmbedTokenRequest:
+      type: object
+      required: [installedAutomationId]
+      properties:
+        installedAutomationId:
+          type: string
+        purpose:
+          type: string
+          enum: [builder, viewer]
+    RuntimeConnectionSummary:
+      type: object
+      required:
+        [
+          id,
+          code,
+          provider,
+          displayName,
+          scope,
+          status,
+          externalConnectionName,
+          lastCheckedAt,
+          usedByAutomationIds,
+        ]
+      properties:
+        id:
+          type: string
+        code:
+          type: string
+        provider:
+          type: string
+        displayName:
+          type: string
+        scope:
+          type: string
+          enum: [workspace, predefined]
+        status:
+          type: string
+          enum: [connected, missing, error, revoked]
+        externalConnectionName:
+          type: [string, "null"]
+        lastCheckedAt:
+          type: [string, "null"]
+          format: date-time
+        usedByAutomationIds:
+          type: array
+          items:
+            type: string
+    UpsertRuntimeConnectionRequest:
+      type: object
+      required: [code, provider]
+      properties:
+        code:
+          type: string
+        provider:
+          type: string
+        displayName:
+          type: string
+        externalConnectionName:
+          type: [string, "null"]
+    RuntimePieceRequirement:
+      type: object
+      required: [packageName, stepCode, status]
+      properties:
+        packageName:
+          type: string
+        stepCode:
+          type: string
+        status:
+          type: string
+          enum: [available, blocked]
+    AutomationRuntimeRequirements:
+      type: object
+      required:
+        [
+          automationId,
+          canOpenBuilder,
+          canRun,
+          builderState,
+          syncState,
+          runtimeProjectId,
+          runtimeFlowId,
+          missingConnections,
+          availableConnections,
+          requiredPieces,
+          warnings,
+        ]
+      properties:
+        automationId:
+          type: string
+        canOpenBuilder:
+          type: boolean
+        canRun:
+          type: boolean
+        builderState:
+          type: string
+          enum: [unavailable, mock, ready]
+        syncState:
+          $ref: "#/components/schemas/RuntimeSyncState"
+        runtimeProjectId:
+          type: [string, "null"]
+        runtimeFlowId:
+          type: [string, "null"]
+        missingConnections:
+          type: array
+          items:
+            $ref: "#/components/schemas/RuntimeConnectionSummary"
+        availableConnections:
+          type: array
+          items:
+            $ref: "#/components/schemas/RuntimeConnectionSummary"
+        requiredPieces:
+          type: array
+          items:
+            $ref: "#/components/schemas/RuntimePieceRequirement"
+        warnings:
+          type: array
+          items:
+            type: string
+    SyncAutomationRuntimeRequest:
+      type: object
+      properties:
+        versionId:
+          type: [string, "null"]
+        dryRun:
+          type: boolean
+        force:
+          type: boolean
+    SyncAutomationRuntimeResponse:
+      type: object
+      required:
+        [
+          status,
+          runtimeProjectId,
+          runtimeFlowId,
+          syncHash,
+          requiredPieces,
+          requiredConnections,
+          warnings,
+        ]
+      properties:
+        status:
+          type: string
+          enum: [synced, noop, failed]
+        runtimeProjectId:
+          type: string
+        runtimeFlowId:
+          type: string
+        syncHash:
+          type: string
+        requiredPieces:
+          type: array
+          items:
+            type: string
+        requiredConnections:
+          type: array
+          items:
+            type: string
+        warnings:
+          type: array
+          items:
+            type: string
+    StartAutomationRunRequest:
+      type: object
+      required: [mode]
+      properties:
+        mode:
+          type: string
+          enum: [dry_run, full_run]
+        inputs:
+          type: object
+          properties:
+            documentIds:
+              type: array
+              items:
+                type: string
+            params:
+              type: object
+              additionalProperties: true
+        profileId:
+          type: [string, "null"]
+        idempotencyKey:
+          type: [string, "null"]
+    StartAutomationRunResponse:
+      type: object
+      required: [runId, status, traceId]
+      properties:
+        runId:
+          type: string
+        status:
+          type: string
+          enum: [queued, running, waiting_approval, completed, failed]
+        traceId:
+          type: string
+    ActivepiecesCallbackError:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+    ActivepiecesStepEventCallback:
+      type: object
+      required: [runId, stepCode, eventType, idempotencyKey, occurredAt]
+      properties:
+        runId:
+          type: string
+        externalRunId:
+          type: [string, "null"]
+        stepCode:
+          type: string
+        moduleCode:
+          type: [string, "null"]
+        eventType:
+          type: string
+          enum: [queued, running, completed, failed, waiting_approval]
+        outputs:
+          oneOf:
+            - type: object
+              additionalProperties: true
+            - type: "null"
+        error:
+          oneOf:
+            - $ref: "#/components/schemas/ActivepiecesCallbackError"
+            - type: "null"
+        idempotencyKey:
+          type: string
+        occurredAt:
+          type: string
+          format: date-time
+    ActivepiecesRunEventCallback:
+      type: object
+      required: [runId, eventType, idempotencyKey, occurredAt]
+      properties:
+        runId:
+          type: string
+        externalRunId:
+          type: [string, "null"]
+        eventType:
+          type: string
+          enum: [queued, running, completed, failed, waiting_approval]
+        error:
+          oneOf:
+            - $ref: "#/components/schemas/ActivepiecesCallbackError"
+            - type: "null"
+        idempotencyKey:
+          type: string
+        occurredAt:
+          type: string
+          format: date-time
+    Stage8Object:
+      type: object
+      additionalProperties: true
+    RunPreflightRequest:
+      allOf:
+        - $ref: "#/components/schemas/Stage8Object"
+    RunPreflightReport:
+      allOf:
+        - $ref: "#/components/schemas/Stage8Object"
+    RunCreateRequest:
+      allOf:
+        - $ref: "#/components/schemas/Stage8Object"
+    RunCreateResponse:
+      allOf:
+        - $ref: "#/components/schemas/Stage8Object"
+    RunSnapshot:
+      allOf:
+        - $ref: "#/components/schemas/Stage8Object"
+    ApprovalTaskDetail:
+      allOf:
+        - $ref: "#/components/schemas/Stage8Object"
+    ApprovalTaskRequestChangesRequest:
+      allOf:
+        - $ref: "#/components/schemas/Stage8Object"
+    ArtifactSignedUrlRequest:
+      allOf:
+        - $ref: "#/components/schemas/SignedUrlRequest"
+    ArtifactAcceptAsDocumentResponse:
+      allOf:
+        - $ref: "#/components/schemas/Stage8Object"
+    DeliveryPreview:
+      allOf:
+        - $ref: "#/components/schemas/Stage8Object"
+    DeliveryRequestDetail:
+      allOf:
+        - $ref: "#/components/schemas/Stage8Object"
+    NotificationSummary:
+      allOf:
+        - $ref: "#/components/schemas/Stage8Object"
+    NotificationAction:
+      allOf:
+        - $ref: "#/components/schemas/Stage8Object"
+    NotificationPreferences:
+      allOf:
+        - $ref: "#/components/schemas/Stage8Object"
+    NotificationListResponse:
+      allOf:
+        - $ref: "#/components/schemas/Stage8Object"
+    RegisteredDevice:
+      allOf:
+        - $ref: "#/components/schemas/Stage8Object"
+    DeviceRegistrationRequest:
+      allOf:
+        - $ref: "#/components/schemas/Stage8Object"
+    SystemStatusComponent:
+      allOf:
+        - $ref: "#/components/schemas/Stage8Object"
+    SystemStatusSummary:
+      allOf:
+        - $ref: "#/components/schemas/Stage8Object"
+    DashboardSnapshot:
+      allOf:
+        - $ref: "#/components/schemas/Stage8Object"
+    DashboardEvent:
+      allOf:
+        - $ref: "#/components/schemas/Stage8Object"
+    DashboardEventListResponse:
+      allOf:
+        - $ref: "#/components/schemas/Stage8Object"
+    RunLiveSnapshot:
+      allOf:
+        - $ref: "#/components/schemas/Stage8Object"
+    RuntimeApprovalGateCallback:
+      allOf:
+        - $ref: "#/components/schemas/Stage8Object"
+    RuntimeDeliveryGateCallback:
+      allOf:
+        - $ref: "#/components/schemas/Stage8Object"
+    Stage7Object:
+      type: object
+      additionalProperties: true
+    LegalWorkProfileDetail:
+      allOf:
+        - $ref: "#/components/schemas/Stage7Object"
+    EffectiveProfileSnapshotSummary:
+      allOf:
+        - $ref: "#/components/schemas/Stage7Object"
+    CreateLegalWorkProfileRequest:
+      allOf:
+        - $ref: "#/components/schemas/Stage7Object"
+    UpdateLegalWorkProfileDraftRequest:
+      allOf:
+        - $ref: "#/components/schemas/Stage7Object"
+    ProfileValidationResult:
+      allOf:
+        - $ref: "#/components/schemas/Stage7Object"
+    LegalWorkProfileVersionSummary:
+      allOf:
+        - $ref: "#/components/schemas/Stage7Object"
+    RestoreLegalWorkProfileVersionRequest:
+      allOf:
+        - $ref: "#/components/schemas/Stage7Object"
+    PreviewEffectiveProfileRequest:
+      allOf:
+        - $ref: "#/components/schemas/Stage7Object"
+    EffectiveProfilePreview:
+      allOf:
+        - $ref: "#/components/schemas/Stage7Object"
+    DocumentTypeSummary:
+      allOf:
+        - $ref: "#/components/schemas/Stage7Object"
+    DocumentTypeDetail:
+      allOf:
+        - $ref: "#/components/schemas/Stage7Object"
+    CreateDocumentTypeRequest:
+      allOf:
+        - $ref: "#/components/schemas/Stage7Object"
+    UpdateDocumentTypeRequest:
+      allOf:
+        - $ref: "#/components/schemas/Stage7Object"
+    DocumentStructureRecord:
+      allOf:
+        - $ref: "#/components/schemas/Stage7Object"
+    CreateDocumentStructureRequest:
+      allOf:
+        - $ref: "#/components/schemas/Stage7Object"
+    UpdateDocumentStructureRequest:
+      allOf:
+        - $ref: "#/components/schemas/Stage7Object"
+    ClauseLibraryItemSummary:
+      allOf:
+        - $ref: "#/components/schemas/Stage7Object"
+    CreateClauseLibraryItemRequest:
+      allOf:
+        - $ref: "#/components/schemas/Stage7Object"
+    UpdateClauseLibraryItemRequest:
+      allOf:
+        - $ref: "#/components/schemas/Stage7Object"
+    PhraseRuleSummary:
+      allOf:
+        - $ref: "#/components/schemas/Stage7Object"
+    CreatePhraseRuleRequest:
+      allOf:
+        - $ref: "#/components/schemas/Stage7Object"
+    UpdatePhraseRuleRequest:
+      allOf:
+        - $ref: "#/components/schemas/Stage7Object"
+    DocumentTemplateDetail:
+      allOf:
+        - $ref: "#/components/schemas/Stage7Object"
+    CreateDocumentTemplateRequest:
+      allOf:
+        - $ref: "#/components/schemas/Stage7Object"
+    UpdateDocumentTemplateRequest:
+      allOf:
+        - $ref: "#/components/schemas/Stage7Object"
+    ParseDocumentTemplatePlaceholdersResponse:
+      allOf:
+        - $ref: "#/components/schemas/Stage7Object"
+    PublishDocumentTemplateVersionRequest:
+      allOf:
+        - $ref: "#/components/schemas/Stage7Object"
+    DocumentGenerationPreviewRequest:
+      allOf:
+        - $ref: "#/components/schemas/Stage7Object"
+    DocumentGenerationJobDetail:
+      allOf:
+        - $ref: "#/components/schemas/Stage7Object"
+    FinalizeDocumentGenerationRequest:
+      allOf:
+        - $ref: "#/components/schemas/Stage7Object"
+    DocumentValidationReportDetail:
+      allOf:
+        - $ref: "#/components/schemas/Stage7Object"
+    RecheckDocumentValidationRequest:
+      allOf:
+        - $ref: "#/components/schemas/Stage7Object"
+    ApprovalRouteSummary:
+      allOf:
+        - $ref: "#/components/schemas/Stage7Object"
+    ApprovalRouteDetail:
+      allOf:
+        - $ref: "#/components/schemas/Stage7Object"
+    CreateApprovalRouteRequest:
+      allOf:
+        - $ref: "#/components/schemas/Stage7Object"
+    UpdateApprovalRouteRequest:
+      allOf:
+        - $ref: "#/components/schemas/Stage7Object"
+    ApprovalTaskSummary:
+      allOf:
+        - $ref: "#/components/schemas/Stage7Object"
+    ApprovalTaskDecisionRequest:
+      allOf:
+        - $ref: "#/components/schemas/Stage7Object"
+    WorkflowRuntimeDocumentTemplateExecuteRequest:
+      allOf:
+        - $ref: "#/components/schemas/Stage7Object"
+    WorkflowRuntimeDocumentValidationExecuteRequest:
+      allOf:
+        - $ref: "#/components/schemas/Stage7Object"
+    WorkflowRuntimeApprovalRequestExecuteRequest:
+      allOf:
+        - $ref: "#/components/schemas/Stage7Object"
+    ProfileImportJobSummary:
+      allOf:
+        - $ref: "#/components/schemas/Stage7Object"
+    CreateProfileImportJobRequest:
+      allOf:
+        - $ref: "#/components/schemas/Stage7Object"

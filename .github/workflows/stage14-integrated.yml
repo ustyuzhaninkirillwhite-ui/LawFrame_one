@@ -1,0 +1,111 @@
+name: stage14-integrated
+
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches:
+      - develop
+      - main
+
+jobs:
+  demo-contour:
+    if: ${{ github.event_name == 'workflow_dispatch' || vars.LEXFRAME_STAGE14_INTEGRATED_ENABLED == '1' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      NODE_ENV: development
+      PORT: 3100
+      NEXT_PUBLIC_API_BASE_URL: http://127.0.0.1:3100
+      LEXFRAME_APP_BASE_URL: http://127.0.0.1:3000
+      LEXFRAME_ENV_PROFILE: ci
+      LEXFRAME_READINESS_PROFILE: local-integrated
+      AI_PROVIDER_MODE: mock
+      LEXFRAME_DEPLOY_ENV: preview
+      LEXFRAME_CONTRACTS_VERSION: stage14
+      LEXFRAME_RELEASE_SHA: github-stage14
+      LEXFRAME_DELIVERY_TRANSPORT: webhook
+      LEXFRAME_DELIVERY_WEBHOOK_URL: http://127.0.0.1:8091/hooks/delivery
+      LEXFRAME_DELIVERY_WEBHOOK_TOKEN: local_delivery_sandbox_token
+      LEXFRAME_DELIVERY_FROM_EMAIL: noreply@lexframe.local
+      LEXFRAME_RUNTIME_MASTER_SECRET: stage14_runtime_master_secret_ci
+      LEXFRAME_SECRET_MANAGER_PROVIDER: env
+      LEXFRAME_HEALTHCHECK_TIMEOUT_MS: 2000
+      SUPABASE_URL: http://127.0.0.1:54321
+      SUPABASE_PUBLISHABLE_KEY: demo_publishable_key
+      SUPABASE_SECRET_KEY: stage14_supabase_secret_key
+      SUPABASE_DB_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
+      NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: demo_publishable_key
+      ACTIVEPIECES_BASE_URL: http://127.0.0.1:8080
+      ACTIVEPIECES_API_KEY: ${{ secrets.ACTIVEPIECES_API_KEY || 'stage14_activepieces_key' }}
+      ACTIVEPIECES_SIGNING_PRIVATE_KEY: ${{ secrets.ACTIVEPIECES_SIGNING_PRIVATE_KEY || 'stage14_activepieces_signing_private_key' }}
+      ACTIVEPIECES_SIGNING_KEY_ID: lexframe-stage4
+      ACTIVEPIECES_PROJECT_PREFIX: lf
+      ACTIVEPIECES_SIMULATE_RUNS: 0
+      NEXT_PUBLIC_ACTIVEPIECES_INSTANCE_URL: http://127.0.0.1:8080
+      NEXT_PUBLIC_ACTIVEPIECES_EMBED_SDK_URL: https://cdn.activepieces.com/sdk/embed/0.8.1.js
+      OPENSEARCH_URL: http://127.0.0.1:9200
+      OPENSEARCH_INDEX_ALIAS: legal_chunks_current
+      OPENSEARCH_SEARCH_PIPELINE: legal-hybrid-pipeline
+      XAI_API_KEY: stage14_dummy_xai_key
+      COMETAPI_API_KEY: stage14_dummy_comet_key
+      POSTHOG_KEY: stage14_dummy_posthog_key
+      NEXT_PUBLIC_POSTHOG_KEY: phc_stage14_local
+      GRAFANA_BASE_URL: http://127.0.0.1:3001
+      SENTRY_DSN: https://examplePublicKey@o0.ingest.sentry.io/0
+      NEXT_PUBLIC_ENABLE_MSW: 0
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Enable Corepack
+        run: corepack enable
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Install Playwright Chromium
+        run: pnpm --filter @lexframe/e2e exec playwright install chromium
+      - name: Release-candidate preflight gates
+        run: |
+          pnpm --filter @lexframe/config build
+          pnpm check:contracts
+          pnpm check:backend
+          pnpm check:frontend
+          pnpm --filter @lexframe/e2e typecheck
+          pnpm check:security
+      - name: Start Stage 14 infrastructure
+        run: docker compose -f compose.yaml --profile local-integrated up -d postgres activepieces-postgres activepieces-redis activepieces-app activepieces-worker opensearch storage-sandbox delivery-sandbox
+      - name: Prepare OpenSearch search index
+        run: node scripts/prepare-stage14-search-index.mjs
+      - name: Apply local schema and seed data
+        shell: bash
+        run: |
+          POSTGRES_CONTAINER="$(docker compose -f compose.yaml ps -q postgres)"
+          cat scripts/bootstrap-local-supabase-compat.sql | docker exec -i "$POSTGRES_CONTAINER" psql -v ON_ERROR_STOP=1 -U postgres -d postgres
+          for file in $(ls supabase/migrations/*.sql | sort); do
+            cat "$file" | docker exec -i "$POSTGRES_CONTAINER" psql -v ON_ERROR_STOP=1 -U postgres -d postgres
+          done
+          for file in $(ls supabase/seed/*.sql | sort); do
+            cat "$file" | docker exec -i "$POSTGRES_CONTAINER" psql -v ON_ERROR_STOP=1 -U postgres -d postgres
+          done
+      - name: Stage 14 integrated smoke
+        run: pnpm --filter @lexframe/e2e exec playwright test stage2-storage-integrated.spec.ts stage4-activepieces-integrated.spec.ts stage5-ai-gateway-policy.spec.ts stage6-search-integrated.spec.ts stage8-delivery-sandbox.spec.ts stage10-realtime-integrated.spec.ts
+      - name: Generate release manifest
+        if: always()
+        run: node scripts/create-release-manifest.mjs
+      - name: Upload runtime logs
+        if: always()
+        shell: bash
+        run: docker compose -f compose.yaml --profile local-integrated logs > stage14-integrated.log
+      - name: Upload runtime artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage14-integrated-logs
+          path: |
+            stage14-integrated.log
+            artifacts/release-manifest.json
+            tests/e2e/playwright-report
+            tests/e2e/test-results

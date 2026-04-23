@@ -1,0 +1,22 @@
+{
+  "name": "@lexframe/workflow",
+  "version": "0.1.0",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "src/index.ts",
+  "scripts": {
+    "build": "node --max-old-space-size=4096 ./node_modules/typescript/lib/tsc.js -p tsconfig.json",
+    "typecheck": "node --max-old-space-size=4096 ./node_modules/typescript/lib/tsc.js -p tsconfig.json --noEmit",
+    "lint": "eslint \"src/**/*.ts\"",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@lexframe/contracts": "workspace:*",
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "vitest": "^3.1.2"
+  }
+}

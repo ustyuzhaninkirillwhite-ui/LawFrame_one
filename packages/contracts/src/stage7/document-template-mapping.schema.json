@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lexframe.local/schemas/document-template-mapping.schema.json",
+  "title": "DocumentTemplateMapping",
+  "type": "object",
+  "required": ["placeholderCode", "sourcePath", "required"],
+  "properties": {
+    "placeholderCode": {
+      "type": "string",
+      "minLength": 2
+    },
+    "sourcePath": {
+      "type": "string",
+      "minLength": 2
+    },
+    "fallbackValue": {
+      "type": ["string", "null"]
+    },
+    "required": {
+      "type": "boolean"
+    }
+  },
+  "additionalProperties": false
+}

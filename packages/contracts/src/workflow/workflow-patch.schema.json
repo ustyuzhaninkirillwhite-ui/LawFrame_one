@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lexframe.local/schemas/workflow-patch.schema.json",
+  "title": "LexFrameWorkflowPatch",
+  "type": "object",
+  "required": [
+    "patchVersion",
+    "baseWorkflowVersionId",
+    "operations",
+    "explanation",
+    "riskChange"
+  ],
+  "properties": {
+    "patchVersion": {
+      "type": "string",
+      "const": "lexframe.workflow_patch.v1"
+    },
+    "baseWorkflowVersionId": {
+      "type": "string",
+      "minLength": 3
+    },
+    "operations": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": ["op", "afterStepId", "step"],
+            "properties": {
+              "op": {
+                "type": "string",
+                "const": "add_step"
+              },
+              "afterStepId": {
+                "type": ["string", "null"]
+              },
+              "step": {
+                "$ref": "workflow.schema.json#/$defs/step"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": ["op", "stepId", "changes"],
+            "properties": {
+              "op": {
+                "type": "string",
+                "const": "update_step"
+              },
+              "stepId": {
+                "type": "string"
+              },
+              "changes": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": ["op", "stepId"],
+            "properties": {
+              "op": {
+                "type": "string",
+                "const": "remove_step"
+              },
+              "stepId": {
+                "type": "string"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "explanation": {
+      "type": "string",
+      "minLength": 3
+    },
+    "riskChange": {
+      "type": "string",
+      "enum": [
+        "none",
+        "low_to_medium",
+        "medium_to_high",
+        "high_to_critical"
+      ]
+    }
+  }
+}

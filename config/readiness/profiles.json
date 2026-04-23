@@ -1,0 +1,67 @@
+{
+  "defaultProfile": "local-basic",
+  "profiles": {
+    "local-basic": {
+      "description": "Baseline local profile with optional integrated dependencies allowed to stay blocked.",
+      "allowReadinessGateBlocked": true,
+      "requiredServices": ["postgres", "backend", "web"],
+      "optionalServices": [
+        "supabase-storage",
+        "activepieces",
+        "redis",
+        "opensearch",
+        "delivery-sandbox",
+        "real-ai-provider",
+        "realtime"
+      ]
+    },
+    "local-integrated": {
+      "description": "Strict local profile for real storage signing, Activepieces runtime, OpenSearch, and delivery sandbox smoke.",
+      "allowReadinessGateBlocked": false,
+      "requiredServices": [
+        "postgres",
+        "supabase-storage",
+        "backend",
+        "web",
+        "activepieces",
+        "redis",
+        "opensearch",
+        "delivery-sandbox"
+      ],
+      "optionalServices": ["real-ai-provider", "realtime"]
+    },
+    "staging-rc": {
+      "description": "Release-candidate staging profile with integrated runtime and search dependencies.",
+      "allowReadinessGateBlocked": false,
+      "requiredServices": [
+        "postgres",
+        "supabase-storage",
+        "backend",
+        "web",
+        "activepieces",
+        "redis",
+        "opensearch",
+        "real-ai-provider",
+        "realtime"
+      ],
+      "optionalServices": ["delivery-sandbox"]
+    },
+    "production": {
+      "description": "Production profile with every runtime dependency enforced.",
+      "allowReadinessGateBlocked": false,
+      "requiredServices": [
+        "postgres",
+        "supabase-storage",
+        "backend",
+        "web",
+        "activepieces",
+        "redis",
+        "opensearch",
+        "delivery-sandbox",
+        "real-ai-provider",
+        "realtime"
+      ],
+      "optionalServices": []
+    }
+  }
+}

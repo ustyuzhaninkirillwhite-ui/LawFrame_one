@@ -1,0 +1,282 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lexframe.local/schemas/workflow.schema.json",
+  "title": "LexFrameWorkflow",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "id",
+    "title",
+    "description",
+    "intent",
+    "jurisdiction",
+    "practiceArea",
+    "inputs",
+    "outputs",
+    "steps",
+    "transitions",
+    "approvalPolicy",
+    "securityLabels",
+    "createdBy",
+    "confidence"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "lexframe.workflow.v1"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{5,63}$"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 3
+    },
+    "description": {
+      "type": "string",
+      "minLength": 3
+    },
+    "intent": {
+      "type": "string",
+      "minLength": 3
+    },
+    "jurisdiction": {
+      "type": "string",
+      "minLength": 2
+    },
+    "practiceArea": {
+      "type": "string",
+      "minLength": 2
+    },
+    "inputs": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/input"
+      }
+    },
+    "outputs": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/output"
+      }
+    },
+    "steps": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/step"
+      }
+    },
+    "transitions": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/transition"
+      }
+    },
+    "approvalPolicy": {
+      "$ref": "#/$defs/approvalPolicy"
+    },
+    "securityLabels": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "createdBy": {
+      "type": "string",
+      "enum": ["ai_planner", "human"]
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  },
+  "$defs": {
+    "input": {
+      "type": "object",
+      "required": ["inputId", "label", "type", "required", "source", "dataClass"],
+      "properties": {
+        "inputId": {
+          "type": "string",
+          "minLength": 2
+        },
+        "label": {
+          "type": "string",
+          "minLength": 2
+        },
+        "type": {
+          "type": "string",
+          "minLength": 2
+        },
+        "required": {
+          "type": "boolean"
+        },
+        "source": {
+          "type": "string",
+          "enum": ["user_selection", "profile", "template", "workspace_context"]
+        },
+        "dataClass": {
+          "type": "string"
+        }
+      }
+    },
+    "output": {
+      "type": "object",
+      "required": ["outputId", "label", "type"],
+      "properties": {
+        "outputId": {
+          "type": "string",
+          "minLength": 2
+        },
+        "label": {
+          "type": "string",
+          "minLength": 2
+        },
+        "type": {
+          "type": "string",
+          "minLength": 2
+        },
+        "format": {
+          "type": ["string", "null"]
+        }
+      }
+    },
+    "step": {
+      "type": "object",
+      "required": [
+        "stepId",
+        "moduleCode",
+        "moduleVersion",
+        "title",
+        "description",
+        "kind",
+        "inputBindings",
+        "outputBindings",
+        "requiresApproval",
+        "dataPolicy",
+        "runtime"
+      ],
+      "properties": {
+        "stepId": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-]{1,63}$"
+        },
+        "moduleCode": {
+          "type": "string",
+          "minLength": 3
+        },
+        "moduleVersion": {
+          "type": "string",
+          "minLength": 1
+        },
+        "title": {
+          "type": "string",
+          "minLength": 3
+        },
+        "description": {
+          "type": "string",
+          "minLength": 3
+        },
+        "kind": {
+          "type": "string",
+          "enum": ["ingest", "analyze", "generate", "review", "deliver", "store"]
+        },
+        "inputBindings": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "outputBindings": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "requiresApproval": {
+          "type": "boolean"
+        },
+        "dataPolicy": {
+          "type": "object",
+          "required": ["maxClass", "allowedAiRoutes"],
+          "properties": {
+            "maxClass": {
+              "type": "string"
+            },
+            "allowedAiRoutes": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "runtime": {
+          "type": "object",
+          "properties": {
+            "requiredPiece": {
+              "type": ["string", "null"]
+            },
+            "requiredConnection": {
+              "type": ["string", "null"]
+            }
+          },
+          "additionalProperties": false
+        },
+        "onError": {
+          "type": "object",
+          "required": ["strategy", "message"],
+          "properties": {
+            "strategy": {
+              "type": "string",
+              "enum": ["stop_and_ask_user", "stop", "continue"]
+            },
+            "message": {
+              "type": "string",
+              "minLength": 3
+            }
+          }
+        }
+      }
+    },
+    "transition": {
+      "type": "object",
+      "required": ["from", "to", "condition"],
+      "properties": {
+        "from": {
+          "type": "string"
+        },
+        "to": {
+          "type": "string"
+        },
+        "condition": {
+          "type": "string",
+          "enum": ["success", "failure", "always", "approved"]
+        }
+      }
+    },
+    "approvalPolicy": {
+      "type": "object",
+      "required": [
+        "externalActionsRequireApproval",
+        "documentGenerationRequiresReview"
+      ],
+      "properties": {
+        "externalActionsRequireApproval": {
+          "type": "boolean"
+        },
+        "documentGenerationRequiresReview": {
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}
