@@ -20,10 +20,18 @@ import {
 import { useSessionBridge } from "@/providers/session-provider";
 import { formatDateTime, formatStatus, t } from "@/lib/i18n";
 
-export function AutomationDetailPanel() {
-  const params = useParams<{ id: string }>();
+export function AutomationDetailPanel({
+  projectId: _projectId,
+}: {
+  readonly projectId?: string;
+}) {
+  void _projectId;
+  const params = useParams<{ id?: string; automationId?: string }>();
   const router = useRouter();
-  const automationId = readParam(params.id) ?? "aut_01hzyd8md4j4yhr40t1k0f8p9n";
+  const automationId =
+    readParam(params.automationId) ??
+    readParam(params.id) ??
+    "aut_01hzyd8md4j4yhr40t1k0f8p9n";
   const { sessionContext } = useSessionBridge();
   const automation = useAutomationDetail(automationId);
   const runtime = useAutomationRuntimeRequirements(automationId);
@@ -140,7 +148,7 @@ export function AutomationDetailPanel() {
                 <Button
                   onClick={() => {
                     void createRunMutation.mutateAsync({}).then((response) => {
-                      router.push(response.runUrl);
+                      router.push(response.runUrl.replace(/^\/runs\//, "/app/runs/"));
                     });
                   }}
                   disabled={

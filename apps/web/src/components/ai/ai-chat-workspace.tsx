@@ -2,6 +2,7 @@
 
 import type {
   AiChatSessionSummary,
+  AiChatSource,
   AiChatResponse,
   AiClarificationQuestion,
   WorkflowDraftDetail,
@@ -25,22 +26,30 @@ import {
   useAiRequest,
   useAiRequestEvents,
   useCreateWorkflowDraft,
-  useDocuments,
-  useInstalledAutomations,
-  useLibraryTemplates,
   useSendAiChatMessage,
-  useSessionContext,
   useWorkflowDraft,
   useWorkflowDrafts,
   useUpdateWorkflowDraftInputs,
+} from "@/hooks/domain/ai";
+import {
+  useInstalledAutomations,
+  useLibraryTemplates,
+} from "@/hooks/domain/automations";
+import { useDocuments } from "@/hooks/domain/documents";
+import {
+  useSessionContext,
   useWorkspaceMembers,
-} from "@/hooks/use-stage0-data";
+} from "@/hooks/domain/session";
 import { formatDateTime, formatStatus, t } from "@/lib/i18n";
 
-export function AiChatWorkspace() {
+export function AiChatWorkspace({
+  initialSource,
+}: {
+  readonly initialSource?: AiChatSource;
+} = {}) {
   const searchParams = useSearchParams();
   const store = useAiChatStore({
-    source: normalizeSource(searchParams.get("source")),
+    source: initialSource ?? normalizeSource(searchParams.get("source")),
     mode: searchParams.get("automationId") ? "modify_workflow" : "create_workflow",
     currentAutomationId: searchParams.get("automationId"),
     selectedDocumentIds: searchParams.get("documentId")
@@ -423,7 +432,7 @@ function ComposerCard(props: {
   readonly deferredMessage: string;
   readonly isPending: boolean;
   readonly mode: "create_workflow" | "modify_workflow" | "explain_workflow" | "extract_fields";
-  readonly source: "global_chat" | "automation_chat" | "document_chat";
+  readonly source: AiChatSource;
   readonly selectedDocumentIds: readonly string[];
   readonly selectedTemplateIds: readonly string[];
   readonly selectedProfileId: string | null;
@@ -1057,8 +1066,8 @@ function EmptyState(props: {
   );
 }
 
-function normalizeSource(value: string | null) {
-  if (value === "automation_chat" || value === "document_chat" || value === "global_chat") {
+function normalizeSource(value: string | null): AiChatSource {
+  if (value === "automation_chat" || value === "document_chat" || value === "project_chat" || value === "global_chat") {
     return value;
   }
 

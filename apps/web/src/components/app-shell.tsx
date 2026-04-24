@@ -1,16 +1,37 @@
+"use client";
+
 import type * as React from "react";
-import { NavSidebar } from "./nav-sidebar";
+import { usePathname } from "next/navigation";
+import { ProjectSidebar } from "@/components/shell/project-sidebar";
+import {
+  isAutomationCanvasRoute,
+  isProjectWorkspaceRoute,
+} from "@/lib/automation-canvas-route";
+import { cn } from "@/lib/utils";
 import { SystemStatusBanner } from "./system-status-banner";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const canvasMode = isAutomationCanvasRoute(pathname);
+  const projectWorkspaceMode = isProjectWorkspaceRoute(pathname);
+
   return (
-    <div className="shell-grid">
-      <NavSidebar />
-      <main className="px-5 py-5 lg:px-8 lg:py-8">
-        <div className="mx-auto flex min-h-[calc(100vh-40px)] max-w-7xl flex-col gap-8 rounded-[34px] border border-[color:var(--line)] bg-[color:var(--panel)] p-6 lg:p-8">
-          <SystemStatusBanner />
-          {children}
-        </div>
+    <div className="flex min-h-screen bg-[color:var(--background)]/30">
+      <ProjectSidebar forceCollapsed={canvasMode} />
+      <main
+        className={cn(
+          "min-w-0 flex-1",
+          canvasMode ? "h-screen overflow-hidden" : "px-4 py-4 lg:px-7 lg:py-7",
+        )}
+      >
+        {canvasMode ? (
+          children
+        ) : (
+          <div className="mx-auto flex min-h-[calc(100vh-32px)] max-w-[1520px] flex-col gap-8 rounded-[28px] border border-[color:var(--line)] bg-[color:var(--panel)] p-5 lg:p-7">
+            {projectWorkspaceMode ? null : <SystemStatusBanner />}
+            {children}
+          </div>
+        )}
       </main>
     </div>
   );

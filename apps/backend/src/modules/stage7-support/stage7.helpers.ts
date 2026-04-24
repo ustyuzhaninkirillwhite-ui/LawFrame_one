@@ -7,108 +7,29 @@ import type {
   DocumentValidationIssue,
   PhraseRuleSummary,
 } from '@lexframe/contracts';
-import type { LexframeRequest } from '../../common/types/lexframe-request';
 import { AppHttpException } from '../../common/errors/app-http.exception';
+import {
+  asRecord,
+  expectString,
+  optionalBoolean,
+  optionalNumber,
+  optionalRecord,
+  optionalString,
+  requestMeta,
+  type RequestMeta,
+} from '../../common/http/request-parsing';
 import { createHash } from 'node:crypto';
 
-export interface RequestMeta {
-  readonly requestId: string | null;
-  readonly traceId: string | null;
-}
-
-export function requestMeta(request: LexframeRequest): RequestMeta {
-  return {
-    requestId: request.requestId ?? request.headers['x-request-id'] ?? null,
-    traceId: request.traceId ?? request.headers['x-trace-id'] ?? null,
-  };
-}
-
-export function asRecord(value: unknown): Record<string, unknown> {
-  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
-    throw new AppHttpException(
-      'VALIDATION_ERROR',
-      400,
-      'Request body must be a JSON object.',
-    );
-  }
-
-  return value as Record<string, unknown>;
-}
-
-export function expectString(value: unknown, message: string): string {
-  if (typeof value !== 'string' || value.trim().length === 0) {
-    throw new AppHttpException('VALIDATION_ERROR', 400, message);
-  }
-
-  return value.trim();
-}
-
-export function optionalString(value: unknown): string | null | undefined {
-  if (value === undefined) {
-    return undefined;
-  }
-
-  if (value === null) {
-    return null;
-  }
-
-  if (typeof value !== 'string') {
-    throw new AppHttpException(
-      'VALIDATION_ERROR',
-      400,
-      'Expected a string or null value.',
-    );
-  }
-
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed : null;
-}
-
-export function optionalBoolean(value: unknown): boolean | undefined {
-  if (value === undefined) {
-    return undefined;
-  }
-
-  if (typeof value !== 'boolean') {
-    throw new AppHttpException(
-      'VALIDATION_ERROR',
-      400,
-      'Expected a boolean value.',
-    );
-  }
-
-  return value;
-}
-
-export function optionalNumber(value: unknown): number | undefined {
-  if (value === undefined) {
-    return undefined;
-  }
-
-  if (typeof value !== 'number' || Number.isNaN(value)) {
-    throw new AppHttpException(
-      'VALIDATION_ERROR',
-      400,
-      'Expected a numeric value.',
-    );
-  }
-
-  return value;
-}
-
-export function optionalRecord(
-  value: unknown,
-): Record<string, unknown> | null | undefined {
-  if (value === undefined) {
-    return undefined;
-  }
-
-  if (value === null) {
-    return null;
-  }
-
-  return asRecord(value);
-}
+export {
+  asRecord,
+  expectString,
+  optionalBoolean,
+  optionalNumber,
+  optionalRecord,
+  optionalString,
+  requestMeta,
+};
+export type { RequestMeta };
 
 export function stringArray(value: unknown): readonly string[] {
   if (!Array.isArray(value)) {

@@ -60,6 +60,10 @@ import {
   sessionContextFixture,
 } from "@lexframe/contracts";
 import { HttpResponse, http } from "msw";
+import {
+  buildStage15ProjectSnapshot,
+  stage15Handlers,
+} from "./stage15-handlers";
 
 const ALLOWED_MIME_TYPES = [
   "application/pdf",
@@ -975,6 +979,8 @@ export const handlers = [
     HttpResponse.json(buildSessionContext(request)),
   ),
 
+  ...stage15Handlers,
+
   http.post("*/workspaces/:workspaceId/switch", ({ params }) => {
     const workspaceId = String(params.workspaceId);
     const workspace =
@@ -1399,9 +1405,14 @@ export const handlers = [
 
     return HttpResponse.json(snapshot);
   }),
-  http.get("*/dashboard/snapshot", () =>
-    HttpResponse.json(buildDashboardSnapshot()),
-  ),
+  http.get("*/dashboard/snapshot", ({ request }) => {
+    const url = new URL(request.url);
+    const projectId = url.searchParams.get("projectId");
+
+    return HttpResponse.json(
+      projectId ? buildStage15ProjectSnapshot(projectId) : buildDashboardSnapshot(),
+    );
+  }),
   http.get("*/dashboard/events", ({ request }) =>
     HttpResponse.json(buildDashboardEvents(new URL(request.url))),
   ),

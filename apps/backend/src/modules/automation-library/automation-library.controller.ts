@@ -17,6 +17,13 @@ import { AuthGuard } from '../../common/guards/auth.guard';
 import { PermissionGuard } from '../../common/guards/permission.guard';
 import { WorkspaceContextGuard } from '../../common/guards/workspace-context.guard';
 import {
+  asLooseRecord,
+  asRecord,
+  expectString,
+  expectStringArray,
+  requestMeta,
+} from '../../common/http/request-parsing';
+import {
   Body,
   Controller,
   Get,
@@ -728,45 +735,6 @@ function expectRequirementArray(
   });
 }
 
-function expectStringArray(value: unknown, message: string): readonly string[] {
-  if (!isStringArray(value)) {
-    throw new AppHttpException('VALIDATION_ERROR', 400, message);
-  }
-
-  return value.map((entry) => entry.trim()).filter((entry) => entry.length > 0);
-}
-
-function expectString(value: unknown, message: string): string {
-  if (typeof value !== 'string' || value.trim().length === 0) {
-    throw new AppHttpException('VALIDATION_ERROR', 400, message);
-  }
-
-  return value.trim();
-}
-
-function asRecord(value: unknown): Record<string, unknown> {
-  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
-    throw new AppHttpException(
-      'VALIDATION_ERROR',
-      400,
-      'Request body must be a JSON object.',
-    );
-  }
-
-  return value as Record<string, unknown>;
-}
-
-function asLooseRecord(
-  value: unknown,
-  message: string,
-): Record<string, unknown> {
-  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
-    throw new AppHttpException('VALIDATION_ERROR', 400, message);
-  }
-
-  return value as Record<string, unknown>;
-}
-
 function isTemplateScope(value: unknown): value is AutomationTemplateScope {
   return (
     value === 'product' ||
@@ -782,18 +750,5 @@ function isTemplateOwner(value: unknown): value is AutomationTemplateOwner {
     value === 'workspace' ||
     value === 'public' ||
     value === 'private'
-  );
-}
-
-function requestMeta(request: LexframeRequest) {
-  return {
-    requestId: request.headers['x-request-id'] ?? null,
-    traceId: request.headers['x-trace-id'] ?? null,
-  };
-}
-
-function isStringArray(value: unknown): value is readonly string[] {
-  return (
-    Array.isArray(value) && value.every((entry) => typeof entry === 'string')
   );
 }

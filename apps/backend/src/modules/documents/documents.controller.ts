@@ -15,6 +15,11 @@ import { AuthGuard } from '../../common/guards/auth.guard';
 import { PermissionGuard } from '../../common/guards/permission.guard';
 import { WorkspaceContextGuard } from '../../common/guards/workspace-context.guard';
 import {
+  asRecord,
+  expectString,
+  requestMeta,
+} from '../../common/http/request-parsing';
+import {
   Body,
   Controller,
   Delete,
@@ -434,14 +439,6 @@ function expectDocumentObjectRole(value: unknown): DocumentObjectRole {
   );
 }
 
-function expectString(value: unknown, message: string): string {
-  if (typeof value !== 'string' || value.trim().length === 0) {
-    throw new AppHttpException('VALIDATION_ERROR', 400, message);
-  }
-
-  return value.trim();
-}
-
 function expectPositiveNumber(value: unknown, message: string): number {
   if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) {
     throw new AppHttpException('VALIDATION_ERROR', 400, message);
@@ -483,23 +480,4 @@ function isDocumentStatus(value: unknown) {
     value === 'soft_deleted' ||
     value === 'hard_delete_pending'
   );
-}
-
-function asRecord(value: unknown): Record<string, unknown> {
-  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
-    throw new AppHttpException(
-      'VALIDATION_ERROR',
-      400,
-      'Request body must be a JSON object.',
-    );
-  }
-
-  return value as Record<string, unknown>;
-}
-
-function requestMeta(request: LexframeRequest) {
-  return {
-    requestId: request.headers['x-request-id'] ?? null,
-    traceId: request.headers['x-trace-id'] ?? null,
-  };
 }

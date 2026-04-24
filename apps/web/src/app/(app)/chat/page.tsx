@@ -1,5 +1,5 @@
-import { AiChatWorkspace } from "@/components/ai/ai-chat-workspace";
+import { redirect } from "next/navigation";
 
 export default function ChatPage() {
-  return <AiChatWorkspace />;
+  redirect("/app/projects/project_claim_001/chats/chat_project_claim_001");
 }

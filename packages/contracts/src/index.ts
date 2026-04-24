@@ -3,6 +3,7 @@ export * from "./domain";
 export * from "./legal";
 export * from "./stage7";
 export * from "./stage8";
+export * from "./stage15";
 export * from "./stage12";
 export * from "./enums/data-classification";
 export * from "./errors/error-codes";
@@ -12,6 +13,7 @@ export * from "./fixtures/demo-data";
 export * from "./fixtures/ai-fixtures";
 export * from "./fixtures/legal-fixtures";
 export * from "./fixtures/recommendation-fixtures";
+export * from "./fixtures/stage15-fixtures";
 
 import workflowSchemaJson from "./workflow/workflow.schema.json";
 import workflowPatchSchemaJson from "./workflow/workflow-patch.schema.json";

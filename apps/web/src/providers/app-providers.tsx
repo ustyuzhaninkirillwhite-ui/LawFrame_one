@@ -2,6 +2,7 @@
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import * as React from "react";
+import { getPublicEnv } from "@/lib/browser-auth";
 import { RealtimeProvider } from "./realtime-provider";
 import { SessionProvider } from "./session-provider";
 
@@ -11,9 +12,19 @@ declare global {
   }
 }
 
-function MswBootstrap() {
+function shouldStartMockApi() {
+  const env = getPublicEnv();
+  return (
+    env.NEXT_PUBLIC_ENABLE_MSW === "1" ||
+    env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY.startsWith("demo_")
+  );
+}
+
+function MswBootstrap({ children }: { readonly children: React.ReactNode }) {
+  const [ready, setReady] = React.useState(() => !shouldStartMockApi());
+
   React.useEffect(() => {
-    if (process.env.NEXT_PUBLIC_ENABLE_MSW !== "1") {
+    if (!shouldStartMockApi()) {
       window.__LEXFRAME_MSW_READY = true;
       return;
     }
@@ -21,10 +32,15 @@ function MswBootstrap() {
     void import("@/mocks/browser").then(async ({ worker }) => {
       await worker.start({ onUnhandledRequest: "bypass" });
       window.__LEXFRAME_MSW_READY = true;
+      setReady(true);
+    }).catch((error: unknown) => {
+      console.error("Failed to start LexFrame mock API.", error);
+      window.__LEXFRAME_MSW_READY = true;
+      setReady(true);
     });
   }, []);
 
-  return null;
+  return ready ? <>{children}</> : null;
 }
 
 export function AppProviders({ children }: { children: React.ReactNode }) {
@@ -41,12 +57,13 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <SessionProvider>
-        <RealtimeProvider>
-          <MswBootstrap />
-          {children}
-        </RealtimeProvider>
-      </SessionProvider>
+      <MswBootstrap>
+        <SessionProvider>
+          <RealtimeProvider>
+            {children}
+          </RealtimeProvider>
+        </SessionProvider>
+      </MswBootstrap>
     </QueryClientProvider>
   );
 }

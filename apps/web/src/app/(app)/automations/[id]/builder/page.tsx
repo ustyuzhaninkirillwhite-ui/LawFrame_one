@@ -1,15 +1,11 @@
-import { BuilderReadiness } from "@/components/builder-readiness";
-import { PageShell } from "@/components/page-shell";
+import { redirect } from "next/navigation";
 
-export default function AutomationBuilderPage() {
-  return (
-    <PageShell
-      eyebrow="builder"
-      title="Builder session короткоживущая, backend-issued и привязана к runtime binding."
-      description="Stage 4 открывает реальный embedded builder после sync: backend создаёт project/user binding, выдаёт short-lived token и управляет allowed pieces через runtime boundary."
-      badge="embedded"
-    >
-      <BuilderReadiness />
-    </PageShell>
-  );
+export default async function AutomationBuilderPage({
+  params,
+}: {
+  readonly params: Promise<{ readonly id: string }>;
+}) {
+  const { id } = await params;
+
+  redirect(`/app/projects/project_claim_001/automations/${id}/advanced-builder`);
 }

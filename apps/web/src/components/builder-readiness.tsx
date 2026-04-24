@@ -30,9 +30,16 @@ declare global {
 
 let embedSdkPromise: Promise<EmbedSdk> | null = null;
 
-export function BuilderReadiness() {
-  const params = useParams<{ id: string }>();
-  const automationId = readParam(params.id) ?? "aut_01hzyd8md4j4yhr40t1k0f8p9n";
+export function BuilderReadiness({
+  projectId,
+}: {
+  readonly projectId?: string;
+}) {
+  const params = useParams<{ id?: string; automationId?: string }>();
+  const automationId =
+    readParam(params.automationId) ??
+    readParam(params.id) ??
+    "aut_01hzyd8md4j4yhr40t1k0f8p9n";
   const env = React.useMemo(() => getPublicEnv(), []);
   const containerId = React.useMemo(
     () => `activepieces-builder-${automationId.replace(/[^a-z0-9_-]/gi, "-")}`,
@@ -100,7 +107,9 @@ export function BuilderReadiness() {
           instanceUrl: tokenData.instanceUrl,
           jwtToken: tokenData.token,
           containerId,
-          prefix: `/automations/${automationId}/builder`,
+          prefix: projectId
+            ? `/app/projects/${projectId}/automations/${automationId}/advanced-builder`
+            : `/automations/${automationId}/builder`,
           disableNavigation: "keep_home_button_only",
           hideFlowName: false,
           navigationHandler: () => undefined,
@@ -134,6 +143,7 @@ export function BuilderReadiness() {
     containerId,
     env.NEXT_PUBLIC_ACTIVEPIECES_EMBED_SDK_URL,
     expired,
+    projectId,
     runtime.data?.canOpenBuilder,
     token.data,
   ]);

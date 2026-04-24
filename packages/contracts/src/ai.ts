@@ -29,6 +29,7 @@ export type AiTaskType =
 export type AiChatSource =
   | "global_chat"
   | "automation_chat"
+  | "project_chat"
   | "document_chat";
 
 export type AiChatMode =

@@ -38,27 +38,22 @@ import { randomUUID } from 'node:crypto';
 import { AuditService } from '../audit/audit.service';
 import { DatabaseService } from '../database/database.service';
 import { LiveEventsService } from '../realtime/live-events.service';
-
-const MAX_UPLOAD_SIZE_BYTES = 25 * 1024 * 1024;
-const DEFAULT_UPLOAD_TTL_MINUTES = 15;
-const ORIGINAL_SIGNED_URL_TTL_SECONDS = 120;
-const PREVIEW_SIGNED_URL_TTL_SECONDS = 300;
-const ALLOWED_MIME_TYPES = [
-  'application/pdf',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  'image/png',
-  'image/jpeg',
-  'text/plain',
-] as const;
-const PREVIEWABLE_MIME_TYPES = new Set([
-  'application/pdf',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-]);
-const TEXT_EXTRACTABLE_MIME_TYPES = new Set([
-  'application/pdf',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  'text/plain',
-]);
+import {
+  ALLOWED_MIME_TYPES,
+  DEFAULT_UPLOAD_TTL_MINUTES,
+  MAX_UPLOAD_SIZE_BYTES,
+  PREVIEWABLE_MIME_TYPES,
+  TEXT_EXTRACTABLE_MIME_TYPES,
+  buildDerivedStoragePath,
+  buildStoragePath,
+  clampSignedUrlTtl,
+  createFutureTimestamp,
+  deriveArtifactFilename,
+  mapStorageState,
+  normalizeArtifactKind,
+  resolveDocumentSource,
+  sanitizeFilename,
+} from './documents-storage.helpers';
 
 interface RequestMeta {
   readonly requestId: string | null;
@@ -2123,138 +2118,4 @@ function mapVersionRow(row: VersionRow): DocumentVersionSummary {
     createdAt: row.created_at,
     completedAt: row.completed_at,
   };
-}
-
-function mapStorageState(bucket: string): StorageState {
-  if (bucket === 'quarantine-private') {
-    return 'quarantined';
-  }
-
-  if (bucket === 'previews-private' || bucket === 'artifacts-private') {
-    return 'signed_url_only';
-  }
-
-  return 'private_bucket';
-}
-
-function buildStoragePath(
-  workspaceId: string,
-  documentId: string,
-  versionId: string,
-  role: DocumentObjectRole,
-  filename: string,
-) {
-  return `workspace/${workspaceId}/documents/${documentId}/versions/${versionId}/${role}/${sanitizeFilename(filename)}`;
-}
-
-function buildDerivedStoragePath(
-  workspaceId: string,
-  documentId: string,
-  versionId: string,
-  role: Exclude<DocumentObjectRole, 'original'>,
-  filename: string,
-) {
-  const safeBaseName = stripExtension(sanitizeFilename(filename));
-  const extension =
-    role === 'preview_pdf'
-      ? 'pdf'
-      : role === 'thumbnail'
-        ? 'png'
-        : role === 'extracted_text'
-          ? 'json'
-          : 'pdf';
-
-  return `workspace/${workspaceId}/documents/${documentId}/versions/${versionId}/${role}/${safeBaseName}.${extension}`;
-}
-
-function sanitizeFilename(filename: string) {
-  const trimmed = filename.trim().toLowerCase();
-  const [baseName, extension] = splitExtension(trimmed);
-  const safeBase = baseName
-    .replace(/[^a-z0-9._-]+/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '');
-  const safeExtension = extension.replace(/[^a-z0-9]+/g, '');
-  return safeExtension.length > 0
-    ? `${safeBase || 'document'}.${safeExtension}`
-    : safeBase || 'document';
-}
-
-function splitExtension(filename: string) {
-  const lastDot = filename.lastIndexOf('.');
-  if (lastDot <= 0) {
-    return [filename, ''] as const;
-  }
-
-  return [filename.slice(0, lastDot), filename.slice(lastDot + 1)] as const;
-}
-
-function stripExtension(filename: string) {
-  return splitExtension(filename)[0];
-}
-
-function resolveDocumentSource(kind: DocumentKind): DocumentSource {
-  if (kind === 'document_template') {
-    return 'template_library';
-  }
-
-  return 'user_upload';
-}
-
-function clampSignedUrlTtl(
-  purpose: SignedUrlRequest['purpose'],
-  requested: number | undefined,
-) {
-  const defaultValue =
-    purpose === 'preview'
-      ? PREVIEW_SIGNED_URL_TTL_SECONDS
-      : ORIGINAL_SIGNED_URL_TTL_SECONDS;
-
-  if (typeof requested !== 'number' || Number.isNaN(requested)) {
-    return defaultValue;
-  }
-
-  return Math.max(30, Math.min(requested, defaultValue));
-}
-
-function createFutureTimestamp(minutes: number) {
-  return new Date(Date.now() + minutes * 60_000).toISOString();
-}
-
-function normalizeArtifactKind(value: string): DocumentKind {
-  if (
-    value === 'case_material' ||
-    value === 'evidence' ||
-    value === 'legal_source' ||
-    value === 'document_template' ||
-    value === 'generated_document' ||
-    value === 'draft_document' ||
-    value === 'delivery_attachment' ||
-    value === 'profile_clause' ||
-    value === 'other'
-  ) {
-    return value;
-  }
-
-  return 'generated_document';
-}
-
-function deriveArtifactFilename(title: string, mimeType: string) {
-  const base = sanitizeFilename(title);
-  const extension =
-    mimeType === 'application/pdf'
-      ? 'pdf'
-      : mimeType ===
-          'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-        ? 'docx'
-        : mimeType === 'image/png'
-          ? 'png'
-          : mimeType === 'image/jpeg'
-            ? 'jpg'
-            : mimeType === 'text/plain'
-              ? 'txt'
-              : 'bin';
-
-  const stripped = stripExtension(base);
-  return `${stripped}.${extension}`;
 }

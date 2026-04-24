@@ -40,6 +40,8 @@ import type {
   RestoreLegalWorkProfileVersionRequest,
   ApprovalTaskRequestChangesRequest,
   StartAutomationRunRequest,
+  Stage15CreateProjectChatRequest,
+  Stage15WorkflowDraftMaterializeRequest,
   SubmitPublicationRequest,
   SyncAutomationRuntimeRequest,
   UpdateApprovalRouteRequest,
@@ -115,6 +117,23 @@ function useAiInvalidation() {
       queryClient.invalidateQueries({ queryKey: ["ai-draft", workspaceId] }),
       queryClient.invalidateQueries({ queryKey: ["ai-request", workspaceId] }),
       queryClient.invalidateQueries({ queryKey: ["ai-request-events", workspaceId] }),
+    ]);
+  };
+}
+
+function useStage15Invalidation() {
+  const queryClient = useQueryClient();
+
+  return async (workspaceId: string) => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["stage15-projects", workspaceId] }),
+      queryClient.invalidateQueries({ queryKey: ["stage15-project", workspaceId] }),
+      queryClient.invalidateQueries({ queryKey: ["stage15-project-snapshot", workspaceId] }),
+      queryClient.invalidateQueries({ queryKey: ["stage15-project-chats", workspaceId] }),
+      queryClient.invalidateQueries({ queryKey: ["stage15-project-automations", workspaceId] }),
+      queryClient.invalidateQueries({ queryKey: ["ai-sessions", workspaceId] }),
+      queryClient.invalidateQueries({ queryKey: ["ai-drafts", workspaceId] }),
+      queryClient.invalidateQueries({ queryKey: ["automations", workspaceId] }),
     ]);
   };
 }
@@ -285,6 +304,81 @@ export function useInstalledAutomations() {
     queryFn: () => apiClient.listInstalledAutomations(),
     enabled,
     staleTime: 15_000,
+  });
+}
+
+export function useStage15Projects() {
+  const { apiClient } = useSessionBridge();
+  const { enabled, workspaceId } = useWorkspaceEnabled();
+
+  return useQuery({
+    queryKey: ["stage15-projects", workspaceId],
+    queryFn: () => apiClient.listProjects(),
+    enabled,
+    staleTime: 15_000,
+  });
+}
+
+export function useStage15Project(projectId?: string | null) {
+  const { apiClient } = useSessionBridge();
+  const { enabled, workspaceId } = useWorkspaceEnabled();
+
+  return useQuery({
+    queryKey: ["stage15-project", workspaceId, projectId],
+    queryFn: () => apiClient.getProject(projectId!),
+    enabled: enabled && Boolean(projectId),
+    staleTime: 10_000,
+  });
+}
+
+export function useStage15ProjectSnapshot(projectId?: string | null) {
+  const { apiClient } = useSessionBridge();
+  const { enabled, workspaceId } = useWorkspaceEnabled();
+
+  return useQuery({
+    queryKey: ["stage15-project-snapshot", workspaceId, projectId],
+    queryFn: () => apiClient.getProjectDashboardSnapshot(projectId!),
+    enabled: enabled && Boolean(projectId),
+    staleTime: 10_000,
+    refetchInterval: 20_000,
+  });
+}
+
+export function useStage15ProjectChats(projectId?: string | null) {
+  const { apiClient } = useSessionBridge();
+  const { enabled, workspaceId } = useWorkspaceEnabled();
+
+  return useQuery({
+    queryKey: ["stage15-project-chats", workspaceId, projectId],
+    queryFn: () => apiClient.listProjectChats(projectId!),
+    enabled: enabled && Boolean(projectId),
+    staleTime: 5_000,
+  });
+}
+
+export function useCreateStage15ProjectChat(projectId?: string | null) {
+  const { apiClient } = useSessionBridge();
+  const { workspaceId } = useWorkspaceEnabled();
+  const invalidate = useStage15Invalidation();
+
+  return useMutation({
+    mutationFn: (input: Stage15CreateProjectChatRequest = {}) =>
+      apiClient.createProjectChat(projectId!, input),
+    onSuccess: async () => {
+      await invalidate(workspaceId);
+    },
+  });
+}
+
+export function useStage15ProjectAutomations(projectId?: string | null) {
+  const { apiClient } = useSessionBridge();
+  const { enabled, workspaceId } = useWorkspaceEnabled();
+
+  return useQuery({
+    queryKey: ["stage15-project-automations", workspaceId, projectId],
+    queryFn: () => apiClient.listProjectAutomations(projectId!),
+    enabled: enabled && Boolean(projectId),
+    staleTime: 10_000,
   });
 }
 
@@ -1171,6 +1265,20 @@ export function useUpdateWorkflowDraftInputs(draftId?: string | null) {
   return useMutation({
     mutationFn: (input: UpdateWorkflowDraftInputsRequest) =>
       apiClient.updateWorkflowDraftInputs(draftId!, input),
+    onSuccess: async () => {
+      await invalidate(workspaceId);
+    },
+  });
+}
+
+export function useMaterializeWorkflowDraft(draftId?: string | null) {
+  const { apiClient } = useSessionBridge();
+  const { workspaceId } = useWorkspaceEnabled();
+  const invalidate = useStage15Invalidation();
+
+  return useMutation({
+    mutationFn: (input: Stage15WorkflowDraftMaterializeRequest) =>
+      apiClient.materializeWorkflowDraft(draftId!, input),
     onSuccess: async () => {
       await invalidate(workspaceId);
     },
