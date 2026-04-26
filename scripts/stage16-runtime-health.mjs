@@ -21,6 +21,7 @@ const optionalEndpoints = [
   ["backend", process.env.LEXFRAME_API_HEALTH_URL ?? "http://127.0.0.1:3100/health/live"],
   ["frontend", process.env.LEXFRAME_WEB_HEALTH_URL ?? "http://127.0.0.1:3000"],
 ];
+const optionalEndpointResults = [];
 
 function run(command, args, options = {}) {
   const result = spawnSync(command, args, {
@@ -45,11 +46,20 @@ async function checkUrl(name, url, required = true) {
       throw new Error(`${name} returned ${response.status}`);
     }
     console.log(`[stage16-runtime] ${name} ${url} -> ${response.status}`);
+    if (!required) {
+      optionalEndpointResults.push({ name, url, available: true });
+    }
     }, `${name} health`);
   } catch (error) {
     if (required) {
       throw error;
     }
+    optionalEndpointResults.push({
+      name,
+      url,
+      available: false,
+      error: error instanceof Error ? error.message : String(error),
+    });
     console.log(`[stage16-runtime] optional ${name} ${url} unavailable: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
@@ -172,4 +182,13 @@ if (
   throw new Error("activepieces-worker reported inability to reach the server and has no later polling evidence");
 }
 
-console.log("[stage16-runtime] local-integrated required services are healthy");
+const unavailableOptional = optionalEndpointResults.filter((item) => !item.available);
+if (unavailableOptional.length > 0 && process.env.STAGE16_REQUIRE_APP_HEALTH !== "1") {
+  console.log(
+    `[stage16-runtime] app servers not required in this probe: ${unavailableOptional
+      .map((item) => item.name)
+      .join(", ")} unavailable. Playwright webServer is the acceptance proof for backend/frontend readiness.`,
+  );
+}
+
+console.log("[stage16-runtime] local-integrated Docker/runtime dependencies are healthy");

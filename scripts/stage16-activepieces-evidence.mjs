@@ -182,18 +182,24 @@ async function verifyBinding(binding, token) {
       `select count(*) from public.flow_version where "flowId" = ${sqlLiteral(binding.flowId)};`,
     ),
   );
-  const flow = await activepiecesApi(
-    `/api/v1/flows/${encodeURIComponent(binding.flowId)}`,
-    token,
-    binding.projectId,
-  );
-  const apiVersionId = flow.version?.id ?? flow.publishedVersionId ?? null;
+  let flow = null;
+  let apiError = null;
+  try {
+    flow = await activepiecesApi(
+      `/api/v1/flows/${encodeURIComponent(binding.flowId)}`,
+      token,
+      binding.projectId,
+    );
+  } catch (error) {
+    apiError = error instanceof Error ? error.message : String(error);
+  }
+  const apiVersionId = flow?.version?.id ?? flow?.publishedVersionId ?? null;
   const matches =
     projectRows > 0 &&
     flowRows > 0 &&
     versionRows > 0 &&
-    flow.id === binding.flowId &&
-    flow.projectId === binding.projectId &&
+    flow?.id === binding.flowId &&
+    flow?.projectId === binding.projectId &&
     Boolean(apiVersionId);
   return {
     ...binding,
@@ -201,8 +207,9 @@ async function verifyBinding(binding, token) {
     flowRows,
     versionRows,
     apiVersionId,
-    publishedVersionId: flow.publishedVersionId ?? null,
-    flowStatus: flow.status ?? null,
+    apiError,
+    publishedVersionId: flow?.publishedVersionId ?? null,
+    flowStatus: flow?.status ?? null,
     matches,
   };
 }

@@ -510,57 +510,6 @@ set
   last_checked_at = excluded.last_checked_at,
   updated_at = timezone('utc', now());
 
-insert into app.automation_runtime_bindings (
-  id,
-  installed_automation_id,
-  workspace_id,
-  source_template_version_id,
-  external_project_id,
-  external_flow_id,
-  sync_hash,
-  projection_version,
-  projection,
-  status,
-  last_synced_at,
-  runtime,
-  activepieces_flow_version_id,
-  source_workflow_hash,
-  runtime_hash,
-  last_synced_hash,
-  last_checked_at
-)
-values
-  (
-    '16000000-0000-4000-8000-00000000a001',
-    '16000000-0000-4000-8000-000000008001',
-    '16000000-0000-4000-8000-00000000100a',
-    '16000000-0000-4000-8000-000000007101',
-    'stage16-activepieces-project',
-    'stage16-activepieces-flow',
-    'stage16-source-hash',
-    'v2',
-    '{"runtime":"activepieces","source":"stage16-live-seed"}',
-    'synced',
-    timezone('utc', now()),
-    'activepieces',
-    'stage16-flow-version-1',
-    'stage16-source-hash',
-    'stage16-runtime-hash',
-    'stage16-source-hash',
-    timezone('utc', now())
-  )
-on conflict (installed_automation_id) do update
-set
-  external_project_id = excluded.external_project_id,
-  external_flow_id = excluded.external_flow_id,
-  sync_hash = excluded.sync_hash,
-  projection = excluded.projection,
-  status = excluded.status,
-  last_synced_at = excluded.last_synced_at,
-  runtime = excluded.runtime,
-  activepieces_flow_version_id = excluded.activepieces_flow_version_id,
-  source_workflow_hash = excluded.source_workflow_hash,
-  runtime_hash = excluded.runtime_hash,
-  last_synced_hash = excluded.last_synced_hash,
-  last_checked_at = excluded.last_checked_at,
-  updated_at = timezone('utc', now());
+-- Stage 16 live acceptance must prove Activepieces runtime artifacts by
+-- running sync against the controlled Activepieces instance. Do not seed a
+-- synthetic "synced" runtime binding: it can mask missing AP flow/version rows.
