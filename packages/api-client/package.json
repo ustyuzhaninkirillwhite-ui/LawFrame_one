@@ -13,5 +13,8 @@
   "dependencies": {
     "@lexframe/contracts": "workspace:*",
     "@lexframe/workflow-dsl": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
   }
 }

@@ -23,5 +23,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "eslint \"src/**/*.ts\"",
     "test": "node -e \"console.log('contracts: no runtime tests')\""
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
   }
 }
