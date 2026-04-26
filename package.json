@@ -39,6 +39,7 @@
     "stage16:db:apply-local": "node scripts/stage16-db-apply-local.mjs",
     "stage16:runtime:health": "node scripts/stage16-runtime-health.mjs",
     "stage16:build:backend-runtime": "node scripts/stage16-build-backend-runtime.mjs",
+    "stage16:build:web-runtime": "node scripts/stage16-build-web-runtime.mjs",
     "stage16:activepieces:evidence": "node scripts/stage16-activepieces-evidence.mjs",
     "stage16:release-gate": "node scripts/stage16-release-gate.mjs",
     "check": "corepack pnpm build && corepack pnpm check:contracts && corepack pnpm check:backend && corepack pnpm check:frontend && corepack pnpm check:db && corepack pnpm check:ai && corepack pnpm check:activepieces && corepack pnpm check:security && corepack pnpm check:e2e",

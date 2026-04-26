@@ -14,6 +14,7 @@ const commands = [
   ["corepack", ["pnpm", "--filter", "@lexframe/web", "test:canvas:components"]],
   ["corepack", ["pnpm", "--filter", "@lexframe/web", "test:canvas:contracts"]],
   ["corepack", ["pnpm", "stage16:build:backend-runtime"]],
+  ["corepack", ["pnpm", "stage16:build:web-runtime"]],
   ["corepack", ["pnpm", "stage16:db:bootstrap"]],
   ["docker", ["compose", "--profile", "local-integrated", "up", "-d"]],
   ["corepack", ["pnpm", "stage16:db:apply-local"]],

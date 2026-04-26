@@ -79,7 +79,7 @@ export default defineConfig({
       },
     },
     {
-      command: `corepack pnpm --dir ../../apps/web exec next dev --hostname ${host} --port ${port}`,
+      command: `corepack pnpm --dir ../.. stage16:build:web-runtime && corepack pnpm --dir ../../apps/web exec next dev --hostname ${host} --port ${port}`,
       url: baseURL,
       timeout: 180_000,
       reuseExistingServer: !process.env.CI && !isStage16LiveAuditRun,
