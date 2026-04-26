@@ -56,11 +56,64 @@ function run(command, args, options = {}) {
   return result.stdout ?? "";
 }
 
-function getPostgresContainer() {
-  const container = run("docker", ["compose", "ps", "-q", "postgres"]).trim();
-  if (!container) {
-    throw new Error("postgres container not found. Run docker compose --profile local-integrated up -d postgres first.");
+function sleep(ms) {
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+}
+
+function findPostgresContainer() {
+  return run("docker", ["compose", "ps", "-q", "postgres"]).trim();
+}
+
+function canConnectToPostgres(container) {
+  const result = spawnSync(
+    "docker",
+    [
+      "exec",
+      container,
+      "psql",
+      "-U",
+      "postgres",
+      "-d",
+      "postgres",
+      "-Atc",
+      "select 1;",
+    ],
+    {
+      cwd: root,
+      encoding: "utf8",
+      shell: false,
+      stdio: "pipe",
+    },
+  );
+  return result.status === 0 && result.stdout.trim() === "1";
+}
+
+function waitForPostgres(container) {
+  let lastStatus = "not ready";
+  for (let attempt = 1; attempt <= 30; attempt += 1) {
+    if (canConnectToPostgres(container)) {
+      process.stdout.write(`[stage16-db] postgres ready after attempt ${attempt}\n`);
+      return;
+    }
+    lastStatus = `attempt ${attempt}/30 failed`;
+    sleep(Math.min(1000 * attempt, 5000));
   }
+  throw new Error(`postgres did not become ready: ${lastStatus}`);
+}
+
+function getPostgresContainer() {
+  let container = findPostgresContainer();
+  if (!container) {
+    process.stdout.write("[stage16-db] postgres container not found; starting local-integrated postgres\n");
+    run("docker", ["compose", "--profile", "local-integrated", "up", "-d", "postgres"], {
+      stdio: "inherit",
+    });
+    container = findPostgresContainer();
+  }
+  if (!container) {
+    throw new Error("postgres container not found after docker compose up -d postgres");
+  }
+  waitForPostgres(container);
   return container;
 }
 

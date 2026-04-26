@@ -59,7 +59,7 @@ export default defineConfig({
   },
   webServer: [
     {
-      command: `corepack pnpm --dir ../../packages/config build && corepack pnpm --dir ../../apps/backend build && corepack pnpm --dir ../../apps/backend start:prod`,
+      command: `corepack pnpm --dir ../.. stage16:build:backend-runtime && corepack pnpm --dir ../../apps/backend start:prod`,
       url: `${apiBaseURL}/health/live`,
       timeout: 240_000,
       reuseExistingServer: !process.env.CI && !isStage16LiveAuditRun,
