@@ -1,0 +1,129 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lexframe.local/schemas/canvas/validation.schema.json",
+  "title": "CanvasValidationResult",
+  "type": "object",
+  "required": [
+    "status",
+    "errors_count",
+    "warnings_count",
+    "policy_blocks_count",
+    "issues",
+    "can_save",
+    "can_test",
+    "can_publish",
+    "can_compile",
+    "can_run",
+    "can_sync"
+  ],
+  "properties": {
+    "validation_run_id": { "type": "string" },
+    "workflow_hash": { "type": "string" },
+    "mode": {
+      "enum": [
+        "fast",
+        "full",
+        "publish_gate",
+        "runtime_gate",
+        "operation_preview",
+        "field_level"
+      ]
+    },
+    "reason": { "type": ["string", "null"] },
+    "scope": {
+      "enum": ["draft", "operation", "node", "publish", "runtime"]
+    },
+    "created_at": { "type": "string" },
+    "cache_hit": { "type": "boolean" },
+    "status": { "enum": ["valid", "valid_with_warnings", "invalid"] },
+    "errors_count": { "type": "integer", "minimum": 0 },
+    "warnings_count": { "type": "integer", "minimum": 0 },
+    "policy_blocks_count": { "type": "integer", "minimum": 0 },
+    "summary": {
+      "type": "object",
+      "required": ["errors", "warnings", "policy_blocks", "suggestions"],
+      "properties": {
+        "errors": { "type": "integer", "minimum": 0 },
+        "warnings": { "type": "integer", "minimum": 0 },
+        "policy_blocks": { "type": "integer", "minimum": 0 },
+        "suggestions": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": false
+    },
+    "capabilities": {
+      "type": "object",
+      "required": [
+        "can_save",
+        "can_test",
+        "can_compile",
+        "can_publish",
+        "can_run",
+        "can_sync"
+      ],
+      "properties": {
+        "can_save": { "type": "boolean" },
+        "can_test": { "type": "boolean" },
+        "can_compile": { "type": "boolean" },
+        "can_publish": { "type": "boolean" },
+        "can_run": { "type": "boolean" },
+        "can_sync": { "type": "boolean" }
+      },
+      "additionalProperties": false
+    },
+    "issues": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "severity", "scope", "code", "title", "message"],
+        "properties": {
+          "id": { "type": "string" },
+          "validation_run_id": { "type": ["string", "null"] },
+          "severity": { "enum": ["info", "warning", "error", "policy_block"] },
+          "category": {
+            "enum": [
+              "structure",
+              "schema",
+              "type_compatibility",
+              "semantic",
+              "security",
+              "policy",
+              "runtime",
+              "ux",
+              "performance"
+            ]
+          },
+          "scope": { "enum": ["workflow", "node", "edge", "binding", "runtime"] },
+          "code": { "type": "string" },
+          "title": { "type": "string" },
+          "message": { "type": "string" },
+          "developer_message": { "type": ["string", "null"] },
+          "affected_node_id": { "type": ["string", "null"] },
+          "affected_edge_id": { "type": ["string", "null"] },
+          "affected_binding_id": { "type": ["string", "null"] },
+          "affected_input_key": { "type": ["string", "null"] },
+          "field_path": { "type": ["string", "null"] },
+          "blocks": {
+            "type": "array",
+            "items": {
+              "enum": ["save", "test_step", "test_flow", "compile", "publish", "run", "sync"]
+            }
+          },
+          "suggested_fix": { "type": ["string", "null"] },
+          "suggested_transform": { "type": ["string", "null"] },
+          "suggested_fixes": { "type": "array" },
+          "suggested_action": { "type": ["object", "null"] },
+          "evidence": { "type": ["object", "null"] },
+          "created_at": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "can_save": { "type": "boolean" },
+    "can_test": { "type": "boolean" },
+    "can_publish": { "type": "boolean" },
+    "can_compile": { "type": "boolean" },
+    "can_run": { "type": "boolean" },
+    "can_sync": { "type": "boolean" }
+  },
+  "additionalProperties": false
+}

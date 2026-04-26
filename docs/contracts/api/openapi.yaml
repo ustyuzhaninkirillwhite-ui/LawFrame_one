@@ -671,6 +671,1670 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/WorkflowValidationSummary"
+  /canvas/block-types:
+    get:
+      operationId: listCanvasBlockTypes
+      tags: [Canvas]
+      responses:
+        "200":
+          description: Canvas block registry available to the current workspace.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CanvasBlockDefinition"
+  /canvas/block-types/{code}:
+    get:
+      operationId: getCanvasBlockType
+      tags: [Canvas]
+      parameters:
+        - in: path
+          name: code
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Single Canvas block definition.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CanvasBlockDefinition"
+  /canvas/block-types/{code}/schema:
+    get:
+      operationId: getCanvasBlockTypeSchema
+      tags: [Canvas]
+      parameters:
+        - in: path
+          name: code
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: JSON schemas and handles for a Canvas block.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CanvasBlockSchemaResponse"
+  /canvas/modules:
+    get:
+      operationId: listCanvasModuleCatalog
+      tags: [Canvas]
+      parameters:
+        - in: query
+          name: automation_id
+          required: false
+          schema: { type: string }
+        - in: query
+          name: draft_version_id
+          required: false
+          schema: { type: string }
+        - in: query
+          name: context_node_id
+          required: false
+          schema: { type: string }
+        - in: query
+          name: insert_position
+          required: false
+          schema:
+            $ref: "#/components/schemas/CanvasInsertPosition"
+        - in: query
+          name: mode
+          required: false
+          schema:
+            type: string
+            enum: [palette, inline, quick_add, recommended]
+        - in: query
+          name: query
+          required: false
+          schema: { type: string }
+      responses:
+        "200":
+          description: Backend-owned Canvas module catalog with availability, recommendations, recent, favorites, policy and runtime summary.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CanvasModuleCatalogResponse"
+  /canvas/modules/{moduleCode}:
+    get:
+      operationId: getCanvasModuleDetail
+      tags: [Canvas]
+      parameters:
+        - in: path
+          name: moduleCode
+          required: true
+          schema: { type: string }
+        - in: query
+          name: automation_id
+          required: false
+          schema: { type: string }
+      responses:
+        "200":
+          description: Detail drawer data for a Canvas module.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CanvasModuleDetail"
+  /canvas/modules/{moduleCode}/compatibility-check:
+    post:
+      operationId: checkCanvasModuleCompatibility
+      tags: [Canvas]
+      parameters:
+        - in: path
+          name: moduleCode
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CanvasCompatibilityCheckRequest"
+      responses:
+        "200":
+          description: Pre-insert compatibility and missing requirement result.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CanvasCompatibilityCheckResponse"
+  /connections/requirements:
+    get:
+      operationId: listCanvasConnectionRequirements
+      tags: [Connections]
+      parameters:
+        - in: query
+          name: module_code
+          required: false
+          schema: { type: string }
+      responses:
+        "200":
+          description: Missing connection requirements for module remediation flows.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CanvasConnectionRequirementsResponse"
+  /connections/requests:
+    post:
+      operationId: createCanvasConnectionRequest
+      tags: [Connections]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                module_code:
+                  type: string
+                connection_type:
+                  type: string
+              additionalProperties: true
+      responses:
+        "200":
+          description: Created missing connection request.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CanvasConnectionRequestResponse"
+  /canvas/validate-block:
+    post:
+      operationId: validateCanvasBlock
+      tags: [Canvas]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ValidateCanvasBlockRequest"
+      responses:
+        "200":
+          description: Block validation result.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CanvasBlockValidationResult"
+  /canvas/validate-connection:
+    post:
+      operationId: validateCanvasConnection
+      tags: [Canvas]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ValidateCanvasConnectionRequest"
+      responses:
+        "200":
+          description: Connection validation result.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CanvasConnectionValidationResult"
+  /canvas/preview-block:
+    post:
+      operationId: previewCanvasBlock
+      tags: [Canvas]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CanvasBlockCodeRequest"
+      responses:
+        "200":
+          description: Safe runtime mapping preview for a Canvas block.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CanvasRuntimeMapping"
+  /canvas/test-block:
+    post:
+      operationId: testCanvasBlock
+      tags: [Canvas]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CanvasBlockCodeRequest"
+      responses:
+        "200":
+          description: Safe step-test contour without external delivery.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status, blockCode, runtime, diagnostics]
+                properties:
+                  status:
+                    type: string
+                    enum: [ready, blocked]
+                  blockCode:
+                    type: string
+                  runtime:
+                    $ref: "#/components/schemas/CanvasRuntimeMapping"
+                  diagnostics:
+                    type: array
+                    items:
+                      type: string
+  /automations/{automationId}/canvas:
+    get:
+      operationId: getAutomationCanvas
+      tags: [Canvas]
+      parameters:
+        - in: path
+          name: automationId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Backend-owned canonical Canvas state for the active Workflow DSL v2 draft.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CanvasState"
+  /automations/{automationId}/canvas/drafts:
+    post:
+      operationId: openAutomationCanvasDraft
+      tags: [Canvas]
+      parameters:
+        - in: path
+          name: automationId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CanvasDraftRequest"
+      responses:
+        "200":
+          description: Existing editable draft opened or a new draft created from the requested source.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CanvasDraftOpenResponse"
+  /automations/{automationId}/canvas/version-state:
+    get:
+      operationId: getAutomationCanvasVersionState
+      tags: [Canvas]
+      parameters:
+        - in: path
+          name: automationId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Canvas version lifecycle state for the automation.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CanvasVersionStateResponse"
+  /automations/{automationId}/canvas/versions:
+    get:
+      operationId: listAutomationCanvasVersions
+      tags: [Canvas]
+      parameters:
+        - in: path
+          name: automationId
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: status
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: include_checkpoints
+          required: false
+          schema:
+            type: boolean
+        - in: query
+          name: cursor
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: limit
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+      responses:
+        "200":
+          description: Read-only immutable Canvas version history.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CanvasVersionListResponse"
+  /automations/{automationId}/canvas/versions/compare:
+    get:
+      operationId: compareAutomationCanvasVersions
+      tags: [Canvas]
+      parameters:
+        - in: path
+          name: automationId
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: from
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: to
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Semantic diff between two Canvas versions.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CanvasVersionCompareResponse"
+  /automations/{automationId}/canvas/versions/{versionId}/runtime-projection:
+    get:
+      operationId: getAutomationCanvasRuntimeProjection
+      tags: [Canvas]
+      parameters:
+        - in: path
+          name: automationId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: versionId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Immutable runtime projection generated for a published Canvas version.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CanvasRuntimeProjectionVersion"
+  /automations/{automationId}/canvas/versions/{versionId}/export:
+    get:
+      operationId: exportAutomationCanvasVersion
+      tags: [Canvas]
+      parameters:
+        - in: path
+          name: automationId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: versionId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Redacted JSON export for a Canvas version.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CanvasVersionExportResponse"
+  /automations/{automationId}/canvas/versions/{versionId}/restore-as-draft:
+    post:
+      operationId: restoreAutomationCanvasVersionAsDraft
+      tags: [Canvas]
+      parameters:
+        - in: path
+          name: automationId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: versionId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Immutable version restored into a new editable draft.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CanvasRestoreVersionResponse"
+  /automations/{automationId}/canvas/operations:
+    post:
+      operationId: applyAutomationCanvasOperations
+      tags: [Canvas]
+      parameters:
+        - in: path
+          name: automationId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CanvasOperationRequest"
+      responses:
+        "200":
+          description: Atomic Canvas operation result with updated canonical workflow hash and revision.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CanvasOperationResponse"
+  /automations/{automationId}/canvas/ai/messages:
+    post:
+      operationId: sendCanvasAiMessage
+      tags: [Canvas AI]
+      parameters:
+        - in: path
+          name: automationId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CanvasAiMessageRequest"
+      responses:
+        "200":
+          description: Canvas AI response for the requested mode.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CanvasAiMessageResponse"
+  /automations/{automationId}/canvas/ai/propose-patch:
+    post:
+      operationId: proposeCanvasAiPatch
+      tags: [Canvas AI]
+      parameters:
+        - in: path
+          name: automationId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CanvasAiMessageRequest"
+      responses:
+        "200":
+          description: AI patch proposal, clarification request, or policy block.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CanvasAiMessageResponse"
+  /automations/{automationId}/canvas/ai/explain:
+    post:
+      operationId: explainCanvasWithAi
+      tags: [Canvas AI]
+      parameters:
+        - in: path
+          name: automationId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CanvasAiMessageRequest"
+      responses:
+        "200":
+          description: AI explanation generated from redacted Canvas context.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CanvasAiExplanationResponse"
+  /automations/{automationId}/canvas/ai/fix-validation:
+    post:
+      operationId: fixCanvasValidationWithAi
+      tags: [Canvas AI]
+      parameters:
+        - in: path
+          name: automationId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CanvasAiMessageRequest"
+      responses:
+        "200":
+          description: AI validation-fix proposal or clarification.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CanvasAiMessageResponse"
+  /automations/{automationId}/canvas/ai/configure-step:
+    post:
+      operationId: configureCanvasStepWithAi
+      tags: [Canvas AI]
+      parameters:
+        - in: path
+          name: automationId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CanvasAiMessageRequest"
+      responses:
+        "200":
+          description: AI step-configuration proposal or clarification.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CanvasAiMessageResponse"
+  /automations/{automationId}/canvas/ai/test-plan:
+    post:
+      operationId: createCanvasAiTestPlan
+      tags: [Canvas AI]
+      parameters:
+        - in: path
+          name: automationId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CanvasAiMessageRequest"
+      responses:
+        "200":
+          description: Draft-only AI-generated test plan.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CanvasAiTestPlanResponse"
+  /automations/{automationId}/canvas/ai/debug-test:
+    post:
+      operationId: debugCanvasTestWithAi
+      tags: [Canvas AI]
+      parameters:
+        - in: path
+          name: automationId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CanvasAiMessageRequest"
+      responses:
+        "200":
+          description: Redacted AI debug explanation for Canvas tests.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CanvasAiDebugResponse"
+  /automations/{automationId}/canvas/ai/apply-patch:
+    post:
+      operationId: applyCanvasAiPatch
+      tags: [Canvas AI]
+      parameters:
+        - in: path
+          name: automationId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CanvasAiPatchApplyRequest"
+      responses:
+        "200":
+          description: Confirmed AI patch applied through CanvasOperationService.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CanvasAiPatchApplyResponse"
+  /automations/{automationId}/canvas/ai/patches/{patchId}:
+    get:
+      operationId: getCanvasAiPatch
+      tags: [Canvas AI]
+      parameters:
+        - in: path
+          name: automationId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: patchId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Stored Canvas AI patch proposal.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CanvasAiPatchProposal"
+  /automations/{automationId}/canvas/ai/patches/{patchId}/reject:
+    post:
+      operationId: rejectCanvasAiPatch
+      tags: [Canvas AI]
+      parameters:
+        - in: path
+          name: automationId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: patchId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CanvasAiPatchRejectRequest"
+      responses:
+        "200":
+          description: Canvas AI patch proposal rejected without draft mutation.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CanvasAiPatchRejectResponse"
+  /automations/{automationId}/canvas/validate:
+    post:
+      operationId: validateAutomationCanvas
+      tags: [Canvas]
+      parameters:
+        - in: path
+          name: automationId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                draft_id:
+                  type: [string, "null"]
+                validation_level:
+                  type: string
+                  enum: [fast, full, publish_gate, runtime_gate]
+      responses:
+        "200":
+          description: Backend validation state for the current Canvas DSL v2 draft.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CanvasValidationSummary"
+  /automations/{automationId}/canvas/test-runs/validate:
+    post:
+      operationId: createCanvasValidationTestRun
+      tags: [Canvas]
+      parameters:
+        - in: path
+          name: automationId
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CanvasTestRunRequest"
+      responses:
+        "200":
+          description: Validation-only Canvas test run.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CanvasTestRunResponse"
+  /automations/{automationId}/canvas/test-runs/test-step:
+    post:
+      operationId: createCanvasStepTestRun
+      tags: [Canvas]
+      parameters:
+        - in: path
+          name: automationId
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CanvasTestRunRequest"
+      responses:
+        "200":
+          description: Canvas selected-step test run.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CanvasTestRunResponse"
+  /automations/{automationId}/canvas/test-runs/test-until-step:
+    post:
+      operationId: createCanvasUntilStepTestRun
+      tags: [Canvas]
+      parameters:
+        - in: path
+          name: automationId
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CanvasTestRunRequest"
+      responses:
+        "200":
+          description: Canvas upstream-to-step test run.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CanvasTestRunResponse"
+  /automations/{automationId}/canvas/test-runs/test-branch:
+    post:
+      operationId: createCanvasBranchTestRun
+      tags: [Canvas]
+      parameters:
+        - in: path
+          name: automationId
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CanvasTestRunRequest"
+      responses:
+        "200":
+          description: Canvas branch test run.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CanvasTestRunResponse"
+  /automations/{automationId}/canvas/test-runs/test-loop:
+    post:
+      operationId: createCanvasLoopTestRun
+      tags: [Canvas]
+      parameters:
+        - in: path
+          name: automationId
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CanvasTestRunRequest"
+      responses:
+        "200":
+          description: Canvas bounded loop sample test run.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CanvasTestRunResponse"
+  /automations/{automationId}/canvas/test-runs/dry-run:
+    post:
+      operationId: createCanvasDryRun
+      tags: [Canvas]
+      parameters:
+        - in: path
+          name: automationId
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CanvasTestRunRequest"
+      responses:
+        "200":
+          description: Full Canvas dry-run without production side effects.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CanvasTestRunResponse"
+  /automations/{automationId}/canvas/test-runs/{testRunId}:
+    get:
+      operationId: getCanvasTestRun
+      tags: [Canvas]
+      parameters:
+        - in: path
+          name: automationId
+          required: true
+          schema: { type: string }
+        - in: path
+          name: testRunId
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Canvas test run snapshot.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CanvasTestRunResponse"
+  /automations/{automationId}/canvas/test-runs/{testRunId}/steps:
+    get:
+      operationId: listCanvasTestRunSteps
+      tags: [Canvas]
+      parameters:
+        - in: path
+          name: automationId
+          required: true
+          schema: { type: string }
+        - in: path
+          name: testRunId
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Canvas test run steps.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CanvasTestRunStepSummary"
+  /automations/{automationId}/canvas/test-runs/{testRunId}/steps/{nodeId}:
+    get:
+      operationId: getCanvasTestRunStep
+      tags: [Canvas]
+      parameters:
+        - in: path
+          name: automationId
+          required: true
+          schema: { type: string }
+        - in: path
+          name: testRunId
+          required: true
+          schema: { type: string }
+        - in: path
+          name: nodeId
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Canvas test run step details.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CanvasTestRunStepSummary"
+  /automations/{automationId}/canvas/test-runs/{testRunId}/cancel:
+    post:
+      operationId: cancelCanvasTestRun
+      tags: [Canvas]
+      parameters:
+        - in: path
+          name: automationId
+          required: true
+          schema: { type: string }
+        - in: path
+          name: testRunId
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Cancelled Canvas test run snapshot.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CanvasTestRunResponse"
+  /automations/{automationId}/canvas/test-runs/{testRunId}/artifacts:
+    get:
+      operationId: listCanvasTestArtifacts
+      tags: [Canvas]
+      parameters:
+        - in: path
+          name: automationId
+          required: true
+          schema: { type: string }
+        - in: path
+          name: testRunId
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Redacted Canvas test artifacts.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CanvasTestArtifactSummary"
+  /automations/{automationId}/canvas/test-runs/{testRunId}/support-bundle:
+    get:
+      operationId: getCanvasTestSupportBundle
+      tags: [Canvas]
+      parameters:
+        - in: path
+          name: automationId
+          required: true
+          schema: { type: string }
+        - in: path
+          name: testRunId
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Safe support bundle for Canvas test debugging.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CanvasTestSupportBundle"
+  /automations/{automationId}/canvas/snapshots:
+    post:
+      operationId: createAutomationCanvasSnapshot
+      tags: [Canvas]
+      parameters:
+        - in: path
+          name: automationId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CanvasSnapshotRequest"
+      responses:
+        "200":
+          description: Manual or system Canvas snapshot persisted for rollback.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CanvasSnapshotResponse"
+  /automations/{automationId}/canvas/snapshots/{snapshotId}/restore:
+    post:
+      operationId: restoreAutomationCanvasSnapshot
+      tags: [Canvas]
+      parameters:
+        - in: path
+          name: automationId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: snapshotId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Snapshot restored into the editable draft after lock and revision checks.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CanvasSnapshotResponse"
+  /automations/{automationId}/canvas/checkpoints:
+    post:
+      operationId: createAutomationCanvasCheckpoint
+      tags: [Canvas]
+      parameters:
+        - in: path
+          name: automationId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CanvasSnapshotRequest"
+      responses:
+        "200":
+          description: Named or automatic Canvas checkpoint persisted in snapshot storage.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CanvasSnapshotResponse"
+  /automations/{automationId}/canvas/publish/validate:
+    post:
+      operationId: validateAutomationCanvasPublish
+      tags: [Canvas]
+      parameters:
+        - in: path
+          name: automationId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CanvasPublishRequest"
+      responses:
+        "200":
+          description: Publish gate report with validation, runtime projection and blockers.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CanvasPublishValidateResponse"
+  /automations/{automationId}/canvas/publish:
+    post:
+      operationId: publishAutomationCanvas
+      tags: [Canvas]
+      parameters:
+        - in: path
+          name: automationId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CanvasPublishRequest"
+      responses:
+        "200":
+          description: Draft published as an immutable Canvas version; runtime sync is marked required but not started.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CanvasPublishResponse"
+  /automations/{automationId}/canvas/rollback/impact:
+    post:
+      operationId: getAutomationCanvasRollbackImpact
+      tags: [Canvas]
+      parameters:
+        - in: path
+          name: automationId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CanvasRollbackImpactRequest"
+      responses:
+        "200":
+          description: Impact report for the requested Canvas rollback operation.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CanvasRollbackImpactResponse"
+  /automations/{automationId}/canvas/rollback:
+    post:
+      operationId: rollbackAutomationCanvas
+      tags: [Canvas]
+      parameters:
+        - in: path
+          name: automationId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CanvasRollbackRequest"
+      responses:
+        "200":
+          description: Canvas version lifecycle rollback result.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CanvasRollbackResponse"
+  /automations/{automationId}/canvas/emergency-disable:
+    post:
+      operationId: emergencyDisableAutomationCanvas
+      tags: [Canvas]
+      parameters:
+        - in: path
+          name: automationId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason:
+                  type: string
+                idempotency_key:
+                  type: [string, "null"]
+      responses:
+        "200":
+          description: Production runs disabled without publishing another version.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CanvasRollbackResponse"
+  /automations/{automationId}/canvas/lock:
+    post:
+      operationId: acquireAutomationCanvasLock
+      tags: [Canvas]
+      parameters:
+        - in: path
+          name: automationId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CanvasLockRequest"
+      responses:
+        "200":
+          description: Single-editor lock acquired for the requested draft and lock type.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CanvasLockState"
+    delete:
+      operationId: releaseAutomationCanvasLock
+      tags: [Canvas]
+      parameters:
+        - in: path
+          name: automationId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CanvasLockRequest"
+      responses:
+        "200":
+          description: Current user's Canvas lock released.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CanvasLockState"
+  /automations/{automationId}/canvas/lock/heartbeat:
+    post:
+      operationId: heartbeatAutomationCanvasLock
+      tags: [Canvas]
+      parameters:
+        - in: path
+          name: automationId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CanvasLockRequest"
+      responses:
+        "200":
+          description: Canvas lock TTL extended for the current editor.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CanvasLockState"
+  /automations/{automationId}/canvas/compile-preview:
+    post:
+      operationId: previewAutomationCanvasCompile
+      tags: [Canvas]
+      parameters:
+        - in: path
+          name: automationId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Deterministic Activepieces runtime projection preview without publish or runtime sync.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  [
+                    provider,
+                    activepieces_flow,
+                    required_pieces,
+                    required_connections,
+                    unsupported_nodes,
+                    policy_warnings,
+                    projection_hash,
+                    can_compile,
+                  ]
+                properties:
+                  provider:
+                    type: string
+                    enum: [activepieces]
+                  activepieces_flow:
+                    nullable: true
+                  required_pieces:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: true
+                  required_connections:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: true
+                  unsupported_nodes:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: true
+                  policy_warnings:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: true
+                  projection_hash:
+                    type: string
+                  can_compile:
+                    type: boolean
+  /automations/{automationId}/runtime/sync-status:
+    get:
+      operationId: getRuntimeSyncStatus
+      tags: [Canvas Runtime]
+      parameters:
+        - in: path
+          name: automationId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Current Activepieces to Canvas reverse-sync status.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+  /automations/{automationId}/runtime/pull:
+    post:
+      operationId: pullAutomationRuntime
+      tags: [Canvas Runtime]
+      parameters:
+        - in: path
+          name: automationId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        "200":
+          description: Immutable Activepieces runtime snapshot pulled for review.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+  /automations/{automationId}/runtime/import-preview:
+    post:
+      operationId: previewAutomationRuntimeImport
+      tags: [Canvas Runtime]
+      parameters:
+        - in: path
+          name: automationId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [snapshot_id]
+              additionalProperties: true
+      responses:
+        "200":
+          description: Semantic diff and importability report for a pulled runtime snapshot.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+  /automations/{automationId}/runtime/import-apply:
+    post:
+      operationId: applyAutomationRuntimeImport
+      tags: [Canvas Runtime]
+      parameters:
+        - in: path
+          name: automationId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [draft_candidate_id]
+              additionalProperties: true
+      responses:
+        "200":
+          description: Runtime import candidate materialized as a new Canvas draft.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+  /automations/{automationId}/runtime/import-reject:
+    post:
+      operationId: rejectAutomationRuntimeImport
+      tags: [Canvas Runtime]
+      parameters:
+        - in: path
+          name: automationId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        "200":
+          description: Runtime import candidate rejected while runtime remains modified.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+  /automations/{automationId}/runtime/overwrite:
+    post:
+      operationId: overwriteAutomationRuntime
+      tags: [Canvas Runtime]
+      parameters:
+        - in: path
+          name: automationId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [confirm_discard_runtime_changes]
+              additionalProperties: true
+      responses:
+        "200":
+          description: Activepieces runtime overwritten from canonical LexFrame Canvas projection.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+  /automations/{automationId}/canvas/io:
+    get:
+      operationId: getAutomationCanvasIo
+      tags: [Canvas]
+      parameters:
+        - in: path
+          name: automationId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Workflow-level and node-level IO contract for a Canvas draft.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [workflow_inputs, workflow_outputs, nodes, validation]
+                properties:
+                  workflow_inputs:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: true
+                  workflow_outputs:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: true
+                  nodes:
+                    type: array
+                    items:
+                      type: object
+                      required: [node_id, inputs, outputs, bindings]
+                      properties:
+                        node_id:
+                          type: string
+                        inputs:
+                          type: array
+                          items:
+                            type: object
+                            additionalProperties: true
+                        outputs:
+                          type: array
+                          items:
+                            type: object
+                            additionalProperties: true
+                        bindings:
+                          type: array
+                          items:
+                            type: object
+                            additionalProperties: true
+                  validation:
+                    type: object
+                    additionalProperties: true
+  /automations/{automationId}/canvas/nodes/{nodeId}/inputs/{inputKey}/sources:
+    get:
+      operationId: listCanvasInputSources
+      tags: [Canvas]
+      parameters:
+        - in: path
+          name: automationId
+          required: true
+          schema: { type: string }
+        - in: path
+          name: nodeId
+          required: true
+          schema: { type: string }
+        - in: path
+          name: inputKey
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Compatible and incompatible source candidates for a target input.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [compatible_sources, incompatible_sources]
+                properties:
+                  compatible_sources:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: true
+                  incompatible_sources:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: true
+  /automations/{automationId}/canvas/bindings/validate:
+    post:
+      operationId: validateCanvasBinding
+      tags: [Canvas]
+      parameters:
+        - in: path
+          name: automationId
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        "200":
+          description: Binding-level validation state and repair hints.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status, issues]
+                properties:
+                  status:
+                    type: string
+                    enum: [valid, warning, invalid, stale, policy_blocked]
+                  issues:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: true
+  /automations/{automationId}/canvas/nodes/{nodeId}/outputs/{outputKey}/sample:
+    get:
+      operationId: getCanvasSampleOutput
+      tags: [Canvas]
+      parameters:
+        - in: path
+          name: automationId
+          required: true
+          schema: { type: string }
+        - in: path
+          name: nodeId
+          required: true
+          schema: { type: string }
+        - in: path
+          name: outputKey
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Safe redacted sample preview for a Canvas output.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+  /automations/{automationId}/canvas/nodes/{nodeId}/outputs/{outputKey}/pinned-data:
+    post:
+      operationId: pinCanvasSampleOutput
+      tags: [Canvas]
+      parameters:
+        - in: path
+          name: automationId
+          required: true
+          schema: { type: string }
+        - in: path
+          name: nodeId
+          required: true
+          schema: { type: string }
+        - in: path
+          name: outputKey
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [sample_data_id]
+              properties:
+                sample_data_id:
+                  type: string
+      responses:
+        "200":
+          description: Pinned sample data reference.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [pinned]
+                properties:
+                  pinned:
+                    type: boolean
+                  pinned_sample_data_id:
+                    type: string
+                    nullable: true
+    delete:
+      operationId: unpinCanvasSampleOutput
+      tags: [Canvas]
+      parameters:
+        - in: path
+          name: automationId
+          required: true
+          schema: { type: string }
+        - in: path
+          name: nodeId
+          required: true
+          schema: { type: string }
+        - in: path
+          name: outputKey
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Cleared pinned sample data reference.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [pinned]
+                properties:
+                  pinned:
+                    type: boolean
+                  pinned_sample_data_id:
+                    type: string
+                    nullable: true
   /admin/legal-modules:
     get:
       operationId: listAdminLegalModules
@@ -3533,6 +5197,2424 @@ components:
       schema:
         type: string
   schemas:
+    CanvasApiError:
+      type: object
+      required: [code, message, trace_id]
+      properties:
+        code:
+          type: string
+          enum:
+            [
+              CANVAS_PERMISSION_DENIED,
+              CANVAS_LOCK_REQUIRED,
+              CANVAS_LOCK_OWNED_BY_ANOTHER_USER,
+              CANVAS_REVISION_CONFLICT,
+              CANVAS_DRAFT_NOT_EDITABLE,
+              CANVAS_OPERATION_INVALID,
+              CANVAS_POLICY_VIOLATION,
+              CANVAS_PUBLISH_VALIDATION_FAILED,
+            ]
+        message:
+          type: string
+        details:
+          type: object
+          additionalProperties: true
+        affected_nodes:
+          type: array
+          items:
+            type: string
+        affected_edges:
+          type: array
+          items:
+            type: string
+        trace_id:
+          type: string
+    CanvasDraftStatus:
+      type: string
+      enum:
+        [
+          editing,
+          validating,
+          valid,
+          invalid,
+          ready_to_publish,
+          published_to_version,
+          conflict,
+          archived,
+          draft,
+          published,
+          restored,
+          runtime_synced,
+          runtime_modified,
+        ]
+    CanvasValidationIssue:
+      type: object
+      required: [id, severity, scope, code, title, message]
+      properties:
+        id:
+          type: string
+        severity:
+          type: string
+          enum: [error, warning, policy_block]
+        scope:
+          type: string
+          enum: [workflow, node, edge, binding, runtime]
+        code:
+          type: string
+        title:
+          type: string
+        message:
+          type: string
+        affected_node_id:
+          type: [string, "null"]
+        affected_edge_id:
+          type: [string, "null"]
+        affected_binding_id:
+          type: [string, "null"]
+        affected_input_key:
+          type: [string, "null"]
+        suggested_fix:
+          type: [string, "null"]
+        suggested_transform:
+          type: [string, "null"]
+        suggested_action:
+          type: [object, "null"]
+          additionalProperties: true
+    CanvasValidationSummary:
+      type: object
+      required:
+        [
+          status,
+          errors_count,
+          warnings_count,
+          policy_blocks_count,
+          issues,
+          can_save,
+          can_test,
+          can_publish,
+          can_compile,
+          can_run,
+        ]
+      properties:
+        status:
+          type: string
+          enum: [valid, valid_with_warnings, invalid]
+        errors_count:
+          type: integer
+          minimum: 0
+        warnings_count:
+          type: integer
+          minimum: 0
+        policy_blocks_count:
+          type: integer
+          minimum: 0
+        issues:
+          type: array
+          items:
+            $ref: "#/components/schemas/CanvasValidationIssue"
+        can_save:
+          type: boolean
+        can_test:
+          type: boolean
+        can_publish:
+          type: boolean
+        can_compile:
+          type: boolean
+        can_run:
+          type: boolean
+    CanvasTestRunRequest:
+      type: object
+      required: [draft_version_id, mode, input_mode, policy, redaction]
+      properties:
+        draft_version_id:
+          type: string
+        mode:
+          type: string
+          enum:
+            [
+              validation_only,
+              test_selected_step,
+              test_until_selected_step,
+              test_branch,
+              test_loop_sample,
+              test_subworkflow_contract,
+              dry_run_full,
+              replay_from_previous_run,
+            ]
+        target_node_id:
+          type: [string, "null"]
+        target_branch_id:
+          type: [string, "null"]
+        input_mode:
+          type: string
+          enum:
+            [
+              use_current_bindings,
+              manual_fixture,
+              schema_generated,
+              pinned_upstream,
+              previous_test_run,
+            ]
+        fixture_id:
+          type: [string, "null"]
+        previous_test_run_id:
+          type: [string, "null"]
+        policy:
+          $ref: "#/components/schemas/CanvasTestRunPolicy"
+        redaction:
+          $ref: "#/components/schemas/CanvasTestRunRedaction"
+    CanvasTestRunPolicy:
+      type: object
+      required:
+        [
+          allow_real_reads,
+          allow_real_writes,
+          allow_external_calls,
+          allow_ai_calls,
+          ai_mode,
+          max_loop_items,
+          timeout_seconds,
+        ]
+      properties:
+        allow_real_reads:
+          type: boolean
+        allow_real_writes:
+          type: boolean
+          const: false
+        allow_external_calls:
+          type: boolean
+          const: false
+        allow_ai_calls:
+          type: boolean
+        ai_mode:
+          type: string
+          enum: [mock, gateway_test_route, real_policy_checked]
+        max_loop_items:
+          type: integer
+          minimum: 1
+        timeout_seconds:
+          type: integer
+          minimum: 1
+    CanvasTestRunRedaction:
+      type: object
+      required: [raw_input_visible, raw_output_visible, store_raw_payload]
+      properties:
+        raw_input_visible:
+          type: boolean
+        raw_output_visible:
+          type: boolean
+        store_raw_payload:
+          type: boolean
+    CanvasSuggestedFix:
+      type: object
+      required: [type, message]
+      properties:
+        type:
+          type: string
+        message:
+          type: string
+        tab:
+          type: [string, "null"]
+        operation_preview:
+          type: [object, "null"]
+          additionalProperties: true
+    CanvasDebugError:
+      type: object
+      required:
+        [
+          code,
+          severity,
+          title,
+          user_message,
+          cause,
+          suggested_fixes,
+          can_auto_fix,
+        ]
+      properties:
+        code:
+          type: string
+          enum:
+            [
+              SCHEMA_VALIDATION_FAILED,
+              REQUIRED_INPUT_MISSING,
+              BINDING_TYPE_MISMATCH,
+              UPSTREAM_OUTPUT_MISSING,
+              CONDITION_UNREACHABLE,
+              LOOP_INPUT_NOT_ARRAY,
+              CONNECTION_MISSING,
+              AI_ROUTE_BLOCKED,
+              DOCUMENT_ACCESS_DENIED,
+              EXTERNAL_ACTION_BLOCKED_IN_DRY_RUN,
+              APPROVAL_REQUIRED,
+              RUNTIME_MAPPING_MISSING,
+              ACTIVEPIECES_PROJECTION_FAILED,
+              TEST_TIMEOUT,
+              RAW_DATA_REDACTED,
+            ]
+        severity:
+          type: string
+          enum: [info, warning, error, policy_block]
+        node_id:
+          type: [string, "null"]
+        edge_id:
+          type: [string, "null"]
+        title:
+          type: string
+        user_message:
+          type: string
+        technical_message:
+          type: [string, "null"]
+        cause:
+          type: object
+          required: [type, details]
+          properties:
+            type:
+              type: string
+              enum:
+                [
+                  missing_input,
+                  invalid_binding,
+                  permission,
+                  policy,
+                  runtime,
+                  ai,
+                  external_service,
+                ]
+            details:
+              type: object
+              additionalProperties: true
+        suggested_fixes:
+          type: array
+          items:
+            $ref: "#/components/schemas/CanvasSuggestedFix"
+        can_auto_fix:
+          type: boolean
+    CanvasTestRunStepSummary:
+      type: object
+      required: [node_id, display_name, module_code, status]
+      properties:
+        node_id:
+          type: string
+        display_name:
+          type: string
+        module_code:
+          type: [string, "null"]
+        status:
+          type: string
+          enum:
+            [
+              not_started,
+              running,
+              succeeded,
+              failed,
+              skipped,
+              simulated,
+              blocked_by_policy,
+              redacted,
+            ]
+        input_summary:
+          type: [object, "null"]
+          additionalProperties: true
+        output_summary:
+          type: [object, "null"]
+          additionalProperties: true
+        error:
+          oneOf:
+            - $ref: "#/components/schemas/CanvasDebugError"
+            - type: "null"
+        timing:
+          type: [object, "null"]
+          required: [started_at]
+          properties:
+            started_at:
+              type: string
+              format: date-time
+            finished_at:
+              type: [string, "null"]
+              format: date-time
+            duration_ms:
+              type: [integer, "null"]
+              minimum: 0
+    CanvasTestWarning:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        node_id:
+          type: [string, "null"]
+        severity:
+          type: [string, "null"]
+          enum: [error, warning, policy_block, null]
+    CanvasTestRunSummary:
+      type: object
+      required:
+        [
+          total_steps,
+          succeeded_steps,
+          failed_steps,
+          simulated_steps,
+          blocked_steps,
+          redacted_steps,
+        ]
+      properties:
+        total_steps:
+          type: integer
+          minimum: 0
+        succeeded_steps:
+          type: integer
+          minimum: 0
+        failed_steps:
+          type: integer
+          minimum: 0
+        simulated_steps:
+          type: integer
+          minimum: 0
+        blocked_steps:
+          type: integer
+          minimum: 0
+        redacted_steps:
+          type: integer
+          minimum: 0
+    CanvasTestRunResponse:
+      type: object
+      required:
+        [
+          test_run_id,
+          status,
+          mode,
+          trace_id,
+          summary,
+          validation,
+          steps,
+          warnings,
+          available_actions,
+        ]
+      properties:
+        test_run_id:
+          type: string
+        status:
+          type: string
+          enum:
+            [
+              created,
+              validating,
+              running,
+              succeeded,
+              failed,
+              cancelled,
+              blocked_by_policy,
+              expired,
+            ]
+        mode:
+          type: string
+          enum:
+            [
+              validation_only,
+              test_selected_step,
+              test_until_selected_step,
+              test_branch,
+              test_loop_sample,
+              test_subworkflow_contract,
+              dry_run_full,
+              replay_from_previous_run,
+            ]
+        trace_id:
+          type: string
+        summary:
+          $ref: "#/components/schemas/CanvasTestRunSummary"
+        validation:
+          $ref: "#/components/schemas/CanvasValidationSummary"
+        steps:
+          type: array
+          items:
+            $ref: "#/components/schemas/CanvasTestRunStepSummary"
+        warnings:
+          type: array
+          items:
+            $ref: "#/components/schemas/CanvasTestWarning"
+        available_actions:
+          type: object
+          required:
+            [
+              retry,
+              pin_outputs,
+              open_debug,
+              create_fixture_from_output,
+              run_dry_run,
+            ]
+          properties:
+            retry:
+              type: boolean
+            pin_outputs:
+              type: boolean
+            open_debug:
+              type: boolean
+            create_fixture_from_output:
+              type: boolean
+            run_dry_run:
+              type: boolean
+    CanvasTestArtifactSummary:
+      type: object
+      required:
+        [
+          id,
+          node_id,
+          blob_type,
+          classification,
+          redacted_payload,
+          retention_until,
+          created_at,
+        ]
+      properties:
+        id:
+          type: string
+        node_id:
+          type: string
+        blob_type:
+          type: string
+          enum: [input, output, log, artifact_preview]
+        classification:
+          type: string
+        redacted_payload:
+          type: [object, "null"]
+          additionalProperties: true
+        retention_until:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+    CanvasTestSupportBundle:
+      type: object
+      required:
+        [
+          test_run_id,
+          trace_id,
+          draft_version_hash,
+          validation,
+          step_statuses,
+          safe_error_codes,
+          redacted_summaries,
+          runtime_projection_status,
+          diagnostics,
+        ]
+      properties:
+        test_run_id:
+          type: string
+        trace_id:
+          type: string
+        draft_version_hash:
+          type: [string, "null"]
+        validation:
+          $ref: "#/components/schemas/CanvasValidationSummary"
+        step_statuses:
+          type: array
+          items:
+            $ref: "#/components/schemas/CanvasTestRunStepSummary"
+        safe_error_codes:
+          type: array
+          items:
+            type: string
+        redacted_summaries:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        runtime_projection_status:
+          type: [string, "null"]
+        diagnostics:
+          type: object
+          required: [browser, backend]
+          properties:
+            browser:
+              type: object
+              additionalProperties: true
+            backend:
+              type: object
+              additionalProperties: true
+    CanvasRuntimeProjectionState:
+      type: object
+      required: [status, can_compile, can_run, warnings]
+      properties:
+        status:
+          type: string
+          enum:
+            [
+              not_compiled,
+              compile_required,
+              compile_failed,
+              compile_preview_ready,
+              sync_required,
+              syncing,
+              synced,
+              runtime_modified,
+              conflict,
+              preview,
+            ]
+        can_compile:
+          type: boolean
+        can_run:
+          type: boolean
+        activepieces_flow_id:
+          type: [string, "null"]
+        compile_preview_id:
+          type: [string, "null"]
+        sync_hash:
+          type: [string, "null"]
+        warnings:
+          type: array
+          items:
+            type: string
+    CanvasPermissions:
+      type: object
+      required:
+        [
+          can_view,
+          can_edit,
+          can_publish,
+          can_test,
+          can_open_advanced_builder,
+          can_debug,
+        ]
+      properties:
+        can_view:
+          type: boolean
+        can_edit:
+          type: boolean
+        can_publish:
+          type: boolean
+        can_test:
+          type: boolean
+        can_import_runtime:
+          type: boolean
+        can_restore_version:
+          type: boolean
+        can_view_versions:
+          type: boolean
+        can_compare_versions:
+          type: boolean
+        can_download_version_json:
+          type: boolean
+        can_create_checkpoint:
+          type: boolean
+        can_validate_publish:
+          type: boolean
+        can_restore_version_as_draft:
+          type: boolean
+        can_rollback_version:
+          type: boolean
+        can_rollback_runtime:
+          type: boolean
+        can_emergency_disable:
+          type: boolean
+        can_view_runtime_projection:
+          type: boolean
+        can_manage_locks:
+          type: boolean
+        can_view_validation:
+          type: boolean
+        can_view_raw_dsl:
+          type: boolean
+        can_open_advanced_builder:
+          type: boolean
+        can_debug:
+          type: boolean
+    CanvasLockState:
+      type: object
+      required: [status, locked, locked_by_current_user]
+      properties:
+        status:
+          type: string
+          enum: [unlocked, locked_by_me, locked_by_other, expired]
+        locked:
+          type: boolean
+        locked_by_current_user:
+          type: boolean
+        lock_id:
+          type: [string, "null"]
+        lock_type:
+          type: [string, "null"]
+        locked_by_user_id:
+          type: [string, "null"]
+        locked_by_user_email:
+          type: [string, "null"]
+        expires_at:
+          type: [string, "null"]
+          format: date-time
+    CanvasReadModel:
+      type: object
+      required: [nodes, edges, viewport, layout_mode]
+      properties:
+        nodes:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        edges:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        viewport:
+          type: object
+          additionalProperties: true
+        layout_mode:
+          type: string
+    CanvasState:
+      type: object
+      required:
+        [
+          automation_id,
+          draft_id,
+          schema_version,
+          status,
+          revision,
+          draft_hash,
+          workflow,
+          canvas,
+          runtime_projection,
+          permissions,
+          lock,
+          feature_flags,
+          validation,
+          workflow_hash,
+          revision_counter,
+        ]
+      properties:
+        automation_id:
+          type: string
+        draft_id:
+          type: string
+        schema_version:
+          type: string
+          const: "2.0"
+        status:
+          $ref: "#/components/schemas/CanvasDraftStatus"
+        revision:
+          type: integer
+          minimum: 0
+        draft_hash:
+          type: string
+        workflow:
+          type: object
+          additionalProperties: true
+        canvas:
+          $ref: "#/components/schemas/CanvasReadModel"
+        runtime_projection:
+          $ref: "#/components/schemas/CanvasRuntimeProjectionState"
+        permissions:
+          $ref: "#/components/schemas/CanvasPermissions"
+        lock:
+          $ref: "#/components/schemas/CanvasLockState"
+        feature_flags:
+          type: object
+          additionalProperties: true
+        validation:
+          $ref: "#/components/schemas/CanvasValidationSummary"
+        workflow_hash:
+          type: string
+        revision_counter:
+          type: integer
+          minimum: 0
+    CanvasDraftRequest:
+      type: object
+      properties:
+        source:
+          type: string
+          enum: [empty, from_published_version, from_template, from_runtime_import]
+        source_version_id:
+          type: [string, "null"]
+        idempotency_key:
+          type: [string, "null"]
+    CanvasDraftOpenResponse:
+      type: object
+      required: [draft_id, revision, draft_hash, status]
+      properties:
+        draft_id:
+          type: string
+        revision:
+          type: integer
+          minimum: 0
+        draft_hash:
+          type: string
+        status:
+          $ref: "#/components/schemas/CanvasDraftStatus"
+    CanvasOperationType:
+      type: string
+      enum:
+        [
+          ADD_NODE_FROM_MODULE,
+          ADD_NODE,
+          DUPLICATE_NODE,
+          UPDATE_NODE,
+          MOVE_NODE,
+          DELETE_NODE,
+          ADD_EDGE,
+          DELETE_EDGE,
+          UPDATE_EDGE,
+          UPDATE_NODE_CONFIG,
+          UPDATE_LAYOUT,
+          UPSERT_WORKFLOW_INPUT,
+          DELETE_WORKFLOW_INPUT,
+          UPSERT_WORKFLOW_OUTPUT,
+          DELETE_WORKFLOW_OUTPUT,
+          UPSERT_INPUT_BINDING,
+          DELETE_INPUT_BINDING,
+          PIN_SAMPLE_DATA,
+          UNPIN_SAMPLE_DATA,
+          UPDATE_CONDITION,
+          UPDATE_WORKFLOW_POLICY,
+          UPDATE_NODE_POLICY,
+          SNAPSHOT_RESTORE,
+          RUNTIME_IMPORT_AS_DRAFT,
+        ]
+    CanvasSemanticOperationType:
+      type: string
+      enum:
+        [
+          workflow.input.add,
+          workflow.input.update,
+          workflow.input.delete,
+          workflow.output.add,
+          workflow.output.update,
+          workflow.output.delete,
+          workflow.metadata.update,
+          node.add,
+          node.update_display,
+          node.update_config,
+          node.update_policy,
+          node.move,
+          node.delete,
+          node.duplicate,
+          edge.add,
+          edge.delete,
+          edge.update_condition,
+          edge.update_mapping,
+          binding.set,
+          binding.clear,
+          binding.batch_set,
+          branch.add,
+          branch.update_condition,
+          branch.delete,
+          loop.add,
+          loop.update,
+          loop.delete,
+          approval.add,
+          approval.update,
+          approval.delete,
+          error_handler.add,
+          error_handler.update,
+          error_handler.delete,
+          layout.update,
+          group.add,
+          group.update,
+          group.delete,
+          snapshot.restore,
+          runtime.import_as_draft,
+        ]
+    CanvasOperationEnvelope:
+      type: object
+      required: [client_operation_id, type, payload]
+      properties:
+        client_operation_id:
+          type: string
+        type:
+          oneOf:
+            - $ref: "#/components/schemas/CanvasOperationType"
+            - $ref: "#/components/schemas/CanvasSemanticOperationType"
+        payload:
+          type: object
+          additionalProperties: true
+        idempotency_key:
+          type: [string, "null"]
+    CanvasLegacyOperation:
+      type: object
+      required: [client_operation_id, operation_type, operation_payload]
+      properties:
+        client_operation_id:
+          type: string
+        operation_type:
+          $ref: "#/components/schemas/CanvasOperationType"
+        operation_payload:
+          type: object
+          additionalProperties: true
+        base_workflow_hash:
+          type: [string, "null"]
+        base_revision_counter:
+          type: [integer, "null"]
+          minimum: 0
+        idempotency_key:
+          type: [string, "null"]
+    CanvasOperationRequest:
+      type: object
+      required: [operations]
+      properties:
+        draft_id:
+          type: [string, "null"]
+        expected_revision:
+          type: [integer, "null"]
+          minimum: 0
+        base_hash:
+          type: [string, "null"]
+        client_batch_id:
+          type: [string, "null"]
+        operations:
+          type: array
+          minItems: 1
+          items:
+            oneOf:
+              - $ref: "#/components/schemas/CanvasOperationEnvelope"
+              - $ref: "#/components/schemas/CanvasLegacyOperation"
+    CanvasOperationResponse:
+      type: object
+      required:
+        [
+          accepted,
+          operation_id,
+          workflow,
+          validation,
+          new_workflow_hash,
+          revision_counter,
+        ]
+      properties:
+        accepted:
+          type: boolean
+        operation_id:
+          type: [string, "null"]
+        draft_id:
+          type: [string, "null"]
+        revision:
+          type: integer
+          minimum: 0
+        draft_hash:
+          type: string
+        workflow:
+          type: object
+          additionalProperties: true
+        canvas:
+          $ref: "#/components/schemas/CanvasReadModel"
+        validation:
+          $ref: "#/components/schemas/CanvasValidationSummary"
+        rejected_reason:
+          type: [string, "null"]
+        new_workflow_hash:
+          type: string
+        revision_counter:
+          type: integer
+          minimum: 0
+        applied_operations:
+          type: array
+          items:
+            type: string
+        operation_results:
+          type: array
+          items:
+            $ref: "#/components/schemas/CanvasOperationResult"
+    CanvasAiMessageRequest:
+      type: object
+      required: [mode, message]
+      properties:
+        session_id:
+          type: [string, "null"]
+        mode:
+          type: string
+          enum:
+            [explain, edit, fix_validation, configure_step, test_plan, debug_test]
+        message:
+          type: string
+        draft_version_id:
+          type: [string, "null"]
+        base_workflow_hash:
+          type: [string, "null"]
+        selected_node_id:
+          type: [string, "null"]
+        selected_edge_id:
+          type: [string, "null"]
+        selected_validation_issue_id:
+          type: [string, "null"]
+        client_context:
+          type: [object, "null"]
+          additionalProperties: true
+        include_sensitive_context:
+          type: boolean
+        idempotency_key:
+          type: [string, "null"]
+    CanvasAiPatchProposal:
+      type: object
+      required:
+        [
+          id,
+          automation_id,
+          draft_version_id,
+          session_id,
+          title,
+          operations,
+          base_workflow_hash,
+          status,
+          validation,
+          policy,
+          diff,
+          can_apply,
+          expires_at,
+          created_at,
+        ]
+      properties:
+        id:
+          type: string
+        workspace_id:
+          type: string
+        automation_id:
+          type: string
+        draft_version_id:
+          type: string
+        session_id:
+          type: string
+        title:
+          type: string
+        user_request:
+          type: string
+        assistant_summary:
+          type: string
+        operations:
+          type: array
+          maxItems: 20
+          items:
+            $ref: "#/components/schemas/CanvasLegacyOperation"
+        base_workflow_hash:
+          type: string
+        proposed_workflow_hash:
+          type: [string, "null"]
+        status:
+          type: string
+          enum:
+            [
+              needs_clarification,
+              validation_failed,
+              policy_blocked,
+              ready_for_review,
+              applied,
+              rejected,
+              expired,
+            ]
+        validation:
+          type: object
+          additionalProperties: true
+        policy:
+          type: object
+          additionalProperties: true
+        diff:
+          type: object
+          additionalProperties: true
+        can_apply:
+          type: boolean
+        expires_at:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        applied_at:
+          type: [string, "null"]
+          format: date-time
+        rejected_at:
+          type: [string, "null"]
+          format: date-time
+    CanvasAiPatchProposalResponse:
+      type: object
+      required: [status, session_id, message_id, proposal]
+      properties:
+        status:
+          type: string
+          const: patch_proposal
+        session_id:
+          type: string
+        message_id:
+          type: string
+        proposal:
+          $ref: "#/components/schemas/CanvasAiPatchProposal"
+    CanvasAiExplanationResponse:
+      type: object
+      required: [status, session_id, message_id, summary]
+      properties:
+        status:
+          type: string
+          const: explanation
+        session_id:
+          type: string
+        message_id:
+          type: string
+        summary:
+          type: string
+        node_references:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        validation_summary:
+          $ref: "#/components/schemas/CanvasValidationSummary"
+        risks:
+          type: array
+          items:
+            type: string
+        redactions:
+          type: array
+          items:
+            type: string
+    CanvasAiTestPlanResponse:
+      type: object
+      required: [status, session_id, message_id, plan, redactions]
+      properties:
+        status:
+          type: string
+          const: test_plan
+        session_id:
+          type: string
+        message_id:
+          type: string
+        plan:
+          type: object
+          additionalProperties: true
+        redactions:
+          type: array
+          items:
+            type: string
+    CanvasAiDebugResponse:
+      type: object
+      required: [status, session_id, message_id, summary, redacted]
+      properties:
+        status:
+          type: string
+          const: debug_explanation
+        session_id:
+          type: string
+        message_id:
+          type: string
+        summary:
+          type: string
+        suspected_causes:
+          type: array
+          items:
+            type: string
+        next_actions:
+          type: array
+          items:
+            type: string
+        redacted:
+          type: boolean
+    CanvasAiMessageResponse:
+      oneOf:
+        - $ref: "#/components/schemas/CanvasAiPatchProposalResponse"
+        - $ref: "#/components/schemas/CanvasAiExplanationResponse"
+        - $ref: "#/components/schemas/CanvasAiTestPlanResponse"
+        - $ref: "#/components/schemas/CanvasAiDebugResponse"
+        - type: object
+          additionalProperties: true
+    CanvasAiPatchApplyRequest:
+      type: object
+      required: [patch_id, base_workflow_hash, user_confirmation]
+      properties:
+        patch_id:
+          type: string
+        base_workflow_hash:
+          type: string
+        user_confirmation:
+          type: boolean
+        idempotency_key:
+          type: [string, "null"]
+    CanvasAiPatchApplyResponse:
+      type: object
+      required:
+        [
+          status,
+          patch_id,
+          session_id,
+          draft_version_id,
+          workflow_hash,
+          revision_counter,
+          operation_response,
+        ]
+      properties:
+        status:
+          type: string
+          const: applied
+        patch_id:
+          type: string
+        session_id:
+          type: string
+        draft_version_id:
+          type: string
+        workflow_hash:
+          type: string
+        revision_counter:
+          type: integer
+        operation_response:
+          $ref: "#/components/schemas/CanvasOperationResponse"
+    CanvasAiPatchRejectRequest:
+      type: object
+      properties:
+        reason:
+          type: [string, "null"]
+    CanvasAiPatchRejectResponse:
+      type: object
+      required: [status, patch_id, session_id, rejected_at]
+      properties:
+        status:
+          type: string
+          const: rejected
+        patch_id:
+          type: string
+        session_id:
+          type: string
+        rejected_at:
+          type: string
+          format: date-time
+    CanvasSnapshot:
+      type: object
+      required: [id, draft_id, revision, snapshot_hash, reason, created_at]
+      properties:
+        id:
+          type: string
+        draft_id:
+          type: string
+        revision:
+          type: integer
+          minimum: 0
+        snapshot_hash:
+          type: string
+        reason:
+          type: string
+        note:
+          type: [string, "null"]
+        checkpoint_name:
+          type: [string, "null"]
+        checkpoint_description:
+          type: [string, "null"]
+        checkpoint_kind:
+          type: [string, "null"]
+          enum: [manual, auto, system, publish, null]
+        retention_until:
+          type: [string, "null"]
+          format: date-time
+        is_named:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+    CanvasSnapshotRequest:
+      type: object
+      properties:
+        draft_id:
+          type: [string, "null"]
+        reason:
+          type: [string, "null"]
+        note:
+          type: [string, "null"]
+        checkpoint_name:
+          type: [string, "null"]
+        checkpoint_description:
+          type: [string, "null"]
+        checkpoint_kind:
+          type: [string, "null"]
+          enum: [manual, auto, system, publish, null]
+        retention_until:
+          type: [string, "null"]
+          format: date-time
+        is_named:
+          type: boolean
+    CanvasSnapshotResponse:
+      type: object
+      required: [snapshot, state]
+      properties:
+        snapshot:
+          $ref: "#/components/schemas/CanvasSnapshot"
+        state:
+          $ref: "#/components/schemas/CanvasState"
+    CanvasPublishRequest:
+      type: object
+      properties:
+        draft_id:
+          type: [string, "null"]
+        expected_revision:
+          type: [integer, "null"]
+          minimum: 0
+        change_note:
+          type: [string, "null"]
+        compile_preview_required:
+          type: boolean
+        version_name:
+          type: [string, "null"]
+        version_description:
+          type: [string, "null"]
+        sync_runtime:
+          type: boolean
+        idempotency_key:
+          type: [string, "null"]
+        typed_confirmation:
+          type: [string, "null"]
+    CanvasPublishResponse:
+      type: object
+      required: [version_id, version_no, version_hash, status, runtime_sync_status]
+      properties:
+        version_id:
+          type: string
+        version_no:
+          type: integer
+          minimum: 1
+        version_hash:
+          type: string
+        status:
+          $ref: "#/components/schemas/CanvasVersionStatus"
+        compile_preview_id:
+          type: [string, "null"]
+        runtime_projection_id:
+          type: [string, "null"]
+        active_version_id:
+          type: [string, "null"]
+        publish_report:
+          oneOf:
+            - $ref: "#/components/schemas/CanvasPublishReport"
+            - type: "null"
+        runtime_sync_status:
+          type: string
+          enum:
+            [
+              not_compiled,
+              compile_required,
+              compile_failed,
+              compile_preview_ready,
+              sync_required,
+              syncing,
+              synced,
+              runtime_modified,
+              conflict,
+              preview,
+            ]
+    CanvasPublishValidateResponse:
+      type: object
+      required: [automation_id, report]
+      properties:
+        automation_id:
+          type: string
+        report:
+          $ref: "#/components/schemas/CanvasPublishReport"
+        runtime_projection:
+          type: [object, "null"]
+          additionalProperties: true
+    CanvasPublishReport:
+      type: object
+      required:
+        [
+          draft_id,
+          draft_hash,
+          expected_revision,
+          validation,
+          blockers,
+          warnings,
+          graph_summary,
+          required_connections,
+          required_pieces,
+          runtime_diff,
+          projection_hash,
+          can_publish,
+          generated_at,
+        ]
+      properties:
+        draft_id:
+          type: string
+        draft_hash:
+          type: string
+        expected_revision:
+          type: integer
+        validation:
+          $ref: "#/components/schemas/CanvasValidationSummary"
+        blockers:
+          type: array
+          items:
+            $ref: "#/components/schemas/CanvasPublishBlocker"
+        warnings:
+          type: array
+          items:
+            $ref: "#/components/schemas/CanvasPublishBlocker"
+        graph_summary:
+          type: object
+          additionalProperties: true
+        required_connections:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        required_pieces:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        runtime_diff:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        projection_hash:
+          type: string
+        can_publish:
+          type: boolean
+        generated_at:
+          type: string
+          format: date-time
+    CanvasPublishBlocker:
+      type: object
+      required: [code, title, message, category, severity]
+      properties:
+        code:
+          type: string
+        title:
+          type: string
+        message:
+          type: string
+        category:
+          type: string
+          enum: [validation, runtime, policy, connection, revision, security]
+        severity:
+          type: string
+          enum: [warning, blocker]
+        affected_node_id:
+          type: [string, "null"]
+    CanvasRestoreVersionResponse:
+      type: object
+      required: [draft_id, revision, draft_hash, state]
+      properties:
+        draft_id:
+          type: string
+        revision:
+          type: integer
+          minimum: 0
+        draft_hash:
+          type: string
+        state:
+          $ref: "#/components/schemas/CanvasState"
+    CanvasVersionStatus:
+      type: string
+      enum: [draft, published, restored, runtime_synced, runtime_modified, superseded, archived]
+    CanvasVersion:
+      type: object
+      required:
+        [
+          id,
+          status,
+          title,
+          workflow_hash,
+          revision_counter,
+          validation_status,
+          is_current,
+          created_at,
+          updated_at,
+        ]
+      properties:
+        id:
+          type: string
+        status:
+          $ref: "#/components/schemas/CanvasVersionStatus"
+        title:
+          type: [string, "null"]
+        workflow_hash:
+          type: string
+        revision_counter:
+          type: integer
+          minimum: 0
+        validation_status:
+          type: string
+          enum: [valid, valid_with_warnings, invalid, untested]
+        is_current:
+          type: boolean
+        is_active:
+          type: boolean
+        entry_type:
+          type: string
+          enum: [draft, published_version, checkpoint, rollback_event]
+        version_no:
+          type: [integer, "null"]
+          minimum: 1
+        runtime_projection_id:
+          type: [string, "null"]
+        runtime_sync_status:
+          type: [string, "null"]
+        published_at:
+          type: [string, "null"]
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    CanvasVersionListResponse:
+      type: object
+      required: [current_draft_version_id, versions]
+      properties:
+        current_draft_version_id:
+          type: [string, "null"]
+        active_version_id:
+          type: [string, "null"]
+        disabled:
+          type: boolean
+        versions:
+          type: array
+          items:
+            $ref: "#/components/schemas/CanvasVersion"
+        next_cursor:
+          type: [string, "null"]
+    CanvasVersionStateResponse:
+      type: object
+      required:
+        [
+          automation_id,
+          active_draft,
+          active_published_version,
+          runtime_binding,
+          disabled_state,
+          latest_checkpoint,
+          runtime_conflict,
+          permissions,
+        ]
+      properties:
+        automation_id:
+          type: string
+        active_draft:
+          type: object
+          additionalProperties: true
+        active_published_version:
+          oneOf:
+            - $ref: "#/components/schemas/CanvasVersion"
+            - type: "null"
+        runtime_binding:
+          oneOf:
+            - $ref: "#/components/schemas/RuntimeBindingDto"
+            - type: "null"
+        disabled_state:
+          $ref: "#/components/schemas/CanvasProductionDisabledState"
+        latest_checkpoint:
+          oneOf:
+            - $ref: "#/components/schemas/CanvasSnapshot"
+            - type: "null"
+        runtime_conflict:
+          type: object
+          additionalProperties: true
+        permissions:
+          $ref: "#/components/schemas/CanvasPermissions"
+    CanvasVersionCompareResponse:
+      type: object
+      required:
+        [automation_id, from_version_id, to_version_id, human_summary, technical_patch, summary]
+      properties:
+        automation_id:
+          type: string
+        from_version_id:
+          type: string
+        to_version_id:
+          type: string
+        human_summary:
+          type: array
+          items:
+            type: string
+        technical_patch:
+          type: object
+          additionalProperties: true
+        summary:
+          type: object
+          additionalProperties: true
+    CanvasRollbackType:
+      type: string
+      enum: [restore_as_draft, publish_previous_version, runtime_binding_rollback, emergency_disable]
+    CanvasRollbackImpactRequest:
+      type: object
+      properties:
+        rollback_type:
+          $ref: "#/components/schemas/CanvasRollbackType"
+        target_version_id:
+          type: [string, "null"]
+    CanvasRollbackRequest:
+      type: object
+      required: [rollback_type, reason, confirm_impact, idempotency_key]
+      properties:
+        rollback_type:
+          $ref: "#/components/schemas/CanvasRollbackType"
+        target_version_id:
+          type: [string, "null"]
+        reason:
+          type: string
+        confirm_impact:
+          type: boolean
+        expected_active_version_id:
+          type: [string, "null"]
+        idempotency_key:
+          type: string
+        impact_policy:
+          type: string
+          enum: [cancel_queued, keep_queued, switch_queued]
+    CanvasRollbackImpactResponse:
+      type: object
+      required:
+        [
+          automation_id,
+          rollback_type,
+          current_active_version_id,
+          impact_report,
+          can_rollback,
+          blockers,
+        ]
+      properties:
+        automation_id:
+          type: string
+        rollback_type:
+          $ref: "#/components/schemas/CanvasRollbackType"
+        target_version_id:
+          type: [string, "null"]
+        current_active_version_id:
+          type: [string, "null"]
+        impact_report:
+          type: object
+          additionalProperties: true
+        diff:
+          oneOf:
+            - $ref: "#/components/schemas/CanvasVersionCompareResponse"
+            - type: "null"
+        can_rollback:
+          type: boolean
+        blockers:
+          type: array
+          items:
+            $ref: "#/components/schemas/CanvasPublishBlocker"
+    CanvasRollbackResponse:
+      type: object
+      required:
+        [
+          rollback_id,
+          automation_id,
+          rollback_type,
+          from_version_id,
+          to_version_id,
+          active_version_id,
+          runtime_binding,
+          disabled_state,
+          impact_report,
+        ]
+      properties:
+        rollback_id:
+          type: string
+        automation_id:
+          type: string
+        rollback_type:
+          $ref: "#/components/schemas/CanvasRollbackType"
+        from_version_id:
+          type: [string, "null"]
+        to_version_id:
+          type: [string, "null"]
+        active_version_id:
+          type: [string, "null"]
+        runtime_binding:
+          oneOf:
+            - $ref: "#/components/schemas/RuntimeBindingDto"
+            - type: "null"
+        disabled_state:
+          $ref: "#/components/schemas/CanvasProductionDisabledState"
+        impact_report:
+          type: object
+          additionalProperties: true
+    CanvasRuntimeProjectionVersion:
+      type: object
+      required:
+        [
+          id,
+          automation_id,
+          automation_version_id,
+          provider,
+          projection_hash,
+          compile_report,
+          required_pieces,
+          required_connections,
+          pinned_piece_versions,
+          created_at,
+        ]
+      properties:
+        id:
+          type: string
+        automation_id:
+          type: string
+        automation_version_id:
+          type: string
+        provider:
+          type: string
+        projection_hash:
+          type: string
+        projection:
+          type: [object, "null"]
+          additionalProperties: true
+        compile_report:
+          type: object
+          additionalProperties: true
+        required_pieces:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        required_connections:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        pinned_piece_versions:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        created_at:
+          type: string
+          format: date-time
+    CanvasVersionExportResponse:
+      type: object
+      required:
+        [
+          automation_id,
+          version_id,
+          exported_at,
+          redacted,
+          workflow,
+          workflow_hash,
+          audit_metadata,
+        ]
+      properties:
+        automation_id:
+          type: string
+        version_id:
+          type: string
+        exported_at:
+          type: string
+          format: date-time
+        redacted:
+          type: boolean
+        workflow:
+          type: object
+          additionalProperties: true
+        workflow_hash:
+          type: string
+        runtime_projection:
+          oneOf:
+            - $ref: "#/components/schemas/CanvasRuntimeProjectionVersion"
+            - type: "null"
+        audit_metadata:
+          type: object
+          additionalProperties: true
+    RuntimeBindingDto:
+      type: object
+      additionalProperties: true
+    CanvasProductionDisabledState:
+      type: object
+      required: [disabled, reason, disabled_at, disabled_by]
+      properties:
+        disabled:
+          type: boolean
+        reason:
+          type: [string, "null"]
+        disabled_at:
+          type: [string, "null"]
+          format: date-time
+        disabled_by:
+          type: [string, "null"]
+    CanvasLockRequest:
+      type: object
+      properties:
+        draft_id:
+          type: [string, "null"]
+        lock_id:
+          type: [string, "null"]
+        lock_type:
+          type: [string, "null"]
+        ttl_seconds:
+          type: [integer, "null"]
+          minimum: 1
+    CanvasBlockDefinition:
+      type: object
+      required:
+        [
+          code,
+          kind,
+          nodeType,
+          category,
+          displayName,
+          shortDescription,
+          mvp,
+          enabled,
+          inputSchema,
+          outputSchema,
+          configSchema,
+          inputs,
+          outputs,
+          handles,
+          defaultConfig,
+          policies,
+          runtime,
+          uiSchema,
+          validationRules,
+        ]
+      properties:
+        code:
+          type: string
+        kind:
+          type: string
+          enum:
+            [
+              trigger,
+              legal_action,
+              ai_action,
+              document_input,
+              condition,
+              loop,
+              merge,
+              approval,
+              wait,
+              delivery,
+              storage,
+              subworkflow,
+              error_handler,
+              note,
+              group,
+              end,
+            ]
+        nodeType:
+          type: string
+        category:
+          type: string
+        displayName:
+          type: string
+        shortDescription:
+          type: string
+        longDescription:
+          type: string
+        mvp:
+          type: boolean
+        enabled:
+          type: boolean
+        disabledReason:
+          type: [string, "null"]
+        moduleCode:
+          type: [string, "null"]
+        inputSchema:
+          type: object
+          additionalProperties: true
+        outputSchema:
+          type: object
+          additionalProperties: true
+        configSchema:
+          type: object
+          additionalProperties: true
+        inputs:
+          type: array
+          items:
+            $ref: "#/components/schemas/CanvasDataFieldDefinition"
+        outputs:
+          type: array
+          items:
+            $ref: "#/components/schemas/CanvasDataFieldDefinition"
+        handles:
+          type: array
+          items:
+            $ref: "#/components/schemas/CanvasHandleDefinition"
+        defaultConfig:
+          type: object
+          additionalProperties: true
+        policies:
+          $ref: "#/components/schemas/CanvasBlockPolicy"
+        runtime:
+          $ref: "#/components/schemas/CanvasRuntimeMapping"
+        uiSchema:
+          type: object
+          additionalProperties: true
+        validationRules:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+    CanvasHandleDefinition:
+      type: object
+      required: [code, label, direction, edgeTypes]
+      properties:
+        code:
+          type: string
+        label:
+          type: string
+        direction:
+          type: string
+          enum: [input, output]
+        edgeTypes:
+          type: array
+          items:
+            type: string
+        dataType:
+          type: [string, "null"]
+        required:
+          type: boolean
+    CanvasDataFieldDefinition:
+      type: object
+      required: [key, label, type, required]
+      properties:
+        key:
+          type: string
+        label:
+          type: string
+        type:
+          type: string
+        required:
+          type: boolean
+        classification:
+          type: [string, "null"]
+        allowedSources:
+          type: array
+          items:
+            type: string
+        options:
+          type: array
+          items:
+            type: string
+    CanvasBlockPolicy:
+      type: object
+      required:
+        [
+          riskLevel,
+          dataClassification,
+          requiresApproval,
+          isExternalAction,
+          canUseAi,
+          canUseDocuments,
+          canRunInDryRun,
+          canBePublishedAsTemplate,
+          allowedRoles,
+          requiredPermissions,
+        ]
+      properties:
+        riskLevel:
+          type: string
+          enum: [low, medium, high, critical]
+        dataClassification:
+          type: string
+        requiresApproval:
+          type: boolean
+        isExternalAction:
+          type: boolean
+        canUseAi:
+          type: boolean
+        canUseDocuments:
+          type: boolean
+        canRunInDryRun:
+          type: boolean
+        canBePublishedAsTemplate:
+          type: boolean
+        allowedRoles:
+          type: array
+          items:
+            type: string
+        requiredPermissions:
+          type: array
+          items:
+            type: string
+    CanvasRuntimeMapping:
+      type: object
+      required:
+        [
+          provider,
+          supportsStepTest,
+          supportsPartialExecution,
+          supportsPinnedData,
+          notes,
+        ]
+      properties:
+        provider:
+          type: string
+          enum: [activepieces, internal_worker, ai_gateway, manual, none]
+        activepiecesPiece:
+          type: string
+        activepiecesAction:
+          type: string
+        internalRoute:
+          type: string
+        supportsStepTest:
+          type: boolean
+        supportsPartialExecution:
+          type: boolean
+        supportsPinnedData:
+          type: boolean
+        notes:
+          type: array
+          items:
+            type: string
+    CanvasBlockSchemaResponse:
+      type: object
+      required:
+        [code, kind, inputSchema, outputSchema, configSchema, handles, validationRules]
+      properties:
+        code:
+          type: string
+        kind:
+          type: string
+        inputSchema:
+          type: object
+          additionalProperties: true
+        outputSchema:
+          type: object
+          additionalProperties: true
+        configSchema:
+          type: object
+          additionalProperties: true
+        handles:
+          type: array
+          items:
+            $ref: "#/components/schemas/CanvasHandleDefinition"
+        validationRules:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+    CanvasInsertPosition:
+      type: string
+      enum:
+        [
+          workflow_start,
+          after_node,
+          before_node,
+          branch_true,
+          branch_false,
+          router_branch,
+          loop_body,
+          approval_after,
+          error_handler,
+          workflow_end,
+        ]
+    ModuleAvailabilityStatus:
+      type: string
+      enum:
+        [
+          available,
+          available_with_warnings,
+          missing_required_input,
+          missing_connection,
+          missing_profile,
+          missing_template,
+          blocked_by_role,
+          blocked_by_plan,
+          blocked_by_data_policy,
+          blocked_by_runtime,
+          deprecated,
+          retired,
+          incompatible_with_canvas_context,
+        ]
+    ModuleRemediationAction:
+      type: object
+      required: [action, label]
+      properties:
+        action:
+          type: string
+          enum:
+            [
+              configure_connection,
+              request_connection,
+              add_as_draft,
+              choose_profile,
+              choose_template,
+              add_approval,
+              upgrade_plan,
+              cancel,
+            ]
+        label:
+          type: string
+        href:
+          type: string
+        request_payload:
+          type: object
+          additionalProperties: true
+    ModuleRequirement:
+      type: object
+      required: [kind, code, label, required, status]
+      properties:
+        kind:
+          type: string
+          enum:
+            [
+              connection,
+              profile,
+              template,
+              input,
+              step_output,
+              runtime_piece,
+              permission,
+              approval,
+            ]
+        code:
+          type: string
+        label:
+          type: string
+        required:
+          type: boolean
+        status:
+          type: string
+          enum: [satisfied, missing, warning, blocked]
+        reason:
+          type: [string, "null"]
+        remediation:
+          type: array
+          items:
+            $ref: "#/components/schemas/ModuleRemediationAction"
+    CanvasModuleCard:
+      type: object
+      required:
+        [
+          module_code,
+          display_name,
+          short_description,
+          category_code,
+          category_label,
+          aliases,
+          tags,
+          availability,
+          requirements,
+          risk_level,
+          flags,
+          input_summary,
+          output_summary,
+          insertion,
+          runtime,
+        ]
+      properties:
+        module_code:
+          type: string
+        module_version:
+          type: [string, "null"]
+        display_name:
+          type: string
+        short_description:
+          type: string
+        long_description:
+          type: [string, "null"]
+        category_code:
+          type: string
+        category_label:
+          type: string
+        aliases:
+          type: array
+          items: { type: string }
+        tags:
+          type: array
+          items: { type: string }
+        availability:
+          type: object
+          required: [status]
+          properties:
+            status:
+              $ref: "#/components/schemas/ModuleAvailabilityStatus"
+            reason_code:
+              type: [string, "null"]
+            human_reason:
+              type: [string, "null"]
+            remediation:
+              type: array
+              items:
+                $ref: "#/components/schemas/ModuleRemediationAction"
+        requirements:
+          type: array
+          items:
+            $ref: "#/components/schemas/ModuleRequirement"
+        risk_level:
+          type: string
+          enum: [low, medium, high, critical]
+        flags:
+          type: object
+          additionalProperties: true
+        input_summary:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        output_summary:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        insertion:
+          type: object
+          additionalProperties: true
+        runtime:
+          type: object
+          additionalProperties: true
+        technical:
+          type: object
+          additionalProperties: true
+    CanvasModuleCatalogResponse:
+      type: object
+      required:
+        [
+          categories,
+          modules,
+          recommended,
+          recent,
+          favorites,
+          policy_summary,
+          runtime_summary,
+        ]
+      properties:
+        categories:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        modules:
+          type: array
+          items:
+            $ref: "#/components/schemas/CanvasModuleCard"
+        recommended:
+          type: array
+          items:
+            $ref: "#/components/schemas/RecommendedModule"
+        recent:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        favorites:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        policy_summary:
+          type: object
+          additionalProperties: true
+        runtime_summary:
+          type: object
+          additionalProperties: true
+    RecommendedModule:
+      type: object
+      required: [module_code, reason, score, source]
+      properties:
+        module_code:
+          type: string
+        reason:
+          type: string
+        score:
+          type: number
+        source:
+          type: string
+          enum: [rules, team_preset, recent, favorite, ai_validated]
+    CanvasModuleDetail:
+      allOf:
+        - $ref: "#/components/schemas/CanvasModuleCard"
+        - type: object
+          properties:
+            examples:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+            technical_detail:
+              type: [object, "null"]
+              additionalProperties: true
+    CanvasCompatibilityCheckRequest:
+      type: object
+      required: [insert]
+      properties:
+        automation_id:
+          type: [string, "null"]
+        draft_version_id:
+          type: [string, "null"]
+        insert:
+          type: object
+          required: [position]
+          properties:
+            position:
+              $ref: "#/components/schemas/CanvasInsertPosition"
+            source_node_id:
+              type: [string, "null"]
+            target_node_id:
+              type: [string, "null"]
+            source_handle:
+              type: [string, "null"]
+            target_handle:
+              type: [string, "null"]
+    CanvasCompatibilityCheckResponse:
+      type: object
+      required: [allowed, warnings, missing_requirements]
+      properties:
+        allowed:
+          type: boolean
+        reason_code:
+          type: [string, "null"]
+        human_reason:
+          type: [string, "null"]
+        warnings:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        missing_requirements:
+          type: array
+          items:
+            $ref: "#/components/schemas/ModuleRequirement"
+    CanvasConnectionRequirementsResponse:
+      type: object
+      required: [requirements]
+      properties:
+        requirements:
+          type: array
+          items:
+            $ref: "#/components/schemas/CanvasConnectionRequirement"
+    CanvasConnectionRequirement:
+      type: object
+      required:
+        [requirement_code, label, module_code, connection_type, status, remediation]
+      properties:
+        requirement_code:
+          type: string
+        label:
+          type: string
+        module_code:
+          type: string
+        connection_type:
+          type: string
+        status:
+          type: string
+          enum: [configured, missing, blocked]
+        remediation:
+          type: array
+          items:
+            $ref: "#/components/schemas/ModuleRemediationAction"
+    CanvasConnectionRequestResponse:
+      type: object
+      required: [request_id, status]
+      properties:
+        request_id:
+          type: string
+        status:
+          type: string
+          enum: [created, queued, failed]
+    CanvasOperationResult:
+      type: object
+      required: [operation_type]
+      properties:
+        operation_type:
+          type: string
+        module_code:
+          type: string
+        added_node_id:
+          type: string
+        created_edges:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        created_bindings:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        binding_suggestions:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        missing_requirements:
+          type: array
+          items:
+            $ref: "#/components/schemas/ModuleRequirement"
+        warnings:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        undo_operations:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+    CanvasBlockCodeRequest:
+      type: object
+      required: [blockCode]
+      properties:
+        blockCode:
+          type: string
+    ValidateCanvasBlockRequest:
+      type: object
+      required: [blockCode]
+      properties:
+        blockCode:
+          type: string
+        targetNodeId:
+          type: string
+        config:
+          type: object
+          additionalProperties: true
+        bindings:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        hasApprovalPath:
+          type: boolean
+    ValidateCanvasConnectionRequest:
+      type: object
+      required: [sourceBlockCode, sourceHandle, targetBlockCode, targetHandle]
+      properties:
+        sourceBlockCode:
+          type: string
+        sourceHandle:
+          type: string
+        targetBlockCode:
+          type: string
+        targetHandle:
+          type: string
+        edgeType:
+          type: string
+        hasApprovalPath:
+          type: boolean
+    CanvasPolicyEvaluation:
+      type: object
+      required: [status, warnings, blocks]
+      properties:
+        status:
+          type: string
+          enum: [allowed, warning, blocked]
+        warnings:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        blocks:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+    CanvasBlockValidationResult:
+      type: object
+      required: [valid, issues, policy]
+      properties:
+        valid:
+          type: boolean
+        issues:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        policy:
+          $ref: "#/components/schemas/CanvasPolicyEvaluation"
+    CanvasConnectionValidationResult:
+      type: object
+      required: [allowed, edgeType, policy]
+      properties:
+        allowed:
+          type: boolean
+        edgeType:
+          type: string
+        reason:
+          type: [string, "null"]
+        policy:
+          $ref: "#/components/schemas/CanvasPolicyEvaluation"
     ActorSummary:
       type: object
       required: [id, email, fullName, locale, timezone, onboardingStatus]

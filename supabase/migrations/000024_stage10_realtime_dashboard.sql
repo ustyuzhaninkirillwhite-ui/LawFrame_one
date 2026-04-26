@@ -1,3 +1,17 @@
+insert into app.roles (code, label, description)
+values
+  ('owner', 'Owner', 'Full workspace ownership.'),
+  ('admin', 'Admin', 'Workspace and membership administration.'),
+  ('lawyer', 'Lawyer', 'Legal production workflows.'),
+  ('assistant', 'Assistant', 'Support operations inside the workspace.'),
+  ('viewer', 'Viewer', 'Read-only workspace visibility.'),
+  ('security_admin', 'Security admin', 'Security review and audit access.'),
+  ('billing_admin', 'Billing admin', 'Billing and subscription administration.')
+on conflict (code) do update
+set
+  label = excluded.label,
+  description = excluded.description;
+
 insert into app.permissions (code, label, description, scope, high_risk)
 values (
   'dashboard.view',

@@ -11,6 +11,7 @@
     "test": "node -e \"console.log('api-client: no runtime tests')\""
   },
   "dependencies": {
-    "@lexframe/contracts": "workspace:*"
+    "@lexframe/contracts": "workspace:*",
+    "@lexframe/workflow-dsl": "workspace:*"
   }
 }

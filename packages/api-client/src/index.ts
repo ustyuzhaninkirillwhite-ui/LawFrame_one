@@ -18,6 +18,97 @@ import type {
   CreateReauthChallengeRequest,
   CreateWorkflowDraftRequest,
   CreateWorkflowPatchRequest,
+  CanvasDraftResponse,
+  CanvasDraftOpenResponse,
+  CanvasDraftRequest,
+  CanvasBindingValidationResponse,
+  CanvasCompatibilityCheckRequest,
+  CanvasCompatibilityCheckResponse,
+  CanvasConnectionRequestResponse,
+  CanvasConnectionRequirementsResponse,
+  CanvasIoResponse,
+  CanvasLockState,
+  CanvasModuleCatalogResponse,
+  CanvasModuleDetail,
+  CanvasModuleSummary,
+  CanvasOperationRequest,
+  CanvasOperationPreviewRequest,
+  CanvasOperationPreviewResponse,
+  CanvasOperationResponse,
+  CanvasPresentationMode,
+  CanvasPresentationModel,
+  CanvasApplySuggestedFixRequest,
+  CanvasApplySuggestedFixResponse,
+  CanvasAiExplanationResponse,
+  CanvasAiMessageRequest,
+  CanvasAiMessageResponse,
+  CanvasAiPatchApplyRequest,
+  CanvasAiPatchApplyResponse,
+  CanvasAiPatchProposal,
+  CanvasAiPatchProposalResponse,
+  CanvasAiPatchRejectRequest,
+  CanvasAiPatchRejectResponse,
+  CanvasAiTestPlanResponse,
+  CanvasPublishRequest,
+  CanvasPublishResponse,
+  CanvasPublishValidateResponse,
+  CanvasRollbackImpactResponse,
+  CanvasRollbackRequest,
+  CanvasRollbackResponse,
+  CanvasRuntimeProjectionVersion,
+  CanvasVersionCompareResponse,
+  CanvasVersionExportResponse,
+  CanvasVersionStateResponse,
+  CanvasPinnedDataResponse,
+  CanvasSampleOutputResponse,
+  CanvasSourcesResponse,
+  CanvasSnapshotRequest,
+  CanvasSnapshotResponse,
+  CanvasRestoreVersionResponse,
+  CanvasAuditExportResponse,
+  CanvasAuditHashChainStatusResponse,
+  CanvasAuditListResponse,
+  CanvasPolicyOverrideDecisionRequest,
+  CanvasPolicyOverrideRequest,
+  CanvasSecurityCheckRequest,
+  CanvasSecurityContext,
+  CanvasSecurityPolicy,
+  CanvasStepConfigValidationRequest,
+  CanvasStepConfigValidationResponse,
+  CanvasSuggestionApplyResponse,
+  CanvasTestArtifactSummary,
+  CanvasTestRunRequest,
+  CanvasTestRunResponse,
+  CanvasTestRunStepSummary,
+  CanvasTestSupportBundle,
+  CanvasVersionsResponse,
+  CompileReport,
+  CompileReportsResponse,
+  CompileRequest,
+  CompileResponse,
+  RuntimeBindingDto,
+  RuntimeDriftResponse,
+  RuntimeImportApplyRequest,
+  RuntimeImportApplyResponse,
+  RuntimeImportPreviewRequest,
+  RuntimeImportPreviewResponse,
+  RuntimeImportRejectRequest,
+  RuntimeImportRejectResponse,
+  RuntimeOverwriteRequest,
+  RuntimeOverwriteResponse,
+  RuntimePullRequest,
+  RuntimePullResponse,
+  RuntimeSnapshotResponse,
+  RuntimeSyncStatusResponse,
+  RuntimeSyncRequest,
+  StepInspectorDto,
+  StepInputBinding,
+  StepTestRequest,
+  StepTestResultDto,
+  CanvasValidateRequest,
+  CanvasValidationIssueExplanation,
+  CanvasValidationResult,
+  NoCodeSuggestion,
   UpdateWorkflowDraftInputsRequest,
   WorkflowDraftDetail,
   WorkflowDraftSummary,
@@ -192,6 +283,14 @@ import type {
   WorkspaceMember,
   WorkspaceSummary,
 } from "@lexframe/contracts";
+import type {
+  CanvasBlockDefinition,
+  CanvasBlockValidationResult,
+  CanvasConnectionValidationResult,
+  CanvasEdgeType,
+  CanvasHandleCode,
+  CanvasRuntimeMapping,
+} from "@lexframe/workflow-dsl";
 import {
   buildQueryString,
   requestJson,
@@ -203,6 +302,33 @@ import { createStage15Client } from "./stage15-client";
 export { ApiClientError } from "./core";
 export type { FetchOptions } from "./core";
 export type { Stage15Api } from "./stage15-client";
+
+export interface CanvasBlockSchemaResponse {
+  readonly code: string;
+  readonly kind: CanvasBlockDefinition["kind"];
+  readonly inputSchema: CanvasBlockDefinition["inputSchema"];
+  readonly outputSchema: CanvasBlockDefinition["outputSchema"];
+  readonly configSchema: CanvasBlockDefinition["configSchema"];
+  readonly handles: CanvasBlockDefinition["handles"];
+  readonly validationRules: CanvasBlockDefinition["validationRules"];
+}
+
+export interface ValidateCanvasBlockRequest {
+  readonly blockCode: string;
+  readonly targetNodeId?: string;
+  readonly config?: Record<string, unknown>;
+  readonly bindings?: readonly StepInputBinding[];
+  readonly hasApprovalPath?: boolean;
+}
+
+export interface ValidateCanvasConnectionRequest {
+  readonly sourceBlockCode: string;
+  readonly sourceHandle: CanvasHandleCode;
+  readonly targetBlockCode: string;
+  readonly targetHandle: CanvasHandleCode;
+  readonly edgeType?: CanvasEdgeType;
+  readonly hasApprovalPath?: boolean;
+}
 
 export interface ApiClient {
   bootstrapAuth(): Promise<{ readonly status: "ok" }>;
@@ -341,6 +467,365 @@ export interface ApiClient {
   ): Promise<readonly LibraryTemplateSummary[]>;
   listInstalledAutomations(): Promise<readonly InstalledAutomationDetail[]>;
   getAutomation(id: string): Promise<InstalledAutomationDetail>;
+  getAutomationCanvas(id: string): Promise<CanvasDraftResponse>;
+  getAutomationCanvasSecurityContext(
+    id: string,
+  ): Promise<CanvasSecurityContext>;
+  listAutomationCanvasSecurityPolicies(
+    id: string,
+  ): Promise<readonly CanvasSecurityPolicy[]>;
+  checkAutomationCanvasSecurityAction(
+    id: string,
+    input: CanvasSecurityCheckRequest,
+  ): Promise<CanvasSecurityContext["decisions"][string]>;
+  requestAutomationCanvasPolicyOverride(
+    id: string,
+    input: CanvasPolicyOverrideRequest,
+  ): Promise<{ readonly id: string | null; readonly status: string }>;
+  approveAutomationCanvasPolicyOverride(
+    id: string,
+    input: CanvasPolicyOverrideDecisionRequest,
+  ): Promise<{ readonly id: string; readonly status: string }>;
+  rejectAutomationCanvasPolicyOverride(
+    id: string,
+    input: CanvasPolicyOverrideDecisionRequest,
+  ): Promise<{ readonly id: string; readonly status: string }>;
+  listAutomationCanvasAuditEvents(id: string): Promise<CanvasAuditListResponse>;
+  getAutomationCanvasAuditEvent(
+    id: string,
+    eventId: string,
+  ): Promise<CanvasAuditListResponse["events"][number]>;
+  exportAutomationCanvasAuditEvents(
+    id: string,
+    input: { readonly from?: string | null; readonly to?: string | null; readonly format?: "json" | "jsonl" },
+  ): Promise<CanvasAuditExportResponse>;
+  getAutomationCanvasAuditHashChainStatus(
+    id: string,
+  ): Promise<CanvasAuditHashChainStatusResponse>;
+  getAutomationCanvasPresentation(
+    id: string,
+    input?: {
+      readonly mode?: CanvasPresentationMode | null;
+      readonly locale?: string | null;
+    },
+  ): Promise<CanvasPresentationModel>;
+  getAutomationCanvasSuggestions(
+    id: string,
+    input?: {
+      readonly contextNodeId?: string | null;
+      readonly locale?: string | null;
+    },
+  ): Promise<readonly NoCodeSuggestion[]>;
+  applyAutomationCanvasSuggestion(
+    id: string,
+    suggestionId: string,
+    input?: {
+      readonly confirmedByUser?: boolean;
+      readonly contextNodeId?: string | null;
+    },
+  ): Promise<CanvasSuggestionApplyResponse>;
+  openAutomationCanvasDraft(
+    id: string,
+    input?: CanvasDraftRequest,
+  ): Promise<CanvasDraftOpenResponse>;
+  getAutomationCanvasVersionState(id: string): Promise<CanvasVersionStateResponse>;
+  getAutomationCanvasVersions(
+    id: string,
+    input?: {
+      readonly status?: string | null;
+      readonly includeCheckpoints?: boolean;
+      readonly cursor?: string | null;
+      readonly limit?: number | null;
+    },
+  ): Promise<CanvasVersionsResponse>;
+  getAutomationCanvasIo(id: string): Promise<CanvasIoResponse>;
+  getStepInspector(id: string, nodeId: string): Promise<StepInspectorDto>;
+  listStepDataSources(
+    id: string,
+    nodeId: string,
+    inputKey: string,
+  ): Promise<CanvasSourcesResponse>;
+  listCanvasInputSources(
+    id: string,
+    nodeId: string,
+    inputKey: string,
+  ): Promise<CanvasSourcesResponse>;
+  testCanvasNode(
+    id: string,
+    nodeId: string,
+    input: StepTestRequest,
+  ): Promise<StepTestResultDto>;
+  createCanvasTestRun(
+    id: string,
+    mode:
+      | "validate"
+      | "test-step"
+      | "test-until-step"
+      | "test-branch"
+      | "test-loop"
+      | "dry-run",
+    input: CanvasTestRunRequest,
+  ): Promise<CanvasTestRunResponse>;
+  getCanvasTestRun(
+    id: string,
+    testRunId: string,
+  ): Promise<CanvasTestRunResponse>;
+  listCanvasTestRunSteps(
+    id: string,
+    testRunId: string,
+  ): Promise<readonly CanvasTestRunStepSummary[]>;
+  getCanvasTestRunStep(
+    id: string,
+    testRunId: string,
+    nodeId: string,
+  ): Promise<CanvasTestRunStepSummary>;
+  cancelCanvasTestRun(
+    id: string,
+    testRunId: string,
+  ): Promise<CanvasTestRunResponse>;
+  listCanvasTestArtifacts(
+    id: string,
+    testRunId: string,
+  ): Promise<readonly CanvasTestArtifactSummary[]>;
+  getCanvasTestSupportBundle(
+    id: string,
+    testRunId: string,
+  ): Promise<CanvasTestSupportBundle>;
+  validateCanvasBinding(
+    id: string,
+    input: StepInputBinding,
+  ): Promise<CanvasBindingValidationResponse>;
+  getCanvasSampleOutput(
+    id: string,
+    nodeId: string,
+    outputKey: string,
+  ): Promise<CanvasSampleOutputResponse>;
+  pinCanvasSampleOutput(
+    id: string,
+    nodeId: string,
+    outputKey: string,
+    sampleDataId: string,
+  ): Promise<CanvasPinnedDataResponse>;
+  unpinCanvasSampleOutput(
+    id: string,
+    nodeId: string,
+    outputKey: string,
+  ): Promise<CanvasPinnedDataResponse>;
+  applyCanvasOperations(
+    id: string,
+    input: CanvasOperationRequest,
+  ): Promise<CanvasOperationResponse>;
+  previewCanvasOperations(
+    id: string,
+    input: CanvasOperationPreviewRequest,
+  ): Promise<CanvasOperationPreviewResponse>;
+  validateAutomationCanvas(
+    id: string,
+    input?: CanvasValidateRequest,
+  ): Promise<CanvasValidationResult>;
+  validateCanvasNodeConfig(
+    id: string,
+    nodeId: string,
+    input: CanvasStepConfigValidationRequest,
+  ): Promise<CanvasStepConfigValidationResponse>;
+  explainCanvasValidationIssue(
+    id: string,
+    issueId: string,
+  ): Promise<CanvasValidationIssueExplanation>;
+  applyCanvasValidationFix(
+    id: string,
+    issueId: string,
+    input: CanvasApplySuggestedFixRequest,
+  ): Promise<CanvasApplySuggestedFixResponse>;
+  sendCanvasAiMessage(
+    id: string,
+    input: CanvasAiMessageRequest,
+  ): Promise<CanvasAiMessageResponse>;
+  proposeCanvasAiPatch(
+    id: string,
+    input: CanvasAiMessageRequest,
+  ): Promise<CanvasAiPatchProposalResponse | CanvasAiMessageResponse>;
+  explainCanvasWithAi(
+    id: string,
+    input?: Partial<CanvasAiMessageRequest>,
+  ): Promise<CanvasAiExplanationResponse>;
+  fixCanvasValidationWithAi(
+    id: string,
+    input: Partial<CanvasAiMessageRequest> & {
+      readonly selected_validation_issue_id?: string | null;
+    },
+  ): Promise<CanvasAiMessageResponse>;
+  configureCanvasStepWithAi(
+    id: string,
+    input: Partial<CanvasAiMessageRequest> & {
+      readonly selected_node_id?: string | null;
+    },
+  ): Promise<CanvasAiMessageResponse>;
+  createCanvasAiTestPlan(
+    id: string,
+    input?: Partial<CanvasAiMessageRequest>,
+  ): Promise<CanvasAiTestPlanResponse>;
+  applyCanvasAiPatch(
+    id: string,
+    input: CanvasAiPatchApplyRequest,
+  ): Promise<CanvasAiPatchApplyResponse>;
+  rejectCanvasAiPatch(
+    id: string,
+    patchId: string,
+    input?: CanvasAiPatchRejectRequest,
+  ): Promise<CanvasAiPatchRejectResponse>;
+  getCanvasAiPatch(id: string, patchId: string): Promise<CanvasAiPatchProposal>;
+  createCanvasSnapshot(
+    id: string,
+    input?: CanvasSnapshotRequest,
+  ): Promise<CanvasSnapshotResponse>;
+  createCanvasCheckpoint(
+    id: string,
+    input?: CanvasSnapshotRequest,
+  ): Promise<CanvasSnapshotResponse>;
+  restoreCanvasSnapshot(
+    id: string,
+    snapshotId: string,
+  ): Promise<CanvasSnapshotResponse>;
+  publishAutomationCanvas(
+    id: string,
+    input?: CanvasPublishRequest,
+  ): Promise<CanvasPublishResponse>;
+  validateAutomationCanvasPublish(
+    id: string,
+    input?: CanvasPublishRequest,
+  ): Promise<CanvasPublishValidateResponse>;
+  compareAutomationCanvasVersions(
+    id: string,
+    input: { readonly from: string; readonly to: string },
+  ): Promise<CanvasVersionCompareResponse>;
+  getAutomationCanvasRollbackImpact(
+    id: string,
+    input: Partial<CanvasRollbackRequest>,
+  ): Promise<CanvasRollbackImpactResponse>;
+  rollbackAutomationCanvas(
+    id: string,
+    input: CanvasRollbackRequest,
+  ): Promise<CanvasRollbackResponse>;
+  emergencyDisableAutomationCanvas(
+    id: string,
+    input: { readonly reason: string; readonly idempotency_key?: string | null },
+  ): Promise<CanvasRollbackResponse>;
+  getAutomationCanvasRuntimeProjection(
+    id: string,
+    versionId: string,
+  ): Promise<CanvasRuntimeProjectionVersion>;
+  exportAutomationCanvasVersion(
+    id: string,
+    versionId: string,
+  ): Promise<CanvasVersionExportResponse>;
+  restoreAutomationCanvasVersion(
+    id: string,
+    versionId: string,
+  ): Promise<CanvasRestoreVersionResponse>;
+  previewAutomationCanvasCompile(
+    id: string,
+    input?: CompileRequest,
+  ): Promise<CompileResponse>;
+  compileAutomationCanvas(
+    id: string,
+    input?: CompileRequest,
+  ): Promise<CompileResponse>;
+  syncAutomationCanvasRuntime(
+    id: string,
+    input: RuntimeSyncRequest,
+  ): Promise<CompileResponse>;
+  getAutomationRuntimeBinding(id: string): Promise<RuntimeBindingDto | null>;
+  getAutomationRuntimeSyncStatus(id: string): Promise<RuntimeSyncStatusResponse>;
+  pullAutomationRuntime(
+    id: string,
+    input?: RuntimePullRequest,
+  ): Promise<RuntimePullResponse>;
+  previewAutomationRuntimeImport(
+    id: string,
+    input: RuntimeImportPreviewRequest,
+  ): Promise<RuntimeImportPreviewResponse>;
+  applyAutomationRuntimeImport(
+    id: string,
+    input: RuntimeImportApplyRequest,
+  ): Promise<RuntimeImportApplyResponse>;
+  rejectAutomationRuntimeImport(
+    id: string,
+    input: RuntimeImportRejectRequest,
+  ): Promise<RuntimeImportRejectResponse>;
+  overwriteAutomationRuntime(
+    id: string,
+    input: RuntimeOverwriteRequest,
+  ): Promise<RuntimeOverwriteResponse>;
+  listAutomationCompileReports(id: string): Promise<CompileReportsResponse>;
+  getAutomationCompileReport(
+    id: string,
+    reportId: string,
+  ): Promise<CompileReport>;
+  checkAutomationRuntimeDrift(id: string): Promise<RuntimeDriftResponse>;
+  pullAutomationRuntimeSnapshot(id: string): Promise<RuntimeSnapshotResponse>;
+  acquireCanvasLock(
+    id: string,
+    input?: { readonly draftId?: string | null; readonly ttlSeconds?: number | null },
+  ): Promise<CanvasLockState>;
+  heartbeatCanvasLock(
+    id: string,
+    input?: {
+      readonly draftId?: string | null;
+      readonly lockId?: string | null;
+      readonly ttlSeconds?: number | null;
+    },
+  ): Promise<CanvasLockState>;
+  releaseCanvasLock(
+    id: string,
+    input?: { readonly draftId?: string | null; readonly lockId?: string | null },
+  ): Promise<CanvasLockState>;
+  listCanvasBlockTypes(): Promise<readonly CanvasBlockDefinition[]>;
+  getCanvasBlockType(code: string): Promise<CanvasBlockDefinition>;
+  getCanvasBlockSchema(code: string): Promise<CanvasBlockSchemaResponse>;
+  listCanvasModuleCatalog(input?: {
+    readonly automationId?: string | null;
+    readonly draftVersionId?: string | null;
+    readonly contextNodeId?: string | null;
+    readonly insertPosition?: string | null;
+    readonly mode?: string | null;
+    readonly query?: string | null;
+  }): Promise<CanvasModuleCatalogResponse>;
+  getCanvasModuleDetail(
+    moduleCode: string,
+    automationId?: string | null,
+  ): Promise<CanvasModuleDetail>;
+  checkCanvasModuleCompatibility(
+    moduleCode: string,
+    input: CanvasCompatibilityCheckRequest,
+  ): Promise<CanvasCompatibilityCheckResponse>;
+  validateCanvasBlock(
+    input: ValidateCanvasBlockRequest,
+  ): Promise<CanvasBlockValidationResult>;
+  validateCanvasConnection(
+    input: ValidateCanvasConnectionRequest,
+  ): Promise<CanvasConnectionValidationResult>;
+  previewCanvasBlock(input: {
+    readonly blockCode: string;
+  }): Promise<CanvasRuntimeMapping>;
+  testCanvasBlock(input: { readonly blockCode: string }): Promise<{
+    readonly status: string;
+    readonly blockCode: string;
+    readonly supportsStepTest: boolean;
+    readonly dryRunOnly: boolean;
+    readonly runtime: CanvasRuntimeMapping;
+    readonly note: string;
+  }>;
+  listCanvasModules(
+    automationId: string,
+  ): Promise<readonly CanvasModuleSummary[]>;
+  listConnectionRequirements(input?: {
+    readonly moduleCode?: string | null;
+  }): Promise<CanvasConnectionRequirementsResponse>;
+  createConnectionRequest(input: {
+    readonly moduleCode?: string | null;
+    readonly connectionType?: string | null;
+  }): Promise<CanvasConnectionRequestResponse>;
   listProjects(): Promise<Stage15ProjectListResponse>;
   getProject(projectId: string): Promise<Stage15ProjectDetail>;
   getProjectDashboardSnapshot(
@@ -888,6 +1373,591 @@ export function createApiClient(options: FetchOptions): ApiClient {
       requestJson(options, `/automation-templates/${id}/related`),
     listInstalledAutomations: () => requestJson(options, "/automations"),
     getAutomation: (id) => requestJson(options, `/automations/${id}`),
+    getAutomationCanvas: (id) =>
+      requestJson(options, `/automations/${id}/canvas`),
+    getAutomationCanvasSecurityContext: (id) =>
+      requestJson(options, `/automations/${id}/canvas/security/context`),
+    listAutomationCanvasSecurityPolicies: (id) =>
+      requestJson(options, `/automations/${id}/canvas/security/policies`),
+    checkAutomationCanvasSecurityAction: (id, input) =>
+      requestJson(
+        options,
+        `/automations/${id}/canvas/security/check-action`,
+        withJsonBody(input, { method: "POST" }),
+      ),
+    requestAutomationCanvasPolicyOverride: (id, input) =>
+      requestJson(
+        options,
+        `/automations/${id}/canvas/security/request-override`,
+        withJsonBody(input, { method: "POST" }),
+      ),
+    approveAutomationCanvasPolicyOverride: (id, input) =>
+      requestJson(
+        options,
+        `/automations/${id}/canvas/security/approve-override`,
+        withJsonBody(input, { method: "POST" }),
+      ),
+    rejectAutomationCanvasPolicyOverride: (id, input) =>
+      requestJson(
+        options,
+        `/automations/${id}/canvas/security/reject-override`,
+        withJsonBody(input, { method: "POST" }),
+      ),
+    listAutomationCanvasAuditEvents: (id) =>
+      requestJson(options, `/automations/${id}/canvas/audit`),
+    getAutomationCanvasAuditEvent: (id, eventId) =>
+      requestJson(
+        options,
+        `/automations/${id}/canvas/audit/${encodeURIComponent(eventId)}`,
+      ),
+    exportAutomationCanvasAuditEvents: (id, input) =>
+      requestJson(
+        options,
+        `/automations/${id}/canvas/audit/export`,
+        withJsonBody(input, { method: "POST" }),
+      ),
+    getAutomationCanvasAuditHashChainStatus: (id) =>
+      requestJson(options, `/automations/${id}/canvas/audit/hash-chain/status`),
+    getAutomationCanvasPresentation: (id, input = {}) =>
+      requestJson(
+        options,
+        `/automations/${id}/canvas/presentation${buildQueryString({
+          mode: input.mode ?? undefined,
+          locale: input.locale ?? undefined,
+        })}`,
+      ),
+    getAutomationCanvasSuggestions: (id, input = {}) =>
+      requestJson(
+        options,
+        `/automations/${id}/canvas/suggestions${buildQueryString({
+          contextNodeId: input.contextNodeId ?? undefined,
+          locale: input.locale ?? undefined,
+        })}`,
+      ),
+    applyAutomationCanvasSuggestion: (id, suggestionId, input = {}) =>
+      requestJson(
+        options,
+        `/automations/${id}/canvas/suggestions/${encodeURIComponent(
+          suggestionId,
+        )}/apply`,
+        withJsonBody(
+          {
+            confirmed_by_user: input.confirmedByUser === true,
+            context_node_id: input.contextNodeId ?? undefined,
+          },
+          { method: "POST" },
+        ),
+      ),
+    openAutomationCanvasDraft: (id, input = {}) =>
+      requestJson(
+        options,
+        `/automations/${id}/canvas/drafts`,
+        withJsonBody(input, { method: "POST" }),
+      ),
+    getAutomationCanvasVersionState: (id) =>
+      requestJson(options, `/automations/${id}/canvas/version-state`),
+    getAutomationCanvasVersions: (id, input = {}) =>
+      requestJson(
+        options,
+        `/automations/${id}/canvas/versions${buildQueryString({
+          status: input.status ?? undefined,
+          include_checkpoints:
+            input.includeCheckpoints === undefined
+              ? undefined
+              : String(input.includeCheckpoints),
+          cursor: input.cursor ?? undefined,
+          limit:
+            input.limit === undefined || input.limit === null
+              ? undefined
+              : String(input.limit),
+        })}`,
+      ),
+    getAutomationCanvasIo: (id) =>
+      requestJson(options, `/automations/${id}/canvas/io`),
+    getStepInspector: (id, nodeId) =>
+      requestJson(
+        options,
+        `/automations/${id}/canvas/nodes/${encodeURIComponent(
+          nodeId,
+        )}/inspector`,
+      ),
+    listStepDataSources: (id, nodeId, inputKey) =>
+      requestJson(
+        options,
+        `/automations/${id}/canvas/nodes/${encodeURIComponent(
+          nodeId,
+        )}/data-sources${buildQueryString({ input_key: inputKey })}`,
+      ),
+    listCanvasInputSources: (id, nodeId, inputKey) =>
+      requestJson(
+        options,
+        `/automations/${id}/canvas/nodes/${encodeURIComponent(
+          nodeId,
+        )}/inputs/${encodeURIComponent(inputKey)}/sources`,
+      ),
+    testCanvasNode: (id, nodeId, input) =>
+      requestJson(
+        options,
+        `/automations/${id}/canvas/nodes/${encodeURIComponent(nodeId)}/test`,
+        withJsonBody(input, { method: "POST" }),
+      ),
+    createCanvasTestRun: (id, mode, input) =>
+      requestJson(
+        options,
+        `/automations/${id}/canvas/test-runs/${mode}`,
+        withJsonBody(input, { method: "POST" }),
+      ),
+    getCanvasTestRun: (id, testRunId) =>
+      requestJson(
+        options,
+        `/automations/${id}/canvas/test-runs/${encodeURIComponent(testRunId)}`,
+      ),
+    listCanvasTestRunSteps: (id, testRunId) =>
+      requestJson(
+        options,
+        `/automations/${id}/canvas/test-runs/${encodeURIComponent(
+          testRunId,
+        )}/steps`,
+      ),
+    getCanvasTestRunStep: (id, testRunId, nodeId) =>
+      requestJson(
+        options,
+        `/automations/${id}/canvas/test-runs/${encodeURIComponent(
+          testRunId,
+        )}/steps/${encodeURIComponent(nodeId)}`,
+      ),
+    cancelCanvasTestRun: (id, testRunId) =>
+      requestJson(
+        options,
+        `/automations/${id}/canvas/test-runs/${encodeURIComponent(
+          testRunId,
+        )}/cancel`,
+        { method: "POST" },
+      ),
+    listCanvasTestArtifacts: (id, testRunId) =>
+      requestJson(
+        options,
+        `/automations/${id}/canvas/test-runs/${encodeURIComponent(
+          testRunId,
+        )}/artifacts`,
+      ),
+    getCanvasTestSupportBundle: (id, testRunId) =>
+      requestJson(
+        options,
+        `/automations/${id}/canvas/test-runs/${encodeURIComponent(
+          testRunId,
+        )}/support-bundle`,
+      ),
+    validateCanvasBinding: (id, input) =>
+      requestJson(
+        options,
+        `/automations/${id}/canvas/bindings/validate`,
+        withJsonBody(input, { method: "POST" }),
+      ),
+    getCanvasSampleOutput: (id, nodeId, outputKey) =>
+      requestJson(
+        options,
+        `/automations/${id}/canvas/nodes/${encodeURIComponent(
+          nodeId,
+        )}/outputs/${encodeURIComponent(outputKey)}/sample`,
+      ),
+    pinCanvasSampleOutput: (id, nodeId, outputKey, sampleDataId) =>
+      requestJson(
+        options,
+        `/automations/${id}/canvas/nodes/${encodeURIComponent(
+          nodeId,
+        )}/outputs/${encodeURIComponent(outputKey)}/pinned-data`,
+        withJsonBody({ sample_data_id: sampleDataId }, { method: "POST" }),
+      ),
+    unpinCanvasSampleOutput: (id, nodeId, outputKey) =>
+      requestJson(
+        options,
+        `/automations/${id}/canvas/nodes/${encodeURIComponent(
+          nodeId,
+        )}/outputs/${encodeURIComponent(outputKey)}/pinned-data`,
+        { method: "DELETE" },
+      ),
+    applyCanvasOperations: (id, input) =>
+      requestJson(
+        options,
+        `/automations/${id}/canvas/operations`,
+        withJsonBody(input, { method: "POST" }),
+      ),
+    previewCanvasOperations: (id, input) =>
+      requestJson(
+        options,
+        `/automations/${id}/canvas/operations/preview`,
+        withJsonBody(input, { method: "POST" }),
+      ),
+    validateAutomationCanvas: (id, input = {}) =>
+      requestJson(
+        options,
+        `/automations/${id}/canvas/validate`,
+        withJsonBody(input, { method: "POST" }),
+      ),
+    validateCanvasNodeConfig: (id, nodeId, input) =>
+      requestJson(
+        options,
+        `/automations/${id}/canvas/nodes/${encodeURIComponent(
+          nodeId,
+        )}/validate-config`,
+        withJsonBody(input, { method: "POST" }),
+      ),
+    explainCanvasValidationIssue: (id, issueId) =>
+      requestJson(
+        options,
+        `/automations/${id}/canvas/validation/issues/${encodeURIComponent(
+          issueId,
+        )}/explain`,
+        { method: "POST" },
+      ),
+    applyCanvasValidationFix: (id, issueId, input) =>
+      requestJson(
+        options,
+        `/automations/${id}/canvas/validation/issues/${encodeURIComponent(
+          issueId,
+        )}/apply-fix`,
+        withJsonBody(input, { method: "POST" }),
+      ),
+    sendCanvasAiMessage: (id, input) =>
+      requestJson(
+        options,
+        `/automations/${id}/canvas/ai/messages`,
+        withJsonBody(input, { method: "POST" }),
+      ),
+    proposeCanvasAiPatch: (id, input) =>
+      requestJson(
+        options,
+        `/automations/${id}/canvas/ai/propose-patch`,
+        withJsonBody({ ...input, mode: input.mode ?? "edit" }, { method: "POST" }),
+      ),
+    explainCanvasWithAi: (id, input = {}) =>
+      requestJson(
+        options,
+        `/automations/${id}/canvas/ai/explain`,
+        withJsonBody(
+          {
+            ...input,
+            mode: "explain",
+            message: input.message ?? "Explain the current Canvas workflow.",
+          },
+          { method: "POST" },
+        ),
+      ),
+    fixCanvasValidationWithAi: (id, input) =>
+      requestJson(
+        options,
+        `/automations/${id}/canvas/ai/fix-validation`,
+        withJsonBody(
+          {
+            ...input,
+            mode: "fix_validation",
+            message:
+              input.message ??
+              "Propose a fix for the selected Canvas validation issue.",
+          },
+          { method: "POST" },
+        ),
+      ),
+    configureCanvasStepWithAi: (id, input) =>
+      requestJson(
+        options,
+        `/automations/${id}/canvas/ai/configure-step`,
+        withJsonBody(
+          {
+            ...input,
+            mode: "configure_step",
+            message: input.message ?? "Configure the selected Canvas step.",
+          },
+          { method: "POST" },
+        ),
+      ),
+    createCanvasAiTestPlan: (id, input = {}) =>
+      requestJson(
+        options,
+        `/automations/${id}/canvas/ai/test-plan`,
+        withJsonBody(
+          {
+            ...input,
+            mode: "test_plan",
+            message: input.message ?? "Create a draft-only Canvas test plan.",
+          },
+          { method: "POST" },
+        ),
+      ),
+    applyCanvasAiPatch: (id, input) =>
+      requestJson(
+        options,
+        `/automations/${id}/canvas/ai/apply-patch`,
+        withJsonBody(input, { method: "POST" }),
+      ),
+    rejectCanvasAiPatch: (id, patchId, input = {}) =>
+      requestJson(
+        options,
+        `/automations/${id}/canvas/ai/patches/${encodeURIComponent(
+          patchId,
+        )}/reject`,
+        withJsonBody(input, { method: "POST" }),
+      ),
+    getCanvasAiPatch: (id, patchId) =>
+      requestJson(
+        options,
+        `/automations/${id}/canvas/ai/patches/${encodeURIComponent(patchId)}`,
+      ),
+    createCanvasSnapshot: (id, input = {}) =>
+      requestJson(
+        options,
+        `/automations/${id}/canvas/snapshots`,
+        withJsonBody(input, { method: "POST" }),
+      ),
+    createCanvasCheckpoint: (id, input = {}) =>
+      requestJson(
+        options,
+        `/automations/${id}/canvas/checkpoints`,
+        withJsonBody(input, { method: "POST" }),
+      ),
+    restoreCanvasSnapshot: (id, snapshotId) =>
+      requestJson(
+        options,
+        `/automations/${id}/canvas/snapshots/${snapshotId}/restore`,
+        { method: "POST" },
+      ),
+    publishAutomationCanvas: (id, input = {}) =>
+      requestJson(
+        options,
+        `/automations/${id}/canvas/publish`,
+        withJsonBody(input, { method: "POST" }),
+      ),
+    validateAutomationCanvasPublish: (id, input = {}) =>
+      requestJson(
+        options,
+        `/automations/${id}/canvas/publish/validate`,
+        withJsonBody(input, { method: "POST" }),
+      ),
+    compareAutomationCanvasVersions: (id, input) =>
+      requestJson(
+        options,
+        `/automations/${id}/canvas/versions/compare${buildQueryString({
+          from: input.from,
+          to: input.to,
+        })}`,
+      ),
+    getAutomationCanvasRollbackImpact: (id, input) =>
+      requestJson(
+        options,
+        `/automations/${id}/canvas/rollback/impact`,
+        withJsonBody(input, { method: "POST" }),
+      ),
+    rollbackAutomationCanvas: (id, input) =>
+      requestJson(
+        options,
+        `/automations/${id}/canvas/rollback`,
+        withJsonBody(input, { method: "POST" }),
+      ),
+    emergencyDisableAutomationCanvas: (id, input) =>
+      requestJson(
+        options,
+        `/automations/${id}/canvas/emergency-disable`,
+        withJsonBody(input, { method: "POST" }),
+      ),
+    getAutomationCanvasRuntimeProjection: (id, versionId) =>
+      requestJson(
+        options,
+        `/automations/${id}/canvas/versions/${versionId}/runtime-projection`,
+      ),
+    exportAutomationCanvasVersion: (id, versionId) =>
+      requestJson(
+        options,
+        `/automations/${id}/canvas/versions/${versionId}/export`,
+      ),
+    restoreAutomationCanvasVersion: (id, versionId) =>
+      requestJson(
+        options,
+        `/automations/${id}/canvas/versions/${versionId}/restore-as-draft`,
+        { method: "POST" },
+      ),
+    previewAutomationCanvasCompile: (id, input = {}) =>
+      requestJson(
+        options,
+        `/automations/${id}/canvas/compile-preview`,
+        withJsonBody(input, { method: "POST" }),
+      ),
+    compileAutomationCanvas: (id, input = {}) =>
+      requestJson(
+        options,
+        `/automations/${id}/canvas/compile`,
+        withJsonBody(input, { method: "POST" }),
+      ),
+    syncAutomationCanvasRuntime: (id, input) =>
+      requestJson(
+        options,
+        `/automations/${id}/canvas/sync-runtime`,
+        withJsonBody(input, { method: "POST" }),
+      ),
+    getAutomationRuntimeBinding: (id) =>
+      requestJson(options, `/automations/${id}/runtime-binding`),
+    getAutomationRuntimeSyncStatus: (id) =>
+      requestJson(options, `/automations/${id}/runtime/sync-status`),
+    pullAutomationRuntime: (id, input = {}) =>
+      requestJson(
+        options,
+        `/automations/${id}/runtime/pull`,
+        withJsonBody(input, { method: "POST" }),
+      ),
+    previewAutomationRuntimeImport: (id, input) =>
+      requestJson(
+        options,
+        `/automations/${id}/runtime/import-preview`,
+        withJsonBody(input, { method: "POST" }),
+      ),
+    applyAutomationRuntimeImport: (id, input) =>
+      requestJson(
+        options,
+        `/automations/${id}/runtime/import-apply`,
+        withJsonBody(input, { method: "POST" }),
+      ),
+    rejectAutomationRuntimeImport: (id, input) =>
+      requestJson(
+        options,
+        `/automations/${id}/runtime/import-reject`,
+        withJsonBody(input, { method: "POST" }),
+      ),
+    overwriteAutomationRuntime: (id, input) =>
+      requestJson(
+        options,
+        `/automations/${id}/runtime/overwrite`,
+        withJsonBody(input, { method: "POST" }),
+      ),
+    listAutomationCompileReports: (id) =>
+      requestJson(options, `/automations/${id}/compile-reports`),
+    getAutomationCompileReport: (id, reportId) =>
+      requestJson(options, `/automations/${id}/compile-reports/${reportId}`),
+    checkAutomationRuntimeDrift: (id) =>
+      requestJson(options, `/automations/${id}/runtime/check-drift`, {
+        method: "POST",
+      }),
+    pullAutomationRuntimeSnapshot: (id) =>
+      requestJson(options, `/automations/${id}/runtime/pull-snapshot`, {
+        method: "POST",
+      }),
+    acquireCanvasLock: (id, input = {}) =>
+      requestJson(
+        options,
+        `/automations/${id}/canvas/lock`,
+        withJsonBody(
+          {
+            draft_id: input.draftId ?? null,
+            ttl_seconds: input.ttlSeconds ?? null,
+          },
+          { method: "POST" },
+        ),
+      ),
+    heartbeatCanvasLock: (id, input = {}) =>
+      requestJson(
+        options,
+        `/automations/${id}/canvas/lock/heartbeat`,
+        withJsonBody(
+          {
+            draft_id: input.draftId ?? null,
+            lock_id: input.lockId ?? null,
+            ttl_seconds: input.ttlSeconds ?? null,
+          },
+          { method: "POST" },
+        ),
+      ),
+    releaseCanvasLock: (id, input = {}) =>
+      requestJson(
+        options,
+        `/automations/${id}/canvas/lock`,
+        withJsonBody(
+          {
+            draft_id: input.draftId ?? null,
+            lock_id: input.lockId ?? null,
+          },
+          { method: "DELETE" },
+        ),
+      ),
+    listCanvasBlockTypes: () => requestJson(options, "/canvas/block-types"),
+    getCanvasBlockType: (code) =>
+      requestJson(options, `/canvas/block-types/${code}`),
+    getCanvasBlockSchema: (code) =>
+      requestJson(options, `/canvas/block-types/${code}/schema`),
+    listCanvasModuleCatalog: (input = {}) =>
+      requestJson(
+        options,
+        `/canvas/modules${buildQueryString({
+          automation_id: input.automationId ?? undefined,
+          draft_version_id: input.draftVersionId ?? undefined,
+          context_node_id: input.contextNodeId ?? undefined,
+          insert_position: input.insertPosition ?? undefined,
+          mode: input.mode ?? undefined,
+          q: input.query ?? undefined,
+        })}`,
+      ),
+    getCanvasModuleDetail: (moduleCode, automationId) =>
+      requestJson(
+        options,
+        `/canvas/modules/${encodeURIComponent(moduleCode)}${buildQueryString({
+          automation_id: automationId ?? undefined,
+        })}`,
+      ),
+    checkCanvasModuleCompatibility: (moduleCode, input) =>
+      requestJson(
+        options,
+        `/canvas/modules/${encodeURIComponent(moduleCode)}/compatibility-check`,
+        withJsonBody(input, { method: "POST" }),
+      ),
+    validateCanvasBlock: (input) =>
+      requestJson(
+        options,
+        "/canvas/validate-block",
+        withJsonBody(input, { method: "POST" }),
+      ),
+    validateCanvasConnection: (input) =>
+      requestJson(
+        options,
+        "/canvas/validate-connection",
+        withJsonBody(input, { method: "POST" }),
+      ),
+    previewCanvasBlock: (input) =>
+      requestJson(
+        options,
+        "/canvas/preview-block",
+        withJsonBody(input, { method: "POST" }),
+      ),
+    testCanvasBlock: (input) =>
+      requestJson(
+        options,
+        "/canvas/test-block",
+        withJsonBody(input, { method: "POST" }),
+      ),
+    listCanvasModules: (automationId) =>
+      requestJson(
+        options,
+        `/modules${buildQueryString({
+          context: "canvas",
+          automation_id: automationId,
+        })}`,
+      ),
+    listConnectionRequirements: (input = {}) =>
+      requestJson(
+        options,
+        `/connections/requirements${buildQueryString({
+          module_code: input.moduleCode ?? undefined,
+        })}`,
+      ),
+    createConnectionRequest: (input) =>
+      requestJson(
+        options,
+        "/connections/requests",
+        withJsonBody(
+          {
+            module_code: input.moduleCode ?? null,
+            connection_type: input.connectionType ?? null,
+          },
+          { method: "POST" },
+        ),
+      ),
     ...createStage15Client(options),
     listLegalSources: () => requestJson(options, "/legal-sources"),
     getLegalSource: (sourceId) =>

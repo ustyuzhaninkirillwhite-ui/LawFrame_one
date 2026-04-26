@@ -14,8 +14,13 @@ declare global {
 
 function shouldStartMockApi() {
   const env = getPublicEnv();
+  if (env.NEXT_PUBLIC_ENABLE_MSW === "1") {
+    return true;
+  }
+  if (env.NEXT_PUBLIC_ENABLE_MSW === "0") {
+    return false;
+  }
   return (
-    env.NEXT_PUBLIC_ENABLE_MSW === "1" ||
     env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY.startsWith("demo_")
   );
 }

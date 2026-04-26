@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lexframe.local/schemas/canvas/canvas-ai-message.schema.json",
+  "title": "CanvasAiMessage",
+  "type": "object",
+  "required": ["mode", "message"],
+  "properties": {
+    "session_id": { "type": ["string", "null"] },
+    "mode": {
+      "enum": [
+        "explain",
+        "edit",
+        "fix_validation",
+        "configure_step",
+        "test_plan",
+        "debug_test"
+      ]
+    },
+    "message": { "type": "string", "minLength": 1, "maxLength": 8000 },
+    "draft_version_id": { "type": ["string", "null"] },
+    "base_workflow_hash": { "type": ["string", "null"] },
+    "selected_node_id": { "type": ["string", "null"] },
+    "selected_edge_id": { "type": ["string", "null"] },
+    "selected_validation_issue_id": { "type": ["string", "null"] },
+    "client_context": { "type": ["object", "null"], "additionalProperties": true },
+    "include_sensitive_context": { "type": "boolean" },
+    "idempotency_key": { "type": ["string", "null"] }
+  },
+  "additionalProperties": false
+}

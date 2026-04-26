@@ -554,7 +554,8 @@ export type RuntimeSyncState =
   | "not_requested"
   | "pending"
   | "synced"
-  | "failed";
+  | "failed"
+  | "disabled";
 
 export type CompatibilityStatus =
   | "compatible"
@@ -730,7 +731,7 @@ export interface InstalledAutomationDetail {
   readonly workspaceId: string;
   readonly templateId: string;
   readonly sourceTemplateVersionId: string;
-  readonly workflowState: "draft" | "compiled" | "execution_ready";
+  readonly workflowState: "draft" | "published" | "compiled" | "execution_ready";
   readonly builderState: "unavailable" | "mock" | "ready";
   readonly syncState: RuntimeSyncState;
   readonly compatibilityStatus: CompatibilityStatus;

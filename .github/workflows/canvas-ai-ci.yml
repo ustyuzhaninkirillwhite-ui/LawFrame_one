@@ -1,0 +1,47 @@
+name: Canvas AI CI
+
+on:
+  pull_request:
+    paths:
+      - "apps/backend/src/modules/canvas-ai/**"
+      - "apps/web/src/features/canvas/**"
+      - "packages/contracts/src/canvas-ai.ts"
+      - "packages/contracts/src/canvas/canvas-ai-*.schema.json"
+      - "packages/api-client/src/index.ts"
+      - "docs/contracts/api/openapi.yaml"
+      - "supabase/migrations/000041_stage16_13_canvas_ai.sql"
+      - ".github/workflows/canvas-ai-ci.yml"
+  push:
+    branches:
+      - main
+      - "codex/**"
+
+jobs:
+  canvas-ai:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: corepack enable
+      - run: corepack pnpm install --frozen-lockfile
+      - name: Contracts build
+        run: corepack pnpm --filter @lexframe/contracts build
+      - name: API client typecheck
+        run: corepack pnpm --filter @lexframe/api-client typecheck
+      - name: JSON schema validation
+        run: corepack pnpm validate:json-schemas
+      - name: OpenAPI validation
+        run: corepack pnpm validate:openapi
+      - name: Backend Canvas AI tests
+        run: corepack pnpm --filter @lexframe/backend test -- canvas-ai
+      - name: Backend typecheck
+        run: corepack pnpm --filter @lexframe/backend typecheck
+      - name: Frontend Canvas AI tests
+        run: corepack pnpm --filter @lexframe/web test -- canvas-ai
+      - name: Frontend typecheck
+        run: corepack pnpm --filter @lexframe/web typecheck
+      - name: Secret scan
+        run: corepack pnpm secret-scan

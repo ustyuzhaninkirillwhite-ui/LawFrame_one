@@ -26,7 +26,7 @@ create table if not exists analytics.raw_product_events (
 engine = MergeTree
 partition by toYYYYMM(event_time)
 order by (workspace_id, event_time, event_id)
-ttl event_time + toIntervalDay(180);
+ttl toDateTime(event_time) + toIntervalDay(180);
 
 create table if not exists analytics.normalized_events (
   event_id UUID,
@@ -45,7 +45,7 @@ create table if not exists analytics.normalized_events (
 engine = MergeTree
 partition by toYYYYMM(event_time)
 order by (workspace_id, case_key, event_time, event_id)
-ttl event_time + toIntervalDay(180);
+ttl toDateTime(event_time) + toIntervalDay(180);
 
 create table if not exists analytics.process_cases (
   workspace_id String,

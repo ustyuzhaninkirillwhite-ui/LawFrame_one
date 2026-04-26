@@ -16,7 +16,13 @@
     "test:stage4:activepieces-integrated": "playwright test stage4-activepieces-integrated.spec.ts",
     "test:stage5:ai-gateway-policy": "playwright test stage5-ai-gateway-policy.spec.ts",
     "test:stage6:search-integrated": "playwright test stage6-search-integrated.spec.ts",
-    "test:stage8:delivery-sandbox": "playwright test stage8-delivery-sandbox.spec.ts"
+    "test:stage8:delivery-sandbox": "playwright test stage8-delivery-sandbox.spec.ts",
+    "test:canvas": "playwright test canvas",
+    "test:canvas:security": "playwright test canvas-security",
+    "test:canvas:activepieces": "playwright test canvas-activepieces",
+    "test:canvas:integrated": "playwright test canvas canvas-activepieces",
+    "test:canvas:performance": "playwright test canvas-performance",
+    "test:stage16-live-audit": "playwright test stage16-live-audit"
   },
   "devDependencies": {
     "@playwright/test": "^1.52.0",

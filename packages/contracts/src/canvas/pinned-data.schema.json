@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lexframe.local/schemas/canvas/pinned-data.schema.json",
+  "title": "CanvasPinnedData",
+  "type": "object",
+  "required": ["node_id", "output_key", "pinned_sample_data_id", "draft_only"],
+  "properties": {
+    "node_id": { "type": "string" },
+    "output_key": { "type": "string" },
+    "pinned_sample_data_id": { "type": "string" },
+    "draft_only": { "const": true },
+    "expires_at": { "type": ["string", "null"] }
+  },
+  "additionalProperties": false
+}

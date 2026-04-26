@@ -4,6 +4,7 @@
   "environment": "staging",
   "commitSha": "abcdef1234567890",
   "contractsVersion": "stage12-bootstrap",
+  "workflowCompilerVersion": "stage16-workflow-compiler-v1",
   "images": [
     {
       "service": "backend",
@@ -41,6 +42,59 @@
       "lexframe.workflow_patch.v1",
       "ai_redaction_preview_v1"
     ]
+  },
+  "canvas": {
+    "dslVersion": "2.0",
+    "workflowSchemaHash": "sha256:workflow-v2-schema-fixture",
+    "runtimeProjectionSchemaHash": "sha256:runtime-projection-schema-fixture",
+    "featureFlags": [
+      {
+        "name": "canvas_v2_enabled",
+        "defaultValue": false,
+        "owner": "product-engineering",
+        "allowedRoles": ["owner", "admin"],
+        "killSwitch": "disable canvas_v2_enabled",
+        "monitoringSignal": "canvas.validation.policy_blocks",
+        "rollbackBehavior": "fall back to Canvas v1/read-only automation detail"
+      },
+      {
+        "name": "canvas_v2_publish_enabled",
+        "defaultValue": false,
+        "owner": "release-manager",
+        "allowedRoles": ["owner", "admin"],
+        "killSwitch": "disable canvas_v2_publish_enabled",
+        "monitoringSignal": "canvas.publish.failed",
+        "rollbackBehavior": "block new publishes and keep existing published versions"
+      }
+    ],
+    "testReports": {
+      "schema": "artifacts/canvas-schema-report.json",
+      "backend": "artifacts/backend-canvas-jest.json",
+      "frontend": "artifacts/web-canvas-vitest.json",
+      "e2e": "artifacts/playwright-canvas-report",
+      "security": "artifacts/canvas-security-report.json",
+      "performance": "artifacts/canvas-performance-smoke.json",
+      "manualQa": "docs/testing/canvas-v2-manual-qa-checklist.md"
+    },
+    "rollbackPlan": {
+      "previousImageDigests": [
+        {
+          "service": "backend",
+          "digest": "sha256:previous-backend"
+        },
+        {
+          "service": "web",
+          "digest": "sha256:previous-web"
+        }
+      ],
+      "disableFlags": [
+        "canvas_v2_enabled",
+        "canvas_v2_publish_enabled",
+        "canvas_v2_reverse_sync_enabled"
+      ],
+      "runtimeBindingPolicy": "freeze_runtime",
+      "verificationCommand": "corepack pnpm canvas:release-gate"
+    }
   },
   "build": {
     "backendArtifact": "artifacts/backend.tgz",

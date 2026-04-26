@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lexframe.local/schemas/canvas/sample-data.schema.json",
+  "title": "CanvasSampleData",
+  "type": "object",
+  "required": [
+    "node_id",
+    "output_key",
+    "data_type",
+    "classification",
+    "source"
+  ],
+  "properties": {
+    "node_id": { "type": "string" },
+    "output_key": { "type": "string" },
+    "data_type": { "type": "string" },
+    "classification": { "type": "string" },
+    "preview_payload": { "type": ["object", "null"], "additionalProperties": true },
+    "redacted_payload": { "type": ["object", "null"], "additionalProperties": true },
+    "raw_payload_ref": { "type": ["string", "null"] },
+    "source": { "enum": ["mock", "test_run", "pinned", "manual", "missing"] },
+    "expires_at": { "type": ["string", "null"] }
+  },
+  "additionalProperties": false
+}

@@ -14,6 +14,9 @@ interface InstalledAutomationPreflightRow {
   readonly id: string;
   readonly title: string;
   readonly required_inputs: readonly string[] | null;
+  readonly active_canvas_version_id: string | null;
+  readonly production_disabled_at: string | null;
+  readonly production_disabled_reason: string | null;
 }
 
 @Injectable()
@@ -31,7 +34,8 @@ export class RunPreflightService {
     const automation =
       await this.databaseService.one<InstalledAutomationPreflightRow>(
         `
-        select id, title, required_inputs
+        select id, title, required_inputs, active_canvas_version_id,
+               production_disabled_at, production_disabled_reason
         from app.installed_automations
         where id = $1
           and workspace_id = $2
@@ -53,9 +57,51 @@ export class RunPreflightService {
         access,
         automationId,
       );
+    const runtimeBinding = await this.databaseService.one<{
+      readonly automation_version_id: string | null;
+      readonly runtime_projection_id: string | null;
+      readonly status: string | null;
+    }>(
+      `
+        select automation_version_id, runtime_projection_id, status
+        from app.automation_runtime_bindings
+        where workspace_id = $1
+          and installed_automation_id = $2
+          and active = true
+        limit 1
+      `,
+      [access.activeWorkspace!.id, automationId],
+    );
     const requiredInputs = automation.required_inputs ?? [];
     const documentIds = input.inputs?.documentIds ?? [];
     const checks: RunPreflightCheck[] = [
+      {
+        code: 'canvas.production.enabled',
+        label: 'Production enabled',
+        category: 'runtime',
+        status: automation.production_disabled_at ? 'blocked' : 'ready',
+        message: automation.production_disabled_at
+          ? (automation.production_disabled_reason ??
+            'Production runs are emergency-disabled.')
+          : 'Production runs are enabled.',
+      },
+      {
+        code: 'canvas.version.binding',
+        label: 'Canvas version binding',
+        category: 'runtime',
+        status:
+          automation.active_canvas_version_id &&
+          runtimeBinding?.automation_version_id !==
+            automation.active_canvas_version_id
+            ? 'blocked'
+            : 'ready',
+        message:
+          automation.active_canvas_version_id &&
+          runtimeBinding?.automation_version_id !==
+            automation.active_canvas_version_id
+            ? 'Runtime binding does not point to the active Canvas version.'
+            : 'Runtime binding points to the active Canvas version.',
+      },
       {
         code: 'runtime.sync',
         label: 'Runtime sync',
@@ -113,6 +159,18 @@ export class RunPreflightService {
         category: 'runtime',
         status: 'warning',
         message: warning,
+      });
+    }
+    const canvasValidationWarnings = runtime.warnings.filter((warning) =>
+      warning.startsWith('WF_'),
+    );
+    if (canvasValidationWarnings.length > 0) {
+      checks.push({
+        code: 'canvas.validation',
+        label: 'Canvas validation',
+        category: 'runtime',
+        status: 'blocked',
+        message: canvasValidationWarnings.join('; '),
       });
     }
 

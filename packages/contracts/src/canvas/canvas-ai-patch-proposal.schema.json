@@ -1,0 +1,69 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lexframe.local/schemas/canvas/canvas-ai-patch-proposal.schema.json",
+  "title": "CanvasAiPatchProposal",
+  "type": "object",
+  "required": [
+    "id",
+    "automation_id",
+    "draft_version_id",
+    "session_id",
+    "operations",
+    "base_workflow_hash",
+    "status",
+    "validation",
+    "policy",
+    "diff",
+    "can_apply",
+    "expires_at",
+    "created_at"
+  ],
+  "properties": {
+    "id": { "type": "string" },
+    "workspace_id": { "type": "string" },
+    "automation_id": { "type": "string" },
+    "draft_version_id": { "type": "string" },
+    "session_id": { "type": "string" },
+    "title": { "type": "string" },
+    "user_request": { "type": "string" },
+    "assistant_summary": { "type": "string" },
+    "operations": {
+      "type": "array",
+      "maxItems": 20,
+      "items": { "$ref": "operation.schema.json" }
+    },
+    "base_workflow_hash": { "type": "string" },
+    "proposed_workflow_hash": { "type": ["string", "null"] },
+    "status": {
+      "enum": [
+        "needs_clarification",
+        "validation_failed",
+        "policy_blocked",
+        "ready_for_review",
+        "applied",
+        "rejected",
+        "expired"
+      ]
+    },
+    "validation": { "type": "object", "additionalProperties": true },
+    "policy": {
+      "type": "object",
+      "required": ["allowed", "codes", "messages", "requires_human_confirmation"],
+      "properties": {
+        "allowed": { "type": "boolean" },
+        "codes": { "type": "array", "items": { "type": "string" } },
+        "messages": { "type": "array", "items": { "type": "string" } },
+        "requires_human_confirmation": { "type": "boolean" },
+        "sensitive_context_used": { "type": "boolean" }
+      },
+      "additionalProperties": true
+    },
+    "diff": { "type": "object", "additionalProperties": true },
+    "can_apply": { "type": "boolean" },
+    "expires_at": { "type": "string", "format": "date-time" },
+    "created_at": { "type": "string", "format": "date-time" },
+    "applied_at": { "type": ["string", "null"], "format": "date-time" },
+    "rejected_at": { "type": ["string", "null"], "format": "date-time" }
+  },
+  "additionalProperties": false
+}

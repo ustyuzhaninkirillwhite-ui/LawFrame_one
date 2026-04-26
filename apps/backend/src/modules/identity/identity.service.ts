@@ -243,6 +243,10 @@ export class IdentityService {
         preferredWorkspaceId ?? profile.default_workspace_id ?? undefined,
       ) ?? workspaces[0];
 
+    if (preferredWorkspaceId && candidateWorkspace?.id !== preferredWorkspaceId) {
+      return null;
+    }
+
     if (!candidateWorkspace) {
       return null;
     }

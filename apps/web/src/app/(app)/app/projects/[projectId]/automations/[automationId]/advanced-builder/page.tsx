@@ -23,8 +23,8 @@ export default async function ProjectAutomationAdvancedBuilderPage({
     >
       <div className="flex flex-wrap gap-3">
         <Button asChild variant="ghost">
-          <Link href={`/app/projects/${projectId}/automations/${automationId}/builder`}>
-            LexFrame Builder
+          <Link href={`/app/projects/${projectId}/automations/${automationId}/canvas`}>
+            LexFrame Canvas
           </Link>
         </Button>
         <Button asChild variant="ghost">

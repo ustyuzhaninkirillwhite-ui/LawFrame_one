@@ -1,0 +1,33 @@
+{
+  "schemaVersion": "lexframe.canvas_visual_states.v1",
+  "states": [
+    { "name": "CanvasPage.Empty", "viewport": "1440x900", "theme": "light" },
+    { "name": "CanvasPage.BasicValidWorkflow", "viewport": "1440x900", "theme": "light" },
+    { "name": "CanvasPage.InvalidMissingInput", "viewport": "1280x800", "theme": "light" },
+    { "name": "CanvasPage.PolicyBlockedExternalDelivery", "viewport": "1280x800", "theme": "light" },
+    { "name": "CanvasPage.RuntimeUnavailable", "viewport": "1280x800", "theme": "light" },
+    { "name": "CanvasPage.ReadonlyViewer", "viewport": "1280x800", "theme": "light" },
+    { "name": "CanvasPage.DraftLocked", "viewport": "1280x800", "theme": "light" },
+    { "name": "CanvasPage.SyncConflict", "viewport": "1440x900", "theme": "light" },
+    { "name": "CanvasPage.CompilePreviewSuccess", "viewport": "1440x900", "theme": "light" },
+    { "name": "CanvasPage.CompilePreviewFailure", "viewport": "1440x900", "theme": "light" },
+    { "name": "CanvasPage.LongRussianLabels", "viewport": "1024x768", "theme": "light" },
+    { "name": "CanvasPage.DarkTheme", "viewport": "1440x900", "theme": "dark" },
+    { "name": "WorkflowNode.Trigger", "viewport": "component", "theme": "light" },
+    { "name": "WorkflowNode.LegalActionConfigured", "viewport": "component", "theme": "light" },
+    { "name": "WorkflowNode.LegalActionMissingInput", "viewport": "component", "theme": "light" },
+    { "name": "WorkflowNode.AIActionSensitiveDataWarning", "viewport": "component", "theme": "light" },
+    { "name": "WorkflowNode.ApprovalPending", "viewport": "component", "theme": "light" },
+    { "name": "WorkflowNode.DeliveryBlocked", "viewport": "component", "theme": "light" },
+    { "name": "WorkflowNode.ErrorHandler", "viewport": "component", "theme": "light" },
+    { "name": "StepInspector.Inputs", "viewport": "component", "theme": "light" },
+    { "name": "StepInspector.DataPicker", "viewport": "component", "theme": "light" },
+    { "name": "StepInspector.ConnectionsMissing", "viewport": "component", "theme": "light" },
+    { "name": "StepInspector.TestStepSuccess", "viewport": "component", "theme": "light" },
+    { "name": "StepInspector.TestStepFailure", "viewport": "component", "theme": "light" },
+    { "name": "StepInspector.OutputsRedacted", "viewport": "component", "theme": "light" },
+    { "name": "ValidationRail.Errors", "viewport": "component", "theme": "light" },
+    { "name": "ValidationRail.Warnings", "viewport": "component", "theme": "light" },
+    { "name": "ValidationRail.PolicyBlocks", "viewport": "component", "theme": "light" }
+  ]
+}

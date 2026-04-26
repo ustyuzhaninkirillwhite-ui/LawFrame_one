@@ -30,8 +30,8 @@ export default async function ProjectAutomationDetailPage({
           </Link>
         </Button>
         <Button asChild>
-          <Link href={`/app/projects/${projectId}/automations/${automationId}/builder`}>
-            LexFrame Builder
+          <Link href={`/app/projects/${projectId}/automations/${automationId}/canvas`}>
+            LexFrame Canvas
           </Link>
         </Button>
       </div>

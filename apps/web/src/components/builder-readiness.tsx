@@ -10,6 +10,7 @@ import {
   useAutomationDetail,
   useAutomationRuntimeRequirements,
   useBuilderToken,
+  useRuntimePull,
   useSyncAutomationRuntime,
 } from "@/hooks/use-stage0-data";
 import { getPublicEnv } from "@/lib/browser-auth";
@@ -48,6 +49,8 @@ export function BuilderReadiness({
   const automation = useAutomationDetail(automationId);
   const runtime = useAutomationRuntimeRequirements(automationId);
   const syncMutation = useSyncAutomationRuntime(automationId);
+  const pullRuntime = useRuntimePull(automationId);
+  const pullRuntimeRef = React.useRef(pullRuntime.mutateAsync);
   const token = useBuilderToken(
     {
       installedAutomationId: automationId,
@@ -62,6 +65,10 @@ export function BuilderReadiness({
     "idle",
   );
   const [sdkError, setSdkError] = React.useState<string | null>(null);
+  React.useEffect(() => {
+    pullRuntimeRef.current = pullRuntime.mutateAsync;
+  }, [pullRuntime.mutateAsync]);
+
   React.useEffect(() => {
     if (!token.data) {
       const resetId = window.setTimeout(() => {
@@ -92,6 +99,7 @@ export function BuilderReadiness({
 
     const tokenData = token.data;
     let disposed = false;
+    let mountedBuilder = false;
 
     async function mount() {
       try {
@@ -114,6 +122,7 @@ export function BuilderReadiness({
           hideFlowName: false,
           navigationHandler: () => undefined,
         });
+        mountedBuilder = true;
 
         if (!disposed && automation.data?.runtimeFlowId && typeof sdk.navigate === "function") {
           await sdk.navigate({ route: `/flows/${automation.data.runtimeFlowId}` });
@@ -136,6 +145,12 @@ export function BuilderReadiness({
 
     return () => {
       disposed = true;
+      if (mountedBuilder) {
+        void pullRuntimeRef.current({
+          source: "after_builder_close",
+          reason: "embedded_builder_unmounted",
+        }).catch(() => undefined);
+      }
     };
   }, [
     automation.data?.runtimeFlowId,

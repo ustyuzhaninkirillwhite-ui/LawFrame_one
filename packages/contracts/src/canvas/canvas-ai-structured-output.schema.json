@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lexframe.local/schemas/canvas/canvas-ai-structured-output.schema.json",
+  "title": "CanvasAiStructuredOutput",
+  "type": "object",
+  "required": ["response_type", "assistant_summary"],
+  "properties": {
+    "response_type": {
+      "enum": [
+        "explanation",
+        "patch_proposal",
+        "needs_clarification",
+        "policy_blocked",
+        "test_plan",
+        "debug_explanation"
+      ]
+    },
+    "title": { "type": ["string", "null"] },
+    "assistant_summary": { "type": "string" },
+    "operations": {
+      "type": "array",
+      "maxItems": 20,
+      "items": { "$ref": "operation.schema.json" }
+    },
+    "clarification_questions": {
+      "type": "array",
+      "items": { "type": "object", "additionalProperties": true }
+    },
+    "policy_codes": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "policy_messages": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "test_plan": { "type": "object", "additionalProperties": true },
+    "debug_summary": { "type": ["string", "null"] },
+    "suspected_causes": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "next_actions": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "additionalProperties": false
+}

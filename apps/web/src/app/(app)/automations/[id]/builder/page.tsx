@@ -7,5 +7,5 @@ export default async function AutomationBuilderPage({
 }) {
   const { id } = await params;
 
-  redirect(`/app/projects/project_claim_001/automations/${id}/advanced-builder`);
+  redirect(`/app/projects/project_claim_001/automations/${id}/canvas`);
 }

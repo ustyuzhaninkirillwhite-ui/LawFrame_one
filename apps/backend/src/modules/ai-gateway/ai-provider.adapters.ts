@@ -8,6 +8,18 @@ export interface StructuredAiRequest<T> {
   readonly prompt: string;
   readonly schemaId: string;
   readonly fallback: T;
+  readonly jsonSchema?: {
+    readonly name: string;
+    readonly schema: Record<string, unknown>;
+    readonly strict?: boolean;
+  };
+  readonly tools?: readonly {
+    readonly name: string;
+    readonly description: string;
+    readonly parameters: Record<string, unknown>;
+  }[];
+  readonly maxToolCalls?: number;
+  readonly traceId?: string | null;
 }
 
 export interface StructuredAiResponse<T> {
@@ -88,9 +100,30 @@ async function requestOpenAiCompatibleStructuredOutput<T>(input: {
       body: JSON.stringify({
         model: input.request.model,
         temperature: 0,
-        response_format: {
-          type: 'json_object',
-        },
+        response_format: input.request.jsonSchema
+          ? {
+              type: 'json_schema',
+              json_schema: {
+                name: input.request.jsonSchema.name,
+                strict: input.request.jsonSchema.strict ?? true,
+                schema: input.request.jsonSchema.schema,
+              },
+            }
+          : {
+              type: 'json_object',
+            },
+        tools: input.request.tools?.map((tool) => ({
+          type: 'function',
+          function: {
+            name: tool.name,
+            description: tool.description,
+            parameters: tool.parameters,
+          },
+        })),
+        tool_choice:
+          input.request.tools && input.request.tools.length > 0
+            ? 'auto'
+            : undefined,
         messages: [
           {
             role: 'system',

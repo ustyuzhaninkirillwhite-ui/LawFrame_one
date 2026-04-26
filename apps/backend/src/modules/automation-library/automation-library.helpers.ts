@@ -12,9 +12,15 @@ export function extractWorkflowModuleCodes(
 ): readonly string[] {
   const steps: readonly unknown[] = Array.isArray(workflow.steps)
     ? workflow.steps
-    : [];
+    : Array.isArray(workflow.nodes)
+      ? workflow.nodes
+      : [];
   const moduleCodes = steps
-    .map((step) => getStringProperty(step, 'moduleCode'))
+    .map(
+      (step) =>
+        getStringProperty(step, 'moduleCode') ??
+        getStringProperty(step, 'module_code'),
+    )
     .filter((value): value is string => Boolean(value));
 
   if (moduleCodes.length === 0) {
@@ -32,7 +38,12 @@ export function extractWorkflowInputs(
     : [];
 
   return inputs
-    .map((entry) => getStringProperty(entry, 'code'))
+    .map(
+      (entry) =>
+        getStringProperty(entry, 'code') ??
+        getStringProperty(entry, 'key') ??
+        getStringProperty(entry, 'inputId'),
+    )
     .filter((value): value is string => Boolean(value));
 }
 

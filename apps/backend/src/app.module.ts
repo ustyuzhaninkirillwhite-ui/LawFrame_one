@@ -6,6 +6,8 @@ import { AIGatewayModule } from './modules/ai-gateway/ai-gateway.module';
 import { AdminConsoleModule } from './modules/admin-console/admin-console.module';
 import { AuditModule } from './modules/audit/audit.module';
 import { AutomationLibraryModule } from './modules/automation-library/automation-library.module';
+import { CanvasModule } from './modules/canvas/canvas.module';
+import { CanvasAiModule } from './modules/canvas-ai/canvas-ai.module';
 import { AutomationImportModule } from './modules/automation-import/automation-import.module';
 import { AuthorizationModule } from './modules/authorization/authorization.module';
 import { DatabaseModule } from './modules/database/database.module';
@@ -47,6 +49,8 @@ import { WorkspacesModule } from './modules/workspaces/workspaces.module';
     AuthorizationModule,
     LegalModulesModule,
     AutomationLibraryModule,
+    CanvasModule,
+    CanvasAiModule,
     AutomationImportModule,
     WorkflowsModule,
     ActivepiecesModule,

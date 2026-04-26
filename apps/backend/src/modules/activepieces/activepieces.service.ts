@@ -9,6 +9,7 @@ import type {
   AutomationRuntimeRequirements,
   CreateActivepiecesEmbedTokenRequest,
   CreateRunArtifactRequest,
+  LexFrameWorkflowV2,
   RuntimeConnectionSummary,
   RuntimePieceRequirement,
   RuntimeApprovalGateCallback,
@@ -26,7 +27,7 @@ import type {
 } from '../../common/types/lexframe-request';
 import { loadServerEnv } from '@lexframe/config';
 import { AppHttpException } from '../../common/errors/app-http.exception';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Optional } from '@nestjs/common';
 import { createHash, randomUUID } from 'node:crypto';
 import { importPKCS8, SignJWT } from 'jose';
 import { ApprovalsService } from '../approvals/approvals.service';
@@ -35,6 +36,8 @@ import { DatabaseService } from '../database/database.service';
 import { DeliveryService } from '../delivery/delivery.service';
 import { DocumentsService } from '../documents/documents.service';
 import { LiveEventsService } from '../realtime/live-events.service';
+import { CanvasValidationService } from '../canvas/canvas-validation.service';
+import { WorkflowCompilerService } from '../workflow-compiler/workflow-compiler.service';
 
 interface RequestMeta {
   readonly requestId: string | null;
@@ -48,9 +51,18 @@ interface InstalledAutomationRuntimeRow {
   readonly source_template_version_id: string;
   readonly title: string;
   readonly version: string;
-  readonly workflow_state: 'draft' | 'compiled' | 'execution_ready';
+  readonly workflow_state:
+    | 'draft'
+    | 'published'
+    | 'compiled'
+    | 'execution_ready';
   readonly builder_state: 'unavailable' | 'mock' | 'ready';
-  readonly sync_state: 'not_requested' | 'pending' | 'synced' | 'failed';
+  readonly sync_state:
+    | 'not_requested'
+    | 'pending'
+    | 'synced'
+    | 'failed'
+    | 'disabled';
   readonly compatibility_status:
     | 'compatible'
     | 'runtime_sync_pending'
@@ -61,6 +73,9 @@ interface InstalledAutomationRuntimeRow {
   readonly required_inputs: readonly string[] | null;
   readonly requirements: readonly RequirementRecord[] | null;
   readonly workflow: Record<string, unknown> | null;
+  readonly active_canvas_version_id: string | null;
+  readonly production_disabled_at: string | null;
+  readonly production_disabled_reason: string | null;
   readonly next_gate: string;
   readonly runtime_project_id: string | null;
   readonly runtime_flow_id: string | null;
@@ -97,6 +112,8 @@ interface RuntimeConnectionRow {
 interface RuntimeBindingRow {
   readonly id: string;
   readonly installed_automation_id: string;
+  readonly automation_version_id: string | null;
+  readonly runtime_projection_id: string | null;
   readonly external_project_id: string;
   readonly external_flow_id: string;
   readonly sync_hash: string;
@@ -177,6 +194,7 @@ interface CallbackReceiptSummaryRow {
 @Injectable()
 export class ActivepiecesService {
   private readonly env = loadServerEnv();
+  private readonly canvasValidationService = new CanvasValidationService();
 
   constructor(
     private readonly databaseService: DatabaseService,
@@ -185,6 +203,8 @@ export class ActivepiecesService {
     private readonly approvalsService: ApprovalsService,
     private readonly deliveryService: DeliveryService,
     private readonly liveEventsService: LiveEventsService,
+    @Optional()
+    private readonly workflowCompilerService?: WorkflowCompilerService,
   ) {}
 
   async getAutomationRuntimeRequirements(
@@ -201,17 +221,35 @@ export class ActivepiecesService {
       automationId,
     );
     const requiredPieces = this.deriveRequiredPieces(automation.workflow);
-    const warnings = this.buildRuntimeWarnings(
-      automation,
-      connectionState.missing,
-      requiredPieces,
-    );
+    const canvasValidation = isCanvasWorkflowLike(automation.workflow)
+      ? this.canvasValidationService.runtimeGateValidate(automation.workflow)
+      : null;
+    const warnings = [
+      ...this.buildRuntimeWarnings(
+        automation,
+        connectionState.missing,
+        requiredPieces,
+      ),
+      ...(canvasValidation?.issues
+        .filter(
+          (issue) =>
+            issue.severity === 'warning' ||
+            issue.blocks?.includes('run') ||
+            issue.blocks?.includes('compile'),
+        )
+        .map((issue) => `${issue.code}: ${issue.title}`) ?? []),
+    ];
     const canOpenBuilder =
       automation.available &&
+      !automation.production_disabled_at &&
       automation.sync_state === 'synced' &&
       automation.builder_state === 'ready' &&
       automation.compatibility_status !== 'policy_blocked';
-    const canRun = canOpenBuilder && connectionState.missing.length === 0;
+    const canRun =
+      canOpenBuilder &&
+      !automation.production_disabled_at &&
+      connectionState.missing.length === 0 &&
+      (canvasValidation?.can_run ?? true);
 
     return {
       automationId: automation.id,
@@ -224,7 +262,15 @@ export class ActivepiecesService {
       missingConnections: connectionState.missing,
       availableConnections: connectionState.available,
       requiredPieces,
-      warnings,
+      warnings: [
+        ...warnings,
+        ...(automation.production_disabled_at
+          ? [
+              automation.production_disabled_reason ??
+                'Automation production runs are emergency-disabled.',
+            ]
+          : []),
+      ],
     };
   }
 
@@ -266,9 +312,11 @@ export class ActivepiecesService {
       actor,
       automation,
     );
-    const role = access.permissions.includes('automation.edit')
-      ? 'builder'
-      : 'viewer';
+    const role =
+      access.permissions.includes('canvas.open_advanced_builder') &&
+      access.permissions.includes('activepieces.open_builder')
+        ? 'builder'
+        : 'viewer';
     const userBinding = await this.ensureUserBinding(
       access.activeWorkspace!.id,
       actor,
@@ -276,9 +324,11 @@ export class ActivepiecesService {
     );
     const piecesTags = this.derivePiecesTags(automation.workflow);
     const issuedAt = Math.floor(Date.now() / 1000);
-    const expiresAt = new Date(
-      Date.now() + workspaceSecurity.tokenTtlSeconds * 1000,
+    const tokenTtlSeconds = Math.max(
+      60,
+      Math.min(workspaceSecurity.tokenTtlSeconds, 300),
     );
+    const expiresAt = new Date(Date.now() + tokenTtlSeconds * 1000);
     const jti = randomUUID();
     const token = await this.issueEmbedToken({
       actor,
@@ -304,9 +354,14 @@ export class ActivepiecesService {
             token_hash,
             token_expires_at,
             external_project_id,
-            external_user_id
+            external_user_id,
+            jti_hash,
+            canvas_role,
+            issued_for_automation_id,
+            issued_for_version_id,
+            issued_reason
           )
-          values ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+          values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
         `,
         [
           randomUUID(),
@@ -318,6 +373,11 @@ export class ActivepiecesService {
           expiresAt.toISOString(),
           projectBinding.external_project_id,
           userBinding.external_user_id,
+          this.hashValue(jti),
+          role,
+          automation.id,
+          automation.active_canvas_version_id,
+          'canvas_advanced_builder',
         ],
       );
 
@@ -523,10 +583,120 @@ export class ActivepiecesService {
     input: SyncAutomationRuntimeRequest,
     meta: RequestMeta,
   ): Promise<SyncAutomationRuntimeResponse> {
+    if (this.workflowCompilerService) {
+      const preview = await this.workflowCompilerService.compilePreview(
+        actor,
+        access,
+        automationId,
+        {
+          mode: 'sync_draft_to_runtime',
+          options: {
+            include_advanced_report: true,
+          },
+        },
+        meta,
+      );
+      const projectId = preview.activepieces_projection?.project_id ?? null;
+      const flowId = preview.activepieces_projection?.flow_id ?? null;
+
+      if (!preview.can_sync) {
+        throw new AppHttpException(
+          'WORKFLOW_COMPILER_BLOCKED',
+          409,
+          'Workflow compiler blocked runtime sync.',
+          {
+            blockingIssues: preview.blocking_issues,
+            warnings: preview.warnings,
+          },
+        );
+      }
+
+      if (input.dryRun === true) {
+        return {
+          status: 'noop',
+          runtimeProjectId: projectId ?? 'not_synced',
+          runtimeFlowId: flowId ?? 'not_synced',
+          syncHash:
+            preview.activepieces_projection?.sync_hash ??
+            preview.source_workflow_hash,
+          requiredPieces:
+            preview.activepieces_projection?.required_pieces.map(
+              (piece) => piece.piece_name,
+            ) ?? [],
+          requiredConnections:
+            preview.activepieces_projection?.required_connections.map(
+              (connection) => connection.connection_type,
+            ) ?? [],
+          warnings: preview.warnings.map((warning) => warning.message),
+        };
+      }
+
+      const synced = await this.workflowCompilerService.syncRuntime(
+        actor,
+        access,
+        automationId,
+        {
+          compile_report_id: preview.compile_report_id,
+          overwrite_runtime_changes: input.force === true,
+          idempotency_key: meta.requestId ?? `runtime-sync:${automationId}`,
+        },
+        meta,
+      );
+      if (synced.status === 'runtime_conflict') {
+        throw new AppHttpException(
+          'WORKFLOW_RUNTIME_DRIFT_CONFLICT',
+          409,
+          'Activepieces runtime has drifted since the last LexFrame sync.',
+          {
+            blockingIssues: synced.blocking_issues,
+          },
+        );
+      }
+
+      return {
+        status: 'synced',
+        runtimeProjectId:
+          synced.activepieces_projection?.project_id ?? projectId ?? 'unknown',
+        runtimeFlowId:
+          synced.activepieces_projection?.flow_id ?? flowId ?? 'unknown',
+        syncHash:
+          synced.activepieces_projection?.sync_hash ??
+          synced.source_workflow_hash,
+        requiredPieces:
+          synced.activepieces_projection?.required_pieces.map(
+            (piece) => piece.piece_name,
+          ) ?? [],
+        requiredConnections:
+          synced.activepieces_projection?.required_connections.map(
+            (connection) => connection.connection_type,
+          ) ?? [],
+        warnings: synced.warnings.map((warning) => warning.message),
+      };
+    }
+
     const automation = await this.getInstalledAutomation(
       access.activeWorkspace!.id,
       automationId,
     );
+    const validation = isCanvasWorkflowLike(automation.workflow)
+      ? this.canvasValidationService.runtimeGateValidate(automation.workflow)
+      : null;
+    if (validation && (!validation.can_compile || !validation.can_run)) {
+      throw new AppHttpException(
+        'READINESS_GATE_BLOCKED',
+        409,
+        'Canvas runtime validation must pass before runtime sync.',
+        { validation },
+      );
+    }
+    const bindingBlocks = this.collectBindingCompileBlocks(automation.workflow);
+    if (bindingBlocks.length > 0) {
+      throw new AppHttpException(
+        'READINESS_GATE_BLOCKED',
+        409,
+        `Canvas bindings must be repaired before runtime sync: ${bindingBlocks.join(', ')}`,
+      );
+    }
     const projectBinding = await this.ensureProjectBinding(
       access.activeWorkspace!.id,
       actor,
@@ -840,16 +1010,20 @@ export class ActivepiecesService {
         select
           id,
           installed_automation_id,
+          automation_version_id,
+          runtime_projection_id,
           external_project_id,
           external_flow_id,
           sync_hash,
           status,
           last_synced_at
         from app.automation_runtime_bindings
-        where installed_automation_id = $1
+        where workspace_id = $1
+          and installed_automation_id = $2
+          and active = true
         limit 1
       `,
-      [automation.id],
+      [access.activeWorkspace!.id, automation.id],
     );
 
     if (!runtimeBinding) {
@@ -859,6 +1033,49 @@ export class ActivepiecesService {
         'Runtime binding is missing. Sync the automation before running it.',
       );
     }
+    if (
+      automation.active_canvas_version_id &&
+      runtimeBinding.automation_version_id !==
+        automation.active_canvas_version_id
+    ) {
+      throw new AppHttpException(
+        'READINESS_GATE_BLOCKED',
+        409,
+        'Runtime binding does not point to the active Canvas version.',
+        {
+          activeCanvasVersionId: automation.active_canvas_version_id,
+          runtimeBindingVersionId: runtimeBinding.automation_version_id,
+        },
+      );
+    }
+
+    if (input.mode === 'full_run' && this.workflowCompilerService) {
+      const drift = await this.workflowCompilerService.checkDrift(
+        actor,
+        access,
+        automationId,
+        meta,
+      );
+      if (drift.status !== 'synced') {
+        throw new AppHttpException(
+          'RUNTIME_RECONCILIATION_REQUIRED',
+          409,
+          'Activepieces runtime changed after the last LexFrame sync. Review or overwrite runtime before full run.',
+          {
+            status: drift.status,
+            currentRuntimeHash: drift.current_runtime_hash,
+            lastSyncedHash: drift.last_synced_hash,
+            issueCodes: drift.issues.map((issue) => issue.code),
+          },
+        );
+      }
+    }
+
+    const runVersionSnapshot = await this.loadRunVersionSnapshot(
+      access.activeWorkspace!.id,
+      automation,
+      runtimeBinding,
+    );
 
     const dispatchMode =
       this.env.ACTIVEPIECES_SIMULATE_RUNS === '1'
@@ -883,6 +1100,11 @@ export class ActivepiecesService {
             workspace_id,
             installed_automation_id,
             automation_runtime_binding_id,
+            automation_version_id,
+            workflow_snapshot_hash,
+            workflow_snapshot,
+            runtime_projection_id,
+            runtime_projection_snapshot,
             external_run_id,
             mode,
             status,
@@ -903,16 +1125,21 @@ export class ActivepiecesService {
             $4,
             $5,
             $6,
-            'queued',
-            $7,
-            0,
+            $7::jsonb,
             $8,
             $9::jsonb,
-            '[]'::jsonb,
             $10,
-            timezone('utc', now()),
             $11,
-            $12
+            'queued',
+            $12,
+            0,
+            $13,
+            $14::jsonb,
+            '[]'::jsonb,
+            $15,
+            timezone('utc', now()),
+            $16,
+            $17
           )
         `,
         [
@@ -920,6 +1147,11 @@ export class ActivepiecesService {
           access.activeWorkspace!.id,
           automation.id,
           runtimeBinding.id,
+          runVersionSnapshot.automationVersionId,
+          runVersionSnapshot.workflowSnapshotHash,
+          JSON.stringify(runVersionSnapshot.workflowSnapshot),
+          runVersionSnapshot.runtimeProjectionId,
+          JSON.stringify(runVersionSnapshot.runtimeProjectionSnapshot),
           externalRunId,
           input.mode,
           stepSummaries[0]?.stepCode ?? 'start',
@@ -1288,6 +1520,9 @@ export class ActivepiecesService {
           required_inputs,
           requirements,
           workflow,
+          active_canvas_version_id,
+          production_disabled_at,
+          production_disabled_reason,
           next_gate,
           runtime_project_id,
           runtime_flow_id,
@@ -1311,6 +1546,55 @@ export class ActivepiecesService {
     }
 
     return row;
+  }
+
+  private async loadRunVersionSnapshot(
+    workspaceId: string,
+    automation: InstalledAutomationRuntimeRow,
+    runtimeBinding: RuntimeBindingRow,
+  ) {
+    const versionId =
+      automation.active_canvas_version_id ??
+      runtimeBinding.automation_version_id ??
+      null;
+    if (!versionId) {
+      return {
+        automationVersionId: null,
+        workflowSnapshotHash: automation.sync_hash,
+        workflowSnapshot: automation.workflow,
+        runtimeProjectionId: runtimeBinding.runtime_projection_id,
+        runtimeProjectionSnapshot: null,
+      };
+    }
+    const row = await this.databaseService.one<{
+      readonly id: string;
+      readonly workflow: unknown;
+      readonly workflow_hash: string;
+      readonly runtime_projection_id: string | null;
+      readonly projection_json: unknown;
+    }>(
+      `
+        select v.id, v.workflow, v.workflow_hash, v.runtime_projection_id,
+               p.projection_json
+        from app.automation_canvas_versions v
+        left join app.automation_runtime_projections p
+          on p.id = v.runtime_projection_id
+        where v.workspace_id = $1
+          and v.installed_automation_id = $2
+          and v.id = $3
+        limit 1
+      `,
+      [workspaceId, automation.id, versionId],
+    );
+    return {
+      automationVersionId: row?.id ?? versionId,
+      workflowSnapshotHash: row?.workflow_hash ?? automation.sync_hash,
+      workflowSnapshot: row?.workflow ?? automation.workflow,
+      runtimeProjectionId:
+        row?.runtime_projection_id ?? runtimeBinding.runtime_projection_id,
+      runtimeProjectionSnapshot:
+        row?.projection_json ?? runtimeBinding.sync_hash,
+    };
   }
 
   private async resolveConnectionState(
@@ -1659,7 +1943,16 @@ export class ActivepiecesService {
   private buildRuntimeProjection(automation: InstalledAutomationRuntimeRow) {
     const steps = Array.isArray(automation.workflow?.steps)
       ? automation.workflow.steps
-      : [];
+      : Array.isArray(automation.workflow?.nodes)
+        ? automation.workflow.nodes.filter(
+            (node) =>
+              typeof node === 'object' &&
+              node !== null &&
+              !['trigger', 'end', 'note'].includes(
+                String((node as Record<string, unknown>).type),
+              ),
+          )
+        : [];
 
     return {
       installedAutomationId: automation.id,
@@ -1672,12 +1965,14 @@ export class ActivepiecesService {
             typeof step !== 'object' ||
             step === null ||
             typeof step.id !== 'string' ||
-            typeof step.moduleCode !== 'string'
+            (typeof step.moduleCode !== 'string' &&
+              typeof (step as Record<string, unknown>).module_code !== 'string')
           ) {
             return null;
           }
-          const moduleCode = (step as { readonly moduleCode: string })
-            .moduleCode;
+          const moduleCode =
+            (step as { readonly moduleCode?: string }).moduleCode ??
+            ((step as Record<string, unknown>).module_code as string);
 
           return {
             position: index,
@@ -1693,6 +1988,10 @@ export class ActivepiecesService {
             requiresApproval: Boolean(
               (step as Record<string, unknown>).requiresApproval,
             ),
+            props: this.buildCanvasStepProps(step as Record<string, unknown>),
+            bindings: this.buildCanvasStepBindings(
+              step as Record<string, unknown>,
+            ),
           };
         })
         .filter((value) => value !== null),
@@ -1703,6 +2002,119 @@ export class ActivepiecesService {
           : [],
       requirements: automation.requirements ?? [],
     };
+  }
+
+  private collectBindingCompileBlocks(
+    workflow: Record<string, unknown> | null,
+  ) {
+    if (!workflow || !isRecord(workflow.validation)) {
+      return [];
+    }
+    const issues = Array.isArray(workflow.validation.issues)
+      ? workflow.validation.issues
+      : [];
+    return issues
+      .filter(
+        (issue): issue is Record<string, unknown> =>
+          isRecord(issue) &&
+          issue.scope === 'binding' &&
+          (issue.severity === 'error' || issue.severity === 'policy_block'),
+      )
+      .map(
+        (issue) =>
+          stringValue(issue.code) ?? stringValue(issue.id) ?? 'invalid_binding',
+      );
+  }
+
+  private buildCanvasStepProps(step: Record<string, unknown>) {
+    const props: Record<string, unknown> = {};
+    for (const binding of validInputBindings(step)) {
+      const target = bindingTarget(binding);
+      if (!target?.input_key) {
+        continue;
+      }
+      props[target.input_key] = this.runtimeValueFromBinding(binding);
+    }
+    return props;
+  }
+
+  private buildCanvasStepBindings(step: Record<string, unknown>) {
+    return validInputBindings(step).map((binding) => {
+      const target = bindingTarget(binding);
+      const fallbackNodeId = target.node_id ?? stringValue(step.id) ?? 'step';
+      const fallbackInputKey = target.input_key ?? 'input';
+
+      return {
+        id:
+          typeof binding.id === 'string'
+            ? binding.id
+            : `${fallbackNodeId}:${fallbackInputKey}`,
+        target,
+        source: redactRuntimeBindingSource(binding.source),
+        transform: isRecord(binding.transform) ? binding.transform : null,
+        selection: isRecord(binding.selection) ? binding.selection : null,
+      };
+    });
+  }
+
+  private runtimeValueFromBinding(binding: Record<string, unknown>) {
+    const source = isRecord(binding.source) ? binding.source : {};
+    const transform = isRecord(binding.transform) ? binding.transform : null;
+    const selection = isRecord(binding.selection) ? binding.selection : null;
+    let value: unknown;
+
+    if (source.type === 'workflow_input') {
+      const inputKey = stringValue(source.input_key) ?? 'input';
+      value = { type: 'workflow_input', path: `inputs.${inputKey}` };
+    } else if (source.type === 'step_output') {
+      value = {
+        type: 'step_output',
+        node_id: source.node_id,
+        output_key: source.output_key,
+        path: source.path ?? null,
+      };
+    } else if (source.type === 'document') {
+      value = {
+        type: 'document_ref',
+        document_id: source.document_id,
+        document_version_id: source.document_version_id ?? null,
+        access_mode: 'runtime_scoped_token',
+      };
+    } else if (source.type === 'secret_ref') {
+      value = {
+        type: 'secret_ref',
+        secret_ref: source.secret_ref,
+      };
+    } else if (source.type === 'connection') {
+      value = {
+        type: 'connection_ref',
+        connection_id: source.connection_id,
+      };
+    } else if (source.type === 'system_value') {
+      value = {
+        type: 'system_value',
+        key: source.key,
+      };
+    } else if (source.type === 'transform') {
+      value = {
+        type: 'transform',
+        transform_type: source.transform_type,
+        source: redactRuntimeBindingSource(source.source),
+        config: source.config ?? {},
+      };
+    } else if (source.type === 'manual_value' || source.type === 'literal') {
+      value = { type: 'literal', value: source.value };
+    } else {
+      value = { type: source.type ?? 'unknown' };
+    }
+
+    return transform || selection
+      ? {
+          value,
+          transform,
+          selection,
+        }
+      : value;
   }
 
   private moduleCodeToPiecePackage(moduleCode: string) {
@@ -2784,6 +3196,70 @@ function mapRunEventType(
   return 'run.status.updated';
 }
 
+function validInputBindings(step: Record<string, unknown>) {
+  const bindings = Array.isArray(step.input_bindings)
+    ? step.input_bindings
+    : [];
+  return bindings.filter(
+    (binding): binding is Record<string, unknown> =>
+      isRecord(binding) &&
+      (binding.validation_state === undefined ||
+        binding.validation_state === 'valid' ||
+        binding.validation_state === 'warning'),
+  );
+}
+
+function bindingTarget(binding: Record<string, unknown>) {
+  if (isRecord(binding.target)) {
+    return {
+      node_id:
+        typeof binding.target.node_id === 'string'
+          ? binding.target.node_id
+          : typeof binding.targetNodeId === 'string'
+            ? binding.targetNodeId
+            : null,
+      input_key:
+        typeof binding.target.input_key === 'string'
+          ? binding.target.input_key
+          : typeof binding.targetInputKey === 'string'
+            ? binding.targetInputKey
+            : null,
+    };
+  }
+  return {
+    node_id:
+      typeof binding.target_node_id === 'string'
+        ? binding.target_node_id
+        : typeof binding.targetNodeId === 'string'
+          ? binding.targetNodeId
+          : null,
+    input_key:
+      typeof binding.target_input_key === 'string'
+        ? binding.target_input_key
+        : typeof binding.targetInputKey === 'string'
+          ? binding.targetInputKey
+          : null,
+  };
+}
+
+function redactRuntimeBindingSource(source: unknown): unknown {
+  if (Array.isArray(source)) {
+    return source.map(redactRuntimeBindingSource);
+  }
+  if (!isRecord(source)) {
+    return source;
+  }
+  const redacted: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(source)) {
+    if (key === 'value' || key === 'secret_ref') {
+      redacted[key] = '[server_ref]';
+      continue;
+    }
+    redacted[key] = redactRuntimeBindingSource(value);
+  }
+  return redacted;
+}
+
 function isUniqueConstraintError(error: unknown, constraint: string) {
   if (!error || typeof error !== 'object') {
     return false;
@@ -2799,6 +3275,20 @@ function isUniqueConstraintError(error: unknown, constraint: string) {
   return code === '23505' && constraintName === constraint;
 }
 
+function stringValue(value: unknown): string | null {
+  return typeof value === 'string' && value.length > 0 ? value : null;
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function isCanvasWorkflowLike(value: unknown): value is LexFrameWorkflowV2 {
+  return (
+    isRecord(value) &&
+    Array.isArray(value.nodes) &&
+    Array.isArray(value.edges) &&
+    isRecord(value.metadata) &&
+    typeof value.schema_version === 'string'
+  );
 }

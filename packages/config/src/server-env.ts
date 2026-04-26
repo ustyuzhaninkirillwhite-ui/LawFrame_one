@@ -41,6 +41,14 @@ export const serverEnvSchema = z.object({
   SUPABASE_DB_URL: z.string().min(10).default("postgresql://postgres:postgres@127.0.0.1:54322/postgres"),
   ACTIVEPIECES_BASE_URL: z.string().url().default("http://127.0.0.1:8080"),
   ACTIVEPIECES_API_KEY: z.string().min(10).default("stage0_activepieces_api_key"),
+  ACTIVEPIECES_SERVICE_EMAIL: z
+    .string()
+    .email()
+    .default("lexframe-stage16@lexframe.test"),
+  ACTIVEPIECES_SERVICE_PASSWORD: z
+    .string()
+    .min(12)
+    .default("Stage16Activepieces!123"),
   ACTIVEPIECES_SIGNING_PRIVATE_KEY: z.string().min(10).default("stage0_signing_private_key"),
   ACTIVEPIECES_SIGNING_KEY_ID: z.string().min(3).default("lexframe-stage4"),
   ACTIVEPIECES_PROJECT_PREFIX: z.string().min(2).default("lf"),

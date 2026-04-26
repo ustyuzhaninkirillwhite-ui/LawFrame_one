@@ -6,8 +6,12 @@ const host = "127.0.0.1";
 const baseURL = `http://${host}:${port}`;
 const apiBaseURL = `http://${host}:${apiPort}`;
 const useMsw = process.env.LEXFRAME_E2E_USE_MSW === "1";
+const isStage16LiveAuditRun = process.argv.some((arg) =>
+  /stage16-live-audit/i.test(arg),
+);
 const readinessProfile =
-  process.env.LEXFRAME_READINESS_PROFILE ?? "local-basic";
+  process.env.LEXFRAME_READINESS_PROFILE ??
+  (isStage16LiveAuditRun ? "local-integrated" : "local-basic");
 const simulateRuns =
   process.env.ACTIVEPIECES_SIMULATE_RUNS ??
   (readinessProfile === "local-integrated" ? "0" : "1");
@@ -31,16 +35,34 @@ export default defineConfig({
   workers: 1,
   timeout: 60_000,
   retries: process.env.CI ? 1 : 0,
+  outputDir: "test-results",
+  projects: [
+    {
+      name: "default",
+      testIgnore: /stage16-live-audit\/.*\.spec\.ts/,
+    },
+    {
+      name: "stage16-live-audit",
+      testMatch: /stage16-live-audit\/.*\.spec\.ts/,
+    },
+  ],
+  reporter: [
+    ["list"],
+    ["html", { outputFolder: "playwright-report", open: "never" }],
+    ["json", { outputFile: "playwright-report/results.json" }],
+  ],
   use: {
     baseURL,
     trace: "retain-on-failure",
+    video: "retain-on-failure",
+    screenshot: "only-on-failure",
   },
   webServer: [
     {
-      command: `corepack pnpm --dir ../../apps/backend build && corepack pnpm --dir ../../apps/backend start:prod`,
+      command: `corepack pnpm --dir ../../packages/config build && corepack pnpm --dir ../../apps/backend build && corepack pnpm --dir ../../apps/backend start:prod`,
       url: `${apiBaseURL}/health/live`,
-      timeout: 120_000,
-      reuseExistingServer: !process.env.CI,
+      timeout: 240_000,
+      reuseExistingServer: !process.env.CI && !isStage16LiveAuditRun,
       env: {
         ...process.env,
         PORT: String(apiPort),
@@ -51,13 +73,16 @@ export default defineConfig({
         LEXFRAME_DELIVERY_WEBHOOK_TOKEN: deliveryWebhookToken,
         LEXFRAME_DELIVERY_FROM_EMAIL:
           process.env.LEXFRAME_DELIVERY_FROM_EMAIL ?? "noreply@lexframe.local",
+        SUPABASE_DB_URL:
+          process.env.SUPABASE_DB_URL ??
+          "postgresql://postgres:postgres@127.0.0.1:54322/stage16_runtime",
       },
     },
     {
       command: `corepack pnpm --dir ../../apps/web exec next dev --hostname ${host} --port ${port}`,
       url: baseURL,
-      timeout: 120_000,
-      reuseExistingServer: !process.env.CI,
+      timeout: 180_000,
+      reuseExistingServer: !process.env.CI && !isStage16LiveAuditRun,
       env: {
         ...process.env,
         NEXT_PUBLIC_ENABLE_MSW: useMsw ? "1" : "0",

@@ -61,7 +61,11 @@ import { randomUUID } from 'node:crypto';
 import { AuditService } from '../audit/audit.service';
 import { DatabaseService } from '../database/database.service';
 import { AiPolicyService } from './ai-policy.service';
-import { AiProviderRegistry } from './ai-provider.adapters';
+import {
+  AiProviderRegistry,
+  type StructuredAiRequest,
+  type StructuredAiResponse,
+} from './ai-provider.adapters';
 import {
   buildDocumentAnalysisDescription,
   buildSecurityLabels,
@@ -366,6 +370,65 @@ export class AIGatewayService {
         'C_LEGAL_SECRET',
       ],
     };
+  }
+
+  async generateStructured<T>(input: {
+    readonly access: AccessContext;
+    readonly classification: DataClassification;
+    readonly taskType: AiRequestSummary['taskType'];
+    readonly hasDocuments: boolean;
+    readonly prompt: string;
+    readonly schemaId: string;
+    readonly fallback: T;
+    readonly jsonSchema?: StructuredAiRequest<T>['jsonSchema'];
+    readonly tools?: StructuredAiRequest<T>['tools'];
+    readonly maxToolCalls?: number;
+    readonly traceId?: string | null;
+  }): Promise<{
+    readonly route: Awaited<
+      ReturnType<AIGatewayService['planStructuredRoute']>
+    >;
+    readonly response: StructuredAiResponse<T>;
+  }> {
+    const route = await this.planStructuredRoute({
+      access: input.access,
+      classification: input.classification,
+      taskType: input.taskType,
+      hasDocuments: input.hasDocuments,
+    });
+
+    if (route.blocked || !route.provider || !route.model) {
+      return {
+        route,
+        response: {
+          provider: 'local',
+          model: 'local-fallback',
+          output: input.fallback,
+          inputTokens: Math.max(1, Math.ceil(input.prompt.length / 4)),
+          outputTokens: Math.max(
+            1,
+            Math.ceil(JSON.stringify(input.fallback).length / 4),
+          ),
+          latencyMs: 0,
+          usedFallback: true,
+        },
+      };
+    }
+
+    const adapter = this.aiProviderRegistry.get(route.provider);
+    const response = await adapter.generateStructured({
+      provider: route.provider,
+      model: route.model,
+      prompt: input.prompt,
+      schemaId: input.schemaId,
+      fallback: input.fallback,
+      jsonSchema: input.jsonSchema,
+      tools: input.tools,
+      maxToolCalls: input.maxToolCalls,
+      traceId: input.traceId ?? null,
+    });
+
+    return { route, response };
   }
 
   async listSessions(

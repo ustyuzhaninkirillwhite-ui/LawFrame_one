@@ -6,12 +6,21 @@ import {
 
 describe("isAutomationCanvasRoute", () => {
   it("matches only project automation index routes", () => {
-    expect(isAutomationCanvasRoute("/app/projects/project_claim_001/automations")).toBe(true);
-    expect(isAutomationCanvasRoute("/app/projects/project_claim_001/automations/")).toBe(true);
+    expect(
+      isAutomationCanvasRoute(
+        "/app/projects/project_claim_001/automations/automation_001/canvas",
+      ),
+    ).toBe(true);
+    expect(
+      isAutomationCanvasRoute(
+        "/app/projects/project_claim_001/automations/automation_001/canvas/",
+      ),
+    ).toBe(true);
 
-    expect(isAutomationCanvasRoute("/app/projects/project_claim_001/automations/automation_001")).toBe(
-      false,
-    );
+    expect(isAutomationCanvasRoute("/app/projects/project_claim_001/automations")).toBe(false);
+    expect(
+      isAutomationCanvasRoute("/app/projects/project_claim_001/automations/automation_001"),
+    ).toBe(false);
     expect(
       isAutomationCanvasRoute(
         "/app/projects/project_claim_001/automations/automation_001/advanced-builder",

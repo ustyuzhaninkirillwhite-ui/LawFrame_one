@@ -26,9 +26,13 @@
     "@lexframe/contracts": "workspace:*",
     "@lexframe/logger": "workspace:*",
     "@lexframe/workflow": "workspace:*",
+    "@lexframe/workflow-dsl": "workspace:*",
     "@nestjs/common": "^11.0.1",
     "@nestjs/core": "^11.0.1",
     "@nestjs/platform-fastify": "^11.0.1",
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1",
+    "dagre": "^0.8.5",
     "docxtemplater": "^3.68.5",
     "jose": "^6.1.0",
     "pg": "^8.16.3",
@@ -42,6 +46,7 @@
     "@nestjs/cli": "^11.0.0",
     "@nestjs/schematics": "^11.0.0",
     "@nestjs/testing": "^11.0.1",
+    "@types/dagre": "^0.7.54",
     "@types/jest": "^30.0.0",
     "@types/node": "^24.0.0",
     "@types/pg": "^8.15.5",
@@ -77,7 +82,8 @@
       "^@lexframe/contracts$": "<rootDir>/../../packages/contracts/src/index.ts",
       "^@lexframe/config$": "<rootDir>/../../packages/config/src/index.ts",
       "^@lexframe/logger$": "<rootDir>/../../packages/logger/src/index.ts",
-      "^@lexframe/workflow$": "<rootDir>/../../packages/workflow/src/index.ts"
+      "^@lexframe/workflow$": "<rootDir>/../../packages/workflow/src/index.ts",
+      "^@lexframe/workflow-dsl$": "<rootDir>/../../packages/workflow-dsl/src/index.ts"
     },
     "collectCoverageFrom": [
       "src/**/*.(t|j)s"

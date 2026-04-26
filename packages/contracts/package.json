@@ -8,6 +8,14 @@
     "dist",
     "src/workflow/workflow.schema.json",
     "src/workflow/workflow-patch.schema.json",
+    "src/canvas/workflow-v2.schema.json",
+    "src/canvas/node.schema.json",
+    "src/canvas/edge.schema.json",
+    "src/canvas/operation.schema.json",
+    "src/canvas/validation.schema.json",
+    "src/canvas/canvas-ai-message.schema.json",
+    "src/canvas/canvas-ai-patch-proposal.schema.json",
+    "src/canvas/canvas-ai-structured-output.schema.json",
     "src/release/release-manifest.schema.json"
   ],
   "scripts": {

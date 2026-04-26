@@ -9,7 +9,11 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:canvas:unit": "vitest run src/features/canvas/lib src/lib/automation-canvas-route.test.ts",
+    "test:canvas:components": "vitest run src/features/canvas/components",
+    "test:canvas:contracts": "vitest run src/features/canvas/fixtures src/features/canvas/lib/canvas-msw-contracts.test.ts",
+    "storybook:build": "node ../../scripts/validate-canvas-storybook.mjs"
   },
   "dependencies": {
     "@fontsource/ibm-plex-sans": "^5.2.8",
@@ -17,6 +21,7 @@
     "@lexframe/api-client": "workspace:*",
     "@lexframe/config": "workspace:*",
     "@lexframe/contracts": "workspace:*",
+    "@lexframe/workflow-dsl": "workspace:*",
     "@lexframe/workflow": "workspace:*",
     "@radix-ui/react-separator": "^1.1.7",
     "@radix-ui/react-slot": "^1.2.3",

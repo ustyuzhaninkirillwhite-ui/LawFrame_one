@@ -1,0 +1,84 @@
+name: Canvas Security CI
+
+on:
+  pull_request:
+    paths:
+      - "apps/backend/src/modules/canvas/**"
+      - "apps/backend/src/modules/activepieces/**"
+      - "apps/web/src/features/canvas/**"
+      - "apps/web/src/hooks/**"
+      - "packages/contracts/src/canvas.ts"
+      - "packages/contracts/src/permissions/permission-codes.ts"
+      - "packages/contracts/src/errors/error-codes.ts"
+      - "packages/api-client/src/index.ts"
+      - "supabase/migrations/000044_stage16_16_canvas_security.sql"
+      - "supabase/migrations/0000*_stage16*.sql"
+      - "supabase/seed/**"
+      - "tests/e2e/stage16-live-audit/**"
+      - "compose.yaml"
+      - "scripts/validate-canvas-security.mjs"
+      - "scripts/stage16-*.mjs"
+      - ".github/workflows/canvas-security-ci.yml"
+  push:
+    branches:
+      - main
+      - "codex/**"
+
+jobs:
+  canvas-security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: corepack enable
+      - run: corepack pnpm install --frozen-lockfile
+      - name: Contracts build
+        run: corepack pnpm --filter @lexframe/contracts build
+      - name: API client typecheck
+        run: corepack pnpm --filter @lexframe/api-client typecheck
+      - name: Backend typecheck
+        run: corepack pnpm --filter @lexframe/backend typecheck
+      - name: Frontend typecheck
+        run: corepack pnpm --filter @lexframe/web typecheck
+      - name: Canvas security validator
+        run: corepack pnpm validate:canvas-security
+      - name: Canvas fixture security matrix
+        run: corepack pnpm validate:canvas-fixtures
+      - name: Canvas backend security tests
+        run: corepack pnpm --filter @lexframe/backend test -- canvas
+      - name: Canvas web contract tests
+        run: corepack pnpm --filter @lexframe/web test:canvas:contracts
+      - name: Secret scan
+        run: corepack pnpm secret-scan
+      - name: Frontend bundle secret scan
+        run: corepack pnpm validate:web-bundle-secrets
+      - name: Install Playwright browsers
+        run: corepack pnpm --filter @lexframe/e2e exec playwright install --with-deps chromium
+      - name: Start local-integrated runtime
+        run: docker compose --profile local-integrated up -d
+      - name: Apply isolated Stage 16 live DB
+        run: corepack pnpm stage16:db:apply-local
+      - name: Runtime health
+        run: corepack pnpm stage16:runtime:health
+      - name: Live browser security scenarios
+        env:
+          LEXFRAME_READINESS_PROFILE: local-integrated
+          ACTIVEPIECES_SIMULATE_RUNS: "0"
+          NEXT_PUBLIC_ENABLE_MSW: "0"
+        run: corepack pnpm --filter @lexframe/e2e exec playwright test stage16-live-audit --grep "Scenario 1[567]"
+      - name: Collect compose logs
+        if: always()
+        run: docker compose --profile local-integrated logs --no-color > stage16-compose.log
+      - name: Upload security evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: canvas-stage16-security-artifacts
+          path: |
+            tests/e2e/playwright-report
+            tests/e2e/test-results
+            stage16-compose.log
+          if-no-files-found: ignore

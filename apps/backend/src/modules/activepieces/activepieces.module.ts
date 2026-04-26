@@ -6,6 +6,7 @@ import { DeliveryModule } from '../delivery/delivery.module';
 import { DocumentsModule } from '../documents/documents.module';
 import { IdentityModule } from '../identity/identity.module';
 import { RealtimeModule } from '../realtime/realtime.module';
+import { WorkflowCompilerModule } from '../workflow-compiler/workflow-compiler.module';
 import { ActivepiecesController } from './activepieces.controller';
 import { ActivepiecesService } from './activepieces.service';
 
@@ -18,6 +19,7 @@ import { ActivepiecesService } from './activepieces.service';
     ApprovalsModule,
     DeliveryModule,
     RealtimeModule,
+    WorkflowCompilerModule,
   ],
   controllers: [ActivepiecesController],
   providers: [ActivepiecesService],

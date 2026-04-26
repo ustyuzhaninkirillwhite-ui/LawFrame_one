@@ -1,0 +1,57 @@
+name: Canvas Release Gate
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "docs/testing/canvas-v2-*.md"
+      - "infra/deploy/release-manifest.example.json"
+      - "packages/contracts/src/release/release-manifest.schema.json"
+      - "packages/canvas-test-fixtures/**"
+      - "apps/backend/src/modules/canvas/**"
+      - "apps/backend/src/modules/workflow-compiler/**"
+      - "apps/web/src/features/canvas/**"
+      - "supabase/migrations/**"
+      - "supabase/seed/**"
+      - "tests/e2e/stage16-live-audit/**"
+      - "compose.yaml"
+      - "scripts/validate-canvas-*.mjs"
+      - "scripts/stage16-*.mjs"
+      - ".github/workflows/canvas-release-gate.yml"
+
+jobs:
+  release-gate:
+    name: Manifest
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: corepack enable
+      - run: corepack pnpm install --frozen-lockfile
+      - name: Install Playwright browsers
+        run: corepack pnpm --filter @lexframe/e2e exec playwright install --with-deps chromium
+      - name: Stage 16 release gate
+        env:
+          LEXFRAME_READINESS_PROFILE: local-integrated
+          ACTIVEPIECES_SIMULATE_RUNS: "0"
+          NEXT_PUBLIC_ENABLE_MSW: "0"
+        run: corepack pnpm stage16:release-gate
+      - name: Collect compose logs
+        if: always()
+        run: docker compose --profile local-integrated logs --no-color > stage16-compose.log
+      - name: Upload release artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: canvas-stage16-release-gate-artifacts
+          path: |
+            tests/e2e/playwright-report
+            tests/e2e/test-results
+            stage16-compose.log
+            infra/deploy/release-manifest.example.json
+          if-no-files-found: ignore

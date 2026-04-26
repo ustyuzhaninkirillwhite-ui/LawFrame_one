@@ -1,4 +1,4 @@
-import { WorkflowBuilderV1 } from "@/components/builder/workflow-builder-v1";
+import { redirect } from "next/navigation";
 
 export default async function ProjectAutomationBuilderPage({
   params,
@@ -10,5 +10,5 @@ export default async function ProjectAutomationBuilderPage({
 }) {
   const { projectId, automationId } = await params;
 
-  return <WorkflowBuilderV1 projectId={projectId} automationId={automationId} />;
+  redirect(`/app/projects/${projectId}/automations/${automationId}/canvas`);
 }

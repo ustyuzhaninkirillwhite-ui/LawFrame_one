@@ -20,6 +20,25 @@ import type {
   CreateProfileImportJobRequest,
   CreateWorkflowDraftRequest,
   CreateWorkflowPatchRequest,
+  CanvasAiMessageRequest,
+  CanvasAiPatchApplyRequest,
+  CanvasAiPatchRejectRequest,
+  CanvasDraftResponse,
+  CanvasApplySuggestedFixRequest,
+  CanvasOperationRequest,
+  CanvasOperationPreviewRequest,
+  CanvasPublishRequest,
+  CanvasPresentationMode,
+  CanvasPolicyOverrideDecisionRequest,
+  CanvasPolicyOverrideRequest,
+  CanvasRollbackRequest,
+  CanvasSecurityCheckRequest,
+  CanvasSnapshotRequest,
+  CanvasStepConfigValidationRequest,
+  CanvasTestRunRequest,
+  CanvasValidateRequest,
+  StepInputBinding,
+  StepTestRequest,
   NotificationListQuery,
   RunCreateRequest,
   RunPreflightRequest,
@@ -37,6 +56,11 @@ import type {
   RecommendationDismissRequest,
   RecommendationFeedbackRequest,
   RecommendationSnoozeRequest,
+  RuntimeImportApplyRequest,
+  RuntimeImportPreviewRequest,
+  RuntimeImportRejectRequest,
+  RuntimeOverwriteRequest,
+  RuntimePullRequest,
   RestoreLegalWorkProfileVersionRequest,
   ApprovalTaskRequestChangesRequest,
   StartAutomationRunRequest,
@@ -392,6 +416,1106 @@ export function useAutomationDetail(id = "aut_01hzyd8md4j4yhr40t1k0f8p9n") {
     enabled,
     staleTime: 30_000,
   });
+}
+
+export function useCanvasDraft(automationId?: string | null) {
+  const { apiClient } = useSessionBridge();
+  const { enabled, workspaceId } = useWorkspaceEnabled();
+
+  return useQuery({
+    queryKey: ["canvas", workspaceId, automationId, "draft"],
+    queryFn: () => apiClient.getAutomationCanvas(automationId!),
+    enabled: enabled && Boolean(automationId),
+    staleTime: 5_000,
+  });
+}
+
+export function useCanvasSecurityContext(automationId?: string | null) {
+  const { apiClient } = useSessionBridge();
+  const { enabled, workspaceId } = useWorkspaceEnabled();
+
+  return useQuery({
+    queryKey: ["canvas", workspaceId, automationId, "security-context"],
+    queryFn: () => apiClient.getAutomationCanvasSecurityContext(automationId!),
+    enabled: enabled && Boolean(automationId),
+    staleTime: 5_000,
+  });
+}
+
+export function useCanvasSecurityPolicies(automationId?: string | null) {
+  const { apiClient } = useSessionBridge();
+  const { enabled, workspaceId } = useWorkspaceEnabled();
+
+  return useQuery({
+    queryKey: ["canvas", workspaceId, automationId, "security-policies"],
+    queryFn: () => apiClient.listAutomationCanvasSecurityPolicies(automationId!),
+    enabled: enabled && Boolean(automationId),
+    staleTime: 30_000,
+  });
+}
+
+export function useCanvasSecurityCheck(automationId?: string | null) {
+  const { apiClient } = useSessionBridge();
+
+  return useMutation({
+    mutationFn: (input: CanvasSecurityCheckRequest) =>
+      apiClient.checkAutomationCanvasSecurityAction(automationId!, input),
+  });
+}
+
+export function useCanvasPolicyOverrideRequest(automationId?: string | null) {
+  const { apiClient } = useSessionBridge();
+  const { workspaceId } = useWorkspaceEnabled();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: CanvasPolicyOverrideRequest) =>
+      apiClient.requestAutomationCanvasPolicyOverride(automationId!, input),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["canvas", workspaceId, automationId, "security-context"],
+      });
+    },
+  });
+}
+
+export function useCanvasPolicyOverrideDecision(automationId?: string | null) {
+  const { apiClient } = useSessionBridge();
+  const { workspaceId } = useWorkspaceEnabled();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: CanvasPolicyOverrideDecisionRequest & {
+      readonly decision: "approve" | "reject";
+    }) =>
+      input.decision === "approve"
+        ? apiClient.approveAutomationCanvasPolicyOverride(automationId!, input)
+        : apiClient.rejectAutomationCanvasPolicyOverride(automationId!, input),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["canvas", workspaceId, automationId, "security-context"],
+      });
+    },
+  });
+}
+
+export function useCanvasAuditEvents(automationId?: string | null) {
+  const { apiClient } = useSessionBridge();
+  const { enabled, workspaceId } = useWorkspaceEnabled();
+
+  return useQuery({
+    queryKey: ["canvas", workspaceId, automationId, "audit"],
+    queryFn: () => apiClient.listAutomationCanvasAuditEvents(automationId!),
+    enabled: enabled && Boolean(automationId),
+    staleTime: 15_000,
+  });
+}
+
+export function useCanvasPresentation(input: {
+  readonly automationId?: string | null;
+  readonly mode?: CanvasPresentationMode | null;
+  readonly locale?: string | null;
+}) {
+  const { apiClient } = useSessionBridge();
+  const { enabled, workspaceId } = useWorkspaceEnabled();
+
+  return useQuery({
+    queryKey: [
+      "canvas",
+      workspaceId,
+      input.automationId,
+      "presentation",
+      input.mode ?? "basic",
+      input.locale ?? "ru-RU",
+    ],
+    queryFn: () =>
+      apiClient.getAutomationCanvasPresentation(input.automationId!, {
+        mode: input.mode ?? "basic",
+        locale: input.locale ?? "ru-RU",
+      }),
+    enabled: enabled && Boolean(input.automationId),
+    staleTime: 5_000,
+  });
+}
+
+export function useCanvasSuggestions(input: {
+  readonly automationId?: string | null;
+  readonly contextNodeId?: string | null;
+  readonly locale?: string | null;
+}) {
+  const { apiClient } = useSessionBridge();
+  const { enabled, workspaceId } = useWorkspaceEnabled();
+
+  return useQuery({
+    queryKey: [
+      "canvas",
+      workspaceId,
+      input.automationId,
+      "suggestions",
+      input.contextNodeId,
+      input.locale ?? "ru-RU",
+    ],
+    queryFn: () =>
+      apiClient.getAutomationCanvasSuggestions(input.automationId!, {
+        contextNodeId: input.contextNodeId,
+        locale: input.locale ?? "ru-RU",
+      }),
+    enabled: enabled && Boolean(input.automationId),
+    staleTime: 10_000,
+  });
+}
+
+export function useCanvasSuggestionApply(automationId?: string | null) {
+  const { apiClient } = useSessionBridge();
+  const { workspaceId } = useWorkspaceEnabled();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: {
+      readonly suggestionId: string;
+      readonly confirmedByUser?: boolean;
+      readonly contextNodeId?: string | null;
+    }) =>
+      apiClient.applyAutomationCanvasSuggestion(
+        automationId!,
+        input.suggestionId,
+        {
+          confirmedByUser: input.confirmedByUser,
+          contextNodeId: input.contextNodeId,
+        },
+      ),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["canvas", workspaceId, automationId],
+      });
+    },
+  });
+}
+
+export function useCanvasDraftOpen(automationId?: string | null) {
+  const { apiClient } = useSessionBridge();
+  const { workspaceId } = useWorkspaceEnabled();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => apiClient.openAutomationCanvasDraft(automationId!),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["canvas", workspaceId, automationId],
+      });
+    },
+  });
+}
+
+export function useCanvasVersions(automationId?: string | null) {
+  const { apiClient } = useSessionBridge();
+  const { enabled, workspaceId } = useWorkspaceEnabled();
+
+  return useQuery({
+    queryKey: ["canvas", workspaceId, automationId, "versions"],
+    queryFn: () => apiClient.getAutomationCanvasVersions(automationId!),
+    enabled: enabled && Boolean(automationId),
+    staleTime: 10_000,
+  });
+}
+
+export function useCanvasVersionState(automationId?: string | null) {
+  const { apiClient } = useSessionBridge();
+  const { enabled, workspaceId } = useWorkspaceEnabled();
+
+  return useQuery({
+    queryKey: ["canvas", workspaceId, automationId, "version-state"],
+    queryFn: () => apiClient.getAutomationCanvasVersionState(automationId!),
+    enabled: enabled && Boolean(automationId),
+    staleTime: 10_000,
+  });
+}
+
+export function useCanvasVersionCompare(automationId?: string | null) {
+  const { apiClient } = useSessionBridge();
+
+  return useMutation({
+    mutationFn: (input: { readonly from: string; readonly to: string }) =>
+      apiClient.compareAutomationCanvasVersions(automationId!, input),
+  });
+}
+
+export function useCanvasIo(automationId?: string | null) {
+  const { apiClient } = useSessionBridge();
+  const { enabled, workspaceId } = useWorkspaceEnabled();
+
+  return useQuery({
+    queryKey: ["canvas", workspaceId, automationId, "io"],
+    queryFn: () => apiClient.getAutomationCanvasIo(automationId!),
+    enabled: enabled && Boolean(automationId),
+    staleTime: 5_000,
+  });
+}
+
+export function useStepInspector(input: {
+  readonly automationId?: string | null;
+  readonly nodeId?: string | null;
+}) {
+  const { apiClient } = useSessionBridge();
+  const { enabled, workspaceId } = useWorkspaceEnabled();
+
+  return useQuery({
+    queryKey: [
+      "canvas",
+      workspaceId,
+      input.automationId,
+      "inspector",
+      input.nodeId,
+    ],
+    queryFn: () =>
+      apiClient.getStepInspector(input.automationId!, input.nodeId!),
+    enabled:
+      enabled && Boolean(input.automationId) && Boolean(input.nodeId),
+    staleTime: 5_000,
+  });
+}
+
+export function useStepDataSources(input: {
+  readonly automationId?: string | null;
+  readonly nodeId?: string | null;
+  readonly inputKey?: string | null;
+}) {
+  const { apiClient } = useSessionBridge();
+  const { enabled, workspaceId } = useWorkspaceEnabled();
+
+  return useQuery({
+    queryKey: [
+      "canvas",
+      workspaceId,
+      input.automationId,
+      "inspector-sources",
+      input.nodeId,
+      input.inputKey,
+    ],
+    queryFn: () =>
+      apiClient.listStepDataSources(
+        input.automationId!,
+        input.nodeId!,
+        input.inputKey!,
+      ),
+    enabled:
+      enabled &&
+      Boolean(input.automationId) &&
+      Boolean(input.nodeId) &&
+      Boolean(input.inputKey),
+    staleTime: 5_000,
+  });
+}
+
+export function useCanvasInputSources(input: {
+  readonly automationId?: string | null;
+  readonly nodeId?: string | null;
+  readonly inputKey?: string | null;
+}) {
+  const { apiClient } = useSessionBridge();
+  const { enabled, workspaceId } = useWorkspaceEnabled();
+
+  return useQuery({
+    queryKey: [
+      "canvas",
+      workspaceId,
+      input.automationId,
+      "sources",
+      input.nodeId,
+      input.inputKey,
+    ],
+    queryFn: () =>
+      apiClient.listCanvasInputSources(
+        input.automationId!,
+        input.nodeId!,
+        input.inputKey!,
+      ),
+    enabled:
+      enabled &&
+      Boolean(input.automationId) &&
+      Boolean(input.nodeId) &&
+      Boolean(input.inputKey),
+    staleTime: 5_000,
+  });
+}
+
+export function useCanvasModules(automationId?: string | null) {
+  const { apiClient } = useSessionBridge();
+  const { enabled, workspaceId } = useWorkspaceEnabled();
+
+  return useQuery({
+    queryKey: ["canvas", workspaceId, automationId, "modules"],
+    queryFn: () => apiClient.listCanvasModules(automationId!),
+    enabled: enabled && Boolean(automationId),
+    staleTime: 60_000,
+  });
+}
+
+export function useCanvasModuleCatalog(input: {
+  readonly automationId?: string | null;
+  readonly contextNodeId?: string | null;
+  readonly insertPosition?: string | null;
+  readonly mode?: string | null;
+  readonly query?: string | null;
+} = {}) {
+  const { apiClient } = useSessionBridge();
+  const { enabled, workspaceId } = useWorkspaceEnabled();
+
+  return useQuery({
+    queryKey: [
+      "canvas",
+      workspaceId,
+      input.automationId,
+      "module-catalog",
+      input.contextNodeId,
+      input.insertPosition,
+      input.mode,
+      input.query,
+    ],
+    queryFn: () =>
+      apiClient.listCanvasModuleCatalog({
+        automationId: input.automationId!,
+        contextNodeId: input.contextNodeId,
+        insertPosition: input.insertPosition,
+        mode: input.mode,
+        query: input.query,
+      }),
+    enabled: enabled && Boolean(input.automationId),
+    staleTime: 30_000,
+  });
+}
+
+export function useCanvasBlockTypes(automationId?: string | null) {
+  const { apiClient } = useSessionBridge();
+  const { enabled, workspaceId } = useWorkspaceEnabled();
+
+  return useQuery({
+    queryKey: ["canvas", workspaceId, automationId, "block-types"],
+    queryFn: () => apiClient.listCanvasBlockTypes(),
+    enabled: enabled && Boolean(automationId),
+    staleTime: 60_000,
+  });
+}
+
+export function useCanvasOperations(automationId?: string | null) {
+  const { apiClient } = useSessionBridge();
+  const { workspaceId } = useWorkspaceEnabled();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: CanvasOperationRequest) =>
+      apiClient.applyCanvasOperations(automationId!, input),
+    onSuccess: async (response) => {
+      queryClient.setQueryData<CanvasDraftResponse>(
+        ["canvas", workspaceId, automationId, "draft"],
+        (previous) =>
+          previous
+            ? {
+                ...previous,
+                workflow: response.workflow,
+                canvas: response.canvas ?? previous.canvas,
+                workflow_hash:
+                  response.draft_hash ?? response.new_workflow_hash,
+                draft_hash:
+                  response.draft_hash ?? response.new_workflow_hash,
+                revision_counter: response.revision_counter,
+                revision: response.revision ?? response.revision_counter,
+                validation: response.validation,
+              }
+            : previous,
+      );
+      await queryClient.invalidateQueries({
+        queryKey: ["canvas", workspaceId, automationId],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["automation-detail", workspaceId, automationId],
+      });
+    },
+  });
+}
+
+export function useCanvasOperationPreview(automationId?: string | null) {
+  const { apiClient } = useSessionBridge();
+
+  return useMutation({
+    mutationFn: (input: CanvasOperationPreviewRequest) =>
+      apiClient.previewCanvasOperations(automationId!, input),
+  });
+}
+
+export function useCanvasAiMessage(automationId?: string | null) {
+  const { apiClient } = useSessionBridge();
+
+  return useMutation({
+    mutationFn: (input: CanvasAiMessageRequest) =>
+      apiClient.sendCanvasAiMessage(automationId!, input),
+  });
+}
+
+export function useCanvasAiPatchProposal(automationId?: string | null) {
+  const { apiClient } = useSessionBridge();
+
+  return useMutation({
+    mutationFn: (input: CanvasAiMessageRequest) =>
+      apiClient.proposeCanvasAiPatch(automationId!, input),
+  });
+}
+
+export function useCanvasAiExplain(automationId?: string | null) {
+  const { apiClient } = useSessionBridge();
+
+  return useMutation({
+    mutationFn: (input?: Partial<CanvasAiMessageRequest>) =>
+      apiClient.explainCanvasWithAi(automationId!, input),
+  });
+}
+
+export function useCanvasAiValidationFix(automationId?: string | null) {
+  const { apiClient } = useSessionBridge();
+
+  return useMutation({
+    mutationFn: (
+      input: Partial<CanvasAiMessageRequest> & {
+        readonly selected_validation_issue_id?: string | null;
+      },
+    ) => apiClient.fixCanvasValidationWithAi(automationId!, input),
+  });
+}
+
+export function useCanvasAiConfigureStep(automationId?: string | null) {
+  const { apiClient } = useSessionBridge();
+
+  return useMutation({
+    mutationFn: (
+      input: Partial<CanvasAiMessageRequest> & {
+        readonly selected_node_id?: string | null;
+      },
+    ) => apiClient.configureCanvasStepWithAi(automationId!, input),
+  });
+}
+
+export function useCanvasAiTestPlan(automationId?: string | null) {
+  const { apiClient } = useSessionBridge();
+
+  return useMutation({
+    mutationFn: (input?: Partial<CanvasAiMessageRequest>) =>
+      apiClient.createCanvasAiTestPlan(automationId!, input),
+  });
+}
+
+export function useCanvasAiPatchApply(automationId?: string | null) {
+  const { apiClient } = useSessionBridge();
+  const { workspaceId } = useWorkspaceEnabled();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: CanvasAiPatchApplyRequest) =>
+      apiClient.applyCanvasAiPatch(automationId!, input),
+    onSuccess: async (response) => {
+      queryClient.setQueryData<CanvasDraftResponse>(
+        ["canvas", workspaceId, automationId, "draft"],
+        (previous) =>
+          previous
+            ? {
+                ...previous,
+                workflow: response.operation_response.workflow,
+                canvas: response.operation_response.canvas ?? previous.canvas,
+                workflow_hash: response.workflow_hash,
+                draft_hash: response.workflow_hash,
+                revision_counter: response.revision_counter,
+                revision: response.revision_counter,
+                validation: response.operation_response.validation,
+              }
+            : previous,
+      );
+      await queryClient.invalidateQueries({
+        queryKey: ["canvas", workspaceId, automationId],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["automation-detail", workspaceId, automationId],
+      });
+    },
+  });
+}
+
+export function useCanvasAiPatchReject(automationId?: string | null) {
+  const { apiClient } = useSessionBridge();
+  const { workspaceId } = useWorkspaceEnabled();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: {
+      readonly patchId: string;
+      readonly request?: CanvasAiPatchRejectRequest;
+    }) =>
+      apiClient.rejectCanvasAiPatch(
+        automationId!,
+        input.patchId,
+        input.request,
+      ),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["canvas", workspaceId, automationId],
+      });
+    },
+  });
+}
+
+export function useStepInspectorMutations(automationId?: string | null) {
+  return useCanvasOperations(automationId);
+}
+
+export function useStepTest(input: {
+  readonly automationId?: string | null;
+  readonly nodeId?: string | null;
+}) {
+  const { apiClient } = useSessionBridge();
+  const { workspaceId } = useWorkspaceEnabled();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (request: StepTestRequest) =>
+      apiClient.testCanvasNode(input.automationId!, input.nodeId!, request),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["canvas", workspaceId, input.automationId],
+      });
+    },
+  });
+}
+
+export function useCanvasTestRun(automationId?: string | null) {
+  const { apiClient } = useSessionBridge();
+  const { workspaceId } = useWorkspaceEnabled();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: {
+      readonly endpoint:
+        | "validate"
+        | "test-step"
+        | "test-until-step"
+        | "test-branch"
+        | "test-loop"
+        | "dry-run";
+      readonly request: CanvasTestRunRequest;
+    }) =>
+      apiClient.createCanvasTestRun(
+        automationId!,
+        input.endpoint,
+        input.request,
+      ),
+    onSuccess: async (response) => {
+      await queryClient.invalidateQueries({
+        queryKey: ["canvas", workspaceId, automationId],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["canvas-test-run", workspaceId, automationId, response.test_run_id],
+      });
+    },
+  });
+}
+
+export function useCanvasTestRunSnapshot(input: {
+  readonly automationId?: string | null;
+  readonly testRunId?: string | null;
+}) {
+  const { apiClient } = useSessionBridge();
+  const { enabled, workspaceId } = useWorkspaceEnabled();
+
+  return useQuery({
+    queryKey: [
+      "canvas-test-run",
+      workspaceId,
+      input.automationId,
+      input.testRunId,
+    ],
+    queryFn: () =>
+      apiClient.getCanvasTestRun(input.automationId!, input.testRunId!),
+    enabled: enabled && Boolean(input.automationId) && Boolean(input.testRunId),
+    staleTime: 5_000,
+  });
+}
+
+export function useCanvasTestSupportBundle(input: {
+  readonly automationId?: string | null;
+  readonly testRunId?: string | null;
+}) {
+  const { apiClient } = useSessionBridge();
+
+  return useMutation({
+    mutationFn: () =>
+      apiClient.getCanvasTestSupportBundle(
+        input.automationId!,
+        input.testRunId!,
+      ),
+  });
+}
+
+export function useCanvasCompilePreview(automationId?: string | null) {
+  const { apiClient } = useSessionBridge();
+  const { workspaceId } = useWorkspaceEnabled();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => apiClient.previewAutomationCanvasCompile(automationId!),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["canvas", workspaceId, automationId],
+      });
+    },
+  });
+}
+
+export function useRuntimeSyncStatus(automationId?: string | null) {
+  const { apiClient } = useSessionBridge();
+  const { enabled, workspaceId } = useWorkspaceEnabled();
+
+  return useQuery({
+    queryKey: ["runtime-sync-status", workspaceId, automationId],
+    queryFn: () => apiClient.getAutomationRuntimeSyncStatus(automationId!),
+    enabled: enabled && Boolean(automationId),
+    staleTime: 10_000,
+    refetchInterval: 30_000,
+  });
+}
+
+export function useRuntimePull(automationId?: string | null) {
+  const { apiClient } = useSessionBridge();
+  const { workspaceId } = useWorkspaceEnabled();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: RuntimePullRequest = {}) =>
+      apiClient.pullAutomationRuntime(automationId!, input),
+    onSuccess: async () => {
+      await invalidateRuntimeSyncQueries(queryClient, workspaceId, automationId);
+    },
+  });
+}
+
+export function useRuntimeImportPreview(automationId?: string | null) {
+  const { apiClient } = useSessionBridge();
+  const { workspaceId } = useWorkspaceEnabled();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: RuntimeImportPreviewRequest) =>
+      apiClient.previewAutomationRuntimeImport(automationId!, input),
+    onSuccess: async () => {
+      await invalidateRuntimeSyncQueries(queryClient, workspaceId, automationId);
+    },
+  });
+}
+
+export function useRuntimeImportApply(automationId?: string | null) {
+  const { apiClient } = useSessionBridge();
+  const { workspaceId } = useWorkspaceEnabled();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: RuntimeImportApplyRequest) =>
+      apiClient.applyAutomationRuntimeImport(automationId!, input),
+    onSuccess: async () => {
+      await invalidateRuntimeSyncQueries(queryClient, workspaceId, automationId);
+    },
+  });
+}
+
+export function useRuntimeImportReject(automationId?: string | null) {
+  const { apiClient } = useSessionBridge();
+  const { workspaceId } = useWorkspaceEnabled();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: RuntimeImportRejectRequest) =>
+      apiClient.rejectAutomationRuntimeImport(automationId!, input),
+    onSuccess: async () => {
+      await invalidateRuntimeSyncQueries(queryClient, workspaceId, automationId);
+    },
+  });
+}
+
+export function useRuntimeOverwrite(automationId?: string | null) {
+  const { apiClient } = useSessionBridge();
+  const { workspaceId } = useWorkspaceEnabled();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: RuntimeOverwriteRequest) =>
+      apiClient.overwriteAutomationRuntime(automationId!, input),
+    onSuccess: async () => {
+      await invalidateRuntimeSyncQueries(queryClient, workspaceId, automationId);
+    },
+  });
+}
+
+async function invalidateRuntimeSyncQueries(
+  queryClient: ReturnType<typeof useQueryClient>,
+  workspaceId: string,
+  automationId?: string | null,
+) {
+  await Promise.all([
+    queryClient.invalidateQueries({
+      queryKey: ["runtime-sync-status", workspaceId, automationId],
+    }),
+    queryClient.invalidateQueries({
+      queryKey: ["canvas", workspaceId, automationId],
+    }),
+    queryClient.invalidateQueries({
+      queryKey: ["automation-detail", workspaceId, automationId],
+    }),
+    queryClient.invalidateQueries({
+      queryKey: ["automation-runtime", workspaceId],
+    }),
+  ]);
+}
+
+export function useValidateCanvasBinding(automationId?: string | null) {
+  const { apiClient } = useSessionBridge();
+
+  return useMutation({
+    mutationFn: (input: StepInputBinding) =>
+      apiClient.validateCanvasBinding(automationId!, input),
+  });
+}
+
+export function useCanvasSampleOutput(input: {
+  readonly automationId?: string | null;
+  readonly nodeId?: string | null;
+  readonly outputKey?: string | null;
+}) {
+  const { apiClient } = useSessionBridge();
+  const { enabled, workspaceId } = useWorkspaceEnabled();
+
+  return useQuery({
+    queryKey: [
+      "canvas",
+      workspaceId,
+      input.automationId,
+      "sample",
+      input.nodeId,
+      input.outputKey,
+    ],
+    queryFn: () =>
+      apiClient.getCanvasSampleOutput(
+        input.automationId!,
+        input.nodeId!,
+        input.outputKey!,
+      ),
+    enabled:
+      enabled &&
+      Boolean(input.automationId) &&
+      Boolean(input.nodeId) &&
+      Boolean(input.outputKey),
+    staleTime: 5_000,
+  });
+}
+
+export function usePinCanvasSampleData(automationId?: string | null) {
+  const { apiClient } = useSessionBridge();
+  const { workspaceId } = useWorkspaceEnabled();
+  const queryClient = useQueryClient();
+
+  return {
+    pin: useMutation({
+      mutationFn: (input: {
+        readonly nodeId: string;
+        readonly outputKey: string;
+        readonly sampleDataId: string;
+      }) =>
+        apiClient.pinCanvasSampleOutput(
+          automationId!,
+          input.nodeId,
+          input.outputKey,
+          input.sampleDataId,
+        ),
+      onSuccess: async () => {
+        await queryClient.invalidateQueries({
+          queryKey: ["canvas", workspaceId, automationId],
+        });
+      },
+    }),
+    unpin: useMutation({
+      mutationFn: (input: { readonly nodeId: string; readonly outputKey: string }) =>
+        apiClient.unpinCanvasSampleOutput(
+          automationId!,
+          input.nodeId,
+          input.outputKey,
+        ),
+      onSuccess: async () => {
+        await queryClient.invalidateQueries({
+          queryKey: ["canvas", workspaceId, automationId],
+        });
+      },
+    }),
+  };
+}
+
+export function useValidateCanvas(automationId?: string | null) {
+  const { apiClient } = useSessionBridge();
+  const { workspaceId } = useWorkspaceEnabled();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input?: CanvasValidateRequest) =>
+      apiClient.validateAutomationCanvas(automationId!, input),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["canvas", workspaceId, automationId],
+      });
+    },
+  });
+}
+
+export function useCanvasNodeConfigValidation(input: {
+  readonly automationId?: string | null;
+  readonly nodeId?: string | null;
+}) {
+  const { apiClient } = useSessionBridge();
+
+  return useMutation({
+    mutationFn: (request: CanvasStepConfigValidationRequest) =>
+      apiClient.validateCanvasNodeConfig(
+        input.automationId!,
+        input.nodeId!,
+        request,
+      ),
+  });
+}
+
+export function useCanvasIssueExplanation(automationId?: string | null) {
+  const { apiClient } = useSessionBridge();
+
+  return useMutation({
+    mutationFn: (issueId: string) =>
+      apiClient.explainCanvasValidationIssue(automationId!, issueId),
+  });
+}
+
+export function useCanvasApplyValidationFix(automationId?: string | null) {
+  const { apiClient } = useSessionBridge();
+  const { workspaceId } = useWorkspaceEnabled();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: {
+      readonly issueId: string;
+      readonly request: CanvasApplySuggestedFixRequest;
+    }) =>
+      apiClient.applyCanvasValidationFix(
+        automationId!,
+        input.issueId,
+        input.request,
+      ),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["canvas", workspaceId, automationId],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["automation-detail", workspaceId, automationId],
+      });
+    },
+  });
+}
+
+export function useCanvasPublish(automationId?: string | null) {
+  const { apiClient } = useSessionBridge();
+  const { workspaceId } = useWorkspaceEnabled();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input?: CanvasPublishRequest) =>
+      apiClient.publishAutomationCanvas(automationId!, input),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["canvas", workspaceId, automationId],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["automation-detail", workspaceId, automationId],
+      });
+    },
+  });
+}
+
+export function useCanvasPublishValidate(automationId?: string | null) {
+  const { apiClient } = useSessionBridge();
+
+  return useMutation({
+    mutationFn: (input?: CanvasPublishRequest) =>
+      apiClient.validateAutomationCanvasPublish(automationId!, input),
+  });
+}
+
+export function useCanvasSnapshots(automationId?: string | null) {
+  const { apiClient } = useSessionBridge();
+  const { workspaceId } = useWorkspaceEnabled();
+  const queryClient = useQueryClient();
+
+  return {
+    create: useMutation({
+      mutationFn: (input?: CanvasSnapshotRequest) =>
+        apiClient.createCanvasSnapshot(automationId!, input),
+      onSuccess: async () => {
+        await queryClient.invalidateQueries({
+          queryKey: ["canvas", workspaceId, automationId],
+        });
+      },
+    }),
+    restore: useMutation({
+      mutationFn: (snapshotId: string) =>
+        apiClient.restoreCanvasSnapshot(automationId!, snapshotId),
+      onSuccess: async () => {
+        await queryClient.invalidateQueries({
+          queryKey: ["canvas", workspaceId, automationId],
+        });
+      },
+    }),
+  };
+}
+
+export function useCanvasCheckpointCreate(automationId?: string | null) {
+  const { apiClient } = useSessionBridge();
+  const { workspaceId } = useWorkspaceEnabled();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input?: CanvasSnapshotRequest) =>
+      apiClient.createCanvasCheckpoint(automationId!, input),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["canvas", workspaceId, automationId],
+      });
+    },
+  });
+}
+
+export function useCanvasVersionRestore(automationId?: string | null) {
+  const { apiClient } = useSessionBridge();
+  const { workspaceId } = useWorkspaceEnabled();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (versionId: string) =>
+      apiClient.restoreAutomationCanvasVersion(automationId!, versionId),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["canvas", workspaceId, automationId],
+      });
+    },
+  });
+}
+
+export function useCanvasRollbackImpact(automationId?: string | null) {
+  const { apiClient } = useSessionBridge();
+
+  return useMutation({
+    mutationFn: (input: Partial<CanvasRollbackRequest>) =>
+      apiClient.getAutomationCanvasRollbackImpact(automationId!, input),
+  });
+}
+
+export function useCanvasRollback(automationId?: string | null) {
+  const { apiClient } = useSessionBridge();
+  const { workspaceId } = useWorkspaceEnabled();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: CanvasRollbackRequest) =>
+      apiClient.rollbackAutomationCanvas(automationId!, input),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["canvas", workspaceId, automationId],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["runtime-sync-status", workspaceId, automationId],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["automation-detail", workspaceId, automationId],
+      });
+    },
+  });
+}
+
+export function useCanvasEmergencyDisable(automationId?: string | null) {
+  const { apiClient } = useSessionBridge();
+  const { workspaceId } = useWorkspaceEnabled();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: { readonly reason: string; readonly idempotency_key?: string | null }) =>
+      apiClient.emergencyDisableAutomationCanvas(automationId!, input),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["canvas", workspaceId, automationId],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["runtime-sync-status", workspaceId, automationId],
+      });
+    },
+  });
+}
+
+export function useCanvasRuntimeProjection(automationId?: string | null) {
+  const { apiClient } = useSessionBridge();
+
+  return useMutation({
+    mutationFn: (versionId: string) =>
+      apiClient.getAutomationCanvasRuntimeProjection(automationId!, versionId),
+  });
+}
+
+export function useCanvasVersionExport(automationId?: string | null) {
+  const { apiClient } = useSessionBridge();
+
+  return useMutation({
+    mutationFn: (versionId: string) =>
+      apiClient.exportAutomationCanvasVersion(automationId!, versionId),
+  });
+}
+
+export function useCanvasLock(
+  automationId?: string | null,
+  draftId?: string | null,
+) {
+  const { apiClient } = useSessionBridge();
+  const { workspaceId } = useWorkspaceEnabled();
+  const queryClient = useQueryClient();
+
+  return {
+    acquire: useMutation({
+      mutationFn: (input?: { readonly ttlSeconds?: number | null }) =>
+        apiClient.acquireCanvasLock(automationId!, {
+          draftId,
+          ttlSeconds: input?.ttlSeconds ?? 120,
+        }),
+      onSuccess: async () => {
+        await queryClient.invalidateQueries({
+          queryKey: ["canvas", workspaceId, automationId],
+        });
+      },
+    }),
+    heartbeat: useMutation({
+      mutationFn: () =>
+        apiClient.heartbeatCanvasLock(automationId!, {
+          draftId,
+          ttlSeconds: 120,
+        }),
+      onSuccess: async () => {
+        await queryClient.invalidateQueries({
+          queryKey: ["canvas", workspaceId, automationId],
+        });
+      },
+    }),
+    release: useMutation({
+      mutationFn: () => apiClient.releaseCanvasLock(automationId!, { draftId }),
+      onSuccess: async () => {
+        await queryClient.invalidateQueries({
+          queryKey: ["canvas", workspaceId, automationId],
+        });
+      },
+    }),
+  };
 }
 
 export function useAutomationRuntimeRequirements(id?: string | null) {

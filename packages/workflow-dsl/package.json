@@ -1,0 +1,27 @@
+{
+  "name": "@lexframe/workflow-dsl",
+  "version": "0.1.0",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "src/canvas-block-types.schema.json",
+    "src/canvas-node.schema.json",
+    "src/canvas-edge.schema.json",
+    "src/canvas-bindings.schema.json"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint \"src/**/*.ts\"",
+    "test": "tsc -p tsconfig.json && node test/canvas-blocks.test.cjs && node test/canvas-schema-gate.test.cjs && node test/canvas-operation-gate.test.cjs && node test/canvas-validation-gate.test.cjs && node test/canvas-compiler-gate.test.cjs",
+    "test:schema": "tsc -p tsconfig.json && node test/canvas-schema-gate.test.cjs",
+    "test:operations": "tsc -p tsconfig.json && node test/canvas-operation-gate.test.cjs",
+    "test:validation": "tsc -p tsconfig.json && node test/canvas-validation-gate.test.cjs",
+    "test:compiler": "tsc -p tsconfig.json && node test/canvas-compiler-gate.test.cjs"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lexframe.local/schemas/canvas/policy.schema.json",
+  "title": "WorkflowPolicyBlock",
+  "type": "object",
+  "required": [
+    "external_delivery_requires_approval",
+    "ai_sensitive_data_policy",
+    "raw_execution_data_policy",
+    "pinned_data_policy",
+    "secret_frontend_exposure",
+    "custom_expression_policy"
+  ],
+  "properties": {
+    "external_delivery_requires_approval": { "type": "boolean" },
+    "ai_sensitive_data_policy": {
+      "enum": [
+        "secure_route_or_block",
+        "redact_or_secure_route",
+        "allow_configured_routes"
+      ]
+    },
+    "raw_execution_data_policy": {
+      "enum": [
+        "redact_by_default",
+        "metadata_only",
+        "debug_permission_required"
+      ]
+    },
+    "pinned_data_policy": { "const": "draft_test_only" },
+    "secret_frontend_exposure": { "const": "forbidden" },
+    "custom_expression_policy": {
+      "enum": [
+        "debug_permission_required",
+        "admin_permission_required",
+        "forbidden"
+      ]
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lexframe.local/schemas/workflow-dsl/canvas-edge.schema.json",
+  "title": "CanvasEdge",
+  "type": "object",
+  "required": [
+    "id",
+    "type",
+    "source_node_id",
+    "source_handle",
+    "target_node_id",
+    "target_handle"
+  ],
+  "properties": {
+    "id": { "type": "string", "minLength": 2 },
+    "type": {
+      "enum": [
+        "control_flow",
+        "data_flow",
+        "approval_flow",
+        "error_flow",
+        "loop_flow",
+        "annotation_link",
+        "control",
+        "data",
+        "approval",
+        "error",
+        "loop",
+        "annotation",
+        "invalid"
+      ]
+    },
+    "source_node_id": { "type": "string" },
+    "source_handle": { "type": "string" },
+    "target_node_id": { "type": "string" },
+    "target_handle": { "type": "string" },
+    "label": { "type": ["string", "null"] },
+    "condition": { "type": ["string", "null"] },
+    "invalid_reason": { "type": ["string", "null"] },
+    "data_mapping": { "type": "array", "items": { "type": "object" } },
+    "validation_state": { "enum": ["valid", "warning", "invalid"] }
+  },
+  "additionalProperties": false
+}

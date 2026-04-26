@@ -1,0 +1,311 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lexframe.local/schemas/workflow-dsl/canvas-block-types.schema.json",
+  "title": "CanvasBlockDefinition",
+  "type": "object",
+  "required": [
+    "code",
+    "kind",
+    "nodeType",
+    "category",
+    "displayName",
+    "shortDescription",
+    "mvp",
+    "enabled",
+    "inputSchema",
+    "outputSchema",
+    "configSchema",
+    "inputs",
+    "outputs",
+    "handles",
+    "defaultConfig",
+    "policies",
+    "runtime",
+    "uiSchema",
+    "validationRules"
+  ],
+  "properties": {
+    "code": { "type": "string", "minLength": 2 },
+    "kind": {
+      "enum": [
+        "trigger",
+        "legal_action",
+        "ai_action",
+        "document_input",
+        "condition",
+        "loop",
+        "merge",
+        "approval",
+        "wait",
+        "delivery",
+        "storage",
+        "subworkflow",
+        "error_handler",
+        "note",
+        "group",
+        "end"
+      ]
+    },
+    "nodeType": {
+      "enum": [
+        "trigger",
+        "legalAction",
+        "aiAction",
+        "documentInput",
+        "condition",
+        "loop",
+        "merge",
+        "approval",
+        "wait",
+        "delivery",
+        "storage",
+        "subworkflow",
+        "errorHandler",
+        "note",
+        "group",
+        "end"
+      ]
+    },
+    "category": {
+      "enum": [
+        "start_trigger",
+        "legal_action",
+        "ai_action",
+        "document_data_input",
+        "condition_router",
+        "loop_batch",
+        "merge",
+        "human_approval",
+        "wait_pause",
+        "delivery",
+        "storage_artifact",
+        "subworkflow",
+        "error_handler",
+        "note_group",
+        "end_output"
+      ]
+    },
+    "displayName": { "type": "string", "minLength": 1 },
+    "shortDescription": { "type": "string", "minLength": 1 },
+    "longDescription": { "type": "string" },
+    "mvp": { "type": "boolean" },
+    "enabled": { "type": "boolean" },
+    "disabledReason": { "type": ["string", "null"] },
+    "moduleCode": { "type": ["string", "null"] },
+    "inputSchema": { "type": "object" },
+    "outputSchema": { "type": "object" },
+    "configSchema": { "type": "object" },
+    "inputs": { "type": "array", "items": { "$ref": "#/$defs/dataField" } },
+    "outputs": { "type": "array", "items": { "$ref": "#/$defs/dataField" } },
+    "handles": { "type": "array", "items": { "$ref": "#/$defs/handle" } },
+    "defaultConfig": { "type": "object" },
+    "policies": { "$ref": "#/$defs/policy" },
+    "runtime": { "$ref": "#/$defs/runtime" },
+    "uiSchema": { "$ref": "#/$defs/uiSchema" },
+    "validationRules": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/validationRule" }
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "classification": {
+      "enum": [
+        "public",
+        "workspace_internal",
+        "confidential",
+        "personal_data",
+        "legal_secret",
+        "client_material"
+      ]
+    },
+    "edgeType": {
+      "enum": [
+        "control_flow",
+        "data_flow",
+        "approval_flow",
+        "error_flow",
+        "loop_flow",
+        "annotation_link",
+        "invalid"
+      ]
+    },
+    "handleCode": {
+      "enum": [
+        "main_input",
+        "main_output",
+        "error_input",
+        "error_output",
+        "true_branch",
+        "false_branch",
+        "otherwise",
+        "branch_1",
+        "branch_2",
+        "branch_3",
+        "loop_items",
+        "loop_item",
+        "after_loop",
+        "merge_a",
+        "merge_b",
+        "merge_c",
+        "approved",
+        "rejected",
+        "changes_requested",
+        "expired",
+        "resumed",
+        "cancelled",
+        "sent",
+        "saved",
+        "retry",
+        "fallback",
+        "stop",
+        "notify"
+      ]
+    },
+    "dataField": {
+      "type": "object",
+      "required": ["key", "label", "type", "required"],
+      "properties": {
+        "key": { "type": "string" },
+        "label": { "type": "string" },
+        "type": { "type": "string" },
+        "required": { "type": "boolean" },
+        "classification": { "anyOf": [{ "$ref": "#/$defs/classification" }, { "type": "null" }] },
+        "allowedSources": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "workflow_input",
+              "step_output",
+              "document",
+              "profile_snapshot",
+              "literal"
+            ]
+          }
+        },
+        "options": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": false
+    },
+    "handle": {
+      "type": "object",
+      "required": ["code", "label", "direction", "edgeTypes"],
+      "properties": {
+        "code": { "$ref": "#/$defs/handleCode" },
+        "label": { "type": "string" },
+        "direction": { "enum": ["input", "output"] },
+        "edgeTypes": { "type": "array", "items": { "$ref": "#/$defs/edgeType" } },
+        "dataType": { "type": ["string", "null"] },
+        "required": { "type": "boolean" }
+      },
+      "additionalProperties": false
+    },
+    "policy": {
+      "type": "object",
+      "required": [
+        "riskLevel",
+        "dataClassification",
+        "requiresApproval",
+        "isExternalAction",
+        "canUseAi",
+        "canUseDocuments",
+        "canRunInDryRun",
+        "canBePublishedAsTemplate",
+        "allowedRoles",
+        "requiredPermissions"
+      ],
+      "properties": {
+        "riskLevel": { "enum": ["low", "medium", "high", "critical"] },
+        "dataClassification": { "$ref": "#/$defs/classification" },
+        "requiresApproval": { "type": "boolean" },
+        "isExternalAction": { "type": "boolean" },
+        "canUseAi": { "type": "boolean" },
+        "canUseDocuments": { "type": "boolean" },
+        "canRunInDryRun": { "type": "boolean" },
+        "canBePublishedAsTemplate": { "type": "boolean" },
+        "allowedRoles": { "type": "array", "items": { "type": "string" } },
+        "requiredPermissions": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": false
+    },
+    "runtime": {
+      "type": "object",
+      "required": [
+        "provider",
+        "supportsStepTest",
+        "supportsPartialExecution",
+        "supportsPinnedData",
+        "notes"
+      ],
+      "properties": {
+        "provider": {
+          "enum": ["activepieces", "internal_worker", "ai_gateway", "manual", "none"]
+        },
+        "activepiecesPiece": { "type": "string" },
+        "activepiecesAction": { "type": "string" },
+        "internalRoute": { "type": "string" },
+        "supportsStepTest": { "type": "boolean" },
+        "supportsPartialExecution": { "type": "boolean" },
+        "supportsPinnedData": { "type": "boolean" },
+        "notes": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": false
+    },
+    "uiSchema": {
+      "type": "object",
+      "required": [
+        "paletteCategory",
+        "icon",
+        "userFacingLevel",
+        "card",
+        "inspectorTabs",
+        "hints"
+      ],
+      "properties": {
+        "paletteCategory": { "type": "string" },
+        "icon": { "type": "string" },
+        "userFacingLevel": { "enum": ["basic", "advanced", "admin"] },
+        "card": {
+          "type": "object",
+          "required": ["needs", "creates", "badges"],
+          "properties": {
+            "needs": { "type": "array", "items": { "type": "string" } },
+            "creates": { "type": "array", "items": { "type": "string" } },
+            "badges": { "type": "array", "items": { "type": "string" } }
+          },
+          "additionalProperties": false
+        },
+        "inspectorTabs": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "overview",
+              "inputs",
+              "settings",
+              "data",
+              "connections",
+              "test",
+              "outputs",
+              "errors",
+              "policies",
+              "debug"
+            ]
+          }
+        },
+        "hints": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": false
+    },
+    "validationRule": {
+      "type": "object",
+      "required": ["code", "severity", "scope", "message"],
+      "properties": {
+        "code": { "type": "string" },
+        "severity": { "enum": ["error", "warning", "policy_block"] },
+        "scope": { "enum": ["block", "connection", "binding", "workflow", "runtime"] },
+        "message": { "type": "string" }
+      },
+      "additionalProperties": false
+    }
+  }
+}

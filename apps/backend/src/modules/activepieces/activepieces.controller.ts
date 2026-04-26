@@ -45,7 +45,10 @@ export class ActivepiecesController {
   @Post('activepieces/embed-token')
   @HttpCode(200)
   @UseGuards(AuthGuard, WorkspaceContextGuard, PermissionGuard)
-  @RequiredPermissions('activepieces.open_builder')
+  @RequiredPermissions(
+    'activepieces.open_builder',
+    'canvas.open_advanced_builder',
+  )
   createEmbedToken(
     @LexframeRequestContext() context: LexframeRequest['lexframe'],
     @Body() body: unknown,

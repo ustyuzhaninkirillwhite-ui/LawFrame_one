@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lexframe.local/schemas/canvas/edge.schema.json",
+  "title": "WorkflowEdge",
+  "type": "object",
+  "required": [
+    "id",
+    "type",
+    "source_node_id",
+    "source_handle",
+    "target_node_id",
+    "target_handle"
+  ],
+  "properties": {
+    "id": { "type": "string", "minLength": 2 },
+    "type": {
+      "enum": [
+        "control",
+        "data",
+        "invalid",
+        "error",
+        "approval",
+        "loop",
+        "annotation",
+        "control_flow",
+        "data_flow",
+        "approval_flow",
+        "error_flow",
+        "loop_flow",
+        "annotation_link"
+      ]
+    },
+    "edge_type": {
+      "enum": [
+        "control",
+        "data",
+        "invalid",
+        "error",
+        "approval",
+        "loop",
+        "annotation",
+        "control_flow",
+        "data_flow",
+        "approval_flow",
+        "error_flow",
+        "loop_flow",
+        "annotation_link"
+      ]
+    },
+    "source_node_id": { "type": "string" },
+    "source_handle": { "type": "string" },
+    "source_port_id": { "type": "string" },
+    "target_node_id": { "type": "string" },
+    "target_handle": { "type": "string" },
+    "target_port_id": { "type": "string" },
+    "label": { "type": ["string", "null"] },
+    "condition": {
+      "oneOf": [
+        { "type": "string" },
+        { "$ref": "#/$defs/condition" },
+        { "type": "null" }
+      ]
+    },
+    "invalid_reason": { "type": ["string", "null"] },
+    "data_mapping": { "type": "array", "items": { "type": "object" } },
+    "data_mappings": { "type": "array", "items": { "type": "object" } },
+    "validation_state": { "enum": ["valid", "warning", "invalid"] }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "condition": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": { "enum": ["comparison", "and", "or", "not"] },
+        "left": { "type": "object", "additionalProperties": true },
+        "operator": {
+          "enum": [
+            "eq",
+            "neq",
+            "gt",
+            "gte",
+            "lt",
+            "lte",
+            "contains",
+            "not_contains",
+            "exists",
+            "is_empty"
+          ]
+        },
+        "right": { "type": "object", "additionalProperties": true },
+        "conditions": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/condition" }
+        },
+        "condition": { "$ref": "#/$defs/condition" }
+      },
+      "additionalProperties": false
+    }
+  }
+}

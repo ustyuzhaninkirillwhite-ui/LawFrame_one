@@ -1,0 +1,30 @@
+name: workflow-compiler-ci
+
+on:
+  pull_request:
+  push:
+    branches:
+      - develop
+      - main
+
+jobs:
+  workflow-compiler:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Enable Corepack
+        run: corepack enable
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Contracts typecheck
+        run: pnpm --filter @lexframe/contracts typecheck
+      - name: Backend typecheck
+        run: pnpm --filter @lexframe/backend typecheck
+      - name: Workflow compiler unit tests
+        run: pnpm --filter @lexframe/backend test -- workflow-compiler.service.spec.ts --runInBand
+      - name: JSON schema validation
+        run: pnpm validate:json-schemas

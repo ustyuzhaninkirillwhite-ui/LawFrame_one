@@ -1,0 +1,83 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lexframe.local/schemas/canvas/binding.schema.json",
+  "title": "StepInputBindingV2",
+  "type": "object",
+  "required": ["target", "source"],
+  "properties": {
+    "id": { "type": "string", "minLength": 1 },
+    "target": {
+      "type": "object",
+      "required": ["node_id", "input_key"],
+      "properties": {
+        "node_id": { "type": "string", "minLength": 1 },
+        "input_key": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "targetNodeId": { "type": "string", "minLength": 1 },
+    "targetInputKey": { "type": "string", "minLength": 1 },
+    "source": { "$ref": "#/$defs/dataSource" },
+    "selection": { "type": "object", "additionalProperties": true },
+    "transform": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "enum": [
+            "none",
+            "extract_field",
+            "map_array",
+            "join_text",
+            "format_money",
+            "format_date",
+            "wrap_array",
+            "pick_one",
+            "approval_to_boolean",
+            "legal_sources_to_citation_summary",
+            "pick_fields",
+            "rename_fields",
+            "filter_items",
+            "format_template",
+            "safe_expression"
+          ]
+        },
+        "config": { "type": "object", "additionalProperties": true }
+      },
+      "additionalProperties": false
+    },
+    "fallback": { "$ref": "#/$defs/dataSource" },
+    "validation_state": {
+      "enum": ["valid", "warning", "invalid", "stale", "policy_blocked"]
+    },
+    "created_by": { "enum": ["user", "ai_assistant", "template", "system"] },
+    "created_at": { "type": "string" }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "dataSource": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "enum": [
+            "workflow_input",
+            "step_output",
+            "document",
+            "profile",
+            "profile_snapshot",
+            "template",
+            "manual_value",
+            "literal",
+            "system_value",
+            "connection",
+            "secret_ref",
+            "expression",
+            "transform"
+          ]
+        }
+      },
+      "additionalProperties": true
+    }
+  }
+}

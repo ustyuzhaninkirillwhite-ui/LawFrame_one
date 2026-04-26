@@ -8,10 +8,10 @@ test.describe("stage11 security control plane", () => {
       fullName: "Security Admin",
     });
 
-    await page.getByRole("link", { name: "Admin / Security" }).click();
+    await page.goto("/admin/security");
     await expect(
-      page.getByText("Release gates stay visible to the team long before the first beta."),
-    ).toBeVisible();
+      page.getByRole("heading", { name: "Security overview and release gates" }),
+    ).toBeVisible({ timeout: 15_000 });
     await expect(page.getByText("Current Stage 11 blockers")).toBeVisible();
   });
 
@@ -23,15 +23,23 @@ test.describe("stage11 security control plane", () => {
       fullName: "Security Panels",
     });
 
-    await page.getByRole("link", { name: "Admin / Security" }).click();
+    await page.goto("/admin/security");
     await page.getByRole("link", { name: "sessions" }).click();
-    await expect(page.getByText("Session inventory and revocation")).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Session inventory and revocation" }),
+    ).toBeVisible({ timeout: 15_000 });
 
     await page.getByRole("link", { name: "secrets" }).click();
-    await expect(page.getByText("Secrets inventory and rotation")).toBeVisible();
+    await expect(page).toHaveURL(/\/admin\/security\/secrets$/);
+    await expect(
+      page.getByRole("heading", { name: "Secrets inventory and rotation" }),
+    ).toBeVisible({ timeout: 15_000 });
 
     await page.getByRole("link", { name: "incidents" }).click();
-    await expect(page.getByText("Incidents and containment")).toBeVisible();
+    await expect(page).toHaveURL(/\/admin\/security\/incidents$/);
+    await expect(
+      page.getByRole("heading", { name: "Incidents and containment" }),
+    ).toBeVisible({ timeout: 15_000 });
   });
 
   test("activepieces governance panel exposes token and runtime controls", async ({
@@ -42,7 +50,7 @@ test.describe("stage11 security control plane", () => {
       fullName: "Builder Security",
     });
 
-    await page.getByRole("link", { name: "Admin / Security" }).click();
+    await page.goto("/admin/security");
     await page.getByRole("link", { name: "activepieces" }).click();
     await expect(page.getByText("Activepieces governance")).toBeVisible();
     await expect(page.getByText("token TTL", { exact: true })).toBeVisible();

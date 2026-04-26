@@ -4,7 +4,10 @@ import fs from "node:fs/promises";
 import path from "node:path";
 
 const schemaPath = path.resolve("packages/contracts/src/release/release-manifest.schema.json");
-const manifestPath = path.resolve("infra/deploy/release-manifest.example.json");
+const manifestPath = path.resolve(
+  process.env.LEXFRAME_RELEASE_MANIFEST_PATH ??
+    "infra/deploy/release-manifest.example.json",
+);
 
 const ajv = new Ajv2020({
   allErrors: true,

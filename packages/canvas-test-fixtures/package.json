@@ -1,0 +1,13 @@
+{
+  "name": "@lexframe/canvas-test-fixtures",
+  "version": "0.1.0",
+  "private": true,
+  "main": "index.cjs",
+  "files": [
+    "index.cjs",
+    "fixtures"
+  ],
+  "scripts": {
+    "test": "node test/fixtures-contract.test.cjs"
+  }
+}

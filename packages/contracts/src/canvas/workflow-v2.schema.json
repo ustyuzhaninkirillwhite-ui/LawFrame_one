@@ -1,0 +1,622 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lexframe.local/schemas/canvas/workflow-v2.schema.json",
+  "title": "LexFrameWorkflowV2",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "id",
+    "workspace_id",
+    "automation_id",
+    "draft_version_id",
+    "metadata",
+    "inputs",
+    "outputs",
+    "nodes",
+    "edges",
+    "variables",
+    "validation",
+    "runtime_projection",
+    "layout",
+    "created_at",
+    "updated_at"
+  ],
+  "properties": {
+    "schema_version": { "type": "string", "const": "2.0" },
+    "id": { "type": "string", "minLength": 3 },
+    "workspace_id": { "type": "string", "minLength": 3 },
+    "project_id": { "type": ["string", "null"] },
+    "automation_id": { "type": "string", "minLength": 3 },
+    "draft_version_id": { "type": "string", "minLength": 3 },
+    "published_version_id": { "type": ["string", "null"] },
+    "revision_counter": { "type": "integer", "minimum": 0 },
+    "metadata": {
+      "type": "object",
+      "required": ["title", "status", "canvas_mode"],
+      "properties": {
+        "title": { "type": "string", "minLength": 1 },
+        "description": { "type": ["string", "null"] },
+        "status": { "enum": ["draft", "published", "archived"] },
+        "canvas_mode": {
+          "enum": ["guided_vertical", "guided_branching", "advanced_free_graph"]
+        }
+      },
+      "additionalProperties": false
+    },
+    "workflow_inputs": { "type": "array", "items": { "$ref": "#/$defs/dataField" } },
+    "workflow_outputs": { "type": "array", "items": { "$ref": "#/$defs/dataField" } },
+    "inputs": { "type": "array", "items": { "$ref": "#/$defs/dataField" } },
+    "outputs": { "type": "array", "items": { "$ref": "#/$defs/dataField" } },
+    "nodes": { "type": "array", "items": { "$ref": "#/$defs/node" } },
+    "edges": { "type": "array", "items": { "$ref": "#/$defs/edge" } },
+    "variables": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["key", "label", "type"],
+        "properties": {
+          "key": { "type": "string" },
+          "label": { "type": "string" },
+          "type": { "type": "string" },
+          "value": true
+        },
+        "additionalProperties": false
+      }
+    },
+    "secrets_policy": {
+      "type": "object",
+      "required": ["frontend_exposure", "secret_sources"],
+      "properties": {
+        "frontend_exposure": { "const": "forbidden" },
+        "secret_sources": {
+          "type": "array",
+          "items": { "enum": ["connection_ref_only", "secret_ref_only"] }
+        }
+      },
+      "additionalProperties": false
+    },
+    "data_contracts": { "type": "object", "additionalProperties": true },
+    "policies": { "$ref": "#/$defs/policyBlock" },
+    "validation_state": { "$ref": "#/$defs/validation" },
+    "validation": { "$ref": "#/$defs/validation" },
+    "runtime_projection": {
+      "type": "object",
+      "required": ["status", "can_compile", "can_run", "warnings"],
+      "properties": {
+        "status": {
+          "enum": [
+            "not_compiled",
+            "compile_required",
+            "compile_failed",
+            "compile_preview_ready",
+            "sync_required",
+            "syncing",
+            "synced",
+            "runtime_modified",
+            "importable",
+            "import_requires_review",
+            "import_blocked_by_policy",
+            "conflict",
+            "unknown_runtime_nodes",
+            "blocked_by_policy",
+            "deprecated_piece",
+            "missing_connection",
+            "runtime_unavailable",
+            "preview"
+          ]
+        },
+        "can_compile": { "type": "boolean" },
+        "can_run": { "type": "boolean" },
+        "activepieces_flow_id": { "type": ["string", "null"] },
+        "compile_preview_id": { "type": ["string", "null"] },
+        "sync_hash": { "type": ["string", "null"] },
+        "warnings": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": false
+    },
+    "canvas_layout": { "$ref": "#/$defs/layoutState" },
+    "layout": {
+      "type": "object",
+      "required": ["mode"],
+      "properties": {
+        "mode": {
+          "enum": ["guided_vertical", "guided_branching", "advanced_free_graph"]
+        },
+        "updated_at": { "type": ["string", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "created_at": { "type": "string" },
+    "updated_at": { "type": "string" }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "handleCode": {
+      "type": "string",
+      "minLength": 1
+    },
+    "dataField": {
+      "type": "object",
+      "required": ["key", "label"],
+      "properties": {
+        "key": { "type": "string" },
+        "label": { "type": "string" },
+        "description": { "type": ["string", "null"] },
+        "type": { "type": "string" },
+        "data_type": { "type": "string" },
+        "item_schema": { "type": "object", "additionalProperties": true },
+        "required": { "type": "boolean" },
+        "nullable": { "type": "boolean" },
+        "cardinality": { "enum": ["one", "many", "zero_or_one"] },
+        "classification": { "type": ["string", "null"] },
+        "source": {
+          "oneOf": [
+            { "type": "object", "additionalProperties": true },
+            { "type": "string" },
+            { "type": "null" }
+          ]
+        },
+        "options": { "type": "array", "items": { "type": "string" } },
+        "allowedSources": { "type": "array", "items": { "type": "string" } },
+        "allowed_sources": { "type": "array", "items": { "type": "string" } },
+        "allowed_classifications": { "type": "array", "items": { "type": "string" } },
+        "default_value": true,
+        "default_source": { "type": "object", "additionalProperties": true },
+        "ui": { "type": "object", "additionalProperties": true },
+        "validation": { "type": "object", "additionalProperties": true },
+        "visibility": { "enum": ["basic", "advanced", "admin"] },
+        "is_template_parameter": { "type": "boolean" },
+        "is_runtime_parameter": { "type": "boolean" },
+        "preview_policy": { "enum": ["full", "summary", "metadata_only", "redacted", "hidden"] },
+        "delivery_allowed": { "type": "boolean" },
+        "requires_approval_before_delivery": { "type": "boolean" },
+        "advanced": { "type": "boolean" }
+      },
+      "additionalProperties": false
+    },
+    "policyBlock": {
+      "type": "object",
+      "required": [
+        "external_delivery_requires_approval",
+        "ai_sensitive_data_policy",
+        "raw_execution_data_policy",
+        "pinned_data_policy",
+        "secret_frontend_exposure",
+        "custom_expression_policy"
+      ],
+      "properties": {
+        "external_delivery_requires_approval": { "type": "boolean" },
+        "ai_sensitive_data_policy": {
+          "enum": [
+            "secure_route_or_block",
+            "redact_or_secure_route",
+            "allow_configured_routes"
+          ]
+        },
+        "raw_execution_data_policy": {
+          "enum": [
+            "redact_by_default",
+            "metadata_only",
+            "debug_permission_required"
+          ]
+        },
+        "pinned_data_policy": { "const": "draft_test_only" },
+        "secret_frontend_exposure": { "const": "forbidden" },
+        "custom_expression_policy": {
+          "enum": [
+            "debug_permission_required",
+            "admin_permission_required",
+            "forbidden"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "layoutState": {
+      "type": "object",
+      "required": ["mode"],
+      "properties": {
+        "layout_version": { "type": "string" },
+        "mode": {
+          "enum": ["guided_vertical", "guided_branching", "advanced_free_graph"]
+        },
+        "updated_at": { "type": ["string", "null"] },
+        "nodes": { "type": "object", "additionalProperties": true }
+      },
+      "additionalProperties": false
+    },
+    "handle": {
+      "type": "object",
+      "required": ["code", "label", "direction"],
+      "properties": {
+        "code": { "$ref": "#/$defs/handleCode" },
+        "label": { "type": "string" },
+        "direction": { "enum": ["input", "output"] },
+        "kind": { "type": "string" },
+        "edge_types": { "type": "array", "items": { "type": "string" } },
+        "data_type": { "type": ["string", "null"] },
+        "data_field_key": { "type": ["string", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "inputBinding": {
+      "type": "object",
+      "required": ["source"],
+      "properties": {
+        "id": { "type": "string" },
+        "target": {
+          "type": "object",
+          "required": ["node_id", "input_key"],
+          "properties": {
+            "node_id": { "type": "string" },
+            "input_key": { "type": "string" }
+          },
+          "additionalProperties": false
+        },
+        "targetNodeId": { "type": "string" },
+        "targetInputKey": { "type": "string" },
+        "source": { "type": "object", "required": ["type"], "additionalProperties": true },
+        "selection": { "type": "object", "additionalProperties": true },
+        "transform": {
+          "type": "object",
+          "required": ["type"],
+          "properties": {
+            "type": { "type": "string" },
+            "config": { "type": "object", "additionalProperties": true }
+          },
+          "additionalProperties": false
+        },
+        "fallback": { "type": "object", "required": ["type"], "additionalProperties": true },
+        "validation_state": { "enum": ["valid", "warning", "invalid", "stale", "policy_blocked"] },
+        "created_by": { "enum": ["user", "ai_assistant", "template", "system"] },
+        "created_at": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "node": {
+      "type": "object",
+      "required": [
+        "id",
+        "type",
+        "node_type",
+        "block_code",
+        "display_name",
+        "handles",
+        "inputs",
+        "outputs",
+        "bindings",
+        "config",
+        "policy",
+        "runtime_mapping",
+        "layout"
+      ],
+      "properties": {
+        "id": { "type": "string", "minLength": 2 },
+        "type": {
+          "enum": [
+            "trigger",
+            "legalAction",
+            "aiAction",
+            "documentInput",
+            "condition",
+            "loop",
+            "merge",
+            "approval",
+            "wait",
+            "delivery",
+            "storage",
+            "subworkflow",
+            "errorHandler",
+            "end",
+            "note",
+            "group"
+          ]
+        },
+        "node_type": {
+          "enum": [
+            "trigger",
+            "legalAction",
+            "aiAction",
+            "documentInput",
+            "condition",
+            "loop",
+            "merge",
+            "approval",
+            "wait",
+            "delivery",
+            "storage",
+            "subworkflow",
+            "errorHandler",
+            "end",
+            "note",
+            "group"
+          ]
+        },
+        "block_code": { "type": "string", "minLength": 2 },
+        "display_name": { "type": "string", "minLength": 1 },
+        "description": { "type": ["string", "null"] },
+        "module_ref": {
+          "type": ["object", "null"],
+          "required": ["module_code", "module_version"],
+          "properties": {
+            "module_code": { "type": "string" },
+            "module_version": { "type": ["string", "null"] },
+            "module_schema_hash": { "type": ["string", "null"] },
+            "status": { "enum": ["draft", "published", "deprecated", "retired"] }
+          },
+          "additionalProperties": false
+        },
+        "module_code": { "type": ["string", "null"] },
+        "module_version": { "type": ["string", "null"] },
+        "module_status": { "enum": ["draft", "published", "deprecated", "retired", null] },
+        "module_schema_hash": { "type": ["string", "null"] },
+        "dynamic_outputs_status": { "enum": ["static", "resolved", "stale", "unresolved"] },
+        "trigger_kind": { "type": ["string", "null"] },
+        "handles": { "type": "array", "items": { "$ref": "#/$defs/handle" } },
+        "input_ports": { "type": "array", "items": { "type": "object" } },
+        "output_ports": { "type": "array", "items": { "type": "object" } },
+        "inputs": { "type": "array", "items": { "$ref": "#/$defs/dataField" } },
+        "outputs": { "type": "array", "items": { "$ref": "#/$defs/dataField" } },
+        "bindings": { "type": "object", "additionalProperties": true },
+        "input_bindings": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/inputBinding" }
+        },
+        "config": { "type": "object", "additionalProperties": true },
+        "policy": { "type": "object", "additionalProperties": true },
+        "policies": { "type": "object", "additionalProperties": true },
+        "runtime_mapping": { "type": "object", "additionalProperties": true },
+        "test_state": {
+          "type": "object",
+          "required": ["sample_data_status"],
+          "properties": {
+            "last_tested_at": { "type": ["string", "null"] },
+            "sample_data_status": { "enum": ["missing", "available", "stale", "pinned"] },
+            "pinned_output_id": { "type": ["string", "null"] }
+          },
+          "additionalProperties": false
+        },
+        "layout": {
+          "type": "object",
+          "required": ["x", "y"],
+          "properties": {
+            "x": { "type": "number" },
+            "y": { "type": "number" },
+            "width": { "type": "number" },
+            "height": { "type": "number" },
+            "group_id": { "type": "string" },
+            "collapsed": { "type": "boolean" }
+          },
+          "additionalProperties": false
+        },
+        "canvas": {
+          "type": "object",
+          "required": ["x", "y"],
+          "properties": {
+            "x": { "type": "number" },
+            "y": { "type": "number" },
+            "width": { "type": "number" },
+            "height": { "type": "number" },
+            "group_id": { "type": "string" },
+            "collapsed": { "type": "boolean" }
+          },
+          "additionalProperties": false
+        },
+        "lifecycle": {
+          "type": "object",
+          "required": ["status"],
+          "properties": {
+            "status": {
+              "enum": ["draft", "configured", "needs_input", "invalid", "disabled"]
+            }
+          },
+          "additionalProperties": false
+        },
+        "disabled": { "type": "boolean" }
+      },
+      "additionalProperties": false
+    },
+    "edge": {
+      "type": "object",
+      "required": [
+        "id",
+        "type",
+        "source_node_id",
+        "source_handle",
+        "target_node_id",
+        "target_handle"
+      ],
+      "properties": {
+        "id": { "type": "string", "minLength": 2 },
+        "type": {
+          "enum": [
+            "control",
+            "data",
+            "invalid",
+            "error",
+            "approval",
+            "loop",
+            "annotation",
+            "control_flow",
+            "data_flow",
+            "approval_flow",
+            "error_flow",
+            "loop_flow",
+            "annotation_link"
+          ]
+        },
+        "edge_type": {
+          "enum": [
+            "control",
+            "data",
+            "invalid",
+            "error",
+            "approval",
+            "loop",
+            "annotation",
+            "control_flow",
+            "data_flow",
+            "approval_flow",
+            "error_flow",
+            "loop_flow",
+            "annotation_link"
+          ]
+        },
+        "source_node_id": { "type": "string" },
+        "source_handle": { "$ref": "#/$defs/handleCode" },
+        "source_port_id": { "$ref": "#/$defs/handleCode" },
+        "target_node_id": { "type": "string" },
+        "target_handle": { "$ref": "#/$defs/handleCode" },
+        "target_port_id": { "$ref": "#/$defs/handleCode" },
+        "label": { "type": ["string", "null"] },
+        "condition": {
+          "oneOf": [
+            { "type": "string" },
+            { "type": "object", "additionalProperties": true },
+            { "type": "null" }
+          ]
+        },
+        "invalid_reason": { "type": ["string", "null"] },
+        "data_mapping": { "type": "array", "items": { "type": "object" } },
+        "data_mappings": { "type": "array", "items": { "type": "object" } },
+        "validation_state": { "enum": ["valid", "warning", "invalid"] }
+      },
+      "additionalProperties": false
+    },
+    "validation": {
+      "type": "object",
+      "required": [
+        "status",
+        "errors_count",
+        "warnings_count",
+        "policy_blocks_count",
+        "issues",
+        "can_save",
+        "can_test",
+        "can_publish",
+        "can_compile",
+        "can_run",
+        "can_sync"
+      ],
+      "properties": {
+        "status": { "enum": ["valid", "valid_with_warnings", "invalid"] },
+        "errors_count": { "type": "integer", "minimum": 0 },
+        "warnings_count": { "type": "integer", "minimum": 0 },
+        "policy_blocks_count": { "type": "integer", "minimum": 0 },
+        "validation_run_id": { "type": "string" },
+        "workflow_hash": { "type": "string" },
+        "mode": {
+          "enum": [
+            "fast",
+            "full",
+            "publish_gate",
+            "runtime_gate",
+            "operation_preview",
+            "field_level"
+          ]
+        },
+        "reason": { "type": ["string", "null"] },
+        "scope": {
+          "enum": ["draft", "operation", "node", "publish", "runtime"]
+        },
+        "created_at": { "type": "string" },
+        "cache_hit": { "type": "boolean" },
+        "summary": {
+          "type": "object",
+          "required": ["errors", "warnings", "policy_blocks", "suggestions"],
+          "properties": {
+            "errors": { "type": "integer", "minimum": 0 },
+            "warnings": { "type": "integer", "minimum": 0 },
+            "policy_blocks": { "type": "integer", "minimum": 0 },
+            "suggestions": { "type": "integer", "minimum": 0 }
+          },
+          "additionalProperties": false
+        },
+        "capabilities": {
+          "type": "object",
+          "required": [
+            "can_save",
+            "can_test",
+            "can_compile",
+            "can_publish",
+            "can_run",
+            "can_sync"
+          ],
+          "properties": {
+            "can_save": { "type": "boolean" },
+            "can_test": { "type": "boolean" },
+            "can_compile": { "type": "boolean" },
+            "can_publish": { "type": "boolean" },
+            "can_run": { "type": "boolean" },
+            "can_sync": { "type": "boolean" }
+          },
+          "additionalProperties": false
+        },
+        "issues": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/issue" }
+        },
+        "can_save": { "type": "boolean" },
+        "can_test": { "type": "boolean" },
+        "can_publish": { "type": "boolean" },
+        "can_compile": { "type": "boolean" },
+        "can_run": { "type": "boolean" },
+        "can_sync": { "type": "boolean" }
+      },
+      "additionalProperties": false
+    },
+    "issue": {
+      "type": "object",
+      "required": ["id", "severity", "scope", "code", "title", "message"],
+      "properties": {
+        "id": { "type": "string" },
+        "validation_run_id": { "type": ["string", "null"] },
+        "severity": { "enum": ["info", "warning", "error", "policy_block"] },
+        "category": {
+          "enum": [
+            "structure",
+            "schema",
+            "type_compatibility",
+            "semantic",
+            "security",
+            "policy",
+            "runtime",
+            "ux",
+            "performance"
+          ]
+        },
+        "scope": { "enum": ["workflow", "node", "edge", "binding", "runtime"] },
+        "code": { "type": "string" },
+        "title": { "type": "string" },
+        "message": { "type": "string" },
+        "developer_message": { "type": ["string", "null"] },
+        "affected_node_id": { "type": ["string", "null"] },
+        "affected_edge_id": { "type": ["string", "null"] },
+        "affected_binding_id": { "type": ["string", "null"] },
+        "affected_input_key": { "type": ["string", "null"] },
+        "field_path": { "type": ["string", "null"] },
+        "blocks": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "save",
+              "test_step",
+              "test_flow",
+              "compile",
+              "publish",
+              "run",
+              "sync"
+            ]
+          }
+        },
+        "suggested_fix": { "type": ["string", "null"] },
+        "suggested_transform": { "type": ["string", "null"] },
+        "suggested_fixes": { "type": "array" },
+        "suggested_action": { "type": ["object", "null"] },
+        "evidence": { "type": ["object", "null"] },
+        "created_at": { "type": "string" }
+      },
+      "additionalProperties": false
+    }
+  }
+}

@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lexframe.local/schemas/canvas/condition.schema.json",
+  "title": "ConditionExpression",
+  "oneOf": [
+    {
+      "type": "object",
+      "required": ["type", "left", "operator"],
+      "properties": {
+        "type": { "const": "comparison" },
+        "left": { "$ref": "#/$defs/value" },
+        "operator": {
+          "enum": [
+            "eq",
+            "neq",
+            "gt",
+            "gte",
+            "lt",
+            "lte",
+            "contains",
+            "not_contains",
+            "exists",
+            "is_empty"
+          ]
+        },
+        "right": { "$ref": "#/$defs/value" }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": ["type", "conditions"],
+      "properties": {
+        "type": { "enum": ["and", "or"] },
+        "conditions": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#" }
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": ["type", "condition"],
+      "properties": {
+        "type": { "const": "not" },
+        "condition": { "$ref": "#" }
+      },
+      "additionalProperties": false
+    }
+  ],
+  "$defs": {
+    "value": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["type", "value"],
+          "properties": {
+            "type": { "const": "literal" },
+            "value": true
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": ["type"],
+          "properties": {
+            "type": {
+              "enum": [
+                "workflow_input",
+                "step_output",
+                "manual_value",
+                "literal",
+                "system_value",
+                "transform"
+              ]
+            }
+          },
+          "additionalProperties": true
+        }
+      ]
+    }
+  }
+}

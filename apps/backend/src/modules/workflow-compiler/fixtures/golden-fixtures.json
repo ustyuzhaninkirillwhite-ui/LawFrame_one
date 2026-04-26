@@ -1,0 +1,133 @@
+{
+  "schema_version": "16.10-golden-fixtures-v1",
+  "compiler_version": "16.10.0",
+  "fixtures": [
+    {
+      "name": "simple_claim_draft",
+      "input_dsl": {
+        "nodes": ["trigger", "legal.claim_draft", "end"],
+        "edges": ["trigger->legal.claim_draft", "legal.claim_draft->end"]
+      },
+      "normalized_dsl": {
+        "order": ["trigger", "legal.claim_draft", "end"],
+        "source_hash_excludes": ["viewport", "selected_node", "timestamps", "opened_panels"]
+      },
+      "runtime_ir": {
+        "trigger": "@lexframe/piece-canvas-trigger:manual_start",
+        "steps": ["@lexframe/piece-legal-module:execute", "@lexframe/piece-runtime-state:complete_run"]
+      },
+      "compile_report": {
+        "expected_status": "compiled",
+        "blocking_issues": []
+      },
+      "projection": {
+        "runtime": "activepieces",
+        "operation_strategy": "IMPORT_FLOW"
+      },
+      "operations": ["IMPORT_FLOW", "UPSERT_ACTION_PREVIEW"]
+    },
+    {
+      "name": "pretrial_claim_with_approval",
+      "input_dsl": {
+        "nodes": ["trigger", "legal.pretrial_claim", "approval", "delivery", "end"],
+        "edges": ["trigger->legal.pretrial_claim", "legal.pretrial_claim->approval", "approval->delivery", "delivery->end"]
+      },
+      "normalized_dsl": {
+        "order": ["trigger", "legal.pretrial_claim", "approval", "delivery", "end"]
+      },
+      "runtime_ir": {
+        "steps": ["create_approval_task", "wait_for_approval", "read_approval_decision", "preview_delivery", "send_delivery", "record_delivery_audit"]
+      },
+      "compile_report": {
+        "expected_status": "compiled"
+      },
+      "projection": {
+        "required_pieces": ["@lexframe/piece-approval", "@lexframe/piece-delivery", "@activepieces/piece-flow-control"]
+      },
+      "operations": ["IMPORT_FLOW"]
+    },
+    {
+      "name": "search_analyze_draft_send",
+      "input_dsl": {
+        "nodes": ["trigger", "legal.search", "ai.analyze", "legal.claim_draft", "approval", "delivery", "end"]
+      },
+      "normalized_dsl": {
+        "ai_nodes": "force_lexframe_ai_gateway"
+      },
+      "runtime_ir": {
+        "required_ai_piece": "@lexframe/piece-ai-gateway@0.1.0",
+        "document_policy": "document_refs_only"
+      },
+      "compile_report": {
+        "expected_status": "compiled"
+      },
+      "projection": {
+        "secrets_exposed_to_frontend": false
+      },
+      "operations": ["IMPORT_FLOW"]
+    },
+    {
+      "name": "branch_missing_data",
+      "input_dsl": {
+        "nodes": ["trigger", "condition", "legal.action_true", "merge", "end"],
+        "missing": ["condition.false_default"]
+      },
+      "normalized_dsl": {
+        "branches": ["true"],
+        "missing_defaults": ["false"]
+      },
+      "runtime_ir": {
+        "router": "@activepieces/piece-flow-control:evaluate_condition"
+      },
+      "compile_report": {
+        "expected_status": "blocked_by_validation",
+        "blocking_issue_codes": ["WF_COMPILER_BINDING_SOURCE_MISSING"]
+      },
+      "projection": {
+        "can_sync": false
+      },
+      "operations": ["IMPORT_FLOW"]
+    },
+    {
+      "name": "loop_documents",
+      "input_dsl": {
+        "nodes": ["trigger", "documents.input", "loop", "legal.analyze_document", "merge", "end"]
+      },
+      "normalized_dsl": {
+        "document_policy": "reference_only"
+      },
+      "runtime_ir": {
+        "loop": "@activepieces/piece-flow-control:loop_on_items",
+        "document_props": ["document_refs", "document_version_id", "classification", "scoped_token_ref"]
+      },
+      "compile_report": {
+        "expected_status": "compiled"
+      },
+      "projection": {
+        "raw_document_text": "forbidden"
+      },
+      "operations": ["IMPORT_FLOW"]
+    },
+    {
+      "name": "error_handler",
+      "input_dsl": {
+        "nodes": ["trigger", "legal.claim_draft", "errorHandler", "end"],
+        "edges": ["legal.claim_draft--error->errorHandler"]
+      },
+      "normalized_dsl": {
+        "error_policy": "retry_then_fail"
+      },
+      "runtime_ir": {
+        "error_steps": ["retry", "safe_stop", "report_failure"],
+        "canonical_run_state": "lexframe"
+      },
+      "compile_report": {
+        "expected_status": "compiled"
+      },
+      "projection": {
+        "runtime_state_owner": "lexframe"
+      },
+      "operations": ["IMPORT_FLOW"]
+    }
+  ]
+}

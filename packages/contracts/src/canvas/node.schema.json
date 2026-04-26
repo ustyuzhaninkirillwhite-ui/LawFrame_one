@@ -1,0 +1,173 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lexframe.local/schemas/canvas/node.schema.json",
+  "title": "WorkflowNode",
+  "type": "object",
+  "required": [
+    "id",
+    "type",
+    "block_code",
+    "display_name",
+    "handles",
+    "inputs",
+    "outputs",
+    "bindings",
+    "config",
+    "policy",
+    "runtime_mapping",
+    "layout"
+  ],
+  "properties": {
+    "id": { "type": "string", "minLength": 2 },
+    "type": {
+      "enum": [
+        "trigger",
+        "legalAction",
+        "aiAction",
+        "documentInput",
+        "condition",
+        "loop",
+        "merge",
+        "approval",
+        "wait",
+        "delivery",
+        "storage",
+        "subworkflow",
+        "errorHandler",
+        "end",
+        "note",
+        "group"
+      ]
+    },
+    "node_type": {
+      "enum": [
+        "trigger",
+        "legalAction",
+        "aiAction",
+        "documentInput",
+        "condition",
+        "loop",
+        "merge",
+        "approval",
+        "wait",
+        "delivery",
+        "storage",
+        "subworkflow",
+        "errorHandler",
+        "end",
+        "note",
+        "group"
+      ]
+    },
+    "block_code": { "type": "string", "minLength": 2 },
+    "display_name": { "type": "string", "minLength": 1 },
+    "description": { "type": ["string", "null"] },
+    "module_ref": {
+      "type": ["object", "null"],
+      "required": ["module_code", "module_version"],
+      "properties": {
+        "module_code": { "type": "string" },
+        "module_version": { "type": ["string", "null"] },
+        "module_schema_hash": { "type": ["string", "null"] },
+        "status": { "enum": ["draft", "published", "deprecated", "retired"] }
+      },
+      "additionalProperties": false
+    },
+    "module_code": { "type": ["string", "null"] },
+    "module_version": { "type": ["string", "null"] },
+    "module_status": {
+      "enum": ["draft", "published", "deprecated", "retired", null]
+    },
+    "module_schema_hash": { "type": ["string", "null"] },
+    "dynamic_outputs_status": { "enum": ["static", "resolved", "stale", "unresolved"] },
+    "trigger_kind": { "type": ["string", "null"] },
+    "handles": { "type": "array" },
+    "input_ports": { "type": "array", "items": { "$ref": "#/$defs/inputPort" } },
+    "output_ports": { "type": "array", "items": { "$ref": "#/$defs/outputPort" } },
+    "inputs": { "type": "array" },
+    "outputs": { "type": "array" },
+    "bindings": { "type": "object", "additionalProperties": true },
+    "input_bindings": { "type": "array", "items": { "type": "object" } },
+    "config": { "type": "object", "additionalProperties": true },
+    "policy": { "type": "object", "additionalProperties": true },
+    "policies": { "type": "object", "additionalProperties": true },
+    "runtime_mapping": { "type": "object", "additionalProperties": true },
+    "test_state": {
+      "type": "object",
+      "required": ["sample_data_status"],
+      "properties": {
+        "last_tested_at": { "type": ["string", "null"] },
+        "sample_data_status": { "enum": ["missing", "available", "stale", "pinned"] },
+        "pinned_output_id": { "type": ["string", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "layout": {
+      "type": "object",
+      "required": ["x", "y"],
+      "properties": {
+        "x": { "type": "number" },
+        "y": { "type": "number" },
+        "width": { "type": "number" },
+        "height": { "type": "number" },
+        "group_id": { "type": "string" },
+        "collapsed": { "type": "boolean" }
+      },
+      "additionalProperties": false
+    },
+    "canvas": {
+      "type": "object",
+      "required": ["x", "y"],
+      "properties": {
+        "x": { "type": "number" },
+        "y": { "type": "number" },
+        "width": { "type": "number" },
+        "height": { "type": "number" },
+        "group_id": { "type": "string" },
+        "collapsed": { "type": "boolean" }
+      },
+      "additionalProperties": false
+    },
+    "lifecycle": {
+      "type": "object",
+      "required": ["status"],
+      "properties": {
+        "status": {
+          "enum": ["draft", "configured", "needs_input", "invalid", "disabled"]
+        }
+      },
+      "additionalProperties": false
+    },
+    "disabled": { "type": "boolean" }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "inputPort": {
+      "type": "object",
+      "required": ["id", "label", "port_kind", "accepted_edge_types"],
+      "properties": {
+        "id": { "type": "string" },
+        "label": { "type": "string" },
+        "port_kind": { "enum": ["control", "data", "error", "approval", "loop"] },
+        "accepted_edge_types": { "type": "array", "items": { "type": "string" } },
+        "accepted_data_types": { "type": "array", "items": { "type": "string" } },
+        "required": { "type": "boolean" },
+        "max_connections": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": false
+    },
+    "outputPort": {
+      "type": "object",
+      "required": ["id", "label", "port_kind", "emitted_edge_types"],
+      "properties": {
+        "id": { "type": "string" },
+        "label": { "type": "string" },
+        "port_kind": { "enum": ["control", "data", "error", "approval", "loop"] },
+        "emitted_edge_types": { "type": "array", "items": { "type": "string" } },
+        "emitted_data_types": { "type": "array", "items": { "type": "string" } },
+        "max_connections": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": false
+    }
+  }
+}
