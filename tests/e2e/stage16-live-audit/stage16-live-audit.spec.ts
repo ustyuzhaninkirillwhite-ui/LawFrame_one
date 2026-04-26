@@ -6,6 +6,7 @@ import {
   test,
   type APIRequestContext,
   type Browser,
+  type Locator,
   type Page,
   type TestInfo,
 } from "@playwright/test";
@@ -630,25 +631,69 @@ test("Scenario 20. Accessibility and keyboard UX expose Canvas controls without 
   request,
 }, testInfo) => {
   await openCanvas(page);
-  await expect(page.locator("button").first()).toBeVisible({ timeout: 15_000 });
-  await page.keyboard.press("Tab");
-  const focused = await page.evaluate(() => document.activeElement?.tagName ?? null);
-  expect(focused).toBeTruthy();
-  const controlsWithNames = await page
-    .locator("button, [role='button'], a[href], input, select, textarea")
-    .evaluateAll((controls) =>
-      controls.filter((control) => {
-        const label =
-          control.getAttribute("aria-label") ??
-          control.getAttribute("title") ??
-          control.textContent ??
-          "";
-        return label.trim().length > 0;
-      }).length,
+  await waitForScenario20CanvasReady(page);
+
+  const {
+    paletteButton,
+    commandButton,
+    validateButton,
+    runButton,
+    aiPlanButton,
+    paletteSearch,
+  } = scenario20CanvasControls(page);
+
+  for (const control of [
+    paletteButton,
+    commandButton,
+    validateButton,
+    runButton,
+    aiPlanButton,
+    paletteSearch,
+  ]) {
+    await expect(control).toBeVisible();
+    await expect(control).toBeEnabled();
+  }
+
+  await expect(paletteButton).toHaveAccessibleName("Палитра");
+  await expect(commandButton).toHaveAccessibleName("Команды");
+  await expect(validateButton).toHaveAccessibleName("Validate");
+  await expect(runButton).toHaveAccessibleName("Run");
+  await expect(aiPlanButton).toHaveAccessibleName("AI plan");
+  await expect(paletteSearch).toHaveAccessibleName(
+    "Поиск по каталогу юридических блоков Canvas",
   );
+
+  await page.keyboard.press("Control+F");
+  const commandDialog = page.getByRole("dialog", { name: "Команды Canvas" });
+  await expect(commandDialog).toBeVisible();
+  await expect(
+    page.getByRole("textbox", {
+      name: "Поиск команды или юридического блока Canvas",
+    }),
+  ).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(commandDialog).toBeHidden();
+  await expect(commandButton).toBeFocused();
+
+  const controlDiagnostics = await collectScenario20ControlDiagnostics(
+    scenario20CanvasRegion(page),
+  );
+  const controlsWithNames = controlDiagnostics.filter((control) => control.included).length;
+  const rootCause =
+    "Scenario 20 previously counted controls before the cold release-gate Canvas UI was stable; " +
+    "the fix waits for the live Canvas shell and verifies concrete visible role-based controls.";
+  await attachJson(testInfo, "scenario-20-controls", {
+    rootCause,
+    controlsWithNames,
+    controls: controlDiagnostics,
+  });
   expect(controlsWithNames).toBeGreaterThan(3);
   const validation = await validateDraft(request, "full");
-  await attachJson(testInfo, "scenario-20-a11y", { controlsWithNames, validationStatus: validation.status });
+  await attachJson(testInfo, "scenario-20-a11y", {
+    rootCause,
+    controlsWithNames,
+    validationStatus: validation.status,
+  });
 });
 
 test("Scenario 21. Performance/stability keeps 100-node fixture responsive and persisted", async ({
@@ -764,8 +809,172 @@ async function openCanvas(page: Page) {
   await expect(page).toHaveURL(new RegExp(`${automationId}/canvas`));
   const response = await responsePromise;
   if (response) {
-    expect(response.status()).toBeLessThan(500);
+    expect(response.status()).toBeLessThan(300);
   }
+}
+
+async function waitForScenario20CanvasReady(page: Page) {
+  await expect(page).toHaveURL(new RegExp(`${automationId}/canvas`));
+  const canvasRegion = scenario20CanvasRegion(page);
+  await expect(canvasRegion).toBeVisible({ timeout: 30_000 });
+  await expect(
+    canvasRegion.getByRole("heading", { name: "Stage16 Empty Canvas Fixture" }),
+  ).toBeVisible({ timeout: 30_000 });
+  const {
+    paletteButton,
+    commandButton,
+    validateButton,
+    runButton,
+    aiPlanButton,
+    paletteSearch,
+  } = scenario20CanvasControls(page);
+
+  for (const control of [
+    paletteButton,
+    commandButton,
+    validateButton,
+    runButton,
+    aiPlanButton,
+    paletteSearch,
+    canvasRegion.getByRole("button", { name: /^Все$/ }),
+  ]) {
+    await expect(control).toBeVisible({ timeout: 30_000 });
+  }
+}
+
+function scenario20CanvasRegion(page: Page) {
+  return page.getByRole("region", { name: "Рабочая область Canvas" });
+}
+
+function scenario20CanvasControls(page: Page) {
+  const canvasRegion = scenario20CanvasRegion(page);
+  const header = canvasRegion.locator("header");
+  const testLab = canvasRegion.locator("section").filter({ hasText: "Test lab" });
+  return {
+    paletteButton: header.getByRole("button", { name: /^Палитра$/ }),
+    commandButton: header.getByRole("button", { name: /^Команды$/ }),
+    validateButton: header.getByRole("button", { name: /^Validate$/ }),
+    runButton: testLab.getByRole("button", { name: /^Run$/ }),
+    aiPlanButton: testLab.getByRole("button", { name: /^AI plan$/ }),
+    paletteSearch: canvasRegion.getByRole("textbox", {
+      name: "Поиск по каталогу юридических блоков Canvas",
+    }),
+  };
+}
+
+async function collectScenario20ControlDiagnostics(root: Locator) {
+  return root
+    .locator("button, [role='button'], a[href], input, select, textarea")
+    .evaluateAll((controls) => {
+      function labelledByText(element: Element) {
+        const ids = element.getAttribute("aria-labelledby");
+        if (!ids) {
+          return "";
+        }
+        return ids
+          .split(/\s+/)
+          .map((id) => document.getElementById(id)?.textContent?.trim() ?? "")
+          .filter(Boolean)
+          .join(" ")
+          .trim();
+      }
+
+      function visible(element: HTMLElement) {
+        const style = window.getComputedStyle(element);
+        const rect = element.getBoundingClientRect();
+        return (
+          !element.closest('[aria-hidden="true"]') &&
+          style.display !== "none" &&
+          style.visibility !== "hidden" &&
+          Number.parseFloat(style.opacity || "1") > 0 &&
+          rect.width > 0 &&
+          rect.height > 0
+        );
+      }
+
+      function disabled(element: HTMLElement) {
+        const maybeDisabled = element as
+          | HTMLButtonElement
+          | HTMLInputElement
+          | HTMLSelectElement
+          | HTMLTextAreaElement;
+        return (
+          ("disabled" in maybeDisabled && Boolean(maybeDisabled.disabled)) ||
+          element.getAttribute("aria-disabled") === "true"
+        );
+      }
+
+      function nameFor(element: HTMLElement) {
+        const ariaLabel = element.getAttribute("aria-label")?.trim();
+        if (ariaLabel) {
+          return { name: ariaLabel, source: "aria-label" };
+        }
+        const labelled = labelledByText(element);
+        if (labelled) {
+          return { name: labelled, source: "aria-labelledby" };
+        }
+        const title = element.getAttribute("title")?.trim();
+        if (title) {
+          return { name: title, source: "title" };
+        }
+        const text = element.textContent?.trim().replace(/\s+/g, " ") ?? "";
+        if (text) {
+          return { name: text, source: "visible-text" };
+        }
+        return { name: "", source: "none" };
+      }
+
+      function selectorFor(element: HTMLElement) {
+        const tag = element.tagName.toLowerCase();
+        const id = element.id ? `#${element.id}` : "";
+        const testId = element.getAttribute("data-testid");
+        const testIdPart = testId ? `[data-testid="${testId}"]` : "";
+        const className =
+          typeof element.className === "string"
+            ? element.className
+                .split(/\s+/)
+                .filter(Boolean)
+                .slice(0, 2)
+                .map((name) => `.${name}`)
+                .join("")
+            : "";
+        return `${tag}${id}${testIdPart}${id || testIdPart ? "" : className}`;
+      }
+
+      return controls.map((control) => {
+        const element = control as HTMLElement;
+        const tag = element.tagName.toLowerCase();
+        const role =
+          element.getAttribute("role") ??
+          (tag === "button" ? "button" : tag === "a" ? "link" : tag);
+        const accessibleName = nameFor(element);
+        const isVisible = visible(element);
+        const isDisabled = disabled(element);
+        const included =
+          isVisible && !isDisabled && accessibleName.name.trim().length > 0;
+        const reason = !isVisible
+          ? "excluded:hidden-or-aria-hidden"
+          : isDisabled
+            ? "excluded:disabled"
+            : accessibleName.name.trim().length === 0
+              ? "excluded:unnamed"
+              : "included";
+
+        return {
+          tag,
+          role,
+          name: accessibleName.name,
+          nameSource: accessibleName.source,
+          visible: isVisible,
+          enabled: !isDisabled,
+          ariaHiddenAncestor: Boolean(element.closest('[aria-hidden="true"]')),
+          selector: selectorFor(element),
+          testId: element.getAttribute("data-testid"),
+          reason,
+          included,
+        };
+      });
+    });
 }
 
 async function openDraft(request: APIRequestContext) {

@@ -144,7 +144,13 @@ export function CanvasHeader({
           <PanelLeft aria-hidden data-icon="inline-start" />
           Палитра
         </Button>
-        <Button type="button" variant="ghost" size="sm" onClick={onOpenCommandPalette}>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={onOpenCommandPalette}
+          data-canvas-command-trigger="true"
+        >
           <Search aria-hidden data-icon="inline-start" />
           Команды
         </Button>

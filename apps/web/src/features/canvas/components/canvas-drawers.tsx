@@ -73,7 +73,13 @@ export function CanvasSideDrawer({
             <Badge variant="muted">{badge}</Badge>
             <h2 className="mt-3 text-lg font-semibold">{title}</h2>
           </div>
-          <Button type="button" size="sm" variant="ghost" onClick={onClose}>
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            onClick={onClose}
+            aria-label={`Закрыть панель: ${title}`}
+          >
             <X aria-hidden />
           </Button>
         </div>
@@ -485,7 +491,13 @@ export function PublishModal({
             <Badge variant="accent">Publish</Badge>
             <h2 className="mt-3 text-xl font-semibold">Publish Canvas version</h2>
           </div>
-          <Button type="button" size="sm" variant="ghost" onClick={closePublish}>
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            onClick={closePublish}
+            aria-label="Закрыть окно публикации Canvas"
+          >
             <X aria-hidden />
           </Button>
         </div>
@@ -720,7 +732,13 @@ function RollbackModal({
               Switch production to {targetVersion.title}
             </h2>
           </div>
-          <Button type="button" size="sm" variant="ghost" onClick={close}>
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            onClick={close}
+            aria-label={`Закрыть окно rollback версии: ${targetVersion.title}`}
+          >
             <X aria-hidden />
           </Button>
         </div>
@@ -785,7 +803,13 @@ function EmergencyDisableDialog({
             <Badge variant="danger">Emergency disable</Badge>
             <h2 className="mt-3 text-lg font-semibold">Block new production runs</h2>
           </div>
-          <Button type="button" size="sm" variant="ghost" onClick={onClose}>
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            onClick={onClose}
+            aria-label="Закрыть окно emergency disable Canvas"
+          >
             <X aria-hidden />
           </Button>
         </div>

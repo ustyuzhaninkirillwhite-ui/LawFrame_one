@@ -231,7 +231,11 @@ export function WorkflowCanvasPage({
   }
 
   return (
-    <div className="flex min-h-[calc(100vh-64px)] flex-col overflow-hidden rounded-[8px] border border-[color:var(--line)] bg-[#0b0f15]">
+    <div
+      role="region"
+      aria-label="Рабочая область Canvas"
+      className="flex min-h-[calc(100vh-64px)] flex-col overflow-hidden rounded-[8px] border border-[color:var(--line)] bg-[#0b0f15]"
+    >
       <CanvasHeader
         projectId={projectId}
         automationId={automationId}

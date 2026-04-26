@@ -93,6 +93,7 @@ export function ModulePalette({
         <Badge variant="muted">Каталог модулей</Badge>
         <h2 className="mt-3 text-sm font-semibold">Юридические блоки Canvas</h2>
         <input
+          aria-label="Поиск по каталогу юридических блоков Canvas"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           placeholder="Поиск: претензия, практика, согласовать"
@@ -216,6 +217,7 @@ function ModuleCard({
         <div className="min-w-0 flex-1">
           <button
             type="button"
+            aria-label={`Подробнее о блоке: ${module.display_name}`}
             className="block w-full text-left text-sm font-medium hover:text-[color:var(--accent)]"
             onClick={onDetail}
           >
@@ -260,10 +262,23 @@ function ModuleCard({
       ) : null}
 
       <div className="mt-3 flex gap-2">
-        <Button type="button" size="sm" variant="default" disabled={disabled} onClick={onAdd}>
+        <Button
+          type="button"
+          size="sm"
+          variant="default"
+          disabled={disabled}
+          onClick={onAdd}
+          aria-label={`Добавить блок: ${module.display_name}`}
+        >
           Добавить
         </Button>
-        <Button type="button" size="sm" variant="ghost" onClick={onDetail}>
+        <Button
+          type="button"
+          size="sm"
+          variant="ghost"
+          onClick={onDetail}
+          aria-label={`Подробнее о блоке: ${module.display_name}`}
+        >
           Подробнее
         </Button>
       </div>
@@ -290,7 +305,13 @@ function ModuleDetailDrawer({
           <Badge variant="muted">{module.category_label}</Badge>
           <h3 className="mt-3 text-lg font-semibold">{module.display_name}</h3>
         </div>
-        <Button type="button" size="sm" variant="ghost" onClick={onClose}>
+        <Button
+          type="button"
+          size="sm"
+          variant="ghost"
+          onClick={onClose}
+          aria-label={`Закрыть описание блока: ${module.display_name}`}
+        >
           <X aria-hidden />
         </Button>
       </div>
@@ -327,7 +348,12 @@ function ModuleDetailDrawer({
       </DetailSection>
 
       <div className="mt-5 flex gap-2">
-        <Button type="button" disabled={disabled} onClick={onAdd}>
+        <Button
+          type="button"
+          disabled={disabled}
+          onClick={onAdd}
+          aria-label={`Добавить блок: ${module.display_name}`}
+        >
           Добавить блок
         </Button>
         <Button type="button" variant="ghost" onClick={onClose}>

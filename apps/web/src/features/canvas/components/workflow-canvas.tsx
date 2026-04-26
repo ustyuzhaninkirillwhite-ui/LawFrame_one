@@ -525,7 +525,7 @@ export function WorkflowCanvas({
         fitViewOptions={{ padding: 0.2 }}
       >
         <MiniMap pannable zoomable />
-        <Controls />
+        <Controls aria-label="Масштаб и навигация Canvas" />
         <Background />
       </ReactFlow>
 

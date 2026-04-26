@@ -264,6 +264,7 @@ function InspectorHeader({
               disabled={readOnly}
               onClick={() => onConfigureWithAi(node.id)}
               title="Настроить с AI"
+              aria-label={`Настроить шаг с AI: ${node.display_name}`}
             >
               <Wand2 aria-hidden />
             </Button>
@@ -274,6 +275,11 @@ function InspectorHeader({
             variant="ghost"
             onClick={onToggleExpanded}
             title={expanded ? "Свернуть настройки" : "Развернуть настройки"}
+            aria-label={
+              expanded
+                ? `Свернуть настройки шага: ${node.display_name}`
+                : `Развернуть настройки шага: ${node.display_name}`
+            }
           >
             <Expand aria-hidden />
           </Button>
@@ -295,6 +301,7 @@ function InspectorHeader({
               })
             }
             title="Удалить шаг"
+            aria-label={`Удалить шаг: ${node.display_name}`}
           >
             <Trash2 aria-hidden />
           </Button>
@@ -773,6 +780,7 @@ function DataSourceList({
               variant="ghost"
               disabled={readOnly || incompatible}
               onClick={() => onPick(candidate)}
+              aria-label={`Выбрать источник данных: ${candidate.label}`}
             >
               <Link2 aria-hidden />
               Выбрать
@@ -784,6 +792,7 @@ function DataSourceList({
                 variant="ghost"
                 disabled={readOnly}
                 onClick={() => onPick(candidate, candidate.suggested_transform)}
+                aria-label={`Преобразовать источник данных: ${candidate.label}`}
               >
                 <Wand2 aria-hidden />
                 Преобразовать

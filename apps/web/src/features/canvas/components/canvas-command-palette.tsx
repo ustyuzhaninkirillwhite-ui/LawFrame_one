@@ -27,10 +27,32 @@ export function CanvasCommandPalette({
   readonly onAutoLayout: () => void;
 }) {
   const [query, setQuery] = React.useState("");
-  const handleClose = () => {
+  const handleClose = React.useCallback(() => {
     setQuery("");
     onClose();
-  };
+    window.requestAnimationFrame(() => {
+      document
+        .querySelector<HTMLElement>('[data-canvas-command-trigger="true"]')
+        ?.focus();
+    });
+  }, [onClose]);
+
+  React.useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key !== "Escape") {
+        return;
+      }
+      event.preventDefault();
+      handleClose();
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [handleClose, open]);
 
   if (!open) {
     return null;
@@ -58,17 +80,29 @@ export function CanvasCommandPalette({
 
   return (
     <div className="fixed inset-0 z-50 grid place-items-start bg-black/45 px-4 pt-[12vh]">
-      <div className="mx-auto w-full max-w-2xl rounded-[8px] border border-[color:var(--line)] bg-[#0d1118] shadow-[0_24px_80px_rgba(0,0,0,0.45)]">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Команды Canvas"
+        className="mx-auto w-full max-w-2xl rounded-[8px] border border-[color:var(--line)] bg-[#0d1118] shadow-[0_24px_80px_rgba(0,0,0,0.45)]"
+      >
         <div className="flex items-center gap-3 border-b border-[color:var(--line)] px-4 py-3">
           <Search aria-hidden className="size-4 text-[color:var(--muted)]" />
           <input
             autoFocus
+            aria-label="Поиск команды или юридического блока Canvas"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Команда или блок"
             className="h-10 min-w-0 flex-1 bg-transparent text-sm outline-none"
           />
-          <Button type="button" size="sm" variant="ghost" onClick={handleClose}>
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            onClick={handleClose}
+            aria-label="Закрыть команды Canvas"
+          >
             <X aria-hidden />
           </Button>
         </div>
