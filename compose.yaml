@@ -1,3 +1,22 @@
+x-backend-build: &backend-build
+  context: .
+  dockerfile: ./apps/backend/Dockerfile
+  network: host
+
+x-web-build: &web-build
+  context: .
+  dockerfile: ./apps/web/Dockerfile
+  network: host
+  args:
+    NEXT_PUBLIC_API_BASE_URL: http://localhost:3100
+    NEXT_PUBLIC_SUPABASE_URL: http://localhost:54321
+    NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: demo_publishable_key
+    NEXT_PUBLIC_ACTIVEPIECES_INSTANCE_URL: http://localhost:8080
+    NEXT_PUBLIC_ACTIVEPIECES_EMBED_SDK_URL: https://cdn.activepieces.com/sdk/embed/0.8.1.js
+    NEXT_PUBLIC_POSTHOG_KEY: phc_stage_local
+    NEXT_PUBLIC_CONTRACTS_VERSION: stage11
+    NEXT_PUBLIC_ENABLE_MSW: "0"
+
 services:
   postgres:
     image: postgres:16-alpine
@@ -113,7 +132,7 @@ services:
     profiles: ["local-integrated"]
     environment:
       STORAGE_SANDBOX_PORT: 54321
-      SUPABASE_SECRET_KEY: ${SUPABASE_SECRET_KEY:-stage14_supabase_secret_key}
+      SUPABASE_SECRET_KEY: stage14_supabase_secret_key
     ports:
       - "54321:54321"
     healthcheck:
@@ -133,7 +152,7 @@ services:
     profiles: ["local-integrated"]
     environment:
       DELIVERY_SANDBOX_PORT: 8091
-      DELIVERY_SANDBOX_TOKEN: ${LEXFRAME_DELIVERY_WEBHOOK_TOKEN:-}
+      DELIVERY_SANDBOX_TOKEN: local_delivery_token
     ports:
       - "8091:8091"
     healthcheck:
@@ -145,6 +164,143 @@ services:
       interval: 5s
       timeout: 5s
       retries: 20
+
+  stage16-db-bootstrap:
+    build:
+      context: .
+      dockerfile: ./infra/stage16-db-bootstrap/Dockerfile
+      network: host
+    image: lexframe-stage16-db-bootstrap:local
+    profiles: ["local-integrated"]
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      LEXFRAME_DB_NAME: lexframe
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command:
+      - sh
+      - -ec
+      - |
+        export PGPASSWORD="$${POSTGRES_PASSWORD}"
+        psql -h postgres -U "$${POSTGRES_USER}" -d postgres -v ON_ERROR_STOP=1 \
+          -c "select pg_terminate_backend(pid) from pg_stat_activity where datname = '$${LEXFRAME_DB_NAME}' and pid <> pg_backend_pid();" \
+          -c "drop database if exists \"$${LEXFRAME_DB_NAME}\";" \
+          -c "create database \"$${LEXFRAME_DB_NAME}\";"
+        apply_sql() {
+          echo "[stage16-db-bootstrap] apply $$1"
+          psql -h postgres -U "$${POSTGRES_USER}" -d "$${LEXFRAME_DB_NAME}" -v ON_ERROR_STOP=1 -f "$$1"
+        }
+        apply_sql /workspace/scripts/bootstrap-local-supabase-compat.sql
+        for file in /workspace/supabase/migrations/*.sql; do apply_sql "$$file"; done
+        for file in /workspace/supabase/seed/*.sql; do apply_sql "$$file"; done
+        psql -h postgres -U "$${POSTGRES_USER}" -d "$${LEXFRAME_DB_NAME}" -v ON_ERROR_STOP=1 -Atc "select 'verified|' || count(*) from app.automation_canvas_drafts;"
+
+  backend:
+    build: *backend-build
+    image: lexframe-backend:local
+    profiles: ["local-integrated"]
+    environment:
+      NODE_ENV: production
+      PORT: 3100
+      LEXFRAME_APP_BASE_URL: http://localhost:3000
+      LEXFRAME_ENV_PROFILE: local
+      LEXFRAME_READINESS_PROFILE: local-integrated
+      LEXFRAME_DEPLOY_ENV: local
+      LEXFRAME_CONTRACTS_VERSION: stage11
+      LEXFRAME_RELEASE_SHA: local-docker
+      LEXFRAME_METRICS_ENABLED: "1"
+      LEXFRAME_HEALTHCHECK_TIMEOUT_MS: 2000
+      LEXFRAME_REQUIRE_MFA_FOR_ADMIN_ACTIONS: "0"
+      LEXFRAME_REQUIRE_REAUTH_FOR_ADMIN_ACTIONS: "1"
+      LEXFRAME_DEFAULT_SESSION_MAX_AGE_MINUTES: 720
+      LEXFRAME_DEFAULT_IDLE_TIMEOUT_MINUTES: 60
+      LEXFRAME_AI_SENSITIVE_DATA_POLICY: zdr_or_block
+      AI_PROVIDER_MODE: mock
+      LEXFRAME_DELIVERY_TRANSPORT: webhook
+      LEXFRAME_DELIVERY_WEBHOOK_URL: http://delivery-sandbox:8091/hooks/delivery
+      LEXFRAME_DELIVERY_WEBHOOK_TOKEN: local_delivery_token
+      LEXFRAME_DELIVERY_TIMEOUT_MS: 5000
+      LEXFRAME_DELIVERY_FROM_EMAIL: noreply@lexframe.local
+      LEXFRAME_SECRET_MANAGER_PROVIDER: env
+      SUPABASE_URL: http://storage-sandbox:54321
+      SUPABASE_PUBLISHABLE_KEY: demo_publishable_key
+      SUPABASE_SECRET_KEY: stage14_supabase_secret_key
+      SUPABASE_DB_URL: postgresql://postgres:postgres@postgres:5432/lexframe
+      ACTIVEPIECES_BASE_URL: http://activepieces-app:80
+      ACTIVEPIECES_API_KEY: local_activepieces_access_token
+      ACTIVEPIECES_SERVICE_EMAIL: lexframe-stage16@lexframe.test
+      ACTIVEPIECES_SERVICE_PASSWORD: Stage16Activepieces!123
+      ACTIVEPIECES_SIGNING_PRIVATE_KEY: local_stage16_signing_private_key
+      ACTIVEPIECES_SIGNING_KEY_ID: lexframe-stage4
+      ACTIVEPIECES_PROJECT_PREFIX: lf
+      ACTIVEPIECES_SIMULATE_RUNS: "0"
+      LEXFRAME_RUNTIME_MASTER_SECRET: local_stage16_runtime_master_secret
+      OPENSEARCH_URL: http://opensearch:9200
+      OPENSEARCH_INDEX_ALIAS: legal_chunks_current
+      OPENSEARCH_SEARCH_PIPELINE: legal-hybrid-pipeline
+      TEMPORAL_ADDRESS: 127.0.0.1:7233
+      TEMPORAL_NAMESPACE: default
+      TEMPORAL_TASK_QUEUE: lexframe-legal
+      POSTHOG_KEY: phc_stage_local
+      GRAFANA_BASE_URL: http://127.0.0.1:3001
+      SENTRY_DSN: https://examplePublicKey@o0.ingest.sentry.io/0
+    depends_on:
+      stage16-db-bootstrap:
+        condition: service_completed_successfully
+      storage-sandbox:
+        condition: service_healthy
+      delivery-sandbox:
+        condition: service_healthy
+      activepieces-app:
+        condition: service_healthy
+      opensearch:
+        condition: service_started
+    ports:
+      - "3100:3100"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"require('http').get('http://127.0.0.1:3100/health/live', r => process.exit(r.statusCode < 500 ? 0 : 1)).on('error', () => process.exit(1))\"",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+
+  web:
+    build: *web-build
+    image: lexframe-web:local
+    profiles: ["local-integrated"]
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      HOSTNAME: 0.0.0.0
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:3100
+      NEXT_PUBLIC_SUPABASE_URL: http://localhost:54321
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: demo_publishable_key
+      NEXT_PUBLIC_ACTIVEPIECES_INSTANCE_URL: http://localhost:8080
+      NEXT_PUBLIC_ACTIVEPIECES_EMBED_SDK_URL: https://cdn.activepieces.com/sdk/embed/0.8.1.js
+      NEXT_PUBLIC_POSTHOG_KEY: phc_stage_local
+      NEXT_PUBLIC_CONTRACTS_VERSION: stage11
+      NEXT_PUBLIC_ENABLE_MSW: "0"
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"require('http').get('http://127.0.0.1:3000', r => process.exit(r.statusCode < 500 ? 0 : 1)).on('error', () => process.exit(1))\"",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
 
   activepieces-app:
     image: activepieces/activepieces:0.44.0
