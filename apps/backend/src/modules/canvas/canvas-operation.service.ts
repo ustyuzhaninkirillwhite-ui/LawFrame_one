@@ -5,6 +5,7 @@ import type {
   CanvasOperationRequest,
   CanvasOperationResponse,
   CanvasOperationResult,
+  CanvasModuleCard,
   CanvasValidationSummary,
   ModuleAvailabilityStatus,
   LexFrameWorkflowV2,
@@ -22,6 +23,7 @@ import { Injectable } from '@nestjs/common';
 import {
   findCanvasBlockDefinition,
   validateCanvasConnection,
+  type CanvasBlockDefinition,
   type CanvasHandleCode as DslCanvasHandleCode,
   type CanvasEdgeType,
 } from '@lexframe/workflow-dsl';
@@ -54,6 +56,7 @@ import {
   CanvasInsertRequest,
   CanvasModuleCompatibilityService,
 } from './canvas-module-compatibility.service';
+import { CanvasModuleCatalogService } from './canvas-module-catalog.service';
 import { CanvasNodeFactory } from './canvas-node-factory.service';
 import { TelemetryService } from '../telemetry/telemetry.service';
 
@@ -94,6 +97,7 @@ export class CanvasOperationService {
     private readonly auditService: AuditService,
     private readonly moduleAvailabilityService: CanvasModuleAvailabilityService,
     private readonly moduleCompatibilityService: CanvasModuleCompatibilityService,
+    private readonly moduleCatalogService: CanvasModuleCatalogService,
     private readonly nodeFactory: CanvasNodeFactory,
     private readonly autoBindingService: CanvasAutoBindingService,
     private readonly telemetryService: TelemetryService,
@@ -281,7 +285,11 @@ export class CanvasOperationService {
           workflow,
           operation,
         );
-        const result = this.applySingleOperation(workflow, operation, access);
+        const result = await this.applySingleOperation(
+          workflow,
+          operation,
+          access,
+        );
         if (result.rejectedReason) {
           const validation = this.validationService.fastValidate(workflow);
           const validationResultId = await this.persistValidationResult(
@@ -637,7 +645,11 @@ export class CanvasOperationService {
     const operations = input.operations as readonly CanvasOperation[];
 
     for (const operation of operations) {
-      const result = this.applySingleOperation(workflow, operation, access);
+      const result = await this.applySingleOperation(
+        workflow,
+        operation,
+        access,
+      );
       if (result.rejectedReason) {
         const validation =
           this.validationService.operationPreviewValidate(workflow);
@@ -855,11 +867,11 @@ export class CanvasOperationService {
     return null;
   }
 
-  private applySingleOperation(
+  private async applySingleOperation(
     workflow: LexFrameWorkflowV2,
     operation: CanvasOperation,
     access: AccessContext,
-  ):
+  ): Promise<
     | {
         readonly workflow: LexFrameWorkflowV2;
         readonly rejectedReason?: null;
@@ -868,7 +880,8 @@ export class CanvasOperationService {
     | {
         readonly workflow: LexFrameWorkflowV2;
         readonly rejectedReason: CanvasOperationRejectReason;
-      } {
+      }
+  > {
     const payload = operation.operation_payload;
 
     if (operation.operation_type === 'ADD_NODE_FROM_MODULE') {
@@ -1366,11 +1379,11 @@ export class CanvasOperationService {
     return { workflow, rejectedReason: 'INVALID_NODE_TYPE' };
   }
 
-  private applyAddNodeFromModule(
+  private async applyAddNodeFromModule(
     workflow: LexFrameWorkflowV2,
     operation: CanvasOperation,
     access: AccessContext,
-  ):
+  ): Promise<
     | {
         readonly workflow: LexFrameWorkflowV2;
         readonly rejectedReason?: null;
@@ -1379,7 +1392,8 @@ export class CanvasOperationService {
     | {
         readonly workflow: LexFrameWorkflowV2;
         readonly rejectedReason: CanvasOperationRejectReason;
-      } {
+      }
+  > {
     const payload = operation.operation_payload;
     const moduleCode =
       stringValue(payload.module_code) ??
@@ -1390,17 +1404,36 @@ export class CanvasOperationService {
       return { workflow, rejectedReason: 'INVALID_NODE_TYPE' };
     }
 
-    const block = findCanvasBlockDefinition(moduleCode);
+    const staticBlock = findCanvasBlockDefinition(moduleCode);
+    const dynamicCard = staticBlock
+      ? null
+      : await this.moduleCatalogService.getActivepiecesModuleCard(moduleCode);
+    const genericActivepiecesBlock = dynamicCard
+      ? findCanvasBlockDefinition('activepieces_action')
+      : null;
+    const block = staticBlock
+      ? staticBlock
+      : dynamicCard && genericActivepiecesBlock
+        ? buildDynamicActivepiecesBlock(genericActivepiecesBlock, dynamicCard)
+        : null;
     if (!block) {
       return { workflow, rejectedReason: 'INVALID_NODE_TYPE' };
     }
 
     const insert = parseInsertRequest(payload.insert);
-    const availability = this.moduleAvailabilityService.evaluate({
-      block,
-      access,
-      hasApprovalPath: hasApprovalBefore(workflow, insert.source_node_id ?? ''),
-    });
+    const availability = dynamicCard
+      ? {
+          availability: dynamicCard.availability,
+          requirements: dynamicCard.requirements,
+        }
+      : this.moduleAvailabilityService.evaluate({
+          block,
+          access,
+          hasApprovalPath: hasApprovalBefore(
+            workflow,
+            insert.source_node_id ?? '',
+          ),
+        });
     if (isBlockingAvailability(availability.availability.status)) {
       return { workflow, rejectedReason: 'POLICY_BLOCKED' };
     }
@@ -1428,12 +1461,15 @@ export class CanvasOperationService {
         stringValue(payload.module_version) ??
         stringValue(payload.moduleVersion),
     });
+    const createdNode = dynamicCard
+      ? withDynamicActivepiecesNode(factoryResult.node, dynamicCard)
+      : factoryResult.node;
     const deletedEdges = workflow.edges.filter((edge) =>
       factoryResult.deletedEdgeIds.includes(edge.id),
     );
     let nextWorkflow = canonicalizeWorkflowV2({
       ...workflow,
-      nodes: [...workflow.nodes, factoryResult.node],
+      nodes: [...workflow.nodes, createdNode],
       edges: [
         ...workflow.edges.filter(
           (edge) => !factoryResult.deletedEdgeIds.includes(edge.id),
@@ -1443,7 +1479,7 @@ export class CanvasOperationService {
       updated_at: new Date().toISOString(),
     });
     const addedNode = nextWorkflow.nodes.find(
-      (node) => node.id === factoryResult.node.id,
+      (node) => node.id === createdNode.id,
     );
     const autoBinding = addedNode
       ? this.autoBindingService.bind({
@@ -1476,7 +1512,7 @@ export class CanvasOperationService {
       {
         client_operation_id: `${operation.client_operation_id}:undo_delete_node`,
         operation_type: 'DELETE_NODE',
-        operation_payload: { node_id: factoryResult.node.id },
+        operation_payload: { node_id: createdNode.id },
       },
       ...deletedEdges.map((edge, index) => ({
         client_operation_id: `${operation.client_operation_id}:undo_edge_${index}`,
@@ -1489,8 +1525,8 @@ export class CanvasOperationService {
       workflow: nextWorkflow,
       operationResult: {
         operation_type: 'ADD_NODE_FROM_MODULE',
-        module_code: block.code,
-        added_node_id: factoryResult.node.id,
+        module_code: dynamicCard?.module_code ?? block.code,
+        added_node_id: createdNode.id,
         created_edges: factoryResult.edges,
         created_bindings: autoBinding.bindings,
         binding_suggestions: autoBinding.suggestions,
@@ -2003,6 +2039,161 @@ function isBlockingAvailability(status: ModuleAvailabilityStatus) {
     'retired',
     'incompatible_with_canvas_context',
   ].includes(status);
+}
+
+function buildDynamicActivepiecesBlock(
+  genericBlock: CanvasBlockDefinition,
+  card: CanvasModuleCard,
+): CanvasBlockDefinition {
+  const mapping = card.technical?.runtime_mapping ?? {};
+  const nodeType = card.insertion.default_node_type;
+  const kind = nodeType === 'trigger' ? 'trigger' : 'legal_action';
+  const category = nodeType === 'trigger' ? 'start_trigger' : 'legal_action';
+
+  return {
+    ...genericBlock,
+    kind,
+    nodeType,
+    category,
+    displayName: card.display_name,
+    shortDescription: card.short_description,
+    longDescription: card.long_description ?? undefined,
+    moduleCode: card.module_code,
+    enabled: true,
+    disabledReason: null,
+    policies: {
+      ...genericBlock.policies,
+      riskLevel: card.risk_level,
+      dataClassification: canvasDataClassification(card.data_classification),
+      requiresApproval: card.flags.requires_approval,
+      isExternalAction: card.flags.external_action,
+      canUseAi: card.flags.uses_ai,
+      canUseDocuments: card.flags.requires_documents,
+      canRunInDryRun: card.flags.supports_dry_run,
+      canBePublishedAsTemplate: false,
+      requiredPermissions: [],
+    },
+    runtime: {
+      provider: 'activepieces',
+      activepiecesPiece:
+        mapping.activepieces_piece ??
+        card.runtime.required_pieces[0]?.piece_name ??
+        undefined,
+      activepiecesAction:
+        mapping.activepieces_action ??
+        card.runtime.required_pieces[0]?.action ??
+        undefined,
+      supportsStepTest: mapping.supports_step_test ?? card.flags.supports_dry_run,
+      supportsPartialExecution: mapping.supports_partial_execution ?? false,
+      supportsPinnedData: mapping.supports_pinned_data ?? false,
+      notes: mapping.warnings ?? [],
+    },
+    uiSchema: {
+      ...genericBlock.uiSchema,
+      paletteCategory: card.category_label,
+      icon: card.icon,
+      card: {
+        needs: card.input_summary.map((item) => item.label),
+        creates: card.output_summary.map((item) => item.label),
+        badges: [
+          card.source_label ?? 'Activepieces',
+          card.availability.status,
+          card.risk_level,
+        ],
+      },
+      hints: [
+        card.availability.human_reason ?? '',
+        card.long_description ?? '',
+      ].filter(Boolean),
+    },
+  };
+}
+
+function withDynamicActivepiecesNode(
+  node: WorkflowNode,
+  card: CanvasModuleCard,
+): WorkflowNode {
+  const mapping = card.technical?.runtime_mapping ?? {};
+  const runtimeMapping = {
+    ...node.runtime_mapping,
+    module_code: card.module_code,
+    provider: 'activepieces' as const,
+    activepieces_piece:
+      mapping.activepieces_piece ??
+      card.runtime.required_pieces[0]?.piece_name ??
+      null,
+    activepieces_action:
+      mapping.activepieces_action ??
+      card.runtime.required_pieces[0]?.action ??
+      null,
+    internal_route: null,
+    can_compile:
+      mapping.can_compile ?? !isBlockingAvailability(card.availability.status),
+    supports_step_test:
+      mapping.supports_step_test ?? card.flags.supports_dry_run,
+    supports_partial_execution: mapping.supports_partial_execution ?? false,
+    supports_pinned_data: mapping.supports_pinned_data ?? false,
+    warnings: [
+      ...(mapping.warnings ?? []),
+      card.availability.human_reason ?? '',
+    ].filter(Boolean),
+  };
+
+  return canonicalizeNode({
+    ...node,
+    display_name: card.display_name,
+    description: card.short_description,
+    module_code: card.module_code,
+    module_version: card.module_version,
+    module_ref: {
+      module_code: card.module_code,
+      module_version: card.module_version,
+      status:
+        card.availability.status === 'deprecated' ||
+        card.availability.status === 'retired'
+          ? card.availability.status
+          : 'draft',
+    },
+    policy: {
+      ...node.policy,
+      approval_required: card.flags.requires_approval,
+      external_action: card.flags.external_action,
+      ai_action: card.flags.uses_ai,
+      data_classification: card.data_classification,
+      risk_level: card.risk_level,
+      can_use_documents: card.flags.requires_documents,
+      can_run_in_dry_run: card.flags.supports_dry_run,
+      can_be_published_as_template: false,
+      required_permissions: [],
+    },
+    runtime_mapping: runtimeMapping,
+    lifecycle: {
+      status:
+        card.availability.status === 'missing_connection'
+          ? 'needs_input'
+          : 'draft',
+    },
+    disabled: isBlockingAvailability(card.availability.status),
+  });
+}
+
+function canvasDataClassification(
+  value: CanvasModuleCard['data_classification'],
+): CanvasBlockDefinition['policies']['dataClassification'] {
+  switch (value) {
+    case 'public':
+    case 'workspace_internal':
+    case 'confidential':
+    case 'personal_data':
+    case 'legal_secret':
+    case 'client_material':
+    case 'secret':
+    case 'runtime_only':
+    case 'internal':
+      return value;
+    default:
+      return 'internal';
+  }
 }
 
 function normalizeDataFields(value: unknown) {

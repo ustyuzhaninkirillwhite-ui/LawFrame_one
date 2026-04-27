@@ -176,6 +176,11 @@ export class CanvasController {
     @Query('insert_position') insertPosition: string | undefined,
     @Query('mode') mode: string | undefined,
     @Query('q') query: string | undefined,
+    @Query('source') source: string | undefined,
+    @Query('status') status: string | undefined,
+    @Query('runtime') runtime: string | undefined,
+    @Query('limit') limit: string | undefined,
+    @Query('cursor') cursor: string | undefined,
   ) {
     if (!context?.actor || !context.access) {
       throw new Error('Workspace access context was not attached.');
@@ -198,6 +203,11 @@ export class CanvasController {
       insertPosition: parseInsertPositionQuery(insertPosition),
       mode,
       query,
+      source,
+      status,
+      runtime,
+      limit: parsePositiveInteger(limit),
+      cursor,
     });
   }
 
@@ -2415,6 +2425,14 @@ function parseInsertPositionQuery(value: string | undefined) {
     default:
       return null;
   }
+}
+
+function parsePositiveInteger(value: string | undefined) {
+  if (!value) {
+    return null;
+  }
+  const parsed = Number.parseInt(value, 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
 }
 
 function parseCompatibilityRequest(

@@ -58,6 +58,7 @@ describe('CanvasOperationService', () => {
       {} as never,
       {} as never,
       {} as never,
+      {} as never,
       { recordProductEvent: jest.fn() } as never,
       {} as never,
     );

@@ -790,6 +790,11 @@ export interface ApiClient {
     readonly insertPosition?: string | null;
     readonly mode?: string | null;
     readonly query?: string | null;
+    readonly source?: string | null;
+    readonly status?: string | null;
+    readonly runtime?: string | null;
+    readonly limit?: number | null;
+    readonly cursor?: string | null;
   }): Promise<CanvasModuleCatalogResponse>;
   getCanvasModuleDetail(
     moduleCode: string,
@@ -1892,6 +1897,14 @@ export function createApiClient(options: FetchOptions): ApiClient {
           insert_position: input.insertPosition ?? undefined,
           mode: input.mode ?? undefined,
           q: input.query ?? undefined,
+          source: input.source ?? undefined,
+          status: input.status ?? undefined,
+          runtime: input.runtime ?? undefined,
+          limit:
+            input.limit !== undefined && input.limit !== null
+              ? String(input.limit)
+              : undefined,
+          cursor: input.cursor ?? undefined,
         })}`,
       ),
     getCanvasModuleDetail: (moduleCode, automationId) =>

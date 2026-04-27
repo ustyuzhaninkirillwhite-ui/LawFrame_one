@@ -252,6 +252,9 @@ function ModuleCard({
         {module.flags.requires_connection ? (
           <Badge variant="muted">подключение</Badge>
         ) : null}
+        <Badge variant={module.source === "activepieces" ? "accent" : "muted"}>
+          {module.source_label ?? sourceLabel(module.source)}
+        </Badge>
         <ModuleAvailabilityBadge status={module.availability.status} />
       </div>
 
@@ -302,7 +305,12 @@ function ModuleDetailDrawer({
     <div className="fixed inset-y-0 left-0 z-50 w-full max-w-md border-r border-[color:var(--line)] bg-[#0d1118] p-4 shadow-[0_18px_60px_rgba(0,0,0,0.45)]">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <Badge variant="muted">{module.category_label}</Badge>
+          <div className="flex flex-wrap gap-2">
+            <Badge variant="muted">{module.category_label}</Badge>
+            <Badge variant={module.source === "activepieces" ? "accent" : "muted"}>
+              {module.source_label ?? sourceLabel(module.source)}
+            </Badge>
+          </div>
           <h3 className="mt-3 text-lg font-semibold">{module.display_name}</h3>
         </div>
         <Button
@@ -438,6 +446,16 @@ function riskLabel(risk: CanvasModuleCard["risk_level"]) {
     critical: "критический",
   } as const;
   return labels[risk];
+}
+
+function sourceLabel(source: CanvasModuleCard["source"]) {
+  if (source === "activepieces") {
+    return "Activepieces";
+  }
+  if (source === "external") {
+    return "External";
+  }
+  return "LexFrame";
 }
 
 function availabilityLabel(status: ModuleAvailabilityStatus) {

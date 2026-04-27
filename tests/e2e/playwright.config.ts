@@ -12,6 +12,10 @@ const isStage16LiveAuditRun = process.argv.some((arg) =>
 const readinessProfile =
   process.env.LEXFRAME_READINESS_PROFILE ??
   (isStage16LiveAuditRun ? "local-integrated" : "local-basic");
+const reuseExistingServer =
+  process.env.LEXFRAME_E2E_REUSE_EXISTING_SERVER === "1" ||
+  (!process.env.CI &&
+    (!isStage16LiveAuditRun || readinessProfile === "local-integrated"));
 const simulateRuns =
   process.env.ACTIVEPIECES_SIMULATE_RUNS ??
   (readinessProfile === "local-integrated" ? "0" : "1");
@@ -62,7 +66,7 @@ export default defineConfig({
       command: `corepack pnpm --dir ../.. stage16:build:backend-runtime && corepack pnpm --dir ../../apps/backend start:prod`,
       url: `${apiBaseURL}/health/live`,
       timeout: 240_000,
-      reuseExistingServer: !process.env.CI && !isStage16LiveAuditRun,
+      reuseExistingServer,
       env: {
         ...process.env,
         PORT: String(apiPort),
@@ -82,7 +86,7 @@ export default defineConfig({
       command: `corepack pnpm --dir ../.. stage16:build:web-runtime && corepack pnpm --dir ../../apps/web exec next dev --hostname ${host} --port ${port}`,
       url: baseURL,
       timeout: 180_000,
-      reuseExistingServer: !process.env.CI && !isStage16LiveAuditRun,
+      reuseExistingServer,
       env: {
         ...process.env,
         NEXT_PUBLIC_ENABLE_MSW: useMsw ? "1" : "0",

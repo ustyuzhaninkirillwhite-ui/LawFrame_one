@@ -175,7 +175,7 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      LEXFRAME_DB_NAME: lexframe
+      LEXFRAME_DB_NAME: stage16_runtime
     depends_on:
       postgres:
         condition: service_healthy
@@ -184,6 +184,10 @@ services:
       - -ec
       - |
         export PGPASSWORD="$${POSTGRES_PASSWORD}"
+        until psql -h postgres -U "$${POSTGRES_USER}" -d postgres -v ON_ERROR_STOP=1 -Atc "select 1" >/dev/null 2>&1; do
+          echo "[stage16-db-bootstrap] waiting for postgres"
+          sleep 1
+        done
         psql -h postgres -U "$${POSTGRES_USER}" -d postgres -v ON_ERROR_STOP=1 \
           -c "select pg_terminate_backend(pid) from pg_stat_activity where datname = '$${LEXFRAME_DB_NAME}' and pid <> pg_backend_pid();" \
           -c "drop database if exists \"$${LEXFRAME_DB_NAME}\";" \
@@ -196,6 +200,22 @@ services:
         for file in /workspace/supabase/migrations/*.sql; do apply_sql "$$file"; done
         for file in /workspace/supabase/seed/*.sql; do apply_sql "$$file"; done
         psql -h postgres -U "$${POSTGRES_USER}" -d "$${LEXFRAME_DB_NAME}" -v ON_ERROR_STOP=1 -Atc "select 'verified|' || count(*) from app.automation_canvas_drafts;"
+
+  stage16-activepieces-catalog-sync:
+    build:
+      context: .
+      dockerfile: ./infra/stage16-activepieces-catalog-sync/Dockerfile
+      network: host
+    image: lexframe-stage16-activepieces-catalog-sync:local
+    profiles: ["local-integrated"]
+    environment:
+      ACTIVEPIECES_CATALOG_DATABASE_URL: postgresql://postgres:postgres@postgres:5432/stage16_runtime
+      ACTIVEPIECES_SOURCE_IMAGE_TAG: activepieces/activepieces:0.44.0
+    depends_on:
+      stage16-db-bootstrap:
+        condition: service_completed_successfully
+      activepieces-app:
+        condition: service_healthy
 
   backend:
     build: *backend-build
@@ -227,7 +247,7 @@ services:
       SUPABASE_URL: http://storage-sandbox:54321
       SUPABASE_PUBLISHABLE_KEY: demo_publishable_key
       SUPABASE_SECRET_KEY: stage14_supabase_secret_key
-      SUPABASE_DB_URL: postgresql://postgres:postgres@postgres:5432/lexframe
+      SUPABASE_DB_URL: postgresql://postgres:postgres@postgres:5432/stage16_runtime
       ACTIVEPIECES_BASE_URL: http://activepieces-app:80
       ACTIVEPIECES_API_KEY: local_activepieces_access_token
       ACTIVEPIECES_SERVICE_EMAIL: lexframe-stage16@lexframe.test
@@ -247,7 +267,7 @@ services:
       GRAFANA_BASE_URL: http://127.0.0.1:3001
       SENTRY_DSN: https://examplePublicKey@o0.ingest.sentry.io/0
     depends_on:
-      stage16-db-bootstrap:
+      stage16-activepieces-catalog-sync:
         condition: service_completed_successfully
       storage-sandbox:
         condition: service_healthy

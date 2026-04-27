@@ -81,6 +81,33 @@ export class ActivepiecesController {
     );
   }
 
+  @Get('admin/activepieces/catalog')
+  @UseGuards(AuthGuard, WorkspaceContextGuard, PermissionGuard)
+  @RequiredPermissions('module.manage')
+  getActivepiecesCatalogDiagnostics(
+    @LexframeRequestContext() context: LexframeRequest['lexframe'],
+  ) {
+    if (!context?.access) {
+      throw new Error('Workspace access context was not attached.');
+    }
+
+    return this.activepiecesService.getCatalogDiagnostics();
+  }
+
+  @Post('admin/activepieces/catalog/sync')
+  @HttpCode(202)
+  @UseGuards(AuthGuard, WorkspaceContextGuard, PermissionGuard)
+  @RequiredPermissions('module.manage')
+  requestActivepiecesCatalogSync(
+    @LexframeRequestContext() context: LexframeRequest['lexframe'],
+  ) {
+    if (!context?.access) {
+      throw new Error('Workspace access context was not attached.');
+    }
+
+    return this.activepiecesService.requestCatalogSync();
+  }
+
   @Get('integrations/activepieces/status')
   @UseGuards(AuthGuard, WorkspaceContextGuard, PermissionGuard)
   @RequiredPermissions('automation.read')

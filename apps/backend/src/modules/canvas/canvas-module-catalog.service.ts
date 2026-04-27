@@ -5,6 +5,8 @@ import type {
   CanvasModuleCategory,
   CanvasModuleDetail,
   LexFrameWorkflowV2,
+  ModuleAvailabilityStatus,
+  ModuleRequirement,
 } from '@lexframe/contracts';
 import type {
   AccessContext,
@@ -35,6 +37,27 @@ interface FavoriteRow {
   readonly created_at: string;
 }
 
+interface ActivepiecesActionRow {
+  readonly module_code: string;
+  readonly piece_name: string;
+  readonly piece_version: string;
+  readonly entry_type: 'action' | 'trigger';
+  readonly entry_name: string;
+  readonly display_name: string;
+  readonly description: string;
+  readonly status: 'active' | 'deprecated' | 'blocked' | 'missing';
+  readonly availability_status: ModuleAvailabilityStatus;
+  readonly gating_reason_code: string | null;
+  readonly gating_human_reason: string | null;
+  readonly required_connection_type: string | null;
+  readonly risk_level: CanvasModuleCard['risk_level'];
+  readonly category: string;
+  readonly source_image_tag: string | null;
+  readonly piece_display_name: string | null;
+  readonly piece_auth_type: string | null;
+  readonly piece_categories: readonly string[] | null;
+}
+
 @Injectable()
 export class CanvasModuleCatalogService {
   constructor(
@@ -55,12 +78,27 @@ export class CanvasModuleCatalogService {
     readonly insertPosition?: CanvasInsertPosition | null;
     readonly mode?: string | null;
     readonly query?: string | null;
+    readonly source?: string | null;
+    readonly status?: string | null;
+    readonly runtime?: string | null;
+    readonly limit?: number | null;
+    readonly cursor?: string | null;
   }): Promise<CanvasModuleCatalogResponse> {
     const workspaceId = requireWorkspaceId(input.access);
-    const blocks = getCanvasBlockDefinitions();
-    const cards = blocks
+    const includeLexFrame = !input.source || input.source === 'lexframe';
+    const includeActivepieces = !input.source || input.source === 'activepieces';
+    const blocks = includeLexFrame
+      ? getCanvasBlockDefinitions().filter(
+          (block) => block.code !== 'activepieces_action',
+        )
+      : [];
+    const lexframeCards = blocks
       .map((block) => this.toCard(block, input))
       .filter((card) => !isSecurityHidden(card, input.access));
+    const activepiecesCards = includeActivepieces
+      ? await this.getActivepiecesCards(input)
+      : [];
+    const cards = [...lexframeCards, ...activepiecesCards];
     const filteredCards = this.search.filter(cards, input.query ?? undefined);
     const categories = categoriesFor(filteredCards);
     const [recent, favorites] = await Promise.all([
@@ -107,14 +145,10 @@ export class CanvasModuleCatalogService {
     readonly access: AccessContext;
     readonly moduleCode: string;
     readonly workflow?: LexFrameWorkflowV2 | null;
-  }): CanvasModuleDetail {
+  }): Promise<CanvasModuleDetail> {
     const block = findCanvasBlockDefinition(input.moduleCode);
     if (!block) {
-      throw new AppHttpException(
-        'MODULE_NOT_FOUND',
-        404,
-        `Canvas module was not found: ${input.moduleCode}.`,
-      );
+      return this.getActivepiecesDetail(input);
     }
 
     const card = this.toCard(block, {
@@ -122,7 +156,7 @@ export class CanvasModuleCatalogService {
       workflow: input.workflow,
     });
 
-    return {
+    return Promise.resolve({
       ...card,
       examples: block.uiSchema.hints,
       requirements_detail: card.requirements,
@@ -147,7 +181,18 @@ export class CanvasModuleCatalogService {
             },
           }
         : null,
-    };
+    });
+  }
+
+  async getActivepiecesModuleCard(
+    moduleCode: string,
+  ): Promise<CanvasModuleCard | null> {
+    const rows = await this.queryActivepiecesRows({
+      moduleCode,
+      limit: 1,
+    });
+    const row = rows[0];
+    return row ? this.activepiecesRowToCard(row) : null;
   }
 
   private toCard(
@@ -194,6 +239,8 @@ export class CanvasModuleCatalogService {
       display_name: block.displayName,
       short_description: block.shortDescription,
       long_description: block.longDescription ?? null,
+      source: 'lexframe',
+      source_label: 'LexFrame',
       category_code: block.category,
       category_label: category.label,
       icon: block.uiSchema.icon,
@@ -282,6 +329,277 @@ export class CanvasModuleCatalogService {
           supports_partial_execution: block.runtime.supportsPartialExecution,
           supports_pinned_data: block.runtime.supportsPinnedData,
           warnings: block.runtime.notes,
+        },
+      },
+    };
+  }
+
+  private async getActivepiecesDetail(input: {
+    readonly access: AccessContext;
+    readonly moduleCode: string;
+  }): Promise<CanvasModuleDetail> {
+    const card = await this.getActivepiecesModuleCard(input.moduleCode);
+    if (!card) {
+      throw new AppHttpException(
+        'MODULE_NOT_FOUND',
+        404,
+        `Canvas module was not found: ${input.moduleCode}.`,
+      );
+    }
+
+    return {
+      ...card,
+      examples: [
+        'Add the action as a draft step, then configure its workspace connection.',
+        'Review blocked and advanced entries before enabling them for production runs.',
+      ],
+      requirements_detail: card.requirements,
+      technical_detail: input.access.permissions.includes('canvas.debug')
+        ? {
+            module_code: card.module_code,
+            module_version: card.module_version,
+            runtime_mapping: card.technical?.runtime_mapping ?? {},
+            input_schema: {},
+            output_schema: {},
+            policy: {
+              approval_required: card.flags.requires_approval,
+              external_action: card.flags.external_action,
+              ai_action: card.flags.uses_ai,
+              data_classification: card.data_classification,
+              risk_level: card.risk_level,
+              can_use_documents: card.flags.requires_documents,
+              can_run_in_dry_run: card.flags.supports_dry_run,
+              can_be_published_as_template: false,
+              required_permissions: [],
+            },
+          }
+        : null,
+    };
+  }
+
+  private async getActivepiecesCards(input: {
+    readonly query?: string | null;
+    readonly status?: string | null;
+    readonly runtime?: string | null;
+    readonly limit?: number | null;
+  }) {
+    if (input.runtime && input.runtime !== 'activepieces') {
+      return [];
+    }
+    const rows = await this.queryActivepiecesRows({
+      query: input.query,
+      status: input.status,
+      limit: input.limit ?? 1500,
+    });
+    return rows.map((row) => this.activepiecesRowToCard(row));
+  }
+
+  private async queryActivepiecesRows(input: {
+    readonly moduleCode?: string | null;
+    readonly query?: string | null;
+    readonly status?: string | null;
+    readonly limit?: number | null;
+  }): Promise<readonly ActivepiecesActionRow[]> {
+    const limit = Math.max(1, Math.min(input.limit ?? 1500, 1500));
+    const query = input.query?.trim() ? `%${input.query.trim()}%` : null;
+    const status = input.status?.trim() || null;
+    try {
+      const result = await this.databaseService.query<ActivepiecesActionRow>(
+        `
+          select
+            ar.module_code,
+            ar.piece_name,
+            ar.piece_version,
+            ar.entry_type,
+            ar.entry_name,
+            ar.display_name,
+            ar.description,
+            ar.status,
+            ar.availability_status,
+            ar.gating_reason_code,
+            ar.gating_human_reason,
+            ar.required_connection_type,
+            ar.risk_level,
+            ar.category,
+            ar.source_image_tag,
+            pr.display_name as piece_display_name,
+            pr.auth_type as piece_auth_type,
+            pr.categories as piece_categories
+          from app.activepieces_action_registry ar
+          left join app.activepieces_piece_registry pr
+            on pr.piece_name = ar.piece_name
+           and pr.piece_version = ar.piece_version
+          where ($1::text is null or ar.module_code = $1)
+            and (
+              $2::text is null
+              or ar.module_code ilike $2
+              or ar.display_name ilike $2
+              or ar.description ilike $2
+              or ar.piece_name ilike $2
+              or ar.category ilike $2
+            )
+            and (
+              $3::text is null
+              or ar.status = $3
+              or ar.availability_status = $3
+            )
+          order by
+            case ar.status when 'active' then 0 when 'blocked' then 1 when 'deprecated' then 2 else 3 end,
+            case ar.availability_status when 'available' then 0 when 'available_with_warnings' then 1 when 'missing_connection' then 2 else 3 end,
+            ar.category asc,
+            ar.display_name asc
+          limit $4
+        `,
+        [input.moduleCode ?? null, query, status, limit],
+      );
+      return result.rows;
+    } catch {
+      return [];
+    }
+  }
+
+  private activepiecesRowToCard(row: ActivepiecesActionRow): CanvasModuleCard {
+    const categoryCode = `ap_${sanitizeCode(row.category)}`;
+    const requiredConnection = row.required_connection_type
+      ? [
+          {
+            type: row.required_connection_type,
+            label: connectionLabel(row),
+            status: 'missing' as const,
+            connection_id: null,
+          },
+        ]
+      : [];
+    const requirements = requirementsForActivepieces(row);
+    const externalAction =
+      row.risk_level === 'high' ||
+      row.risk_level === 'critical' ||
+      row.category.includes('communication');
+
+    return {
+      module_code: row.module_code,
+      module_version: row.piece_version,
+      display_name: row.display_name,
+      short_description: row.description,
+      long_description: row.gating_human_reason ?? row.description,
+      source: 'activepieces',
+      source_label: 'Activepieces',
+      category_code: categoryCode,
+      category_label: categoryLabel(row.category),
+      icon: row.entry_type === 'trigger' ? 'Play' : 'Workflow',
+      tags: [
+        'activepieces',
+        row.entry_type,
+        row.status,
+        row.availability_status,
+        row.category,
+        row.piece_name,
+      ],
+      aliases: [
+        row.entry_name,
+        row.piece_name,
+        row.piece_display_name ?? '',
+        ...(row.piece_categories ?? []),
+      ].filter(Boolean),
+      input_summary: [
+        {
+          key: 'config',
+          label: 'Configuration',
+          data_type: 'object',
+          required: row.availability_status !== 'available',
+          classification: 'internal',
+        },
+      ],
+      output_summary: [
+        {
+          key: 'result',
+          label: 'Result',
+          data_type: 'object',
+          required: false,
+          classification: 'internal',
+        },
+      ],
+      risk_level: row.risk_level,
+      data_classification:
+        row.risk_level === 'critical' ? 'confidential' : 'internal',
+      flags: {
+        uses_ai:
+          row.piece_name.toLocaleLowerCase('en-US').includes('ai') ||
+          row.gating_reason_code ===
+            'ACTIVEPIECES_AI_ROUTE_REQUIRES_LEXFRAME_GATEWAY',
+        external_action: externalAction,
+        requires_documents: row.category.includes('document'),
+        requires_profile: false,
+        requires_template: false,
+        requires_connection: row.required_connection_type !== null,
+        requires_approval: externalAction,
+        supports_dry_run: row.status === 'active',
+        supports_batch: false,
+      },
+      availability: {
+        status: row.availability_status,
+        reason_code: row.gating_reason_code,
+        human_reason: row.gating_human_reason,
+        remediation:
+          row.availability_status === 'missing_connection'
+            ? [
+                {
+                  action: 'configure_connection',
+                  label: 'Configure connection',
+                },
+                {
+                  action: 'add_as_draft',
+                  label: 'Add as draft',
+                },
+              ]
+            : [],
+      },
+      requirements,
+      runtime: {
+        provider: 'activepieces',
+        mapping_status: row.status === 'missing' ? 'missing' : 'available',
+        required_pieces: [
+          {
+            piece_name: row.piece_name,
+            version_range: row.piece_version,
+            action: row.entry_type === 'action' ? row.entry_name : null,
+            connection_type: row.required_connection_type,
+          },
+        ],
+        required_connections: requiredConnection,
+      },
+      insertion: {
+        allowed_positions:
+          row.entry_type === 'trigger'
+            ? ['workflow_start']
+            : ['after_node', 'before_node', 'workflow_end'],
+        default_node_type: row.entry_type === 'trigger' ? 'trigger' : 'legalAction',
+        preferred_after_module_codes: [],
+        forbidden_after_module_codes: [],
+      },
+      technical: {
+        block_code: 'activepieces_action',
+        runtime_mapping: {
+          module_code: row.module_code,
+          provider: 'activepieces',
+          activepieces_piece: row.piece_name,
+          activepieces_action:
+            row.entry_type === 'action' ? row.entry_name : null,
+          can_compile:
+            row.status === 'active' &&
+            ['available', 'available_with_warnings'].includes(
+              row.availability_status,
+            ),
+          supports_step_test:
+            row.status === 'active' &&
+            ['available', 'available_with_warnings'].includes(
+              row.availability_status,
+            ),
+          supports_partial_execution: false,
+          supports_pinned_data: false,
+          warnings: [row.gating_human_reason ?? null].filter(
+            (item): item is string => item !== null,
+          ),
         },
       },
     };
@@ -443,7 +761,76 @@ function isDisabled(card: CanvasModuleCard) {
     'missing_connection',
     'missing_template',
     'missing_profile',
-  ].includes(card.availability.status);
+    ].includes(card.availability.status);
+}
+
+function requirementsForActivepieces(
+  row: ActivepiecesActionRow,
+): readonly ModuleRequirement[] {
+  const requirements: ModuleRequirement[] = [];
+
+  if (row.required_connection_type) {
+    requirements.push({
+      kind: 'connection',
+      code: `${row.module_code}:connection`,
+      label: connectionLabel(row),
+      required: true,
+      status:
+        row.availability_status === 'missing_connection'
+          ? 'missing'
+          : row.availability_status.startsWith('blocked')
+            ? 'blocked'
+            : 'warning',
+      reason:
+        row.gating_human_reason ??
+        'Configure a workspace-scoped Activepieces connection.',
+    });
+  }
+
+  if (row.status === 'blocked' || row.availability_status.startsWith('blocked')) {
+    requirements.push({
+      kind: 'data_policy',
+      code: row.gating_reason_code ?? `${row.module_code}:policy`,
+      label: 'Activepieces policy gate',
+      required: true,
+      status: 'blocked',
+      reason:
+        row.gating_human_reason ??
+        'This Activepieces entry is gated before Canvas execution.',
+    });
+  }
+
+  if (row.status === 'missing') {
+    requirements.push({
+      kind: 'runtime_piece',
+      code: `${row.module_code}:runtime`,
+      label: 'Activepieces source piece',
+      required: true,
+      status: 'blocked',
+      reason: 'This entry is missing from the current Activepieces source image.',
+    });
+  }
+
+  return requirements;
+}
+
+function connectionLabel(row: ActivepiecesActionRow) {
+  return `${row.piece_display_name ?? row.piece_name} connection`;
+}
+
+function categoryLabel(value: string) {
+  return value
+    .split(/[_-]+/g)
+    .filter(Boolean)
+    .map((part) => part[0]?.toUpperCase() + part.slice(1))
+    .join(' ');
+}
+
+function sanitizeCode(value: string) {
+  return value
+    .toLocaleLowerCase('en-US')
+    .replace(/[^a-z0-9_]+/g, '_')
+    .replace(/^_+|_+$/g, '') || 'activepieces';
 }
 
 function hasApprovalBefore(workflow: LexFrameWorkflowV2, targetNodeId: string) {

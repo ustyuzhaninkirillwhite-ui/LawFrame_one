@@ -2535,6 +2535,8 @@ export interface CanvasModuleCard {
   readonly display_name: string;
   readonly short_description: string;
   readonly long_description?: string | null;
+  readonly source?: "lexframe" | "activepieces" | "external";
+  readonly source_label?: string | null;
   readonly category_code: string;
   readonly category_label: string;
   readonly icon: string;

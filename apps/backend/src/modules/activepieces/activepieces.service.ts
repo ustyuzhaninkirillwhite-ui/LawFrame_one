@@ -168,6 +168,20 @@ interface ActivepiecesApiProbeResult {
   readonly projectCount?: number;
 }
 
+interface ActivepiecesCatalogDiagnosticsRow {
+  readonly piece_count: string | number;
+  readonly entry_count: string | number;
+  readonly action_count: string | number;
+  readonly trigger_count: string | number;
+  readonly blocked_count: string | number;
+  readonly missing_count: string | number;
+  readonly deprecated_count: string | number;
+  readonly source_image_tag: string | null;
+  readonly last_checked_at: string | null;
+  readonly status_counts: Record<string, string | number> | null;
+  readonly availability_counts: Record<string, string | number> | null;
+}
+
 interface ActivepiecesCredentialContext {
   readonly projectId: string | null;
   readonly platformId: string | null;
@@ -467,6 +481,98 @@ export class ActivepiecesService {
       piecesTags: settings?.pieces_tags ?? [],
       incidentLockActive: settings?.incident_lock_active ?? false,
       runtimeConnections,
+    };
+  }
+
+  async getCatalogDiagnostics() {
+    try {
+      const row =
+        await this.databaseService.one<ActivepiecesCatalogDiagnosticsRow>(
+          `
+            select
+              (select count(*)
+               from app.activepieces_piece_registry
+               where source = 'activepieces_builtin') as piece_count,
+              count(*) as entry_count,
+              count(*) filter (where entry_type = 'action') as action_count,
+              count(*) filter (where entry_type = 'trigger') as trigger_count,
+              count(*) filter (
+                where status = 'blocked'
+                   or availability_status in (
+                    'blocked_by_role',
+                    'blocked_by_plan',
+                    'blocked_by_data_policy',
+                    'blocked_by_runtime'
+                  )
+              ) as blocked_count,
+              count(*) filter (where status = 'missing') as missing_count,
+              count(*) filter (where status = 'deprecated') as deprecated_count,
+              max(source_image_tag) as source_image_tag,
+              max(last_checked_at)::text as last_checked_at,
+              coalesce(
+                jsonb_object_agg(status, status_count) filter (where status is not null),
+                '{}'::jsonb
+              ) as status_counts,
+              coalesce(
+                jsonb_object_agg(availability_status, availability_count)
+                  filter (where availability_status is not null),
+                '{}'::jsonb
+              ) as availability_counts
+            from (
+              select
+                *,
+                count(*) over (partition by status) as status_count,
+                count(*) over (partition by availability_status) as availability_count
+              from app.activepieces_action_registry
+            ) entries
+          `,
+        );
+
+      return {
+        catalogAvailable: true,
+        sourceImageTag: row?.source_image_tag ?? null,
+        lastSyncAt: row?.last_checked_at ?? null,
+        pieces: toNumber(row?.piece_count),
+        entries: toNumber(row?.entry_count),
+        actions: toNumber(row?.action_count),
+        triggers: toNumber(row?.trigger_count),
+        blocked: toNumber(row?.blocked_count),
+        missing: toNumber(row?.missing_count),
+        deprecated: toNumber(row?.deprecated_count),
+        statusCounts: normalizeNumberRecord(row?.status_counts),
+        availabilityCounts: normalizeNumberRecord(row?.availability_counts),
+        manualSyncSupported: false,
+      };
+    } catch (error) {
+      return {
+        catalogAvailable: false,
+        sourceImageTag: null,
+        lastSyncAt: null,
+        pieces: 0,
+        entries: 0,
+        actions: 0,
+        triggers: 0,
+        blocked: 0,
+        missing: 0,
+        deprecated: 0,
+        statusCounts: {},
+        availabilityCounts: {},
+        manualSyncSupported: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Activepieces catalog diagnostics failed.',
+      };
+    }
+  }
+
+  async requestCatalogSync() {
+    return {
+      syncStarted: false,
+      manualSyncSupported: false,
+      reason:
+        'Local Docker sync is executed by the stage16-activepieces-catalog-sync one-shot service.',
+      diagnostics: await this.getCatalogDiagnostics(),
     };
   }
 
@@ -3194,6 +3300,20 @@ function mapRunEventType(
   }
 
   return 'run.status.updated';
+}
+
+function toNumber(value: string | number | null | undefined) {
+  return typeof value === 'number' ? value : Number(value ?? 0);
+}
+
+function normalizeNumberRecord(
+  value: Record<string, string | number> | null | undefined,
+) {
+  const result: Record<string, number> = {};
+  for (const [key, raw] of Object.entries(value ?? {})) {
+    result[key] = toNumber(raw);
+  }
+  return result;
 }
 
 function validInputBindings(step: Record<string, unknown>) {

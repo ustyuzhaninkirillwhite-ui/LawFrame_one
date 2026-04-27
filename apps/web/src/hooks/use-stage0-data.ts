@@ -757,6 +757,11 @@ export function useCanvasModuleCatalog(input: {
   readonly insertPosition?: string | null;
   readonly mode?: string | null;
   readonly query?: string | null;
+  readonly source?: string | null;
+  readonly status?: string | null;
+  readonly runtime?: string | null;
+  readonly limit?: number | null;
+  readonly cursor?: string | null;
 } = {}) {
   const { apiClient } = useSessionBridge();
   const { enabled, workspaceId } = useWorkspaceEnabled();
@@ -771,6 +776,11 @@ export function useCanvasModuleCatalog(input: {
       input.insertPosition,
       input.mode,
       input.query,
+      input.source,
+      input.status,
+      input.runtime,
+      input.limit,
+      input.cursor,
     ],
     queryFn: () =>
       apiClient.listCanvasModuleCatalog({
@@ -779,6 +789,11 @@ export function useCanvasModuleCatalog(input: {
         insertPosition: input.insertPosition,
         mode: input.mode,
         query: input.query,
+        source: input.source,
+        status: input.status,
+        runtime: input.runtime,
+        limit: input.limit,
+        cursor: input.cursor,
       }),
     enabled: enabled && Boolean(input.automationId),
     staleTime: 30_000,

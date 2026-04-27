@@ -27,6 +27,7 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json ./
 COPY apps/backend/package.json apps/backend/package.json
 COPY apps/web/package.json apps/web/package.json
 COPY packages/activepieces-bridge/package.json packages/activepieces-bridge/package.json
+COPY packages/activepieces-catalog-sync/package.json packages/activepieces-catalog-sync/package.json
 COPY packages/activepieces-inventory/package.json packages/activepieces-inventory/package.json
 COPY packages/activepieces-legal-pieces/package.json packages/activepieces-legal-pieces/package.json
 COPY packages/activepieces-template-ingestor/package.json packages/activepieces-template-ingestor/package.json

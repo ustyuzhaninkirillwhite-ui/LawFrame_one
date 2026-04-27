@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import crypto from 'node:crypto';
 import path from 'node:path';
 
 export type PieceKind = 'core' | 'community' | 'custom';
@@ -32,8 +33,20 @@ export type PieceImportMode =
   | 'blocked_security'
   | 'not_found';
 
+export type PieceEntryType = 'action' | 'trigger';
+
+export interface PieceInventoryEntry {
+  readonly type: PieceEntryType;
+  readonly name: string;
+  readonly displayName: string | null;
+  readonly description: string | null;
+  readonly sourcePath: string;
+  readonly sourceHash: string;
+}
+
 export interface PieceInventoryItem {
   readonly packageName: string;
+  readonly packageVersion: string;
   readonly slug: string;
   readonly path: string;
   readonly kind: PieceKind;
@@ -42,11 +55,14 @@ export interface PieceInventoryItem {
   readonly authType: string;
   readonly actions: number;
   readonly triggers: number;
+  readonly actionEntries: readonly PieceInventoryEntry[];
+  readonly triggerEntries: readonly PieceInventoryEntry[];
   readonly categories: readonly string[];
   readonly risk: PieceRisk;
   readonly exposure: LexFrameExposure;
   readonly importMode: PieceImportMode;
   readonly notes: readonly string[];
+  readonly sourceHash: string;
 }
 
 export interface PieceInventoryReport {
@@ -220,29 +236,45 @@ export function scanActivepiecesPieces(repoRoot: string): PieceInventoryReport {
       const packageJson = readJson<PackageJson>(packageJsonPath);
       const sourceRoot = path.join(piecePath, 'src');
       const sourceFiles = fs.existsSync(sourceRoot)
-        ? walkFiles(sourceRoot).filter((file) => file.endsWith('.ts'))
+        ? walkFiles(sourceRoot)
+            .filter((file) => file.endsWith('.ts'))
+            .sort((left, right) => left.localeCompare(right))
         : [];
       const indexText = readTextIfExists(path.join(sourceRoot, 'index.ts'));
-      const actions = sourceFiles.filter(isActionFile).length;
-      const triggers = sourceFiles.filter(isTriggerFile).length;
+      const actionFiles = sourceFiles.filter(isActionFile);
+      const triggerFiles = sourceFiles.filter(isTriggerFile);
       const slug = dirent.name;
       const classification = classifyPiece(slug, kind);
+      const actionEntries = actionFiles.map((file) =>
+        buildEntry(file, piecePath, 'action'),
+      );
+      const triggerEntries = triggerFiles.map((file) =>
+        buildEntry(file, piecePath, 'trigger'),
+      );
 
       pieces.push({
         packageName: packageJson.name ?? `@activepieces/piece-${slug}`,
+        packageVersion: packageJson.version ?? '0.0.0',
         slug,
         path: normalizePath(path.relative(absoluteRoot, piecePath)),
         kind,
         displayName: extractStringProperty(indexText, 'displayName'),
         description: extractStringProperty(indexText, 'description'),
         authType: extractAuthType(indexText),
-        actions,
-        triggers,
+        actions: actionEntries.length,
+        triggers: triggerEntries.length,
+        actionEntries,
+        triggerEntries,
         categories: extractCategories(indexText),
         risk: classification.risk,
         exposure: classification.exposure,
         importMode: classification.importMode,
         notes: classification.notes,
+        sourceHash: hashFiles([
+          packageJsonPath,
+          path.join(piecePath, 'project.json'),
+          ...sourceFiles,
+        ]),
       });
     }
   }
@@ -466,6 +498,47 @@ function extractCategories(source: string): readonly string[] {
   return [...values].sort();
 }
 
+function buildEntry(
+  file: string,
+  piecePath: string,
+  type: PieceEntryType,
+): PieceInventoryEntry {
+  const source = readTextIfExists(file);
+  const relative = normalizePath(path.relative(piecePath, file));
+  const basename = path.basename(file).replace(/\.ts$/, '');
+  const rawName =
+    extractStringProperty(source, 'name') ??
+    extractExportName(source) ??
+    basename
+      .replace(/\.action$/, '')
+      .replace(/\.trigger$/, '')
+      .replace(/-action$/, '')
+      .replace(/-trigger$/, '');
+
+  return {
+    type,
+    name: normalizeEntryName(rawName),
+    displayName: extractStringProperty(source, 'displayName'),
+    description: extractStringProperty(source, 'description'),
+    sourcePath: relative,
+    sourceHash: hashText(source),
+  };
+}
+
+function extractExportName(source: string): string | null {
+  const match = source.match(/export\s+const\s+([A-Za-z0-9_]+)/);
+  return match?.[1] ?? null;
+}
+
+function normalizeEntryName(value: string): string {
+  return value
+    .trim()
+    .replace(/([a-z0-9])([A-Z])/g, '$1_$2')
+    .replace(/[^a-zA-Z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .toLowerCase();
+}
+
 function readJson<T>(file: string): T {
   return JSON.parse(fs.readFileSync(file, 'utf8')) as T;
 }
@@ -485,6 +558,24 @@ function walkFiles(root: string): string[] {
     }
   }
   return files;
+}
+
+function hashFiles(files: readonly string[]): string {
+  const hash = crypto.createHash('sha256');
+  for (const file of files) {
+    if (!fs.existsSync(file)) {
+      continue;
+    }
+    hash.update(normalizePath(file));
+    hash.update('\0');
+    hash.update(fs.readFileSync(file));
+    hash.update('\0');
+  }
+  return hash.digest('hex');
+}
+
+function hashText(value: string): string {
+  return crypto.createHash('sha256').update(value).digest('hex');
 }
 
 function normalizePath(value: string): string {
