@@ -1,10 +1,16 @@
 import { readdirSync, readFileSync } from "node:fs";
-import { join, resolve } from "node:path";
-import { spawnSync } from "node:child_process";
+import { join } from "node:path";
+import {
+  compose,
+  composePsql,
+  isTransientPostgresError,
+  repoRoot as root,
+  waitForPostgresReady,
+} from "./stage16-compose-utils.mjs";
 
-const root = resolve(import.meta.dirname, "..");
 const dbName = process.env.STAGE16_DB_NAME ?? "stage16_audit";
 const keepDb = process.env.STAGE16_DB_KEEP === "1";
+const postgresService = "postgres";
 
 const requiredRelations = [
   "app.automation_canvas_drafts",
@@ -38,97 +44,14 @@ const requiredIndexes = [
   "idx_compile_reports_automation",
 ];
 
-function run(command, args, options = {}) {
-  const result = spawnSync(command, args, {
-    cwd: root,
-    encoding: options.encoding ?? "utf8",
-    input: options.input,
-    stdio: options.stdio ?? "pipe",
-    shell: false,
-  });
-
-  if (result.status !== 0) {
-    const stderr = result.stderr ? `\n${result.stderr}` : "";
-    const stdout = result.stdout ? `\n${result.stdout}` : "";
-    throw new Error(`${command} ${args.join(" ")} failed${stdout}${stderr}`);
-  }
-
-  return result.stdout ?? "";
+function psql(database, args, input) {
+  return composePsql(postgresService, database, args, input);
 }
 
-function sleep(ms) {
-  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
-}
-
-function findPostgresContainer() {
-  return run("docker", ["compose", "ps", "-q", "postgres"]).trim();
-}
-
-function canConnectToPostgres(container) {
-  const result = spawnSync(
-    "docker",
-    [
-      "exec",
-      container,
-      "psql",
-      "-U",
-      "postgres",
-      "-d",
-      "postgres",
-      "-Atc",
-      "select 1;",
-    ],
-    {
-      cwd: root,
-      encoding: "utf8",
-      shell: false,
-      stdio: "pipe",
-    },
-  );
-  return result.status === 0 && result.stdout.trim() === "1";
-}
-
-function waitForPostgres(container) {
-  let lastStatus = "not ready";
-  for (let attempt = 1; attempt <= 30; attempt += 1) {
-    if (canConnectToPostgres(container)) {
-      process.stdout.write(`[stage16-db] postgres ready after attempt ${attempt}\n`);
-      return;
-    }
-    lastStatus = `attempt ${attempt}/30 failed`;
-    sleep(Math.min(1000 * attempt, 5000));
-  }
-  throw new Error(`postgres did not become ready: ${lastStatus}`);
-}
-
-function getPostgresContainer() {
-  let container = findPostgresContainer();
-  if (!container) {
-    process.stdout.write("[stage16-db] postgres container not found; starting local-integrated postgres\n");
-    run("docker", ["compose", "--profile", "local-integrated", "up", "-d", "postgres"], {
-      stdio: "inherit",
-    });
-    container = findPostgresContainer();
-  }
-  if (!container) {
-    throw new Error("postgres container not found after docker compose up -d postgres");
-  }
-  waitForPostgres(container);
-  return container;
-}
-
-function psql(container, database, args, input) {
-  return run(
-    "docker",
-    ["exec", "-i", container, "psql", "-U", "postgres", "-d", database, "-v", "ON_ERROR_STOP=1", ...args],
-    { input },
-  );
-}
-
-function applyFile(container, database, filePath) {
+function applyFile(database, filePath) {
   const relative = filePath.replace(`${root}\\`, "").replace(`${root}/`, "");
   process.stdout.write(`[stage16-db] apply ${relative}\n`);
-  psql(container, database, [], readFileSync(filePath));
+  psql(database, [], readFileSync(filePath));
 }
 
 function sortedSqlFiles(directory) {
@@ -138,24 +61,24 @@ function sortedSqlFiles(directory) {
     .map((name) => join(directory, name));
 }
 
-function resetDatabase(container) {
-  psql(container, "postgres", [
+function resetDatabase() {
+  psql("postgres", [
     "-c",
-    `select pg_terminate_backend(pid) from pg_stat_activity where datname='${dbName}';`,
+    `select pg_terminate_backend(pid) from pg_stat_activity where datname=${sqlLiteral(dbName)} and pid <> pg_backend_pid();`,
     "-c",
-    `drop database if exists ${dbName};`,
+    `drop database if exists ${sqlIdentifier(dbName)};`,
     "-c",
-    `create database ${dbName};`,
+    `create database ${sqlIdentifier(dbName)};`,
   ]);
 }
 
-function verify(container) {
+function verify() {
   const relationSql = `
     select rel::text, coalesce(c.relkind::text, 'missing') as kind
     from unnest(array[${requiredRelations.map((rel) => `'${rel}'::text`).join(",")}]) as r(rel)
     left join pg_class c on c.oid = to_regclass(r.rel);
   `;
-  const relations = psql(container, dbName, ["-Atc", relationSql]).trim().split(/\r?\n/).filter(Boolean);
+  const relations = psql(dbName, ["-Atc", relationSql]).trim().split(/\r?\n/).filter(Boolean);
   const missingRelations = relations.filter((line) => line.endsWith("|missing"));
   if (missingRelations.length > 0) {
     throw new Error(`missing Stage 16 relations:\n${missingRelations.join("\n")}`);
@@ -169,7 +92,7 @@ function verify(container) {
     )
     from unnest(array[${requiredIndexes.map((idx) => `'${idx}'::text`).join(",")}]) as r(idx);
   `;
-  const indexes = psql(container, dbName, ["-Atc", indexSql]).trim().split(/\r?\n/).filter(Boolean);
+  const indexes = psql(dbName, ["-Atc", indexSql]).trim().split(/\r?\n/).filter(Boolean);
   const missingIndexes = indexes.filter((line) => line.endsWith("|f"));
   if (missingIndexes.length > 0) {
     throw new Error(`missing Stage 16 indexes:\n${missingIndexes.join("\n")}`);
@@ -184,7 +107,7 @@ function verify(container) {
       (select count(*) from app.installed_automations where id='16000000-0000-4000-8000-000000008001') as automations,
       (select count(*) from app.role_permissions where permission_code like 'canvas.%') as canvas_role_permissions;
   `;
-  const seedEvidence = psql(container, dbName, ["-Atc", seedSql]).trim();
+  const seedEvidence = psql(dbName, ["-Atc", seedSql]).trim();
   const [workspaces, members, modules, connections, automations, canvasPermissions] = seedEvidence.split("|").map(Number);
   if (workspaces < 2 || members < 5 || modules < 11 || connections < 4 || automations < 1 || canvasPermissions < 1) {
     throw new Error(`Stage 16 seed verification failed: ${seedEvidence}`);
@@ -201,7 +124,7 @@ function verify(container) {
     )
     order by conname;
   `;
-  const constraints = psql(container, dbName, ["-Atc", constraintSql]).trim().split(/\r?\n/).filter(Boolean);
+  const constraints = psql(dbName, ["-Atc", constraintSql]).trim().split(/\r?\n/).filter(Boolean);
   if (constraints.length < 4) {
     throw new Error(`Stage 16 constraint verification failed: ${constraints.join(", ")}`);
   }
@@ -209,36 +132,65 @@ function verify(container) {
   process.stdout.write(`[stage16-db] verified relations=${relations.length} indexes=${indexes.length} seed=${seedEvidence}\n`);
 }
 
-function cleanup(container) {
+function cleanup() {
   if (keepDb) {
     process.stdout.write(`[stage16-db] keeping ${dbName} because STAGE16_DB_KEEP=1\n`);
     return;
   }
-  psql(container, "postgres", [
+  psql("postgres", [
     "-c",
-    `select pg_terminate_backend(pid) from pg_stat_activity where datname='${dbName}';`,
+    `select pg_terminate_backend(pid) from pg_stat_activity where datname=${sqlLiteral(dbName)} and pid <> pg_backend_pid();`,
     "-c",
-    `drop database if exists ${dbName};`,
+    `drop database if exists ${sqlIdentifier(dbName)};`,
   ]);
   process.stdout.write(`[stage16-db] cleaned ${dbName}\n`);
 }
 
-const container = getPostgresContainer();
+function withPostgresRetry(label, fn) {
+  for (let attempt = 1; attempt <= 2; attempt += 1) {
+    try {
+      waitForPostgresReady(postgresService, "postgres");
+      return fn();
+    } catch (error) {
+      if (attempt === 2 || !isTransientPostgresError(error)) {
+        throw error;
+      }
+      process.stdout.write(
+        `[stage16-db] ${label} hit transient postgres readiness error; waiting and retrying once\n`,
+      );
+      waitForPostgresReady(postgresService, "postgres");
+    }
+  }
+  return null;
+}
+
+function sqlLiteral(value) {
+  return `'${String(value).replace(/'/g, "''")}'`;
+}
+
+function sqlIdentifier(value) {
+  return `"${String(value).replace(/"/g, '""')}"`;
+}
+
+process.stdout.write("[stage16-db] ensuring local-integrated postgres is running\n");
+compose(["up", "-d", postgresService], { stdio: "inherit" });
+waitForPostgresReady(postgresService, "postgres");
+
 let verified = false;
 
 try {
-  resetDatabase(container);
-  applyFile(container, dbName, join(root, "scripts", "bootstrap-local-supabase-compat.sql"));
+  withPostgresRetry("reset", resetDatabase);
+  applyFile(dbName, join(root, "scripts", "bootstrap-local-supabase-compat.sql"));
   for (const file of sortedSqlFiles(join(root, "supabase", "migrations"))) {
-    applyFile(container, dbName, file);
+    applyFile(dbName, file);
   }
   for (const file of sortedSqlFiles(join(root, "supabase", "seed"))) {
-    applyFile(container, dbName, file);
+    applyFile(dbName, file);
   }
-  verify(container);
+  verify();
   verified = true;
 } finally {
-  cleanup(container);
+  cleanup();
 }
 
 if (!verified) {

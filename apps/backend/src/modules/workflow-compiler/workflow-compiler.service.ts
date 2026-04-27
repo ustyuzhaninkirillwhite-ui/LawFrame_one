@@ -274,6 +274,7 @@ export class WorkflowCompilerService {
       });
       const flow = await this.syncService.ensureFlow({
         projectId: project.external_project_id,
+        workspaceId,
         automationId,
         displayName: automation.title,
         existingFlowId:

@@ -18,9 +18,11 @@ interface ActivepiecesFlowResponse {
   readonly id: string;
   readonly projectId: string;
   readonly externalId?: string | null;
+  readonly metadata?: Record<string, unknown> | null;
   readonly publishedVersionId?: string | null;
   readonly version?: {
     readonly id: string;
+    readonly displayName?: string;
     readonly state?: string;
     readonly trigger?: unknown;
     readonly valid?: boolean;
@@ -50,6 +52,8 @@ export interface ActivepiecesFlowRef {
   readonly projectId: string;
   readonly versionId: string | null;
   readonly publishedVersionId: string | null;
+  readonly externalId: string | null;
+  readonly metadata: Record<string, unknown> | null;
   readonly raw: ActivepiecesFlowResponse;
 }
 
@@ -116,9 +120,47 @@ export class ActivepiecesRuntimeClient {
     return match ? this.toFlowRef(match) : null;
   }
 
+  async findFlowByLexFrameTarget(input: {
+    readonly projectId: string;
+    readonly workspaceId: string;
+    readonly automationId: string;
+  }): Promise<ActivepiecesFlowRef | null> {
+    const page = await this.request<
+      ActivepiecesListResponse<ActivepiecesFlowResponse>
+    >('/flows', { method: 'GET' }, { projectId: input.projectId, searchParams: { limit: '100' } });
+    const match =
+      page.data?.find((flow) => {
+        const lexframe = readLexFrameMetadata(flow.metadata);
+        return (
+          lexframe?.workspaceId === input.workspaceId &&
+          lexframe?.automationId === input.automationId
+        );
+      }) ?? null;
+    return match ? this.toFlowRef(match) : null;
+  }
+
+  async findFlowByDisplayName(
+    projectId: string,
+    displayName: string,
+  ): Promise<ActivepiecesFlowRef | null> {
+    const page = await this.request<
+      ActivepiecesListResponse<ActivepiecesFlowResponse>
+    >(
+      '/flows',
+      { method: 'GET' },
+      { projectId, searchParams: { limit: '100', name: displayName } },
+    );
+    const match =
+      page.data?.find((flow) => flow.version?.displayName === displayName) ??
+      null;
+    return match ? this.toFlowRef(match) : null;
+  }
+
   async createFlow(input: {
     readonly projectId: string;
     readonly displayName: string;
+    readonly externalId?: string | null;
+    readonly metadata?: Record<string, unknown>;
   }): Promise<ActivepiecesFlowRef> {
     const created = await this.request<ActivepiecesFlowResponse>(
       '/flows',
@@ -127,6 +169,8 @@ export class ActivepiecesRuntimeClient {
         body: JSON.stringify({
           displayName: input.displayName,
           projectId: input.projectId,
+          externalId: input.externalId ?? undefined,
+          metadata: input.metadata,
         }),
       },
       { includeProjectId: false },
@@ -173,6 +217,8 @@ export class ActivepiecesRuntimeClient {
       projectId: flow.projectId,
       versionId: flow.version?.id ?? flow.publishedVersionId ?? null,
       publishedVersionId: flow.publishedVersionId ?? null,
+      externalId: flow.externalId ?? null,
+      metadata: flow.metadata ?? null,
       raw: flow,
     };
   }
@@ -322,6 +368,17 @@ export class ActivepiecesRuntimeClient {
       );
     }
   }
+}
+
+function readLexFrameMetadata(metadata: Record<string, unknown> | null | undefined) {
+  const lexframe = metadata?.lexframe;
+  if (!lexframe || typeof lexframe !== 'object' || Array.isArray(lexframe)) {
+    return null;
+  }
+  return lexframe as {
+    readonly workspaceId?: unknown;
+    readonly automationId?: unknown;
+  };
 }
 
 export class ActivepiecesRuntimeError extends Error {

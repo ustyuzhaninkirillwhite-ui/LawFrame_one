@@ -1,56 +1,31 @@
 import { readdirSync, readFileSync } from "node:fs";
-import { join, resolve } from "node:path";
-import { spawnSync } from "node:child_process";
+import { join } from "node:path";
+import {
+  compose,
+  composePsql,
+  repoRoot as root,
+  waitForPostgresReady,
+} from "./stage16-compose-utils.mjs";
 
-const root = resolve(import.meta.dirname, "..");
 const database = process.env.STAGE16_TARGET_DB ?? "stage16_runtime";
+const postgresService = "postgres";
 
-function run(command, args, options = {}) {
-  const result = spawnSync(command, args, {
-    cwd: root,
-    encoding: "utf8",
-    input: options.input,
-    stdio: options.stdio ?? "pipe",
-    shell: false,
-  });
-  if (result.status !== 0) {
-    throw new Error(`${command} ${args.join(" ")} failed\n${result.stdout ?? ""}\n${result.stderr ?? ""}`);
-  }
-  return result.stdout ?? "";
+function psql(args, input) {
+  return composePsql(postgresService, "postgres", args, input);
 }
 
-function container() {
-  const id = run("docker", ["compose", "ps", "-q", "postgres"]).trim();
-  if (!id) {
-    throw new Error("postgres container not found");
-  }
-  return id;
+function targetPsql(args, input) {
+  return composePsql(postgresService, database, args, input);
 }
 
-function psql(id, args, input) {
-  return run("docker", ["exec", "-i", id, "psql", "-U", "postgres", "-d", database, "-v", "ON_ERROR_STOP=1", ...args], {
-    input,
-  });
-}
-
-function resetTargetDatabase(id) {
-  run("docker", [
-    "exec",
-    "-i",
-    id,
-    "psql",
-    "-U",
-    "postgres",
-    "-d",
-    "postgres",
-    "-v",
-    "ON_ERROR_STOP=1",
+function resetTargetDatabase() {
+  psql([
     "-c",
-    `select pg_terminate_backend(pid) from pg_stat_activity where datname='${database}';`,
+    `select pg_terminate_backend(pid) from pg_stat_activity where datname=${sqlLiteral(database)} and pid <> pg_backend_pid();`,
     "-c",
-    `drop database if exists ${database};`,
+    `drop database if exists ${sqlIdentifier(database)};`,
     "-c",
-    `create database ${database};`,
+    `create database ${sqlIdentifier(database)};`,
   ]);
 }
 
@@ -61,23 +36,80 @@ function sortedSqlFiles(directory) {
     .map((name) => join(directory, name));
 }
 
-function apply(id, file) {
+function apply(file) {
   const relative = file.replace(`${root}\\`, "").replace(`${root}/`, "");
   console.log(`[stage16-db-local] apply ${relative}`);
-  psql(id, [], readFileSync(file));
+  targetPsql([], readFileSync(file));
 }
 
-const id = container();
-resetTargetDatabase(id);
-apply(id, join(root, "scripts", "bootstrap-local-supabase-compat.sql"));
+function stopAppServices() {
+  const stopped = compose(["stop", "backend", "web", "stage16-db-bootstrap", "stage16-activepieces-catalog-sync"], {
+    allowFailure: true,
+    stdio: "inherit",
+    label: "stop app/bootstrap services before DB reset",
+  });
+  if (stopped.status !== 0) {
+    console.log("[stage16-db-local] service stop was non-fatal; continuing with DB reset");
+  }
+  compose(["rm", "-f", "-s", "stage16-db-bootstrap", "stage16-activepieces-catalog-sync"], {
+    allowFailure: true,
+    stdio: "inherit",
+    label: "remove one-shot bootstrap/catalog containers before DB reset",
+  });
+}
+
+function syncCatalogAndRestartApps() {
+  compose(
+    [
+      "run",
+      "--rm",
+      "--no-deps",
+      "stage16-activepieces-catalog-sync",
+    ],
+    {
+      stdio: "inherit",
+      label: "stage16 activepieces catalog sync",
+    },
+  );
+  compose(
+    [
+      "up",
+      "-d",
+      "--no-deps",
+      "--force-recreate",
+      "--build",
+      "backend",
+      "web",
+    ],
+    {
+      stdio: "inherit",
+      label: "recreate backend/web after DB apply",
+    },
+  );
+}
+
+function sqlLiteral(value) {
+  return `'${String(value).replace(/'/g, "''")}'`;
+}
+
+function sqlIdentifier(value) {
+  return `"${String(value).replace(/"/g, '""')}"`;
+}
+
+compose(["up", "-d", postgresService], { stdio: "inherit" });
+waitForPostgresReady(postgresService, "postgres");
+stopAppServices();
+waitForPostgresReady(postgresService, "postgres");
+resetTargetDatabase();
+apply(join(root, "scripts", "bootstrap-local-supabase-compat.sql"));
 for (const file of sortedSqlFiles(join(root, "supabase", "migrations"))) {
-  apply(id, file);
+  apply(file);
 }
 for (const file of sortedSqlFiles(join(root, "supabase", "seed"))) {
-  apply(id, file);
+  apply(file);
 }
 
-const evidence = psql(id, [
+const evidence = targetPsql([
   "-Atc",
   `
     select
@@ -92,3 +124,4 @@ const evidence = psql(id, [
 ]).trim();
 
 console.log(`[stage16-db-local] verified ${evidence}`);
+syncCatalogAndRestartApps();

@@ -16,6 +16,9 @@ const apiBaseUrl = process.env.LEXFRAME_API_BASE_URL ?? "http://127.0.0.1:3100";
 const webBaseUrl = process.env.LEXFRAME_E2E_BASE_URL ?? "http://127.0.0.1:3000";
 const activepiecesBaseUrl = process.env.ACTIVEPIECES_BASE_URL ?? "http://127.0.0.1:8080";
 const testDb = process.env.STAGE16_DB_NAME ?? "stage16_runtime";
+const dockerCli =
+  process.env.DOCKER_CLI_PATH ??
+  (process.platform === "win32" ? "docker.exe" : "docker");
 
 const workspaceA = "16000000-0000-4000-8000-00000000100a";
 const workspaceB = "16000000-0000-4000-8000-00000000100b";
@@ -1288,28 +1291,13 @@ function devToken(role: RoleName, assuranceLevel: AssuranceLevel = "aal1") {
 }
 
 function resetStage16Seed() {
-  psql(readFileSync(join(repoRoot, "supabase", "seed", "cleanup", "stage16_canvas_live_cleanup.sql"), "utf8"));
-  psql(readFileSync(join(repoRoot, "supabase", "seed", "000007_stage16_canvas_live_seed.sql"), "utf8"));
+  const cleanupSql = readFileSync(join(repoRoot, "supabase", "seed", "cleanup", "stage16_canvas_live_cleanup.sql"), "utf8");
+  const seedSql = readFileSync(join(repoRoot, "supabase", "seed", "000007_stage16_canvas_live_seed.sql"), "utf8");
+  psql(`${cleanupSql}\n${seedSql}`);
 }
 
 function psql(sql: string) {
-  const containerId = execFileSync("docker", ["compose", "ps", "-q", "postgres"], {
-    cwd: repoRoot,
-    encoding: "utf8",
-  }).trim();
-  if (!containerId) {
-    throw new Error("docker compose postgres container is not running");
-  }
-  return execFileSync(
-    "docker",
-    ["exec", "-i", containerId, "psql", "-v", "ON_ERROR_STOP=1", "-U", "postgres", "-d", testDb, "-At"],
-    {
-      cwd: repoRoot,
-      input: sql,
-      encoding: "utf8",
-      maxBuffer: 20 * 1024 * 1024,
-    },
-  );
+  return composePsql("postgres", testDb, ["-At"], sql);
 }
 
 function dbScalar(sql: string) {
@@ -1317,23 +1305,89 @@ function dbScalar(sql: string) {
 }
 
 function activepiecesPsql(sql: string) {
-  const containerId = execFileSync("docker", ["compose", "ps", "-q", "activepieces-postgres"], {
-    cwd: repoRoot,
-    encoding: "utf8",
-  }).trim();
-  if (!containerId) {
-    throw new Error("docker compose activepieces-postgres container is not running");
-  }
-  return execFileSync(
-    "docker",
-    ["exec", "-i", containerId, "psql", "-v", "ON_ERROR_STOP=1", "-U", "postgres", "-d", "activepieces", "-At", "-F", "\t"],
-    {
+  return composePsql(
+    "activepieces-postgres",
+    "activepieces",
+    ["-At", "-F", "\t"],
+    `${sql};`,
+  ).trim();
+}
+
+function composePsql(
+  service: "postgres" | "activepieces-postgres",
+  database: string,
+  psqlArgs: readonly string[],
+  input: string,
+) {
+  const args = [
+    "compose",
+    "exec",
+    "-T",
+    service,
+    "psql",
+    "-v",
+    "ON_ERROR_STOP=1",
+    "-U",
+    "postgres",
+    "-d",
+    database,
+    ...psqlArgs,
+  ];
+  try {
+    return execFileSync(dockerCli, args, {
       cwd: repoRoot,
-      input: `${sql};`,
+      env: {
+        ...process.env,
+        GOMAXPROCS: process.env.DOCKER_CLI_GOMAXPROCS ?? "2",
+      },
+      input,
       encoding: "utf8",
       maxBuffer: 20 * 1024 * 1024,
-    },
-  ).trim();
+    });
+  } catch (error) {
+    throw new Error(
+      [
+        `docker compose psql failed for service=${service}`,
+        `command=${dockerCli} ${args.join(" ")}`,
+        `cwd=${repoRoot}`,
+        `COMPOSE_PROJECT_NAME=${process.env.COMPOSE_PROJECT_NAME ?? ""}`,
+        dockerErrorDetails(error),
+      ]
+        .filter(Boolean)
+        .join("\n"),
+    );
+  }
+}
+
+function dockerErrorDetails(error: unknown) {
+  const commandError = error as {
+    readonly status?: number | null;
+    readonly signal?: string | null;
+    readonly stdout?: unknown;
+    readonly stderr?: unknown;
+    readonly message?: string;
+  };
+  return [
+    commandError.status === undefined
+      ? null
+      : `exitStatus=${commandError.status}`,
+    commandError.signal ? `signal=${commandError.signal}` : null,
+    commandError.stderr ? `stderr=${bufferText(commandError.stderr)}` : null,
+    commandError.stdout ? `stdout=${bufferText(commandError.stdout)}` : null,
+    commandError.message ? `message=${commandError.message}` : null,
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
+function bufferText(value: unknown) {
+  if (Buffer.isBuffer(value)) {
+    return value.toString("utf8").trim();
+  }
+  if (typeof value === "string") {
+    return value.trim();
+  }
+  return String(value);
 }
 
 function apScalar(sql: string) {
@@ -1341,11 +1395,22 @@ function apScalar(sql: string) {
 }
 
 function activepiecesCounts() {
+  const counts = parsePsqlJson<Record<string, unknown>>(
+    activepiecesPsql(`
+      select json_build_object(
+        'project', (select count(*) from public.project),
+        'flow', (select count(*) from public.flow),
+        'flow_version', (select count(*) from public.flow_version),
+        'flow_run', (select count(*) from public.flow_run)
+      )
+    `),
+    "Activepieces counts",
+  );
   return {
-    project: Number(apScalar("select count(*) from public.project")),
-    flow: Number(apScalar("select count(*) from public.flow")),
-    flow_version: Number(apScalar("select count(*) from public.flow_version")),
-    flow_run: Number(apScalar("select count(*) from public.flow_run")),
+    project: Number(counts.project),
+    flow: Number(counts.flow),
+    flow_version: Number(counts.flow_version),
+    flow_run: Number(counts.flow_run),
   };
 }
 
@@ -1379,21 +1444,22 @@ async function activepiecesEvidenceForBinding() {
   const runtimeHash = parts[5] ?? "";
   expect(projectId).toBeTruthy();
   expect(flowId).toBeTruthy();
-  const projectRows = Number(
-    apScalar(`select count(*) from public.project where id = '${sqlString(projectId)}'`),
-  );
-  const flowRows = Number(
-    apScalar(`select count(*) from public.flow where id = '${sqlString(flowId)}' and "projectId" = '${sqlString(projectId)}'`),
-  );
-  const flowVersionRows = Number(
-    apScalar(`select count(*) from public.flow_version where "flowId" = '${sqlString(flowId)}'`),
+  const activepiecesRows = parsePsqlJson<Record<string, unknown>>(
+    activepiecesPsql(`
+      select json_build_object(
+        'projectRows', (select count(*) from public.project where id = '${sqlString(projectId)}'),
+        'flowRows', (select count(*) from public.flow where id = '${sqlString(flowId)}' and "projectId" = '${sqlString(projectId)}'),
+        'flowVersionRows', (select count(*) from public.flow_version where "flowId" = '${sqlString(flowId)}')
+      )
+    `),
+    "Activepieces binding rows",
   );
   const apiFlow = await activepiecesGetFlow(flowId, projectId);
   return {
     binding: { projectId, flowId, flowVersionId, status, compileReportId, runtimeHash },
-    projectRows,
-    flowRows,
-    flowVersionRows,
+    projectRows: Number(activepiecesRows.projectRows),
+    flowRows: Number(activepiecesRows.flowRows),
+    flowVersionRows: Number(activepiecesRows.flowVersionRows),
     apiFlow: sanitizeActivepiecesFlow(apiFlow),
   };
 }
@@ -1545,18 +1611,54 @@ function sqlString(value: string) {
 }
 
 async function attachDbEvidence(testInfo: TestInfo) {
+  const lexframeEvidence = parsePsqlJson<Record<string, unknown>>(
+    psql(`
+      select json_build_object(
+        'drafts', (select count(*) from app.automation_canvas_drafts),
+        'operations', (select count(*) from app.automation_canvas_operations),
+        'validationRuns', (select count(*) from app.canvas_validation_runs),
+        'testRuns', (select count(*) from app.canvas_test_runs),
+        'versions', (select count(*) from app.automation_canvas_versions),
+        'auditEvents', (select count(*) from audit.audit_events where action like 'canvas.%' or action like '%activepieces%')
+      )
+    `),
+    "LexFrame DB evidence",
+  );
+  const activepiecesEvidence = parsePsqlJson<Record<string, unknown>>(
+    activepiecesPsql(`
+      select json_build_object(
+        'activepiecesProjects', (select count(*) from public.project),
+        'activepiecesFlows', (select count(*) from public.flow),
+        'activepiecesFlowVersions', (select count(*) from public.flow_version)
+      )
+    `),
+    "Activepieces DB evidence",
+  );
   const evidence = {
-    drafts: dbScalar("select count(*) from app.automation_canvas_drafts"),
-    operations: dbScalar("select count(*) from app.automation_canvas_operations"),
-    validationRuns: dbScalar("select count(*) from app.canvas_validation_runs"),
-    testRuns: dbScalar("select count(*) from app.canvas_test_runs"),
-    versions: dbScalar("select count(*) from app.automation_canvas_versions"),
-    auditEvents: dbScalar("select count(*) from audit.audit_events where action like 'canvas.%' or action like '%activepieces%'"),
-    activepiecesProjects: apScalar("select count(*) from public.project"),
-    activepiecesFlows: apScalar("select count(*) from public.flow"),
-    activepiecesFlowVersions: apScalar("select count(*) from public.flow_version"),
+    drafts: String(lexframeEvidence.drafts),
+    operations: String(lexframeEvidence.operations),
+    validationRuns: String(lexframeEvidence.validationRuns),
+    testRuns: String(lexframeEvidence.testRuns),
+    versions: String(lexframeEvidence.versions),
+    auditEvents: String(lexframeEvidence.auditEvents),
+    activepiecesProjects: String(activepiecesEvidence.activepiecesProjects),
+    activepiecesFlows: String(activepiecesEvidence.activepiecesFlows),
+    activepiecesFlowVersions: String(activepiecesEvidence.activepiecesFlowVersions),
   };
   await attachJson(testInfo, "db-evidence", evidence);
+}
+
+function parsePsqlJson<T extends Record<string, unknown>>(raw: string, label: string): T {
+  const text = raw.trim();
+  try {
+    const parsed = JSON.parse(text) as unknown;
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      throw new Error("expected a JSON object");
+    }
+    return parsed as T;
+  } catch (error) {
+    throw new Error(`${label} query did not return JSON object: ${String(error)}\nraw=${text}`);
+  }
 }
 
 function captureBrowserEvidence(page: Page, testInfo: TestInfo, suffix = "main") {

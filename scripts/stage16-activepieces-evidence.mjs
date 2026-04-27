@@ -160,6 +160,92 @@ function latestBindings() {
   });
 }
 
+function lexframeDuplicateFlowGroups() {
+  const rows = psql(
+    "activepieces-postgres",
+    "activepieces",
+    `
+      with latest_versions as (
+        select distinct on ("flowId")
+          "flowId",
+          "displayName",
+          trigger
+        from public.flow_version
+        order by "flowId", created desc
+      ),
+      lexframe_flows as (
+        select
+          f."projectId",
+          coalesce(
+            nullif(f."externalId", ''),
+            nullif(
+              concat_ws(
+                ':',
+                'lexframe',
+                v.trigger #>> '{settings,lexframe,workspaceId}',
+                v.trigger #>> '{settings,lexframe,automationId}'
+              ),
+              'lexframe'
+            )
+          ) as target,
+          v.trigger #>> '{settings,lexframe,workspaceId}' as workspace_id,
+          v.trigger #>> '{settings,lexframe,automationId}' as automation_id,
+          v.trigger #>> '{settings,lexframe,sourceWorkflowHash}' as source_workflow_hash,
+          f.id,
+          coalesce(f."externalId", '') as external_id,
+          coalesce(v."displayName", '') as display_name
+        from public.flow f
+        join latest_versions v on v."flowId" = f.id
+        where coalesce(f."externalId", '') like 'lexframe:%'
+           or v.trigger #>> '{settings,lexframe,managedBy}' = 'lexframe'
+      )
+      select
+        "projectId",
+        target,
+        coalesce(workspace_id, ''),
+        coalesce(automation_id, ''),
+        coalesce(source_workflow_hash, ''),
+        count(*),
+        json_agg(
+          json_build_object(
+            'flowId', id,
+            'externalId', external_id,
+            'displayName', display_name
+          )
+          order by id
+        )
+      from lexframe_flows
+      where target is not null
+      group by 1, 2, 3, 4, 5
+      having count(*) > 1
+      order by count(*) desc
+    `,
+  );
+  if (!rows) {
+    return [];
+  }
+  return rows.split(/\r?\n/).map((line) => {
+    const [
+      projectId,
+      target,
+      workspaceId,
+      automationId,
+      sourceWorkflowHash,
+      count,
+      flowsJson,
+    ] = line.split("\t");
+    return {
+      projectId,
+      target,
+      workspaceId,
+      automationId,
+      sourceWorkflowHash,
+      count: Number(count),
+      flows: JSON.parse(flowsJson),
+    };
+  });
+}
+
 async function verifyBinding(binding, token) {
   const projectRows = Number(
     psql(
@@ -221,6 +307,7 @@ const verified = [];
 for (const binding of bindings) {
   verified.push(await verifyBinding(binding, authSession.token));
 }
+const duplicateFlowGroups = lexframeDuplicateFlowGroups();
 const syncSuccessCount = Number(
   psql(
     "postgres",
@@ -266,6 +353,7 @@ const evidence = {
     auditCount,
   },
   verifiedBindings: verified,
+  duplicateFlowGroups,
 };
 
 console.log(JSON.stringify(evidence, null, 2));
@@ -279,11 +367,17 @@ const hasFalseSuccess =
       item.compileReportId &&
       item.runtimeHash,
   );
+const hasDuplicateFlowGroups = duplicateFlowGroups.length > 0;
 
-if (!hasVerifiedBinding || hasFalseSuccess) {
+if (!hasVerifiedBinding || hasFalseSuccess || hasDuplicateFlowGroups) {
   console.error(
     "[stage16-activepieces-evidence] FAIL: no verified LexFrame runtime binding with matching Activepieces project, flow and flow_version.",
   );
+  if (hasDuplicateFlowGroups) {
+    console.error(
+      `[stage16-activepieces-evidence] FAIL: duplicate LexFrame-managed Activepieces flows found: ${JSON.stringify(duplicateFlowGroups)}`,
+    );
+  }
   process.exit(1);
 }
 

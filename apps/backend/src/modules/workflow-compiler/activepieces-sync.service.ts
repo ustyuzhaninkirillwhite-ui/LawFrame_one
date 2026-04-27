@@ -82,6 +82,7 @@ export class ActivepiecesSyncService {
 
   async ensureFlow(input: {
     readonly projectId: string;
+    readonly workspaceId: string;
     readonly automationId: string;
     readonly displayName: string;
     readonly existingFlowId?: string | null;
@@ -89,6 +90,10 @@ export class ActivepiecesSyncService {
     readonly flowId: string;
     readonly flowVersionId: string | null;
   }> {
+    const externalId = lexFrameFlowExternalId(
+      input.workspaceId,
+      input.automationId,
+    );
     if (input.existingFlowId && isActivepiecesId(input.existingFlowId)) {
       try {
         const existing = await this.activepieces.getFlow({
@@ -108,9 +113,42 @@ export class ActivepiecesSyncService {
       }
     }
 
+    const existingByExternalId = await this.activepieces.findFlowByExternalId(
+      input.projectId,
+      externalId,
+    );
+    if (existingByExternalId) {
+      return {
+        flowId: existingByExternalId.id,
+        flowVersionId: existingByExternalId.versionId,
+      };
+    }
+
+    const existingByLexFrameTarget =
+      await this.activepieces.findFlowByLexFrameTarget({
+        projectId: input.projectId,
+        workspaceId: input.workspaceId,
+        automationId: input.automationId,
+      });
+    if (existingByLexFrameTarget) {
+      return {
+        flowId: existingByLexFrameTarget.id,
+        flowVersionId: existingByLexFrameTarget.versionId,
+      };
+    }
+
     const created = await this.activepieces.createFlow({
       projectId: input.projectId,
       displayName: input.displayName,
+      externalId,
+      metadata: {
+        lexframe: {
+          managedBy: 'lexframe',
+          workspaceId: input.workspaceId,
+          automationId: input.automationId,
+          target: externalId,
+        },
+      },
     });
     return {
       flowId: created.id,
@@ -155,6 +193,10 @@ export class ActivepiecesSyncService {
 
     return { flowVersionId: latestFlowVersionId };
   }
+}
+
+function lexFrameFlowExternalId(workspaceId: string, automationId: string) {
+  return `lexframe:${workspaceId}:${automationId}`;
 }
 
 function isActivepiecesId(value: string) {
@@ -202,6 +244,22 @@ function buildTrigger(projection: ActivepiecesFlowProjection) {
       inputUiInfo: {},
       lexframe: {
         managedBy: 'lexframe',
+        workspaceId:
+          typeof projection.metadata.workspaceId === 'string'
+            ? projection.metadata.workspaceId
+            : null,
+        automationId:
+          typeof projection.metadata.automationId === 'string'
+            ? projection.metadata.automationId
+            : null,
+        workflowId:
+          typeof projection.metadata.workflowId === 'string'
+            ? projection.metadata.workflowId
+            : null,
+        draftVersionId:
+          typeof projection.metadata.draftVersionId === 'string'
+            ? projection.metadata.draftVersionId
+            : null,
         sourceWorkflowHash: projection.metadata.sourceWorkflowHash ?? null,
       },
     },

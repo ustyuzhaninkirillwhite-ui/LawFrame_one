@@ -1,9 +1,18 @@
 import { spawnSync } from "node:child_process";
+import { resolveDockerCli } from "./stage16-compose-utils.mjs";
+
+const docker = resolveDockerCli();
 
 const commands = [
+  ["corepack", ["pnpm", "stage16:validate:compose-helpers"]],
+  ["corepack", ["pnpm", "stage16:validate:release-gate-integrity"]],
   ["corepack", ["pnpm", "validate:json-schemas"]],
   ["corepack", ["pnpm", "validate:openapi"]],
   ["corepack", ["pnpm", "validate:canvas-fixtures"]],
+  ["corepack", ["pnpm", "stage16:build:backend-runtime"]],
+  ["corepack", ["pnpm", "stage16:build:web-runtime"]],
+  ["corepack", ["pnpm", "--dir", "packages/config", "build"]],
+  ["corepack", ["pnpm", "--filter", "@lexframe/web", "build"]],
   ["corepack", ["pnpm", "validate:canvas-security"]],
   ["corepack", ["pnpm", "validate:web-bundle-secrets"]],
   ["corepack", ["pnpm", "secret-scan"]],
@@ -13,56 +22,40 @@ const commands = [
   ["corepack", ["pnpm", "--filter", "@lexframe/web", "test:canvas:unit"]],
   ["corepack", ["pnpm", "--filter", "@lexframe/web", "test:canvas:components"]],
   ["corepack", ["pnpm", "--filter", "@lexframe/web", "test:canvas:contracts"]],
-  ["corepack", ["pnpm", "stage16:build:backend-runtime"]],
-  ["corepack", ["pnpm", "stage16:build:web-runtime"]],
+  [docker, ["compose", "--profile", "local-integrated", "down", "-v", "--remove-orphans"]],
   ["corepack", ["pnpm", "stage16:db:bootstrap"]],
-  ["docker", ["compose", "--profile", "local-integrated", "stop", "backend", "web"]],
-  ["docker", ["compose", "--profile", "local-integrated", "up", "-d"]],
-  ["corepack", ["pnpm", "stage16:db:apply-local"]],
+  [docker, ["compose", "--profile", "local-integrated", "down", "-v", "--remove-orphans"]],
   [
-    "docker",
-    [
-      "compose",
-      "--profile",
-      "local-integrated",
-      "run",
-      "--rm",
-      "--no-deps",
-      "stage16-activepieces-catalog-sync",
-    ],
-  ],
-  [
-    "docker",
+    docker,
     [
       "compose",
       "--profile",
       "local-integrated",
       "up",
       "-d",
-      "--no-deps",
-      "--force-recreate",
-      "backend",
-      "web",
+      "postgres",
+      "redis",
+      "activepieces-postgres",
+      "activepieces-redis",
+      "activepieces-app",
+      "activepieces-worker",
+      "opensearch",
+      "storage-sandbox",
+      "delivery-sandbox",
     ],
   ],
-  ["corepack", ["pnpm", "stage16:runtime:health"]],
+  ["corepack", ["pnpm", "stage16:db:apply-local"]],
   [
     "corepack",
-    [
-      "pnpm",
-      "--filter",
-      "@lexframe/e2e",
-      "exec",
-      "playwright",
-      "test",
-      "stage16-live-audit",
-    ],
+    ["pnpm", "stage16:runtime:health"],
+    { STAGE16_REQUIRE_APP_HEALTH: "1" },
   ],
+  ["corepack", ["pnpm", "stage16:run-live-audit"]],
   ["corepack", ["pnpm", "stage16:activepieces:evidence"]],
   ["corepack", ["pnpm", "validate:release-manifest"]],
 ];
 
-for (const [command, args] of commands) {
+for (const [command, args, envOverrides] of commands) {
   const useShell = process.platform === "win32";
   console.log(`[stage16-release-gate] ${command} ${args.join(" ")}`);
   const result = spawnSync(command, args, {
@@ -75,6 +68,7 @@ for (const [command, args] of commands) {
       ACTIVEPIECES_SIMULATE_RUNS:
         process.env.ACTIVEPIECES_SIMULATE_RUNS ?? "0",
       NEXT_PUBLIC_ENABLE_MSW: process.env.NEXT_PUBLIC_ENABLE_MSW ?? "0",
+      ...(envOverrides ?? {}),
     },
   });
   if (result.error) {

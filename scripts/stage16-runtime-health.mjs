@@ -1,4 +1,8 @@
-import { spawnSync } from "node:child_process";
+import {
+  compose,
+  parseComposePsJson,
+  repoRoot,
+} from "./stage16-compose-utils.mjs";
 
 const requiredServices = [
   "postgres",
@@ -11,45 +15,90 @@ const requiredServices = [
   "delivery-sandbox",
 ];
 
-const endpoints = [
+const dependencyEndpoints = [
   ["storage-sandbox", process.env.STORAGE_SANDBOX_HEALTH_URL ?? "http://127.0.0.1:54321/health"],
   ["delivery-sandbox", process.env.DELIVERY_SANDBOX_HEALTH_URL ?? "http://127.0.0.1:8091/health"],
   ["activepieces-app", process.env.ACTIVEPIECES_HEALTH_URL ?? "http://127.0.0.1:8080"],
 ];
 
-const optionalEndpoints = [
+const appEndpoints = [
   ["backend", process.env.LEXFRAME_API_HEALTH_URL ?? "http://127.0.0.1:3100/health/live"],
   ["frontend", process.env.LEXFRAME_WEB_HEALTH_URL ?? "http://127.0.0.1:3000"],
 ];
+
 const requireAppHealth = process.env.STAGE16_REQUIRE_APP_HEALTH === "1";
 const optionalEndpointResults = [];
 
-function run(command, args, options = {}) {
-  const result = spawnSync(command, args, {
-    encoding: "utf8",
-    shell: false,
-    ...options,
-  });
-  if (result.status !== 0) {
-    throw new Error(`${command} ${args.join(" ")} failed\n${result.stdout ?? ""}\n${result.stderr ?? ""}`);
+async function main() {
+  const services = parseComposePsJson(null, { all: true });
+  assertRequiredServices(services);
+
+  for (const [name, url] of dependencyEndpoints) {
+    await checkUrl(name, url, true);
   }
-  return result.stdout ?? "";
+
+  for (const [name, url] of appEndpoints) {
+    await checkUrl(name, url, requireAppHealth);
+  }
+
+  await retry(activepiecesAuthPreflight, "activepieces API preflight");
+  assertWorkerEvidence();
+
+  const unavailableOptional = optionalEndpointResults.filter((item) => !item.available);
+  if (unavailableOptional.length > 0 && !requireAppHealth) {
+    console.log(
+      `[stage16-runtime] Docker/runtime dependency probe passed; application servers are not required unless STAGE16_REQUIRE_APP_HEALTH=1. Optional endpoints unavailable: ${unavailableOptional
+        .map((item) => item.name)
+        .join(", ")}.`,
+    );
+  } else if (requireAppHealth) {
+    console.log("[stage16-runtime] backend/frontend application health is required and available");
+  }
+
+  console.log("[stage16-runtime] local-integrated Docker/runtime dependencies are healthy");
+}
+
+function assertRequiredServices(services) {
+  const byService = new Map(services.map((service) => [service.Service, service]));
+  const failures = [];
+
+  for (const serviceName of requiredServices) {
+    const service = byService.get(serviceName);
+    if (!service) {
+      failures.push(`${serviceName}: missing`);
+      continue;
+    }
+    const state = serviceStateText(service);
+    if (state.includes("exited") || state.includes("dead") || state.includes("unhealthy")) {
+      failures.push(`${serviceName}: ${state}`);
+    }
+    if (!state.includes("running") && !state.includes("healthy")) {
+      failures.push(`${serviceName}: not running (${state})`);
+    }
+  }
+
+  if (failures.length > 0) {
+    throw new Error(`local-integrated required service failure:\n${failures.join("\n")}`);
+  }
 }
 
 async function checkUrl(name, url, required = true) {
   try {
     await retry(async () => {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 5000);
-    const response = await fetch(url, { signal: controller.signal });
-    clearTimeout(timeout);
-    if (response.status >= 500) {
-      throw new Error(`${name} returned ${response.status}`);
-    }
-    console.log(`[stage16-runtime] ${name} ${url} -> ${response.status}`);
-    if (!required) {
-      optionalEndpointResults.push({ name, url, available: true });
-    }
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 5000);
+      try {
+        const response = await fetch(url, { signal: controller.signal });
+        if (response.status >= 500) {
+          throw new Error(`${name} returned ${response.status}`);
+        }
+        console.log(`[stage16-runtime] ${name} ${url} -> ${response.status}`);
+        if (!required) {
+          optionalEndpointResults.push({ name, url, available: true });
+        }
+      } finally {
+        clearTimeout(timeout);
+      }
     }, `${name} health`);
   } catch (error) {
     if (required) {
@@ -127,71 +176,61 @@ async function activepiecesAuthPreflight() {
   console.log(`[stage16-runtime] activepieces API auth/project preflight -> ${projectResponse.status}`);
 }
 
-function parseComposePs() {
-  const json = run("docker", ["compose", "--profile", "local-integrated", "ps", "--all", "--format", "json"]);
-  return json
-    .trim()
-    .split(/\r?\n/)
+function assertWorkerEvidence() {
+  const workerLogs = compose(
+    ["logs", "--no-color", "--tail", "200", "activepieces-worker"],
+    { label: "activepieces-worker logs" },
+  ).stdout ?? "";
+  if (
+    /unable to reach the server/i.test(workerLogs) &&
+    !/(Started|Starting) polling queue/i.test(workerLogs)
+  ) {
+    throw new Error("activepieces-worker reported inability to reach the server and has no later polling evidence");
+  }
+  console.log("[stage16-runtime] activepieces-worker log probe passed");
+}
+
+function serviceStateText(service) {
+  return [
+    service.State,
+    service.Status,
+    service.Health,
+    service.ExitCode === 0 ? null : service.ExitCode ? `exit-${service.ExitCode}` : null,
+  ]
     .filter(Boolean)
-    .map((line) => JSON.parse(line));
+    .join(" ")
+    .toLowerCase();
 }
 
-const services = parseComposePs();
-const byService = new Map(services.map((service) => [service.Service, service]));
-const failures = [];
-
-for (const serviceName of requiredServices) {
-  const service = byService.get(serviceName);
-  if (!service) {
-    failures.push(`${serviceName}: missing`);
-    continue;
+async function dumpDiagnostics(error) {
+  console.error(`[stage16-runtime] FAIL: ${error instanceof Error ? error.message : String(error)}`);
+  try {
+    const ps = compose(["ps", "--all"], { allowFailure: true });
+    if (ps.stdout) {
+      console.error(`[stage16-runtime] compose ps --all\n${ps.stdout}`);
+    }
+  } catch {
+    // Diagnostic best effort.
   }
-  const state = `${service.State ?? ""} ${service.Status ?? ""}`.toLowerCase();
-  if (state.includes("exited") || state.includes("dead") || state.includes("unhealthy")) {
-    failures.push(`${serviceName}: ${service.State} ${service.Status}`);
+  for (const service of ["backend", "web", "postgres"]) {
+    try {
+      const logs = compose(
+        ["logs", "--no-color", "--tail", "120", service],
+        { allowFailure: true },
+      );
+      if (logs.stdout || logs.stderr) {
+        console.error(`[stage16-runtime] ${service} logs\n${logs.stdout ?? ""}${logs.stderr ?? ""}`);
+      }
+    } catch {
+      // Diagnostic best effort.
+    }
   }
+  console.error(`[stage16-runtime] cwd=${repoRoot} COMPOSE_PROJECT_NAME=${process.env.COMPOSE_PROJECT_NAME ?? ""}`);
 }
 
-if (failures.length > 0) {
-  throw new Error(`local-integrated required service failure:\n${failures.join("\n")}`);
+try {
+  await main();
+} catch (error) {
+  await dumpDiagnostics(error);
+  process.exit(1);
 }
-
-for (const [name, url] of endpoints) {
-  await checkUrl(name, url, true);
-}
-
-for (const [name, url] of optionalEndpoints) {
-  await checkUrl(name, url, requireAppHealth);
-}
-
-await retry(activepiecesAuthPreflight, "activepieces API preflight");
-
-const workerLogs = run("docker", [
-  "compose",
-  "--profile",
-  "local-integrated",
-  "logs",
-  "--no-color",
-  "--tail",
-  "200",
-  "activepieces-worker",
-]);
-if (
-  /unable to reach the server/i.test(workerLogs) &&
-  !/(Started|Starting) polling queue/i.test(workerLogs)
-) {
-  throw new Error("activepieces-worker reported inability to reach the server and has no later polling evidence");
-}
-
-const unavailableOptional = optionalEndpointResults.filter((item) => !item.available);
-if (unavailableOptional.length > 0 && !requireAppHealth) {
-  console.log(
-    `[stage16-runtime] Docker/runtime dependency probe passed; application servers are not required unless STAGE16_REQUIRE_APP_HEALTH=1. Optional endpoints unavailable: ${unavailableOptional
-      .map((item) => item.name)
-      .join(", ")} unavailable. Playwright webServer is the acceptance proof for backend/frontend readiness.`,
-  );
-} else if (requireAppHealth) {
-  console.log("[stage16-runtime] backend/frontend application health is required and available");
-}
-
-console.log("[stage16-runtime] local-integrated Docker/runtime dependencies are healthy");
