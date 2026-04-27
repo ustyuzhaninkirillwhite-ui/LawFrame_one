@@ -1,7 +1,9 @@
 "use client";
 
 import type {
+  CanvasModuleCard,
   InstalledAutomationDetail,
+  ModuleAvailabilityStatus,
   PermissionCode,
   Stage15UiStatus,
 } from "@lexframe/contracts";
@@ -43,6 +45,7 @@ import {
   useStage15ProjectAutomations,
   useStage15ProjectSnapshot,
 } from "@/hooks/domain/stage15";
+import { useCanvasModuleCatalog } from "@/hooks/domain/automations";
 import { cn } from "@/lib/utils";
 import { useSessionBridge } from "@/providers/session-provider";
 import {
@@ -66,6 +69,7 @@ import {
   type CanvasValidationIssue,
   type WorkflowCanvasDraft,
   type WorkflowCanvasEdge,
+  type WorkflowCanvasKind,
   type WorkflowCanvasNode,
   type WorkflowCanvasPosition,
   type WorkflowPolicyState,
@@ -133,8 +137,19 @@ export function AutomationWorkbench({ projectId }: { readonly projectId: string 
   const [showComposerHint, setShowComposerHint] = React.useState(false);
   const [connectNotice, setConnectNotice] = React.useState<string | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
+  const moduleCatalog = useCanvasModuleCatalog({
+    automationId: selectedAutomationId,
+    mode: "palette",
+    limit: 1500,
+  });
 
   const automationList = automations.data ?? [];
+  const catalogPaletteItems = React.useMemo(
+    () => (moduleCatalog.data?.modules ?? []).map(canvasModuleToWorkbenchPaletteItem),
+    [moduleCatalog.data?.modules],
+  );
+  const paletteItems =
+    catalogPaletteItems.length > 0 ? catalogPaletteItems : legalBlockPalette;
   const projectDocuments = snapshot.data?.projectDocuments ?? [];
   const selectedAutomation =
     automationList.find((automation) => automation.id === selectedAutomationId) ?? null;
@@ -279,6 +294,11 @@ export function AutomationWorkbench({ projectId }: { readonly projectId: string 
 
   function addPaletteItem(item: BlockPaletteItem) {
     if (!paletteTarget) {
+      return;
+    }
+
+    if (item.disabledReason) {
+      setConnectNotice(item.disabledReason);
       return;
     }
 
@@ -557,6 +577,9 @@ export function AutomationWorkbench({ projectId }: { readonly projectId: string 
 
       {paletteTarget ? (
         <BlockPalette
+          catalogError={moduleCatalog.isError}
+          catalogLoading={moduleCatalog.isLoading}
+          items={paletteItems}
           onClose={() => setPaletteTarget(null)}
           onSelect={addPaletteItem}
         />
@@ -753,13 +776,198 @@ function IconAction({
   );
 }
 
+function canvasModuleToWorkbenchPaletteItem(module: CanvasModuleCard): BlockPaletteItem {
+  const availabilityStatus = module.availability.status;
+  const disabledReason = canAddCanvasCatalogModule(availabilityStatus)
+    ? null
+    : module.availability.human_reason ??
+      `Модуль недоступен: ${availabilityLabelForPalette(availabilityStatus)}.`;
+  const outputKey = sanitizePaletteOutputKey(module.module_code);
+  const connectionBindings = Object.fromEntries(
+    module.runtime.required_connections.map((connection) => [
+      connection.type,
+      `$connections.${connection.type}`,
+    ]),
+  );
+
+  return {
+    kind: moduleKindForCanvasModule(module),
+    label: module.display_name,
+    description: module.short_description,
+    requiredPermissions:
+      module.flags.external_action || module.flags.requires_approval
+        ? ["automation.edit", "automation.approve_external"]
+        : ["automation.edit"],
+    moduleCode: module.module_code,
+    source: module.source ?? "lexframe",
+    sourceLabel: module.source_label ?? sourceLabelForPalette(module.source),
+    categoryLabel: module.category_label,
+    availabilityStatus,
+    disabledReason,
+    tags: [...module.tags, ...module.aliases],
+    defaultNode: {
+      kind: moduleKindForCanvasModule(module),
+      title: module.display_name,
+      description: module.short_description,
+      prompt: module.long_description ?? module.short_description,
+      inputBindings: {},
+      outputBindings: {
+        result: `$outputs.${outputKey}`,
+      },
+      connectionBindings,
+      requiresApproval: module.flags.requires_approval || module.flags.external_action,
+      runtimeRequirement:
+        module.runtime.required_connections[0]?.type ??
+        module.runtime.required_pieces[0]?.piece_name ??
+        module.module_code,
+      policyState: policyStateForCanvasModule(module),
+      moduleCode: module.module_code,
+      moduleSource: module.source ?? "lexframe",
+      moduleSourceLabel: module.source_label ?? sourceLabelForPalette(module.source),
+      moduleAvailability: availabilityStatus,
+      moduleAvailabilityReason: module.availability.human_reason ?? null,
+    },
+  };
+}
+
+function moduleKindForCanvasModule(module: CanvasModuleCard): WorkflowCanvasKind {
+  if (module.insertion.default_node_type === "trigger") {
+    return "trigger";
+  }
+
+  const category = module.category_code.toLocaleLowerCase("en-US");
+  if (category.includes("document") || category.includes("data")) {
+    return "document";
+  }
+  if (category.includes("ai") || module.flags.uses_ai) {
+    return "legal_analysis";
+  }
+  if (category.includes("condition") || category.includes("router")) {
+    return "condition";
+  }
+  if (category.includes("approval") || module.flags.requires_approval) {
+    return "approval";
+  }
+  if (category.includes("delivery") || category.includes("communication")) {
+    return "delivery";
+  }
+  if (category.includes("storage")) {
+    return "storage";
+  }
+
+  return module.source === "activepieces" ? "custom" : "legal_analysis";
+}
+
+function policyStateForCanvasModule(module: CanvasModuleCard): WorkflowPolicyState {
+  if (
+    [
+      "blocked_by_role",
+      "blocked_by_plan",
+      "blocked_by_data_policy",
+      "blocked_by_runtime",
+      "incompatible_with_canvas_context",
+      "retired",
+    ].includes(module.availability.status)
+  ) {
+    return "blocked_by_policy";
+  }
+  if (module.availability.status === "missing_connection") {
+    return "missing_connection";
+  }
+  if (module.flags.external_action) {
+    return "external_action";
+  }
+  if (module.flags.requires_approval) {
+    return "requires_approval";
+  }
+  return "ok";
+}
+
+function canAddCanvasCatalogModule(status: ModuleAvailabilityStatus) {
+  return [
+    "available",
+    "available_with_warnings",
+    "missing_connection",
+    "missing_profile",
+    "missing_template",
+  ].includes(status);
+}
+
+function sourceLabelForPalette(source: CanvasModuleCard["source"] | BlockPaletteItem["source"]) {
+  if (source === "activepieces") {
+    return "Activepieces";
+  }
+  if (source === "external") {
+    return "External";
+  }
+  if (source === "legacy") {
+    return "Local";
+  }
+  return "LexFrame";
+}
+
+function availabilityLabelForPalette(status: string) {
+  const labels: Record<string, string> = {
+    available: "доступен",
+    available_with_warnings: "с предупреждением",
+    missing_required_input: "нет входных данных",
+    missing_connection: "нет подключения",
+    missing_profile: "нет профиля",
+    missing_template: "нет шаблона",
+    blocked_by_role: "нет прав",
+    blocked_by_plan: "недоступно в тарифе",
+    blocked_by_data_policy: "блокирует политика",
+    blocked_by_runtime: "runtime недоступен",
+    deprecated: "устарел",
+    retired: "выведен",
+    incompatible_with_canvas_context: "не подходит здесь",
+  };
+  return labels[status] ?? status;
+}
+
+function sanitizePaletteOutputKey(value: string) {
+  const normalized = value
+    .replace(/^ap\./, "")
+    .replace(/[^a-zA-Z0-9_]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .toLocaleLowerCase("en-US");
+  return normalized.length > 0 ? normalized : "module_result";
+}
+
 function BlockPalette({
+  catalogError,
+  catalogLoading,
+  items,
   onClose,
   onSelect,
 }: {
+  readonly catalogError: boolean;
+  readonly catalogLoading: boolean;
+  readonly items: readonly BlockPaletteItem[];
   readonly onClose: () => void;
   readonly onSelect: (item: BlockPaletteItem) => void;
 }) {
+  const [query, setQuery] = React.useState("");
+  const normalizedQuery = query.trim().toLocaleLowerCase("ru-RU");
+  const activepiecesCount = items.filter((item) => item.source === "activepieces").length;
+  const filteredItems = items.filter((item) => {
+    if (normalizedQuery.length === 0) {
+      return true;
+    }
+
+    const haystack = [
+      item.label,
+      item.description,
+      item.moduleCode ?? "",
+      item.sourceLabel ?? "",
+      item.categoryLabel ?? "",
+      ...(item.tags ?? []),
+    ]
+      .join(" ")
+      .toLocaleLowerCase("ru-RU");
+    return haystack.includes(normalizedQuery);
+  });
+
   return (
     <div
       data-testid="automation-block-palette"
@@ -778,20 +986,79 @@ function BlockPalette({
           <X className="h-4 w-4" />
         </button>
       </div>
+      <div className="mt-2 px-2">
+        <input
+          aria-label="Поиск по каталогу модулей автоматизации"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="Поиск: gmail, delay, документ"
+          className="h-9 w-full rounded-[14px] border border-[color:var(--line)] bg-black/24 px-3 text-sm outline-none focus:border-[color:var(--accent)]"
+        />
+        <div className="mt-2 flex flex-wrap gap-1 text-[11px] text-[color:var(--muted)]">
+          <span className="rounded-full border border-[color:var(--line)] px-2 py-1">
+            всего: {items.length}
+          </span>
+          <span className="rounded-full border border-[color:var(--line)] px-2 py-1">
+            Activepieces: {activepiecesCount}
+          </span>
+          {catalogLoading ? (
+            <span className="rounded-full border border-[color:var(--accent)]/45 px-2 py-1 text-[color:var(--accent-strong)]">
+              загрузка каталога
+            </span>
+          ) : null}
+          {catalogError ? (
+            <span className="rounded-full border border-[color:var(--danger)]/45 px-2 py-1 text-[color:var(--danger)]">
+              показан локальный fallback
+            </span>
+          ) : null}
+        </div>
+      </div>
       <div className="mt-2 grid max-h-[calc(100vh-248px)] gap-2 overflow-y-auto overscroll-contain pb-3 pr-1">
-        {legalBlockPalette.map((item) => (
+        {filteredItems.map((item) => {
+          const disabled = Boolean(item.disabledReason);
+          return (
           <button
-            key={`${item.kind}_${item.label}`}
+            key={`${item.moduleCode ?? item.kind}_${item.label}`}
             type="button"
-            className="rounded-[18px] border border-[color:var(--line)] bg-black/20 p-3 text-left transition hover:border-[color:var(--accent)] hover:bg-[color:var(--accent)]/10"
+            className="rounded-[18px] border border-[color:var(--line)] bg-black/20 p-3 text-left transition hover:border-[color:var(--accent)] hover:bg-[color:var(--accent)]/10 disabled:cursor-not-allowed disabled:opacity-55"
+            disabled={disabled}
             onClick={() => onSelect(item)}
+            title={item.disabledReason ?? item.description}
           >
-            <div className="text-sm font-semibold">{item.label}</div>
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0 text-sm font-semibold">{item.label}</div>
+              <span className="shrink-0 rounded-full border border-[color:var(--line)] px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] text-[color:var(--muted)]">
+                {item.sourceLabel ?? sourceLabelForPalette(item.source)}
+              </span>
+            </div>
             <div className="mt-1 text-xs leading-5 text-[color:var(--muted)]">
               {item.description}
             </div>
+            <div className="mt-2 flex flex-wrap gap-1 text-[10px] uppercase tracking-[0.12em] text-[color:var(--muted)]">
+              {item.categoryLabel ? (
+                <span className="rounded-full border border-[color:var(--line)] px-2 py-0.5">
+                  {item.categoryLabel}
+                </span>
+              ) : null}
+              {item.availabilityStatus ? (
+                <span className="rounded-full border border-[color:var(--line)] px-2 py-0.5">
+                  {availabilityLabelForPalette(item.availabilityStatus)}
+                </span>
+              ) : null}
+            </div>
+            {item.disabledReason ? (
+              <div className="mt-2 text-xs leading-5 text-[color:var(--danger)]">
+                {item.disabledReason}
+              </div>
+            ) : null}
           </button>
-        ))}
+        );
+        })}
+        {filteredItems.length === 0 ? (
+          <div className="rounded-[18px] border border-[color:var(--line)] bg-black/20 p-3 text-sm text-[color:var(--muted)]">
+            Ничего не найдено.
+          </div>
+        ) : null}
       </div>
     </div>
   );

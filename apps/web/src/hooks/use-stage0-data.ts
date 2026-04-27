@@ -795,7 +795,7 @@ export function useCanvasModuleCatalog(input: {
         limit: input.limit,
         cursor: input.cursor,
       }),
-    enabled: enabled && Boolean(input.automationId),
+    enabled,
     staleTime: 30_000,
   });
 }

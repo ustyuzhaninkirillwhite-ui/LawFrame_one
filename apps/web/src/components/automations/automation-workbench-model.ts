@@ -43,6 +43,11 @@ export interface WorkflowCanvasNode {
   readonly requiresApproval: boolean;
   readonly runtimeRequirement: string | null;
   readonly policyState: WorkflowPolicyState;
+  readonly moduleCode?: string | null;
+  readonly moduleSource?: "lexframe" | "activepieces" | "external" | "legacy";
+  readonly moduleSourceLabel?: string | null;
+  readonly moduleAvailability?: string | null;
+  readonly moduleAvailabilityReason?: string | null;
 }
 
 export interface WorkflowCanvasEdge {
@@ -87,6 +92,13 @@ export interface BlockPaletteItem {
   readonly description: string;
   readonly defaultNode: Omit<WorkflowCanvasNode, "id" | "position">;
   readonly requiredPermissions: readonly PermissionCode[];
+  readonly moduleCode?: string | null;
+  readonly source?: "lexframe" | "activepieces" | "external" | "legacy";
+  readonly sourceLabel?: string | null;
+  readonly categoryLabel?: string | null;
+  readonly availabilityStatus?: string | null;
+  readonly disabledReason?: string | null;
+  readonly tags?: readonly string[];
 }
 
 export type CanvasValidationCode =
