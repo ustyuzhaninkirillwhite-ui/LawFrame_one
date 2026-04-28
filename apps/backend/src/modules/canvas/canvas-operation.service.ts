@@ -1206,7 +1206,10 @@ export class CanvasOperationService {
         workflow: {
           ...workflow,
           inputs: upsertByKey(workflow.inputs, field),
-          workflow_inputs: upsertByKey(workflow.workflow_inputs ?? workflow.inputs, field),
+          workflow_inputs: upsertByKey(
+            workflow.workflow_inputs ?? workflow.inputs,
+            field,
+          ),
           updated_at: new Date().toISOString(),
         },
       };
@@ -1264,9 +1267,9 @@ export class CanvasOperationService {
         workflow: {
           ...workflow,
           outputs: workflow.outputs.filter((output) => output.key !== key),
-          workflow_outputs: (workflow.workflow_outputs ?? workflow.outputs).filter(
-            (output) => output.key !== key,
-          ),
+          workflow_outputs: (
+            workflow.workflow_outputs ?? workflow.outputs
+          ).filter((output) => output.key !== key),
           updated_at: new Date().toISOString(),
         },
       };
@@ -2083,7 +2086,8 @@ function buildDynamicActivepiecesBlock(
         mapping.activepieces_action ??
         card.runtime.required_pieces[0]?.action ??
         undefined,
-      supportsStepTest: mapping.supports_step_test ?? card.flags.supports_dry_run,
+      supportsStepTest:
+        mapping.supports_step_test ?? card.flags.supports_dry_run,
       supportsPartialExecution: mapping.supports_partial_execution ?? false,
       supportsPinnedData: mapping.supports_pinned_data ?? false,
       notes: mapping.warnings ?? [],

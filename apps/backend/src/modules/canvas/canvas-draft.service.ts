@@ -975,8 +975,8 @@ export class CanvasDraftService {
         workspace_id: automation.workspace_id,
         automation_id: automation.id,
         draft_version_id:
-          (existing as { readonly draft_version_id?: string }).draft_version_id ??
-          draftId,
+          (existing as { readonly draft_version_id?: string })
+            .draft_version_id ?? draftId,
         published_version_id: null,
         metadata: {
           ...(existing as unknown as LexFrameWorkflowV2).metadata,

@@ -197,7 +197,8 @@ export class WorkflowCompilerService {
             actorId: actor.id,
             traceId: meta.traceId,
             errorCode: 'activepieces_idempotency_readback_failed',
-            errorMessage: error instanceof Error ? error.message : String(error),
+            errorMessage:
+              error instanceof Error ? error.message : String(error),
           });
         }
       }
@@ -285,11 +286,11 @@ export class WorkflowCompilerService {
         existingBinding?.external_project_id &&
         existingBinding.external_flow_id &&
         isActivepiecesRuntimeId(existingBinding.external_flow_id)
-        ? await this.snapshotService.pullActivepiecesFlowSnapshot({
-            projectId: existingBinding.external_project_id,
-            flowId: existingBinding.external_flow_id,
-          })
-        : null;
+          ? await this.snapshotService.pullActivepiecesFlowSnapshot({
+              projectId: existingBinding.external_project_id,
+              flowId: existingBinding.external_flow_id,
+            })
+          : null;
       const drift = this.diffService.detect({
         binding: existingBinding,
         currentRuntimeHash: beforeSnapshot?.snapshotHash ?? null,

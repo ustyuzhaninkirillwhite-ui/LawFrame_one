@@ -19,7 +19,8 @@ export function canonicalizeWorkflowV2(
     readonly workflow_inputs?: LexFrameWorkflowV2['inputs'];
     readonly workflow_outputs?: LexFrameWorkflowV2['outputs'];
   };
-  const sourceMetadata = (workflow.metadata ?? {}) as LexFrameWorkflowV2['metadata'] & {
+  const sourceMetadata = (workflow.metadata ??
+    {}) as LexFrameWorkflowV2['metadata'] & {
     readonly name?: string;
   };
   const metadata = {
@@ -34,17 +35,15 @@ export function canonicalizeWorkflowV2(
       sourceMetadata.canvas_mode ?? workflow.layout?.mode ?? 'guided_vertical',
   };
   const updatedAt =
-    workflow.updated_at ??
-    workflow.created_at ??
-    '1970-01-01T00:00:00.000Z';
+    workflow.updated_at ?? workflow.created_at ?? '1970-01-01T00:00:00.000Z';
   const workflowInputs =
     input.workflow_inputs && input.workflow_inputs.length > 0
       ? input.workflow_inputs
-      : input.inputs ?? [];
+      : (input.inputs ?? []);
   const workflowOutputs =
     input.workflow_outputs && input.workflow_outputs.length > 0
       ? input.workflow_outputs
-      : input.outputs ?? [];
+      : (input.outputs ?? []);
   const validation =
     workflow.validation_state ?? workflow.validation ?? emptyValidation();
   const canvasLayout =

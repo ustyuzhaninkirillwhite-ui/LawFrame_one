@@ -114,7 +114,11 @@ export class ActivepiecesRuntimeClient {
   ): Promise<ActivepiecesFlowRef | null> {
     const page = await this.request<
       ActivepiecesListResponse<ActivepiecesFlowResponse>
-    >('/flows', { method: 'GET' }, { projectId, searchParams: { limit: '100' } });
+    >(
+      '/flows',
+      { method: 'GET' },
+      { projectId, searchParams: { limit: '100' } },
+    );
     const match =
       page.data?.find((flow) => flow.externalId === externalId) ?? null;
     return match ? this.toFlowRef(match) : null;
@@ -127,7 +131,11 @@ export class ActivepiecesRuntimeClient {
   }): Promise<ActivepiecesFlowRef | null> {
     const page = await this.request<
       ActivepiecesListResponse<ActivepiecesFlowResponse>
-    >('/flows', { method: 'GET' }, { projectId: input.projectId, searchParams: { limit: '100' } });
+    >(
+      '/flows',
+      { method: 'GET' },
+      { projectId: input.projectId, searchParams: { limit: '100' } },
+    );
     const match =
       page.data?.find((flow) => {
         const lexframe = readLexFrameMetadata(flow.metadata);
@@ -370,7 +378,9 @@ export class ActivepiecesRuntimeClient {
   }
 }
 
-function readLexFrameMetadata(metadata: Record<string, unknown> | null | undefined) {
+function readLexFrameMetadata(
+  metadata: Record<string, unknown> | null | undefined,
+) {
   const lexframe = metadata?.lexframe;
   if (!lexframe || typeof lexframe !== 'object' || Array.isArray(lexframe)) {
     return null;

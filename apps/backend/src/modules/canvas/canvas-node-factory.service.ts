@@ -227,12 +227,20 @@ function outputHandleForNode(
     return requested;
   }
 
-  const preferred = ['main_output', 'sent', 'approved', 'after_loop', 'true_branch'];
+  const preferred = [
+    'main_output',
+    'sent',
+    'approved',
+    'after_loop',
+    'true_branch',
+  ];
   const fallback =
     preferred
-      .map((code) => node.handles.find(
-        (handle) => handle.direction === 'output' && handle.code === code,
-      ))
+      .map((code) =>
+        node.handles.find(
+          (handle) => handle.direction === 'output' && handle.code === code,
+        ),
+      )
       .find(Boolean) ??
     node.handles.find((handle) => handle.direction === 'output');
 

@@ -86,7 +86,8 @@ export class CanvasModuleCatalogService {
   }): Promise<CanvasModuleCatalogResponse> {
     const workspaceId = requireWorkspaceId(input.access);
     const includeLexFrame = !input.source || input.source === 'lexframe';
-    const includeActivepieces = !input.source || input.source === 'activepieces';
+    const includeActivepieces =
+      !input.source || input.source === 'activepieces';
     const blocks = includeLexFrame
       ? getCanvasBlockDefinitions().filter(
           (block) => block.code !== 'activepieces_action',
@@ -573,7 +574,8 @@ export class CanvasModuleCatalogService {
           row.entry_type === 'trigger'
             ? ['workflow_start']
             : ['after_node', 'before_node', 'workflow_end'],
-        default_node_type: row.entry_type === 'trigger' ? 'trigger' : 'legalAction',
+        default_node_type:
+          row.entry_type === 'trigger' ? 'trigger' : 'legalAction',
         preferred_after_module_codes: [],
         forbidden_after_module_codes: [],
       },
@@ -761,7 +763,7 @@ function isDisabled(card: CanvasModuleCard) {
     'missing_connection',
     'missing_template',
     'missing_profile',
-    ].includes(card.availability.status);
+  ].includes(card.availability.status);
 }
 
 function requirementsForActivepieces(
@@ -787,7 +789,10 @@ function requirementsForActivepieces(
     });
   }
 
-  if (row.status === 'blocked' || row.availability_status.startsWith('blocked')) {
+  if (
+    row.status === 'blocked' ||
+    row.availability_status.startsWith('blocked')
+  ) {
     requirements.push({
       kind: 'data_policy',
       code: row.gating_reason_code ?? `${row.module_code}:policy`,
@@ -807,7 +812,8 @@ function requirementsForActivepieces(
       label: 'Activepieces source piece',
       required: true,
       status: 'blocked',
-      reason: 'This entry is missing from the current Activepieces source image.',
+      reason:
+        'This entry is missing from the current Activepieces source image.',
     });
   }
 
@@ -827,10 +833,12 @@ function categoryLabel(value: string) {
 }
 
 function sanitizeCode(value: string) {
-  return value
-    .toLocaleLowerCase('en-US')
-    .replace(/[^a-z0-9_]+/g, '_')
-    .replace(/^_+|_+$/g, '') || 'activepieces';
+  return (
+    value
+      .toLocaleLowerCase('en-US')
+      .replace(/[^a-z0-9_]+/g, '_')
+      .replace(/^_+|_+$/g, '') || 'activepieces'
+  );
 }
 
 function hasApprovalBefore(workflow: LexFrameWorkflowV2, targetNodeId: string) {

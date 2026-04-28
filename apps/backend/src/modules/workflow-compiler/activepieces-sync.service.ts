@@ -183,12 +183,14 @@ export class ActivepiecesSyncService {
         projectId: input.projectId,
         flowId: input.flowId,
         operation: {
-            type: 'LOCK_AND_PUBLISH',
-            request: {},
+          type: 'LOCK_AND_PUBLISH',
+          request: {},
         },
       });
       latestFlowVersionId =
-        response.publishedVersionId ?? response.versionId ?? latestFlowVersionId;
+        response.publishedVersionId ??
+        response.versionId ??
+        latestFlowVersionId;
     }
 
     return { flowVersionId: latestFlowVersionId };
@@ -223,7 +225,9 @@ function projectionFromOperation(
   if (isProjection(flowVersion)) {
     return flowVersion;
   }
-  throw new Error('IMPORT_FLOW operation does not contain Activepieces projection.');
+  throw new Error(
+    'IMPORT_FLOW operation does not contain Activepieces projection.',
+  );
 }
 
 function toActivepiecesImportRequest(projection: ActivepiecesFlowProjection) {
