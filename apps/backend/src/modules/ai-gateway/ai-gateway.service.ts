@@ -2869,6 +2869,18 @@ export class AIGatewayService {
     }
 
     if (
+      this.env.AI_PROVIDER_MODE === 'controlled-real' &&
+      this.env.LEXFRAME_AI_TEST_FORCE_COMETAPI === '1'
+    ) {
+      return {
+        route: 'cometapi',
+        provider: 'cometapi',
+        model: this.env.LEXFRAME_AI_TEST_MODEL,
+        routeReason: 'test_force_cometapi_route',
+      };
+    }
+
+    if (
       dataClass === 'C_CONFIDENTIAL_CLIENT' ||
       dataClass === 'C_LEGAL_SECRET'
     ) {

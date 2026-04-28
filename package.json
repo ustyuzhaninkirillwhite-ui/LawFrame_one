@@ -38,6 +38,7 @@
     "stage16:db:bootstrap": "node scripts/stage16-db-bootstrap.mjs",
     "stage16:db:apply-local": "node scripts/stage16-db-apply-local.mjs",
     "stage16:runtime:health": "node scripts/stage16-runtime-health.mjs",
+    "stage16:runtime:up-full": "node scripts/stage16-runtime-up-full.mjs",
     "stage16:build:backend-runtime": "node scripts/stage16-build-backend-runtime.mjs",
     "stage16:build:web-runtime": "node scripts/stage16-build-web-runtime.mjs",
     "stage16:activepieces:evidence": "node scripts/stage16-activepieces-evidence.mjs",

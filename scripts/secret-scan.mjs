@@ -6,6 +6,9 @@ const ignore = [
   "**/dist/**",
   "**/.next/**",
   "**/coverage/**",
+  "**/.env",
+  "**/.env.local",
+  "**/.env.*.local",
 ];
 
 const files = await fg(["**/*.{ts,tsx,js,mjs,cjs,json,yaml,yml,env,md,sql}"], {

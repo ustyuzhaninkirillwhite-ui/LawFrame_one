@@ -247,7 +247,8 @@ export class ReadinessService {
     const aiProviderMode = this.env.AI_PROVIDER_MODE;
     const aiKeyConfigured =
       isConfiguredSecret(this.env.XAI_API_KEY) ||
-      isConfiguredSecret(this.env.COMETAPI_API_KEY);
+      isConfiguredSecret(this.env.COMETAPI_API_KEY) ||
+      hasConfiguredSecretList(this.env.COMETAPI_API_KEYS);
     const aiProviderBlockers = buildAiProviderBlockers({
       providerMode: aiProviderMode,
       keyConfigured: aiKeyConfigured,
@@ -529,7 +530,8 @@ export class ReadinessService {
     const aiProviderMode = this.env.AI_PROVIDER_MODE;
     const aiKeyConfigured =
       isConfiguredSecret(this.env.XAI_API_KEY) ||
-      isConfiguredSecret(this.env.COMETAPI_API_KEY);
+      isConfiguredSecret(this.env.COMETAPI_API_KEY) ||
+      hasConfiguredSecretList(this.env.COMETAPI_API_KEYS);
     const aiProviderBlockers = buildAiProviderBlockers({
       providerMode: aiProviderMode,
       keyConfigured: aiKeyConfigured,
@@ -759,7 +761,9 @@ export class ReadinessService {
           providerMode: aiProviderMode,
           realProviderKeyConfigured: aiKeyConfigured,
           xaiConfigured: isConfiguredSecret(this.env.XAI_API_KEY),
-          cometConfigured: isConfiguredSecret(this.env.COMETAPI_API_KEY),
+          cometConfigured:
+            isConfiguredSecret(this.env.COMETAPI_API_KEY) ||
+            hasConfiguredSecretList(this.env.COMETAPI_API_KEYS),
         },
       }),
       buildServiceStatus({
@@ -1306,6 +1310,12 @@ function isConfiguredSecret(value: string | undefined) {
     !value.startsWith('replace_with_') &&
     !value.startsWith('demo_')
   );
+}
+
+function hasConfiguredSecretList(value: string | undefined) {
+  return (value ?? '')
+    .split(/[\s,;]+/)
+    .some((item) => isConfiguredSecret(item));
 }
 
 function isDeliveryTransportConfigured(env: ReturnType<typeof loadServerEnv>) {

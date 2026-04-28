@@ -230,20 +230,35 @@ export class CometApiAdapter implements AiProviderAdapter {
     zeroDataRetention: false,
   };
   private readonly env = loadServerEnv();
+  private readonly apiKeys = getConfiguredCometApiKeys(this.env);
+  private apiKeyCursor = 0;
 
   async generateStructured<T>(
     request: StructuredAiRequest<T>,
   ): Promise<StructuredAiResponse<T>> {
-    if (!isConfiguredSecret(this.env.COMETAPI_API_KEY)) {
+    const apiKey = this.nextApiKey();
+
+    if (!apiKey) {
       return buildFallbackResponse(this.provider, request, Date.now());
     }
 
     return requestOpenAiCompatibleStructuredOutput({
       provider: this.provider,
-      apiKey: this.env.COMETAPI_API_KEY,
+      apiKey,
       endpoint: 'https://api.cometapi.com/v1/chat/completions',
       request,
     });
+  }
+
+  private nextApiKey() {
+    if (this.apiKeys.length === 0) {
+      return null;
+    }
+
+    const apiKey = this.apiKeys[this.apiKeyCursor % this.apiKeys.length];
+    this.apiKeyCursor = (this.apiKeyCursor + 1) % this.apiKeys.length;
+
+    return apiKey;
   }
 }
 
@@ -276,8 +291,21 @@ export class AiProviderRegistry {
   }
 }
 
-function isConfiguredSecret(value: string) {
-  return !value.startsWith('stage0_') && !value.startsWith('replace_with_');
+function getConfiguredCometApiKeys(env: ReturnType<typeof loadServerEnv>) {
+  const keys = [...env.COMETAPI_API_KEYS.split(/[\s,;]+/), env.COMETAPI_API_KEY]
+    .map((value) => value.trim())
+    .filter(isConfiguredSecret);
+
+  return Array.from(new Set(keys));
+}
+
+function isConfiguredSecret(value: string | undefined) {
+  return (
+    typeof value === 'string' &&
+    value.length > 0 &&
+    !value.startsWith('stage0_') &&
+    !value.startsWith('replace_with_')
+  );
 }
 
 function coerceCompletionContent(payload: ChatCompletionResponse) {

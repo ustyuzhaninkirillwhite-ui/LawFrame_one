@@ -73,7 +73,7 @@ services:
 
   clickhouse:
     image: clickhouse/clickhouse-server:24.8
-    profiles: ["analytics"]
+    profiles: ["analytics", "full-runtime"]
     environment:
       CLICKHOUSE_DB: analytics
       CLICKHOUSE_USER: default
@@ -85,6 +85,12 @@ services:
     volumes:
       - clickhouse_data:/var/lib/clickhouse
       - ./infra/analytics/clickhouse/init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "clickhouse-client --query 'select 1'"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
 
   activepieces-postgres:
     image: postgres:16-alpine
@@ -237,7 +243,12 @@ services:
       LEXFRAME_DEFAULT_SESSION_MAX_AGE_MINUTES: 720
       LEXFRAME_DEFAULT_IDLE_TIMEOUT_MINUTES: 60
       LEXFRAME_AI_SENSITIVE_DATA_POLICY: zdr_or_block
-      AI_PROVIDER_MODE: mock
+      AI_PROVIDER_MODE: ${AI_PROVIDER_MODE:-mock}
+      XAI_API_KEY: ${XAI_API_KEY:-stage0_xai_api_key}
+      COMETAPI_API_KEY: ${COMETAPI_API_KEY:-stage0_comet_api_key}
+      COMETAPI_API_KEYS: ${COMETAPI_API_KEYS:-}
+      LEXFRAME_AI_TEST_FORCE_COMETAPI: ${LEXFRAME_AI_TEST_FORCE_COMETAPI:-0}
+      LEXFRAME_AI_TEST_MODEL: ${LEXFRAME_AI_TEST_MODEL:-grok-4-1-fast-non-reasoning}
       LEXFRAME_DELIVERY_TRANSPORT: webhook
       LEXFRAME_DELIVERY_WEBHOOK_URL: http://delivery-sandbox:8091/hooks/delivery
       LEXFRAME_DELIVERY_WEBHOOK_TOKEN: local_delivery_token
@@ -260,6 +271,7 @@ services:
       OPENSEARCH_URL: http://opensearch:9200
       OPENSEARCH_INDEX_ALIAS: legal_chunks_current
       OPENSEARCH_SEARCH_PIPELINE: legal-hybrid-pipeline
+      LEXFRAME_MINING_WORKER_HEALTH_URL: ${LEXFRAME_MINING_WORKER_HEALTH_URL:-http://mining-worker:8090/health/ready}
       TEMPORAL_ADDRESS: 127.0.0.1:7233
       TEMPORAL_NAMESPACE: default
       TEMPORAL_TASK_QUEUE: lexframe-legal
@@ -387,20 +399,36 @@ services:
   mining-worker:
     build:
       context: ./apps/mining-worker
-    profiles: ["analytics"]
+    profiles: ["analytics", "full-runtime"]
     environment:
-      POSTGRES_DSN: postgresql://postgres:postgres@postgres:5432/postgres
+      POSTGRES_DSN: postgresql://postgres:postgres@postgres:5432/stage16_runtime
       REDPANDA_BROKERS: redpanda:9092
       CLICKHOUSE_URL: http://clickhouse:8123
+      HEALTH_PORT: "8090"
       POSTHOG_DISABLED: "true"
       STAGE9_NGRAM_WINDOW_DAYS: "14"
       STAGE9_VARIANT_WINDOW_DAYS: "30"
       STAGE9_TEAM_MODEL_WINDOW_DAYS: "90"
       STAGE9_SYNTHETIC_SESSION_TIMEOUT_MINUTES: "30"
     depends_on:
-      - postgres
-      - redpanda
-      - clickhouse
+      postgres:
+        condition: service_healthy
+      redpanda:
+        condition: service_started
+      clickhouse:
+        condition: service_healthy
+    ports:
+      - "8090:8090"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8090/health/live', timeout=3)\"",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
 
 volumes:
   postgres_data:

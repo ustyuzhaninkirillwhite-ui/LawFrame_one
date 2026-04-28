@@ -1,15 +1,15 @@
 "use client";
 
-import { useSystemStatus } from "@/hooks/use-stage0-data";
 import { Badge } from "@/components/ui/badge";
+import { useSystemStatus } from "@/hooks/use-stage0-data";
 import { formatStatus } from "@/lib/i18n";
 
 const statusLabels: Record<string, string> = {
-  ai: "ИИ ограничен",
-  storage: "Хранилище ограничено",
-  activepieces: "Activepieces ограничен",
-  search: "Поиск ограничен",
-  realtime: "Realtime ограничен",
+  ai: "ИИ-провайдер недоступен",
+  storage: "Хранилище недоступно",
+  activepieces: "Activepieces недоступен",
+  search: "Поиск недоступен",
+  realtime: "Realtime недоступен",
 };
 
 export function SystemStatusBanner() {

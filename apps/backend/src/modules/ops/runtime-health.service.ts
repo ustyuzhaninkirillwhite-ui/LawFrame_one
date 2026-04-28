@@ -3,10 +3,19 @@ import type {
   RuntimeHealthSummary,
   SystemStatusSummary,
 } from '@lexframe/contracts';
+import type { ServerEnv } from '@lexframe/config';
 import { loadServerEnv } from '@lexframe/config';
 import { Injectable } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
 import { ReadinessService } from '../readiness/readiness.service';
+
+type MiningWorkerReadyPayload = {
+  readonly status?: unknown;
+  readonly summary?: unknown;
+  readonly service?: unknown;
+  readonly lastError?: unknown;
+  readonly error?: unknown;
+};
 
 @Injectable()
 export class RuntimeHealthService {
@@ -31,32 +40,23 @@ export class RuntimeHealthService {
 
   async getDependencies(): Promise<readonly RuntimeDependencyStatus[]> {
     const checkedAt = new Date().toISOString();
-    const [storageHealthy, activepieces, search, worker, readinessSnapshot] =
-      await Promise.all([
-        this.databaseService.ping(),
-        checkHttpDependency(
-          'activepieces',
-          this.env.ACTIVEPIECES_BASE_URL,
-          this.env.LEXFRAME_HEALTHCHECK_TIMEOUT_MS,
-        ),
-        checkHttpDependency(
-          'search',
-          this.env.OPENSEARCH_URL,
-          this.env.LEXFRAME_HEALTHCHECK_TIMEOUT_MS,
-        ),
-        checkHttpDependency(
-          'realtime',
-          this.env.LEXFRAME_MINING_WORKER_HEALTH_URL,
-          this.env.LEXFRAME_HEALTHCHECK_TIMEOUT_MS,
-        ),
-        this.readinessService.getReadinessSnapshot(),
-      ]);
-
-    const aiConfigured =
-      isConfiguredSecret(this.env.XAI_API_KEY) ||
-      isConfiguredSecret(this.env.COMETAPI_API_KEY);
-    const readiness = readinessSnapshot.gates;
-    const readinessBlocked = readiness.some((gate) => gate.blockers.length > 0);
+    const [storageHealthy, activepieces, search, worker] = await Promise.all([
+      this.databaseService.ping(),
+      checkHttpDependency(
+        'activepieces',
+        this.env.ACTIVEPIECES_BASE_URL,
+        this.env.LEXFRAME_HEALTHCHECK_TIMEOUT_MS,
+      ),
+      checkHttpDependency(
+        'search',
+        this.env.OPENSEARCH_URL,
+        this.env.LEXFRAME_HEALTHCHECK_TIMEOUT_MS,
+      ),
+      checkMiningWorkerDependency(
+        this.env.LEXFRAME_MINING_WORKER_HEALTH_URL,
+        this.env.LEXFRAME_HEALTHCHECK_TIMEOUT_MS,
+      ),
+    ]);
 
     return [
       {
@@ -68,31 +68,9 @@ export class RuntimeHealthService {
         checkedAt,
       },
       activepieces,
-      {
-        code: 'ai',
-        status: aiConfigured ? 'healthy' : 'blocked',
-        summary: aiConfigured
-          ? 'Для runtime-маршрутизации настроен хотя бы один внешний ИИ-провайдер.'
-          : 'Внешние ИИ-провайдеры не настроены, поэтому защищённые runtime-маршруты остаются закрыты.',
-        checkedAt,
-      },
+      resolveAiDependency(this.env, checkedAt),
       search,
-      {
-        code: 'realtime',
-        status:
-          worker.status === 'blocked'
-            ? 'blocked'
-            : readinessBlocked
-              ? 'degraded'
-              : worker.status,
-        summary:
-          worker.status === 'blocked'
-            ? worker.summary
-            : readinessBlocked
-              ? 'Realtime и фоновая отправка зависят от upstream-гейтов готовности, которые ещё не полностью зелёные.'
-              : worker.summary,
-        checkedAt,
-      },
+      worker,
     ];
   }
 
@@ -123,11 +101,16 @@ export class RuntimeHealthService {
       summary: dependency.summary,
       checkedAt,
     }));
+    const overall = mapRuntimeStatusToSystemStatus(
+      summarizeHealth(dependencies),
+    );
 
     return {
-      overall: mapRuntimeStatusToSystemStatus(summarizeHealth(dependencies)),
+      overall,
       summary:
-        'Состояние runtime объединяет хранилище, ИИ-маршрутизацию, Activepieces, поиск и realtime-зависимости для решений о degraded mode.',
+        overall === 'healthy'
+          ? 'Все runtime-зависимости доступны; автоматизации работают в полном режиме.'
+          : 'Некоторые runtime-зависимости недоступны; функции автоматизаций временно ограничены.',
       checkedAt,
       incidentsOpen: 0,
       components,
@@ -203,8 +186,161 @@ function statusToMetricValue(status: RuntimeDependencyStatus['status']) {
   }
 }
 
-function isConfiguredSecret(value: string) {
-  return !value.startsWith('stage0_') && !value.startsWith('replace_with_');
+function resolveAiDependency(
+  env: ServerEnv,
+  checkedAt: string,
+): RuntimeDependencyStatus {
+  const hasRealAiKey =
+    isConfiguredSecret(env.XAI_API_KEY) ||
+    isConfiguredSecret(env.COMETAPI_API_KEY) ||
+    hasConfiguredSecretList(env.COMETAPI_API_KEYS);
+
+  if (env.AI_PROVIDER_MODE !== 'controlled-real') {
+    return {
+      code: 'ai',
+      status: 'blocked',
+      summary:
+        'Full-services режим требует AI_PROVIDER_MODE=controlled-real; сейчас включён mock-провайдер.',
+      checkedAt,
+    };
+  }
+
+  if (!hasRealAiKey) {
+    return {
+      code: 'ai',
+      status: 'blocked',
+      summary:
+        'Full-services режим требует XAI_API_KEY, COMETAPI_API_KEY или COMETAPI_API_KEYS.',
+      checkedAt,
+    };
+  }
+
+  return {
+    code: 'ai',
+    status: 'healthy',
+    summary: 'Внешний ИИ-провайдер подключён для runtime-маршрутизации.',
+    checkedAt,
+  };
+}
+
+function isConfiguredSecret(value: string | undefined) {
+  return (
+    typeof value === 'string' &&
+    value.trim().length > 0 &&
+    !value.startsWith('stage0_') &&
+    !value.startsWith('replace_with_')
+  );
+}
+
+function hasConfiguredSecretList(value: string) {
+  return value.split(/[\s,;]+/).some((item) => isConfiguredSecret(item.trim()));
+}
+
+async function checkMiningWorkerDependency(
+  url: string,
+  timeoutMs: number,
+): Promise<RuntimeDependencyStatus> {
+  const checkedAt = new Date().toISOString();
+
+  try {
+    const response = await fetch(url, {
+      signal: AbortSignal.timeout(timeoutMs),
+    });
+    const payload = await readMiningWorkerPayload(response);
+    const status = mapMiningWorkerStatus(payload?.status);
+
+    return {
+      code: 'realtime',
+      status:
+        response.ok || response.status < 500
+          ? status
+          : status === 'blocked'
+            ? 'blocked'
+            : 'degraded',
+      summary: describeMiningWorkerStatus(url, response.status, payload),
+      checkedAt,
+    };
+  } catch (error) {
+    return {
+      code: 'realtime',
+      status: 'blocked',
+      summary:
+        error instanceof Error
+          ? `${url}: mining-worker /health/ready недоступен: ${error.message}`
+          : `${url}: mining-worker /health/ready недоступен.`,
+      checkedAt,
+    };
+  }
+}
+
+async function readMiningWorkerPayload(
+  response: Response,
+): Promise<MiningWorkerReadyPayload | null> {
+  const text = await response.text();
+  if (text.trim().length === 0) {
+    return null;
+  }
+
+  try {
+    const parsed: unknown = JSON.parse(text);
+    return isRecord(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+function mapMiningWorkerStatus(
+  status: unknown,
+): RuntimeDependencyStatus['status'] {
+  if (status === 'ok') {
+    return 'healthy';
+  }
+
+  if (status === 'degraded') {
+    return 'degraded';
+  }
+
+  return 'blocked';
+}
+
+function describeMiningWorkerStatus(
+  url: string,
+  httpStatus: number,
+  payload: MiningWorkerReadyPayload | null,
+) {
+  const rawStatus = typeof payload?.status === 'string' ? payload.status : null;
+  const detail =
+    toSummaryText(payload?.summary) ??
+    toSummaryText(payload?.lastError) ??
+    toSummaryText(payload?.error);
+
+  if (rawStatus === 'ok') {
+    return `${url} ответил HTTP ${httpStatus}; mining-worker готов.`;
+  }
+
+  if (rawStatus === 'degraded') {
+    return detail
+      ? `${url} ответил HTTP ${httpStatus}; mining-worker ограничен: ${detail}`
+      : `${url} ответил HTTP ${httpStatus}; mining-worker ограничен.`;
+  }
+
+  if (rawStatus === 'blocked') {
+    return detail
+      ? `${url} ответил HTTP ${httpStatus}; mining-worker заблокирован: ${detail}`
+      : `${url} ответил HTTP ${httpStatus}; mining-worker заблокирован.`;
+  }
+
+  return `${url} ответил HTTP ${httpStatus}, но не вернул ожидаемый status=ok/degraded/blocked.`;
+}
+
+function toSummaryText(value: unknown) {
+  return typeof value === 'string' && value.trim().length > 0
+    ? value.trim()
+    : null;
+}
+
+function isRecord(value: unknown): value is MiningWorkerReadyPayload {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 async function checkHttpDependency(
