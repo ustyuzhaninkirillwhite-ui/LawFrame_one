@@ -33,6 +33,7 @@ export type ReadinessServiceCode =
   | "redis"
   | "opensearch"
   | "delivery-sandbox"
+  | "local-owner-key-vault"
   | "real-ai-provider"
   | "realtime";
 
@@ -509,6 +510,7 @@ export interface ApiErrorResponse {
   };
   readonly path: string;
   readonly requestId: string | null;
+  readonly trace_id?: string | null;
 }
 
 export interface CreateWorkspaceRequest {
@@ -757,6 +759,86 @@ export interface InstalledAutomationDetail {
 export interface CreateActivepiecesEmbedTokenRequest {
   readonly installedAutomationId: string;
   readonly purpose?: "builder" | "viewer";
+}
+
+export type ActivepiecesSessionPreferredMode =
+  | "auto"
+  | "iframe_embed"
+  | "reverse_proxy";
+
+export type ActivepiecesSessionMode = "iframe_embed" | "reverse_proxy";
+
+export type ActivepiecesSessionRole = "ADMIN" | "EDITOR" | "VIEWER";
+
+export type ActivepiecesSessionStatus =
+  | "ready"
+  | "degraded"
+  | "blocked"
+  | "unavailable";
+
+export type AutomationCanvasReadinessCode =
+  | "READY"
+  | "LOCAL_OWNER_KEYS_MISSING"
+  | "LOCAL_KEYS_INVALID"
+  | "AI_TEST_BLOCKED"
+  | "ACTIVEPIECES_UNAVAILABLE"
+  | "FLOW_BINDING_MISSING"
+  | "SESSION_BRIDGE_UNAVAILABLE"
+  | "FEATURE_DISABLED"
+  | "PERMISSION_DENIED"
+  | "TOKEN_EXPIRED";
+
+export type ActivepiecesRuntimeComponentStatus =
+  | "ok"
+  | "degraded"
+  | "blocked"
+  | "unknown";
+
+export interface CreateActivepiecesSessionRequest {
+  readonly workspaceId?: string;
+  readonly projectId: string;
+  readonly automationId: string | null;
+  readonly purpose: "automation_canvas";
+  readonly preferredMode?: ActivepiecesSessionPreferredMode;
+  readonly modePreference?: ActivepiecesSessionPreferredMode;
+  readonly clientRoute: string;
+  readonly returnBuilderConfig?: boolean;
+  readonly clientTraceId?: string | null;
+  readonly idempotencyKey?: string | null;
+}
+
+export interface CreateActivepiecesSessionWireRequest {
+  readonly workspace_id?: string;
+  readonly project_id: string;
+  readonly automation_id: string | null;
+  readonly purpose: "automation_canvas";
+  readonly preferred_mode?: ActivepiecesSessionPreferredMode;
+  readonly mode_preference?: ActivepiecesSessionPreferredMode;
+  readonly client_route: string;
+  readonly return_builder_config?: boolean;
+  readonly client_trace_id?: string | null;
+  readonly idempotency_key?: string | null;
+}
+
+export interface InitializeActivepiecesSessionRequest {
+  readonly sessionId: string;
+  readonly clientTraceId?: string | null;
+}
+
+export interface InitializeActivepiecesSessionWireRequest {
+  readonly client_trace_id?: string | null;
+}
+
+export interface InitializeActivepiecesSessionResponse {
+  readonly status: "initialized";
+  readonly sessionId: string;
+  readonly initializedAt: string;
+}
+
+export interface InitializeActivepiecesSessionWireResponse {
+  readonly status: "initialized";
+  readonly session_id: string;
+  readonly initialized_at: string;
 }
 
 export interface RuntimeConnectionSummary {
@@ -1484,6 +1566,39 @@ export interface ReadinessDetailsResponse extends ReadinessSummaryResponse {
   };
 }
 
+export type Stage17ReadinessOverall = "READY" | "DEGRADED" | "NOT_READY";
+
+export type Stage17ReadinessCheckStatus = "PASS" | "WARN" | "FAIL";
+
+export interface Stage17ReadinessCheck {
+  readonly status: Stage17ReadinessCheckStatus;
+  readonly summary: string;
+  readonly blocking: boolean;
+  readonly details: Record<string, unknown>;
+}
+
+export interface Stage17ReadinessChecks {
+  readonly activepieces_app: Stage17ReadinessCheck;
+  readonly activepieces_worker: Stage17ReadinessCheck;
+  readonly activepieces_db: Stage17ReadinessCheck;
+  readonly activepieces_redis: Stage17ReadinessCheck;
+  readonly local_owner_keys: Stage17ReadinessCheck;
+  readonly activepieces_signing_key: Stage17ReadinessCheck;
+  readonly i18n: Stage17ReadinessCheck;
+  readonly branding: Stage17ReadinessCheck;
+  readonly design_tokens: Stage17ReadinessCheck;
+}
+
+export interface Stage17ReadinessResponse {
+  readonly stage: "17.4";
+  readonly profile: "local-integrated";
+  readonly overall: Stage17ReadinessOverall;
+  readonly generated_at: string;
+  readonly checks: Stage17ReadinessChecks;
+  readonly blocking_errors: readonly string[];
+  readonly warnings: readonly string[];
+}
+
 export interface ActivepiecesEmbedTokenResponse {
   readonly instanceUrl: string;
   readonly token: string;
@@ -1495,3 +1610,305 @@ export interface ActivepiecesEmbedTokenResponse {
   readonly runtimeFlowId: string | null;
   readonly mode: "embedded-builder";
 }
+
+export interface ActivepiecesSessionFlowBinding {
+  readonly automationId: string | null;
+  readonly activepiecesProjectId: string | null;
+  readonly activepiecesFlowId: string | null;
+  readonly activepiecesFlowVersionId: string | null;
+  readonly syncStatus:
+    | "synced"
+    | "runtime_modified"
+    | "pending_sync"
+    | "unknown";
+  readonly syncHash?: string | null;
+}
+
+export interface ActivepiecesSessionRuntimeStatus {
+  readonly apApp: ActivepiecesRuntimeComponentStatus;
+  readonly apWorker: ActivepiecesRuntimeComponentStatus;
+  readonly apDb: ActivepiecesRuntimeComponentStatus;
+  readonly redis: ActivepiecesRuntimeComponentStatus;
+}
+
+export interface ActivepiecesSessionBrand {
+  readonly shortName: "Автоматизация";
+  readonly longName: "Конструктор автоматизаций";
+  readonly documentTitle: "Конструктор автоматизаций";
+  readonly logoAlt: "Автоматизация";
+  readonly ariaLabel: "Конструктор автоматизаций";
+}
+
+export interface ActivepiecesSessionBrandWire {
+  readonly short_name: "Автоматизация";
+  readonly long_name: "Конструктор автоматизаций";
+  readonly document_title: "Конструктор автоматизаций";
+  readonly logo_alt: "Автоматизация";
+  readonly aria_label: "Конструктор автоматизаций";
+}
+
+export interface ActivepiecesSessionSdkEmbeddingConfig {
+  readonly containerId: string;
+  readonly locale: "ru";
+  readonly builder: {
+    readonly disableNavigation: false;
+    readonly hideFlowName: false;
+    readonly homeButtonIcon: "logo";
+  };
+  readonly dashboard: {
+    readonly hideSidebar: false;
+    readonly hideFlowsPageNavbar: false;
+    readonly hidePageHeader: false;
+  };
+  readonly hideFolders: false;
+  readonly hideExportAndImportFlow: false;
+  readonly hideDuplicateFlow: false;
+  readonly navigationSync: true;
+}
+
+export interface ActivepiecesSessionSdkEmbeddingWireConfig {
+  readonly container_id: string;
+  readonly locale: "ru";
+  readonly builder: {
+    readonly disable_navigation: false;
+    readonly hide_flow_name: false;
+    readonly home_button_icon: "logo";
+  };
+  readonly dashboard: {
+    readonly hide_sidebar: false;
+    readonly hide_flows_page_navbar: false;
+    readonly hide_page_header: false;
+  };
+  readonly hide_folders: false;
+  readonly hide_export_and_import_flow: false;
+  readonly hide_duplicate_flow: false;
+  readonly navigation_sync: true;
+}
+
+export interface ActivepiecesSessionReadyResponse {
+  readonly status: "ready" | "degraded";
+  readonly readinessCode: AutomationCanvasReadinessCode;
+  readonly sessionId: string;
+  readonly mode: ActivepiecesSessionMode;
+  readonly issuedAt: string;
+  readonly instanceUrl: string;
+  readonly builderUrl: string;
+  readonly initialRoute: string;
+  readonly jwtToken: string;
+  readonly expiresAt: string;
+  readonly ttlSeconds: number;
+  readonly locale: "ru";
+  readonly brandDisplayName: string;
+  readonly brand: ActivepiecesSessionBrand;
+  readonly role: ActivepiecesSessionRole;
+  readonly permissions: {
+    readonly canView: boolean;
+    readonly canEdit: boolean;
+    readonly canManageConnections: boolean;
+    readonly canOpenDiagnostics: boolean;
+  };
+  readonly piecesPolicy: {
+    readonly piecesFilterType: "ALLOWED";
+    readonly piecesTags: readonly string[];
+    readonly policyHash: string;
+  };
+  readonly sdkConfig: {
+    readonly containerId: string;
+    readonly prefix: string;
+    readonly locale: "ru";
+    readonly brandDisplayName: string;
+    readonly designSystem: "activepieces_like";
+    readonly navigationSync: boolean;
+    readonly embedding: ActivepiecesSessionSdkEmbeddingConfig;
+  };
+  readonly designSystem: "activepieces_like";
+  readonly flowBinding: ActivepiecesSessionFlowBinding;
+  readonly runtimeStatus: ActivepiecesSessionRuntimeStatus;
+  readonly warnings?: readonly ActivepiecesSessionWarning[];
+  readonly aiTestPolicy?: ActivepiecesAiTestPolicy;
+  readonly diagnostics?: ActivepiecesSessionDiagnostics;
+}
+
+export interface ActivepiecesSessionFlowBindingWire {
+  readonly automation_id: string | null;
+  readonly activepieces_project_id: string | null;
+  readonly activepieces_flow_id: string | null;
+  readonly activepieces_flow_version_id: string | null;
+  readonly sync_status:
+    | "synced"
+    | "runtime_modified"
+    | "pending_sync"
+    | "unknown";
+  readonly sync_hash?: string | null;
+}
+
+export interface ActivepiecesSessionRuntimeStatusWire {
+  readonly ap_app: ActivepiecesRuntimeComponentStatus;
+  readonly ap_worker: ActivepiecesRuntimeComponentStatus;
+  readonly ap_db: ActivepiecesRuntimeComponentStatus;
+  readonly redis: ActivepiecesRuntimeComponentStatus;
+}
+
+export interface ActivepiecesSessionReadyWireResponse {
+  readonly status: "ready" | "degraded";
+  readonly readiness_code: AutomationCanvasReadinessCode;
+  readonly session_id: string;
+  readonly mode: ActivepiecesSessionMode;
+  readonly issued_at: string;
+  readonly instance_url: string;
+  readonly builder_url: string;
+  readonly initial_route: string;
+  readonly jwt_token: string;
+  readonly expires_at: string;
+  readonly ttl_seconds: number;
+  readonly locale: "ru";
+  readonly brand_display_name: string;
+  readonly brand: ActivepiecesSessionBrandWire;
+  readonly role: ActivepiecesSessionRole;
+  readonly permissions: {
+    readonly can_view: boolean;
+    readonly can_edit: boolean;
+    readonly can_manage_connections: boolean;
+    readonly can_open_diagnostics: boolean;
+  };
+  readonly pieces_policy: {
+    readonly pieces_filter_type: "ALLOWED";
+    readonly pieces_tags: readonly string[];
+    readonly policy_hash: string;
+  };
+  readonly sdk_config: {
+    readonly container_id: string;
+    readonly prefix: string;
+    readonly locale: "ru";
+    readonly brand_display_name: string;
+    readonly design_system: "activepieces_like";
+    readonly navigation_sync: boolean;
+    readonly embedding: ActivepiecesSessionSdkEmbeddingWireConfig;
+  };
+  readonly design_system: "activepieces_like";
+  readonly flow_binding: ActivepiecesSessionFlowBindingWire;
+  readonly runtime_status: ActivepiecesSessionRuntimeStatusWire;
+  readonly warnings?: readonly ActivepiecesSessionWarningWire[];
+  readonly ai_test_policy?: ActivepiecesAiTestPolicyWire;
+  readonly diagnostics?: ActivepiecesSessionDiagnosticsWire;
+}
+
+export interface ActivepiecesSessionWarning {
+  readonly code: string;
+  readonly severity: "info" | "warning" | "error" | "policy_block";
+  readonly title: string;
+  readonly message: string;
+}
+
+export interface ActivepiecesSessionWarningWire {
+  readonly code: string;
+  readonly severity: "info" | "warning" | "error" | "policy_block";
+  readonly title: string;
+  readonly message: string;
+}
+
+export interface ActivepiecesAiTestPolicy {
+  readonly status: "ok" | "warning" | "blocked";
+  readonly blockRequiredAiTests: boolean;
+  readonly allowNonAiCanvasEditing: boolean;
+}
+
+export interface ActivepiecesAiTestPolicyWire {
+  readonly status: "ok" | "warning" | "blocked";
+  readonly block_required_ai_tests: boolean;
+  readonly allow_non_ai_canvas_editing: boolean;
+}
+
+export interface ActivepiecesSessionDiagnostics {
+  readonly traceId: string | null;
+  readonly auditEventId?: string | null;
+  readonly safeToShow?: boolean;
+  readonly apApp?: ActivepiecesRuntimeComponentStatus;
+  readonly apWorker?: ActivepiecesRuntimeComponentStatus;
+  readonly localOwnerKeys?: string | null;
+}
+
+export interface ActivepiecesSessionDiagnosticsWire {
+  readonly trace_id: string | null;
+  readonly audit_event_id?: string | null;
+  readonly safe_to_show?: boolean;
+  readonly ap_app?: ActivepiecesRuntimeComponentStatus;
+  readonly ap_worker?: ActivepiecesRuntimeComponentStatus;
+  readonly local_owner_keys?: string | null;
+}
+
+export interface ActivepiecesSessionFallback {
+  readonly showBuilderUnavailableState: boolean;
+  readonly allowLexframeCanvasReserve: boolean;
+  readonly allowRunsTab: boolean;
+  readonly allowSettingsTab: boolean;
+  readonly allowDiagnosticsTab: boolean;
+}
+
+export interface ActivepiecesSessionFallbackWire {
+  readonly show_builder_unavailable_state: boolean;
+  readonly allow_lexframe_canvas_reserve: boolean;
+  readonly allow_runs_tab: boolean;
+  readonly allow_settings_tab: boolean;
+  readonly allow_diagnostics_tab: boolean;
+}
+
+export interface ActivepiecesSessionBlockedResponse {
+  readonly status: "blocked";
+  readonly readinessCode: AutomationCanvasReadinessCode;
+  readonly jwtToken: null;
+  readonly expiresAt: null;
+  readonly role: null;
+  readonly message: string;
+  readonly fallback: ActivepiecesSessionFallback;
+  readonly warnings?: readonly ActivepiecesSessionWarning[];
+  readonly aiTestPolicy?: ActivepiecesAiTestPolicy;
+  readonly diagnostics?: ActivepiecesSessionDiagnostics;
+}
+
+export interface ActivepiecesSessionUnavailableResponse {
+  readonly status: "unavailable";
+  readonly readinessCode: AutomationCanvasReadinessCode;
+  readonly jwtToken: null;
+  readonly expiresAt: null;
+  readonly role: null;
+  readonly message: string;
+  readonly fallback: ActivepiecesSessionFallback;
+  readonly warnings?: readonly ActivepiecesSessionWarning[];
+  readonly diagnostics?: ActivepiecesSessionDiagnostics;
+}
+
+export interface ActivepiecesSessionBlockedWireResponse {
+  readonly status: "blocked";
+  readonly readiness_code: AutomationCanvasReadinessCode;
+  readonly jwt_token: null;
+  readonly expires_at: null;
+  readonly role: null;
+  readonly message: string;
+  readonly fallback: ActivepiecesSessionFallbackWire;
+  readonly warnings?: readonly ActivepiecesSessionWarningWire[];
+  readonly ai_test_policy?: ActivepiecesAiTestPolicyWire;
+  readonly diagnostics?: ActivepiecesSessionDiagnosticsWire;
+}
+
+export interface ActivepiecesSessionUnavailableWireResponse {
+  readonly status: "unavailable";
+  readonly readiness_code: AutomationCanvasReadinessCode;
+  readonly jwt_token: null;
+  readonly expires_at: null;
+  readonly role: null;
+  readonly message: string;
+  readonly fallback: ActivepiecesSessionFallbackWire;
+  readonly warnings?: readonly ActivepiecesSessionWarningWire[];
+  readonly diagnostics?: ActivepiecesSessionDiagnosticsWire;
+}
+
+export type ActivepiecesSessionResponse =
+  | ActivepiecesSessionReadyResponse
+  | ActivepiecesSessionBlockedResponse
+  | ActivepiecesSessionUnavailableResponse;
+
+export type ActivepiecesSessionWireResponse =
+  | ActivepiecesSessionReadyWireResponse
+  | ActivepiecesSessionBlockedWireResponse
+  | ActivepiecesSessionUnavailableWireResponse;

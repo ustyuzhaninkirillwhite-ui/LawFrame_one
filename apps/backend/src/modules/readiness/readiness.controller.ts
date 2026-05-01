@@ -1,21 +1,30 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
+import { Controller, Get, Res, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '../../common/guards/auth.guard';
 import { WorkspaceContextGuard } from '../../common/guards/workspace-context.guard';
 import { ReadinessService } from './readiness.service';
 
-@Controller('health')
+@Controller()
 export class ReadinessController {
   constructor(private readonly readinessService: ReadinessService) {}
 
-  @Get('readiness')
+  @Get('health/readiness')
   @UseGuards(AuthGuard, WorkspaceContextGuard)
   getReadiness() {
     return this.readinessService.getReadinessSummary();
   }
 
-  @Get('readiness/details')
+  @Get('health/readiness/details')
   @UseGuards(AuthGuard, WorkspaceContextGuard)
   getReadinessDetails() {
     return this.readinessService.getReadinessDetails();
+  }
+
+  @Get('readiness/stage17')
+  async getStage17Readiness(
+    @Res({ passthrough: true }) reply: { status: (code: number) => void },
+  ) {
+    const result = await this.readinessService.getStage17Readiness();
+    reply.status(result.overall === 'NOT_READY' ? 503 : 200);
+    return result;
   }
 }

@@ -21,6 +21,7 @@
     "@lexframe/api-client": "workspace:*",
     "@lexframe/config": "workspace:*",
     "@lexframe/contracts": "workspace:*",
+    "@lexframe/design-system-activepieces-bridge": "workspace:*",
     "@lexframe/workflow-dsl": "workspace:*",
     "@lexframe/workflow": "workspace:*",
     "@radix-ui/react-separator": "^1.1.7",

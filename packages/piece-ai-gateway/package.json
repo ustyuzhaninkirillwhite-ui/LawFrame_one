@@ -1,0 +1,16 @@
+{
+  "name": "@lexframe/piece-ai-gateway",
+  "version": "0.1.0-stage17.9.0",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "src/index.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint \"src/**/*.ts\"",
+    "test": "node -e \"console.log('piece-ai-gateway: contract tests are covered by backend runtime tests')\""
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}

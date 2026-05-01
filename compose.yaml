@@ -244,9 +244,8 @@ services:
       LEXFRAME_DEFAULT_IDLE_TIMEOUT_MINUTES: 60
       LEXFRAME_AI_SENSITIVE_DATA_POLICY: zdr_or_block
       AI_PROVIDER_MODE: ${AI_PROVIDER_MODE:-mock}
-      XAI_API_KEY: ${XAI_API_KEY:-stage0_xai_api_key}
-      COMETAPI_API_KEY: ${COMETAPI_API_KEY:-stage0_comet_api_key}
-      COMETAPI_API_KEYS: ${COMETAPI_API_KEYS:-}
+      LEXFRAME_LOCAL_KEYS_FILE: /run/lexframe-secrets/lexframe.keys.local.json
+      LEXFRAME_LOCAL_KEYS_DISABLED: ${LEXFRAME_LOCAL_KEYS_DISABLED:-false}
       LEXFRAME_AI_TEST_FORCE_COMETAPI: ${LEXFRAME_AI_TEST_FORCE_COMETAPI:-0}
       LEXFRAME_AI_TEST_MODEL: ${LEXFRAME_AI_TEST_MODEL:-grok-4-1-fast-non-reasoning}
       LEXFRAME_DELIVERY_TRANSPORT: webhook
@@ -278,6 +277,11 @@ services:
       POSTHOG_KEY: phc_stage_local
       GRAFANA_BASE_URL: http://127.0.0.1:3001
       SENTRY_DSN: https://examplePublicKey@o0.ingest.sentry.io/0
+    volumes:
+      - type: bind
+        source: ${LEXFRAME_LOCAL_KEYS_HOST_DIR:-${USERPROFILE}/.lexframe/secrets}
+        target: /run/lexframe-secrets
+        read_only: true
     depends_on:
       stage16-activepieces-catalog-sync:
         condition: service_completed_successfully

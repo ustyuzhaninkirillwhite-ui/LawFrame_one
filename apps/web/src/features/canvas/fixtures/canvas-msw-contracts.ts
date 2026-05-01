@@ -9,6 +9,7 @@ export const canvasMswContractEndpoints = [
   "GET /automations/:id/canvas/versions",
   "GET /automations/:id/canvas/runtime/sync-status",
   "POST /automations/:id/canvas/runtime/import-preview",
+  "POST /activepieces/session",
   "POST /activepieces/embed-token",
 ] as const;
 
@@ -33,5 +34,7 @@ export const canvasMswRequiredScenarios = [
   "compile preview fails",
   "runtime unavailable",
   "advanced builder token expired",
+  "automation session degraded by local keys",
+  "automation session unavailable",
   "reverse sync conflict",
 ] as const;

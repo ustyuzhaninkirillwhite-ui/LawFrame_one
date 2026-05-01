@@ -9,8 +9,7 @@ export function ProjectChatWorkspace({
   readonly projectId: string;
   readonly chatId: string;
 }) {
-  void projectId;
   void chatId;
 
-  return <AiChatWorkspace initialSource="project_chat" />;
+  return <AiChatWorkspace initialSource="project_chat" projectId={projectId} />;
 }

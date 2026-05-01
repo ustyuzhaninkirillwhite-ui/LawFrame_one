@@ -175,7 +175,7 @@ export function AdvancedBuilderAccessGate({
       decision={decision}
       fallback={
         <PolicyBlockBanner
-          title="Advanced Builder locked"
+          title="Автоматизация недоступна"
           reason={decision?.message ?? "Access is not available."}
         />
       }

@@ -9,10 +9,21 @@ Thumbs.db
 .env
 .env.local
 .env.*.local
+.local/
+.local/secrets/
+*.keys.local.json
+*.secrets.json
+.lexframe/secrets/
+lexframe.keys.local.json
+**/lexframe.keys.local.json
+*api-key*.json
+*private-key*.pem
+*signing-key*.pem
 .next/
 out/
 playwright-report/
 test-results/
+.playwright-mcp/
 *.tsbuildinfo
 apps/web/.next/
 apps/web/out/
@@ -22,4 +33,5 @@ tests/e2e/playwright/.cache/
 *.log
 tmp/
 tmp_*
+stage16-audit-evidence-*/
 backend-startup-env.json

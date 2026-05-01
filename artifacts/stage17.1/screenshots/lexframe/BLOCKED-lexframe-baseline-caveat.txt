@@ -1,0 +1,7 @@
+﻿Stage 17.1 LexFrame baseline screenshot caveat
+
+Status: PARTIAL / BLOCKED for PASS
+Reason: Local LexFrame services were listening on ports 3000/3100/8080, but demo auth POST /auth/bootstrap returned HTTP 500 in a fresh Playwright context. Screenshots LF-01..LF-10 were captured with metadata, but most protected routes redirected to /sign-in and LF-07/LF-09 produced 404 pages.
+Impact: Current PNGs prove visual/auth/error state at commit ec145113, but they do not satisfy the full LF-01..LF-10 protected-route baseline requirement for readiness PASS.
+Required remediation before PASS: fix or document the local demo auth bootstrap, confirm the correct route map for run center/settings, then recapture LF-01..LF-10 on synthetic data.
+Contains secret values: false

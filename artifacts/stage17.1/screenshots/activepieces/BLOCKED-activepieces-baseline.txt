@@ -1,0 +1,7 @@
+﻿Stage 17.1 Activepieces baseline screenshot blocker
+
+Status: BLOCKED
+Reason: E:\activepieces-main is present but is not a git checkout in this environment, bun is not installed/in PATH, and no Activepieces app/worker runtime is listening on audited local ports.
+Impact: AP-01..AP-08 screenshots cannot be accepted as baseline evidence because they cannot be tied to a git commit or verified running runtime.
+Required remediation before PASS: provide a real Activepieces checkout with .git metadata, install/enable the declared package manager (bun@1.3.3 or project-approved equivalent), start AP app/worker/Postgres/Redis on the agreed local profile, then capture AP-01..AP-08 with metadata JSON.
+Contains secret values: false

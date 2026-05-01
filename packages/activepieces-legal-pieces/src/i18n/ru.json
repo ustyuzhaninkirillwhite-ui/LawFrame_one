@@ -1,0 +1,140 @@
+{
+  "@lexframe/piece-ai-gateway": {
+    "displayName": "AI-шлюз LexFrame",
+    "description": "Вызывает backend AI Gateway LexFrame через ограниченный runtime-токен; ключи провайдеров остаются только на backend.",
+    "auth": {
+      "displayName": "Токен рабочего пространства",
+      "description": "Runtime-токен выдаётся LexFrame и не вводится пользователем в браузере."
+    },
+    "actions": {
+      "analyze": {
+        "displayName": "Выполнить AI-анализ",
+        "description": "Отправляет промпт в выбранный backend-маршрут ИИ и возвращает структурированный результат.",
+        "props": {
+          "runId": "ID запуска",
+          "stepId": "ID шага",
+          "prompt": "Промпт",
+          "provider": "Провайдер",
+          "routeId": "Маршрут",
+          "inputRefs": "Ссылки на входные данные"
+        },
+        "placeholders": {
+          "prompt": "Опишите юридическую задачу или вопрос для анализа"
+        },
+        "validation": {
+          "promptRequired": "Укажите промпт для AI-анализа.",
+          "runIdRequired": "Укажите ID запуска."
+        }
+      }
+    },
+    "categories": ["ИИ", "Юридическая автоматизация"]
+  },
+  "@lexframe/piece-callback": {
+    "displayName": "Callback LexFrame",
+    "description": "Принимает защищённый callback от внешнего участника процесса и продолжает автоматизацию.",
+    "triggers": {
+      "waitForCallback": {
+        "displayName": "Ожидать callback",
+        "description": "Останавливает запуск до получения подписанного callback-события.",
+        "props": {
+          "callbackCode": "Код callback",
+          "expiresInMinutes": "Срок ожидания, минут",
+          "payloadSchema": "Схема payload"
+        }
+      }
+    },
+    "categories": ["Интеграция", "Юридическая автоматизация"]
+  },
+  "@lexframe/piece-legal-search": {
+    "displayName": "Правовой поиск",
+    "description": "Выполняет backend-scoped поиск по правовым источникам и возвращает JSON-результаты с цитатами.",
+    "actions": {
+      "search": {
+        "displayName": "Найти правовые источники",
+        "description": "Ищет документы, практику и источники с учётом доступа рабочего пространства.",
+        "props": {
+          "query": "Поисковый запрос",
+          "mode": "Режим поиска",
+          "limit": "Лимит результатов",
+          "offset": "Смещение",
+          "selectedSourceIds": "Выбранные источники"
+        },
+        "placeholders": {
+          "query": "Например: судебная практика по неустойке"
+        },
+        "validation": {
+          "queryRequired": "Укажите поисковый запрос."
+        }
+      }
+    },
+    "sampleLabels": {
+      "result": "Результат правового поиска",
+      "citation": "Цитата"
+    },
+    "categories": ["Поиск", "Юридическая автоматизация"]
+  },
+  "@lexframe/piece-document-drafting": {
+    "displayName": "Подготовка документа",
+    "description": "Формирует черновик или предпросмотр документа через шаблоны и юридический профиль LexFrame.",
+    "actions": {
+      "draft": {
+        "displayName": "Подготовить документ",
+        "description": "Запускает pipeline подготовки документа и сохраняет результат в документном домене.",
+        "props": {
+          "templateId": "Шаблон",
+          "templateVersionId": "Версия шаблона",
+          "profileId": "Юридический профиль",
+          "facts": "Факты",
+          "params": "Параметры",
+          "sourceDocumentIds": "Исходные документы"
+        },
+        "validation": {
+          "templateRequired": "Выберите шаблон документа."
+        }
+      }
+    },
+    "categories": ["Документы", "Юридическая автоматизация"]
+  },
+  "@lexframe/piece-approval": {
+    "displayName": "Согласование",
+    "description": "Создаёт задачу согласования перед рискованным действием с документом или внешней отправкой.",
+    "actions": {
+      "requestApproval": {
+        "displayName": "Запросить согласование",
+        "description": "Создаёт задачу во входящих и ждёт решения по маршруту согласования.",
+        "props": {
+          "workflowRunId": "ID запуска",
+          "generationJobId": "ID задачи формирования",
+          "approvalRouteId": "Маршрут согласования",
+          "title": "Название задачи"
+        },
+        "validation": {
+          "titleRequired": "Укажите название задачи согласования."
+        }
+      }
+    },
+    "categories": ["Согласования", "Юридическая автоматизация"]
+  },
+  "@lexframe/piece-delivery": {
+    "displayName": "Отправка",
+    "description": "Передаёт утверждённый документ через разрешённый канал доставки с аудитом и sandbox-контролем.",
+    "actions": {
+      "send": {
+        "displayName": "Отправить документ",
+        "description": "Отправляет документ после обязательных проверок и согласований.",
+        "props": {
+          "documentId": "Документ",
+          "recipientEmails": "Получатели",
+          "subject": "Тема",
+          "body": "Сообщение",
+          "requiresApproval": "Требует согласования"
+        },
+        "validation": {
+          "documentRequired": "Выберите документ для отправки.",
+          "recipientRequired": "Укажите хотя бы одного получателя."
+        }
+      }
+    },
+    "categories": ["Доставка", "Юридическая автоматизация"]
+  }
+}

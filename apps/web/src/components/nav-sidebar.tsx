@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { navigationRecipe } from "@lexframe/design-system-activepieces-bridge/recipes";
 import { useNotifications } from "@/hooks/use-stage0-data";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -158,7 +159,7 @@ export function NavSidebar() {
           <Badge variant="accent">{formatStatus(sessionContext.state)}</Badge>
         </div>
 
-        <div className="rounded-[24px] border border-[color:var(--line)] bg-white/4 p-4">
+        <div className={navigationRecipe.section}>
           <div className="text-[11px] uppercase tracking-[0.24em] text-[color:var(--muted)]">
             {t("Actor")}
           </div>
@@ -181,10 +182,10 @@ export function NavSidebar() {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "group rounded-[22px] border px-4 py-3 transition",
+                  "group rounded-[var(--lf-radius-card)] border px-4 py-3 transition-colors",
                   active
-                    ? "border-[color:var(--accent)] bg-[color:var(--accent)]/10 text-[color:var(--foreground)]"
-                    : "border-transparent bg-transparent text-[color:var(--muted)] hover:border-[color:var(--line)] hover:bg-white/3 hover:text-[color:var(--foreground)]",
+                    ? "border-[color:var(--lf-primary)]/40 bg-[color:var(--lf-state-active)] text-[color:var(--lf-text-primary)]"
+                    : "border-transparent bg-transparent text-[color:var(--lf-text-muted)] hover:border-[color:var(--lf-border)] hover:bg-[color:var(--lf-state-hover)] hover:text-[color:var(--lf-text-primary)]",
                 )}
               >
                 <div className="flex items-center justify-between gap-4">
@@ -206,7 +207,7 @@ export function NavSidebar() {
           })}
         </nav>
 
-        <div className="mt-auto rounded-[24px] border border-[color:var(--line)] bg-white/4 p-4">
+        <div className={cn("mt-auto", navigationRecipe.section)}>
           <div className="text-[11px] uppercase tracking-[0.24em] text-[color:var(--muted)]">
             {t("Boundary")}
           </div>

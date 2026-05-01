@@ -5,6 +5,8 @@ import type {
 } from '../../common/types/lexframe-request';
 import { loadServerEnv } from '@lexframe/config';
 import { Injectable } from '@nestjs/common';
+import { existsSync, readFileSync } from 'node:fs';
+import { basename } from 'node:path';
 import { AuditService } from '../audit/audit.service';
 import { DatabaseService } from '../database/database.service';
 
@@ -25,6 +27,14 @@ interface SecretCatalogEntry {
   readonly provider: string;
   readonly backendOnly: boolean;
   readonly usedBy: readonly string[];
+}
+
+export interface RuntimeSecretResolution {
+  readonly configured: boolean;
+  readonly source: 'env' | 'file' | 'missing';
+  readonly ref: string | null;
+  readonly value: string | null;
+  readonly diagnostics: Record<string, unknown>;
 }
 
 @Injectable()
@@ -50,10 +60,56 @@ export class SecretsService {
       usedBy: ['runtime-sync', 'builder'],
     },
     {
+      secretCode: 'ACTIVEPIECES_API_KEY_SECRET_REF',
+      provider: 'activepieces',
+      backendOnly: true,
+      usedBy: ['runtime-sync', 'builder'],
+    },
+    {
       secretCode: 'ACTIVEPIECES_SIGNING_PRIVATE_KEY',
       provider: 'activepieces',
       backendOnly: true,
       usedBy: ['embed-signing'],
+    },
+    {
+      secretCode: 'ACTIVEPIECES_SIGNING_PRIVATE_KEY_SECRET_REF',
+      provider: 'activepieces',
+      backendOnly: true,
+      usedBy: ['embed-signing'],
+    },
+    {
+      secretCode: 'ACTIVEPIECES_WORKER_TOKEN_SECRET_REF',
+      provider: 'activepieces',
+      backendOnly: true,
+      usedBy: ['activepieces-worker'],
+    },
+    {
+      secretCode: 'AP_JWT_SECRET',
+      provider: 'activepieces',
+      backendOnly: true,
+      usedBy: ['activepieces-app', 'activepieces-worker'],
+    },
+    {
+      secretCode: 'AP_ENCRYPTION_KEY',
+      provider: 'activepieces',
+      backendOnly: true,
+      usedBy: ['activepieces-app'],
+    },
+    {
+      secretCode: 'AP_POSTGRES_PASSWORD',
+      provider: 'activepieces',
+      backendOnly: true,
+      usedBy: [
+        'activepieces-postgres',
+        'activepieces-app',
+        'activepieces-worker',
+      ],
+    },
+    {
+      secretCode: 'AP_REDIS_PASSWORD',
+      provider: 'activepieces',
+      backendOnly: true,
+      usedBy: ['activepieces-redis', 'activepieces-app', 'activepieces-worker'],
     },
     {
       secretCode: 'XAI_API_KEY',
@@ -107,6 +163,74 @@ export class SecretsService {
     return merged.sort((left, right) =>
       left.secretCode.localeCompare(right.secretCode),
     );
+  }
+
+  resolveRuntimeSecret(input: {
+    readonly secretCode: string;
+    readonly secretRef?: string;
+    readonly envValue?: string;
+    readonly filePath?: string;
+    readonly fallbackFilePaths?: readonly string[];
+    readonly placeholderValues?: readonly string[];
+  }): RuntimeSecretResolution {
+    const ref = normalizeOptional(input.secretRef);
+    const envValue = normalizeOptional(input.envValue);
+    const placeholderValues = input.placeholderValues ?? [];
+
+    if (isUsableSecretValue(envValue, placeholderValues)) {
+      return {
+        configured: true,
+        source: 'env',
+        ref,
+        value: envValue,
+        diagnostics: {
+          configured: true,
+          source: 'env',
+          secret_ref: ref,
+          value_exposed: false,
+        },
+      };
+    }
+
+    const filePaths = [
+      normalizeOptional(input.filePath),
+      ...(input.fallbackFilePaths ?? []).map((item) => normalizeOptional(item)),
+    ].filter((item): item is string => Boolean(item));
+    const match = filePaths.find((filePath) => existsSync(filePath));
+
+    if (match) {
+      const value = readFileSync(match, 'utf8').trim();
+
+      if (isUsableSecretValue(value, placeholderValues)) {
+        return {
+          configured: true,
+          source: 'file',
+          ref,
+          value,
+          diagnostics: {
+            configured: true,
+            source: 'file',
+            secret_ref: ref,
+            file_hint: basename(match),
+            value_exposed: false,
+          },
+        };
+      }
+    }
+
+    return {
+      configured: false,
+      source: 'missing',
+      ref,
+      value: null,
+      diagnostics: {
+        configured: false,
+        source: 'missing',
+        secret_ref: ref,
+        file_hints: filePaths.map((filePath) => basename(filePath)),
+        value_exposed: false,
+      },
+    };
   }
 
   async markCompromised(
@@ -352,19 +476,42 @@ function resolveEnvSecretStatus(
   secretCode: string,
   env: ReturnType<typeof loadServerEnv>,
 ): SecretInventoryItem['status'] {
-  const value = env[secretCode as keyof typeof env];
+  const value =
+    env[secretCode as keyof typeof env] ??
+    process.env[secretCode] ??
+    process.env[`${secretCode}_FILE`] ??
+    process.env[`${secretCode}_SECRET_REF`];
 
-  if (typeof value !== 'string' || value.trim().length === 0) {
-    return 'missing';
-  }
-
-  if (
-    value.startsWith('stage0_') ||
-    value.startsWith('replace_with_') ||
-    value.startsWith('demo_')
-  ) {
+  if (!isUsableSecretValue(typeof value === 'string' ? value : null, [])) {
     return 'missing';
   }
 
   return 'configured';
+}
+
+function normalizeOptional(value: string | undefined | null) {
+  const normalized = value?.trim();
+  return normalized && normalized.length > 0 ? normalized : null;
+}
+
+function isUsableSecretValue(
+  value: string | null,
+  placeholderValues: readonly string[],
+) {
+  if (!value) {
+    return false;
+  }
+
+  const normalized = value.trim();
+  if (normalized.length === 0) {
+    return false;
+  }
+
+  if (placeholderValues.includes(normalized)) {
+    return false;
+  }
+
+  return !/^(stage0_|replace_with_|demo_|placeholder|example|change_me|PASTE_|YOUR_|<)/i.test(
+    normalized,
+  );
 }

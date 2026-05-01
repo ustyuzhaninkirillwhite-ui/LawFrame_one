@@ -1,6 +1,7 @@
 "use client";
 
 import type { Stage15ProjectSummary } from "@lexframe/contracts";
+import { navigationRecipe } from "@lexframe/design-system-activepieces-bridge/recipes";
 import {
   ChevronDown,
   ChevronRight,
@@ -198,7 +199,7 @@ export function ProjectSidebar({
         </aside>
 
         {forceCollapsed && railPreviewOpen ? (
-          <div className="fixed bottom-5 left-[104px] top-5 z-50 w-[310px] rounded-[28px] border border-[color:var(--line)] bg-[color:var(--panel)]/98 p-4 shadow-2xl shadow-black/40 backdrop-blur">
+          <div className="fixed bottom-5 left-[104px] top-5 z-50 w-[310px] rounded-[var(--lf-radius-panel)] border border-[color:var(--lf-border)] bg-[color:var(--lf-bg-panel)] p-4 shadow-[var(--lf-shadow-popover)]">
             <div className="mb-4 flex items-start justify-between gap-4">
               <div>
                 <div className="font-[family-name:var(--font-display)] text-xl">Pravacontour</div>
@@ -241,10 +242,10 @@ export function ProjectSidebar({
         <div className="flex items-center justify-between gap-3">
           <Link
             href="/app"
-            className="flex min-w-0 items-center gap-3 rounded-[18px] border border-transparent px-2 py-2 hover:border-[color:var(--line)]"
+              className="flex min-w-0 items-center gap-3 rounded-[var(--lf-radius-control)] border border-transparent px-2 py-2 hover:border-[color:var(--lf-border)]"
             aria-label="Pravacontour"
           >
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[16px] border border-[color:var(--accent)]/40 bg-[color:var(--accent)]/10 font-[family-name:var(--font-display)] text-lg text-[color:var(--accent-strong)]">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--lf-radius-control)] border border-[color:var(--lf-primary)]/40 bg-[color:var(--lf-state-active)] text-lg font-semibold text-[color:var(--lf-primary-hover)]">
               P
             </div>
             <div className="min-w-0">
@@ -327,7 +328,7 @@ export function ProjectSidebar({
 
         <div className="grid gap-3">
           {activeProject ? (
-            <div className="rounded-[20px] border border-[color:var(--line)] bg-white/4 p-4">
+            <div className={navigationRecipe.section}>
               <div className="text-[11px] uppercase tracking-[0.24em] text-[color:var(--muted)]">
                 Активный проект
               </div>
@@ -381,11 +382,11 @@ function ProjectTreeItem({
   const active = activeProjectId === project.id;
 
   return (
-    <div className="rounded-[20px] border border-[color:var(--line)] bg-black/20 p-2">
+    <div className="rounded-[var(--lf-radius-card)] border border-[color:var(--lf-border)] bg-[color:var(--lf-bg-muted)] p-2">
       <div className="flex items-center gap-2">
         <button
           type="button"
-          className="flex h-8 w-8 items-center justify-center rounded-[12px] text-[color:var(--muted)] hover:bg-white/6 hover:text-[color:var(--foreground)]"
+          className="flex h-8 w-8 items-center justify-center rounded-[var(--lf-radius-control)] text-[color:var(--lf-text-muted)] hover:bg-[color:var(--lf-state-hover)] hover:text-[color:var(--lf-text-primary)]"
           onClick={onToggle}
           aria-label={expanded ? "Свернуть проект" : "Развернуть проект"}
         >
@@ -394,10 +395,10 @@ function ProjectTreeItem({
         <Link
           href={projectHref}
           className={cn(
-            "min-w-0 flex-1 rounded-[14px] px-2 py-2 text-sm transition",
+            "min-w-0 flex-1 rounded-[var(--lf-radius-control)] px-2 py-2 text-sm transition",
             active
-              ? "bg-[color:var(--accent)]/10 text-[color:var(--foreground)]"
-              : "text-[color:var(--muted)] hover:bg-white/4 hover:text-[color:var(--foreground)]",
+              ? "bg-[color:var(--lf-state-active)] text-[color:var(--lf-text-primary)]"
+              : "text-[color:var(--lf-text-muted)] hover:bg-[color:var(--lf-state-hover)] hover:text-[color:var(--lf-text-primary)]",
           )}
         >
           <div className="truncate font-medium">{project.name}</div>
@@ -452,10 +453,10 @@ function RailLink({
     <Link
       href={href}
       className={cn(
-        "relative flex h-12 w-12 items-center justify-center rounded-[18px] border text-[color:var(--muted)] transition",
+        navigationRecipe.railItem,
         active
-          ? "border-[color:var(--accent)] bg-[color:var(--accent)]/10 text-[color:var(--foreground)]"
-          : "border-transparent hover:border-[color:var(--line)] hover:bg-white/4 hover:text-[color:var(--foreground)]",
+          ? navigationRecipe.active
+          : navigationRecipe.inactive,
       )}
       aria-label={label}
       title={label}
@@ -487,8 +488,8 @@ function RailButton({
       className={cn(
         "flex h-12 w-12 items-center justify-center rounded-[18px] border transition disabled:cursor-not-allowed disabled:opacity-45",
         primary
-          ? "border-[color:var(--accent)] bg-[color:var(--accent)] text-black hover:bg-[color:var(--accent-strong)]"
-          : "border-transparent text-[color:var(--muted)] hover:border-[color:var(--line)] hover:bg-white/4 hover:text-[color:var(--foreground)]",
+          ? "border-transparent bg-[color:var(--lf-primary)] text-[color:var(--lf-primary-fg)] hover:bg-[color:var(--lf-primary-hover)]"
+          : navigationRecipe.inactive,
       )}
       disabled={disabled}
       onClick={onClick}
@@ -521,11 +522,11 @@ function SidebarLink({
     <Link
       href={href}
       className={cn(
-        "relative flex min-h-10 items-center gap-3 rounded-[16px] border px-3 py-2 text-sm transition",
+        navigationRecipe.item,
         collapsed ? "w-10 justify-center px-0" : "",
         active
-          ? "border-[color:var(--accent)] bg-[color:var(--accent)]/10 text-[color:var(--foreground)]"
-          : "border-transparent text-[color:var(--muted)] hover:border-[color:var(--line)] hover:bg-white/4 hover:text-[color:var(--foreground)]",
+          ? navigationRecipe.active
+          : navigationRecipe.inactive,
       )}
       aria-label={collapsed ? label : undefined}
     >
@@ -545,7 +546,7 @@ function SidebarLink({
 
 function CompactMuted({ text }: { readonly text: string }) {
   return (
-    <div className="rounded-[16px] border border-[color:var(--line)] bg-white/4 px-3 py-2 text-xs text-[color:var(--muted)]">
+    <div className="rounded-[var(--lf-radius-control)] border border-[color:var(--lf-border)] bg-[color:var(--lf-bg-muted)] px-3 py-2 text-xs text-[color:var(--lf-text-muted)]">
       {text}
     </div>
   );

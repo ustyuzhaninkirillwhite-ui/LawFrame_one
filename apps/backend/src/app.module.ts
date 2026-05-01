@@ -37,6 +37,7 @@ import { RealtimeModule } from './modules/realtime/realtime.module';
 import { RunsModule } from './modules/runs/runs.module';
 import { SecretsModule } from './modules/secrets/secrets.module';
 import { SecurityOperationsModule } from './modules/security-operations/security-operations.module';
+import { Stage15ProjectsModule } from './modules/stage15-projects/stage15-projects.module';
 import { TelemetryModule } from './modules/telemetry/telemetry.module';
 import { WorkflowsModule } from './modules/workflows/workflows.module';
 import { WorkspacesModule } from './modules/workspaces/workspaces.module';
@@ -66,6 +67,7 @@ import { WorkspacesModule } from './modules/workspaces/workspaces.module';
     TelemetryModule,
     SecretsModule,
     SecurityOperationsModule,
+    Stage15ProjectsModule,
     ComplianceModule,
     AdminConsoleModule,
     DeliveryModule,

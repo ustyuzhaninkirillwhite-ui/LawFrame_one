@@ -16,8 +16,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const projectWorkspaceMode = isProjectWorkspaceRoute(pathname);
 
   return (
-    <div className="flex min-h-screen bg-[color:var(--background)]/30">
-      <ProjectSidebar forceCollapsed={canvasMode} />
+    <div className="flex min-h-screen bg-[color:var(--lf-bg-app)]">
+      <ProjectSidebar forceCollapsed={false} />
       <main
         className={cn(
           "min-w-0 flex-1",
@@ -27,7 +27,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         {canvasMode ? (
           children
         ) : (
-          <div className="mx-auto flex min-h-[calc(100vh-32px)] max-w-[1520px] flex-col gap-8 rounded-[28px] border border-[color:var(--line)] bg-[color:var(--panel)] p-5 lg:p-7">
+          <div className="mx-auto flex min-h-[calc(100vh-32px)] max-w-[1520px] flex-col gap-6 rounded-[var(--lf-radius-panel)] border border-[color:var(--lf-border)] bg-[color:var(--lf-bg-panel)] p-5 shadow-[var(--lf-shadow-panel)] lg:p-6">
             {projectWorkspaceMode ? null : <SystemStatusBanner />}
             {children}
           </div>

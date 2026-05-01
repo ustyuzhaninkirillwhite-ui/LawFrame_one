@@ -35,7 +35,6 @@ export async function signInAsDemo(
   await signInFields.nth(0).fill(input.email);
   await signInFields.nth(1).fill(input.fullName);
   await signInFields.nth(2).fill("demo-password");
-  await page.locator("button").nth(1).click();
   await page.locator("button").nth(0).click();
 
   await expect

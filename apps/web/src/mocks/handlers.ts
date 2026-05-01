@@ -1496,6 +1496,84 @@ export const handlers = [
       gates: readinessFixture,
     }),
   ),
+  http.post("*/activepieces/session", () => {
+    const issuedAt = new Date();
+    const expiresAt = new Date(issuedAt.getTime() + 120_000);
+    const runtimeFlowId =
+      installedAutomationFixture.runtimeFlowId ?? "flow_msw_automation";
+    const instanceUrl = activepiecesEmbedTokenFixture.instanceUrl;
+
+    return HttpResponse.json({
+      status: "ready",
+      readiness_code: "READY",
+      session_id: `sess_msw_${Date.now().toString(36)}`,
+      mode: "iframe_embed",
+      issued_at: issuedAt.toISOString(),
+      instance_url: instanceUrl,
+      builder_url: `${instanceUrl}/flows/${runtimeFlowId}`,
+      initial_route: `/flows/${runtimeFlowId}`,
+      jwt_token: "msw-activepieces-session-jwt",
+      expires_at: expiresAt.toISOString(),
+      ttl_seconds: 120,
+      locale: "ru",
+      brand_display_name: "LexFrame",
+      role: "EDITOR",
+      permissions: {
+        can_view: true,
+        can_edit: true,
+        can_manage_connections: false,
+        can_open_diagnostics: true,
+      },
+      pieces_policy: {
+        pieces_filter_type: "ALLOWED",
+        pieces_tags: activepiecesEmbedTokenFixture.piecesTags,
+        policy_hash: "sha256:msw-policy",
+      },
+      sdk_config: {
+        container_id: "activepieces-canvas-msw",
+        prefix: "/automation-runtime",
+        locale: "ru",
+        brand_display_name: "LexFrame",
+        design_system: "activepieces_like",
+        navigation_sync: true,
+      },
+      design_system: "activepieces_like",
+      flow_binding: {
+        automation_id: installedAutomationFixture.id,
+        activepieces_project_id:
+          installedAutomationFixture.runtimeProjectId ?? "proj_msw_automation",
+        activepieces_flow_id: runtimeFlowId,
+        activepieces_flow_version_id: null,
+        sync_status: "synced",
+        sync_hash: installedAutomationFixture.syncHash ?? null,
+      },
+      runtime_status: {
+        ap_app: "ok",
+        ap_worker: "ok",
+        ap_db: "ok",
+        redis: "ok",
+      },
+      ai_test_policy: {
+        status: "ok",
+        block_required_ai_tests: false,
+        allow_non_ai_canvas_editing: true,
+      },
+      diagnostics: {
+        trace_id: "trace_msw_activepieces_session",
+        safe_to_show: true,
+        ap_app: "ok",
+        ap_worker: "ok",
+        local_owner_keys: "ready",
+      },
+    });
+  }),
+  http.post("*/activepieces/session/:sessionId/initialized", ({ params }) =>
+    HttpResponse.json({
+      status: "initialized",
+      session_id: String(params.sessionId),
+      initialized_at: new Date().toISOString(),
+    }),
+  ),
   http.post("*/activepieces/embed-token", () =>
     HttpResponse.json(activepiecesEmbedTokenFixture),
   ),

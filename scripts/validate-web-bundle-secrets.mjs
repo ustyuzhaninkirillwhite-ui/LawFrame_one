@@ -33,7 +33,7 @@ const forbiddenPatterns = [
   },
   {
     label: "JWT/private signing secret name",
-    regex: /(JWT_SECRET|SIGNING_PRIVATE_KEY|LEXFRAME_RUNTIME_MASTER_SECRET)/g,
+    regex: /(JWT_SECRET|SIGNING_PRIVATE_KEY|LEXFRAME_RUNTIME_MASTER_SECRET|LEXFRAME_LOCAL_KEYS_FILE)/g,
   },
   {
     label: "Connection secret reference value",

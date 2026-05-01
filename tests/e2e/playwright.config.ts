@@ -1,6 +1,9 @@
 import { defineConfig } from "@playwright/test";
 
-const port = Number(process.env.LEXFRAME_E2E_PORT ?? "3000");
+const isStage17LiveRun = process.env.LEXFRAME_STAGE17_17_10_LIVE === "1";
+const port = Number(
+  process.env.LEXFRAME_E2E_PORT ?? (isStage17LiveRun ? "3100" : "3000"),
+);
 const apiPort = Number(process.env.LEXFRAME_API_PORT ?? "3100");
 const host = "127.0.0.1";
 const baseURL = `http://${host}:${port}`;
@@ -11,7 +14,10 @@ const isStage16LiveAuditRun = process.argv.some((arg) =>
 );
 const readinessProfile =
   process.env.LEXFRAME_READINESS_PROFILE ??
-  (isStage16LiveAuditRun ? "local-integrated" : "local-basic");
+  (isStage16LiveAuditRun || isStage17LiveRun
+    ? "local-integrated"
+    : "local-basic");
+process.env.LEXFRAME_READINESS_PROFILE ??= readinessProfile;
 const reuseExistingServer =
   process.env.LEXFRAME_E2E_REUSE_EXISTING_SERVER === "1" ||
   (!process.env.CI &&

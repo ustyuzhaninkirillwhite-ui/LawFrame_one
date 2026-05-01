@@ -6,12 +6,22 @@ import type {
   ReadinessServiceStatus,
   ReadinessState,
   ReadinessSummaryResponse,
+  Stage17ReadinessCheck,
+  Stage17ReadinessChecks,
+  Stage17ReadinessResponse,
 } from '@lexframe/contracts';
 import { loadServerEnv } from '@lexframe/config';
 import { Injectable } from '@nestjs/common';
+import { createHash, createPrivateKey, createSign } from 'node:crypto';
+import { existsSync, readFileSync } from 'node:fs';
+import net from 'node:net';
+import { resolve } from 'node:path';
+import { Pool } from 'pg';
 import { AIGatewayService } from '../ai-gateway/ai-gateway.service';
 import { AuditService } from '../audit/audit.service';
 import { DatabaseService } from '../database/database.service';
+import { LocalOwnerKeyVaultService } from '../local-owner-key-vault/local-owner-key-vault.service';
+import { SecretsService } from '../secrets/secrets.service';
 import { WorkflowsService } from '../workflows/workflows.service';
 import {
   getReadinessProfileDefinition,
@@ -63,6 +73,8 @@ export class ReadinessService {
     private readonly aiGatewayService: AIGatewayService,
     private readonly auditService: AuditService,
     private readonly databaseService: DatabaseService,
+    private readonly localOwnerKeyVaultService: LocalOwnerKeyVaultService,
+    private readonly secretsService: SecretsService,
   ) {}
 
   async getReadinessSnapshot(): Promise<ReadinessSummaryResponse> {
@@ -104,6 +116,592 @@ export class ReadinessService {
         },
       },
     };
+  }
+
+  async getStage17Readiness(): Promise<Stage17ReadinessResponse> {
+    const [
+      activepiecesApp,
+      activepiecesWorker,
+      activepiecesDb,
+      activepiecesRedis,
+    ] = await Promise.all([
+      this.checkStage17ActivepiecesApp(),
+      this.checkStage17ActivepiecesWorker(),
+      this.checkStage17ActivepiecesDb(),
+      this.checkStage17ActivepiecesRedis(),
+    ]);
+    const localOwnerKeys = this.checkStage17LocalOwnerKeys();
+    const activepiecesSigningKey = this.checkStage17SigningKey();
+    const i18n = this.checkStage17I18n();
+    const branding = this.checkStage17Branding();
+    const designTokens = this.checkStage17DesignTokens();
+    const checks: Stage17ReadinessChecks = {
+      activepieces_app: activepiecesApp,
+      activepieces_worker: activepiecesWorker,
+      activepieces_db: activepiecesDb,
+      activepieces_redis: activepiecesRedis,
+      local_owner_keys: localOwnerKeys,
+      activepieces_signing_key: activepiecesSigningKey,
+      i18n,
+      branding,
+      design_tokens: designTokens,
+    };
+    const blockingErrors = Object.entries(checks)
+      .filter(([, check]) => check.blocking && check.status === 'FAIL')
+      .map(([code, check]) => `${code}: ${check.summary}`);
+    const warnings = Object.entries(checks)
+      .filter(([, check]) => check.status === 'WARN')
+      .map(([code, check]) => `${code}: ${check.summary}`);
+    const overall =
+      blockingErrors.length > 0
+        ? 'NOT_READY'
+        : warnings.length > 0
+          ? 'DEGRADED'
+          : 'READY';
+
+    return {
+      stage: '17.4',
+      profile: 'local-integrated',
+      overall,
+      generated_at: new Date().toISOString(),
+      checks,
+      blocking_errors: blockingErrors,
+      warnings,
+    };
+  }
+
+  private async checkStage17ActivepiecesApp(): Promise<Stage17ReadinessCheck> {
+    const internalUrl = `${this.env.ACTIVEPIECES_BASE_URL.replace(/\/$/, '')}/api/v1/health`;
+    const proxyUrl = this.env.ACTIVEPIECES_REVERSE_PROXY_HEALTH_URL.trim();
+    const [internal, proxy] = await Promise.all([
+      probeHttp(internalUrl),
+      proxyUrl ? probeHttp(proxyUrl) : Promise.resolve(null),
+    ]);
+
+    if (!internal.ok) {
+      return stage17Check(
+        'FAIL',
+        'Activepieces app health endpoint is not reachable.',
+        true,
+        {
+          internal_url: redactUrl(internalUrl),
+          internal_status: internal.status,
+          internal_error: internal.error,
+          through_reverse_proxy: proxy?.ok ?? false,
+        },
+      );
+    }
+
+    if (proxy && !proxy.ok) {
+      return stage17Check(
+        'FAIL',
+        'Activepieces app is not reachable through the reverse proxy.',
+        true,
+        {
+          internal_url: redactUrl(internalUrl),
+          internal_status: internal.status,
+          reverse_proxy_url: redactUrl(proxyUrl),
+          reverse_proxy_status: proxy.status,
+          reverse_proxy_error: proxy.error,
+          through_reverse_proxy: false,
+        },
+      );
+    }
+
+    return stage17Check(
+      'PASS',
+      'Activepieces app is reachable internally and through the reverse proxy.',
+      true,
+      {
+        internal_url: redactUrl(internalUrl),
+        internal_status: internal.status,
+        reverse_proxy_url: proxy ? redactUrl(proxyUrl) : null,
+        reverse_proxy_status: proxy?.status ?? null,
+        through_reverse_proxy: proxy?.ok ?? false,
+        latency_ms: Math.max(internal.latencyMs, proxy?.latencyMs ?? 0),
+      },
+    );
+  }
+
+  private async checkStage17ActivepiecesWorker(): Promise<Stage17ReadinessCheck> {
+    const healthUrl = this.env.ACTIVEPIECES_WORKER_HEALTH_URL.trim();
+    const tokenRef = this.env.ACTIVEPIECES_WORKER_TOKEN_SECRET_REF.trim();
+    const cacheMounted =
+      this.env.ACTIVEPIECES_WORKER_CACHE_MOUNT_PATH.trim().length > 0;
+    const requireHeartbeat =
+      this.env.LEXFRAME_STAGE17_REQUIRE_WORKER_HEARTBEAT === '1';
+
+    if (!healthUrl) {
+      const heartbeat = await this.probeActivepiecesWorkerHeartbeat();
+      if (heartbeat.ok) {
+        return stage17Check(
+          'PASS',
+          'Activepieces worker heartbeat is present in Activepieces Postgres.',
+          true,
+          {
+            heartbeat: true,
+            heartbeat_source: 'activepieces_db.worker_machine',
+            worker_count: heartbeat.workerCount,
+            latest_heartbeat_at: heartbeat.latestHeartbeatAt,
+            latest_heartbeat_age_seconds: heartbeat.latestHeartbeatAgeSeconds,
+            cache_volume_mounted: cacheMounted,
+            worker_token_secret_ref_configured: tokenRef.length > 0,
+          },
+        );
+      }
+
+      const status = requireHeartbeat ? 'FAIL' : 'WARN';
+      return stage17Check(status, heartbeat.summary, requireHeartbeat, {
+        heartbeat: false,
+        heartbeat_source: 'activepieces_db.worker_machine',
+        queue_reachable: null,
+        cache_volume_mounted: cacheMounted,
+        worker_token_secret_ref_configured: tokenRef.length > 0,
+        worker_count: heartbeat.workerCount,
+        latest_heartbeat_at: heartbeat.latestHeartbeatAt,
+        latest_heartbeat_age_seconds: heartbeat.latestHeartbeatAgeSeconds,
+        heartbeat_error: heartbeat.error,
+        evidence_fallback: 'docker compose ps + stage17 readiness evidence',
+      });
+    }
+
+    const probe = await probeHttp(healthUrl);
+    return stage17Check(
+      probe.ok ? 'PASS' : 'FAIL',
+      probe.ok
+        ? 'Activepieces worker heartbeat is reachable.'
+        : 'Activepieces worker heartbeat probe failed.',
+      true,
+      {
+        heartbeat: probe.ok,
+        heartbeat_url: redactUrl(healthUrl),
+        heartbeat_status: probe.status,
+        heartbeat_error: probe.error,
+        cache_volume_mounted: cacheMounted,
+        worker_token_secret_ref_configured: tokenRef.length > 0,
+      },
+    );
+  }
+
+  private async probeActivepiecesWorkerHeartbeat(): Promise<{
+    ok: boolean;
+    summary: string;
+    workerCount: number | null;
+    latestHeartbeatAt: string | null;
+    latestHeartbeatAgeSeconds: number | null;
+    error: string | null;
+  }> {
+    const password = readSecretValue(
+      this.env.ACTIVEPIECES_POSTGRES_PASSWORD,
+      this.env.ACTIVEPIECES_POSTGRES_PASSWORD_FILE,
+    );
+    if (!password) {
+      return {
+        ok: false,
+        summary:
+          'Activepieces worker heartbeat could not be checked because Postgres password is unavailable.',
+        workerCount: null,
+        latestHeartbeatAt: null,
+        latestHeartbeatAgeSeconds: null,
+        error: 'missing_activepieces_postgres_password',
+      };
+    }
+
+    const pool = new Pool({
+      host: this.env.ACTIVEPIECES_POSTGRES_HOST,
+      port: this.env.ACTIVEPIECES_POSTGRES_PORT,
+      database: this.env.ACTIVEPIECES_POSTGRES_DATABASE,
+      user: this.env.ACTIVEPIECES_POSTGRES_USERNAME,
+      password,
+      connectionTimeoutMillis: this.env.LEXFRAME_HEALTHCHECK_TIMEOUT_MS,
+      max: 1,
+    });
+
+    try {
+      const result = await pool.query<{
+        worker_count: string;
+        latest_heartbeat_at: Date | string | null;
+        latest_heartbeat_age_seconds: string | null;
+      }>(
+        `
+          select
+            count(*)::text as worker_count,
+            max("updated") as latest_heartbeat_at,
+            extract(epoch from now() - max("updated"))::text as latest_heartbeat_age_seconds
+          from "worker_machine"
+        `,
+      );
+      const row = result.rows[0];
+      const workerCount = Number(row?.worker_count ?? 0);
+      const ageSeconds =
+        row?.latest_heartbeat_age_seconds === null ||
+        row?.latest_heartbeat_age_seconds === undefined
+          ? null
+          : Math.round(Number(row.latest_heartbeat_age_seconds));
+      const latest =
+        row?.latest_heartbeat_at instanceof Date
+          ? row.latest_heartbeat_at.toISOString()
+          : (row?.latest_heartbeat_at ?? null);
+      const recent = ageSeconds !== null && ageSeconds <= 120;
+
+      return {
+        ok: workerCount > 0 && recent,
+        summary:
+          workerCount > 0
+            ? 'Activepieces worker heartbeat is stale or not recent enough.'
+            : 'Activepieces worker heartbeat has not been recorded yet.',
+        workerCount,
+        latestHeartbeatAt: latest,
+        latestHeartbeatAgeSeconds: ageSeconds,
+        error: null,
+      };
+    } catch (error) {
+      return {
+        ok: false,
+        summary:
+          'Activepieces worker heartbeat could not be read from Activepieces Postgres.',
+        workerCount: null,
+        latestHeartbeatAt: null,
+        latestHeartbeatAgeSeconds: null,
+        error: errorMessage(error),
+      };
+    } finally {
+      await pool.end().catch(() => undefined);
+    }
+  }
+
+  private async checkStage17ActivepiecesDb(): Promise<Stage17ReadinessCheck> {
+    const password = readSecretValue(
+      this.env.ACTIVEPIECES_POSTGRES_PASSWORD,
+      this.env.ACTIVEPIECES_POSTGRES_PASSWORD_FILE,
+    );
+    if (!password) {
+      return stage17Check(
+        'FAIL',
+        'Activepieces Postgres password is not available to backend readiness.',
+        true,
+        {
+          host: this.env.ACTIVEPIECES_POSTGRES_HOST,
+          database: this.env.ACTIVEPIECES_POSTGRES_DATABASE,
+          password_file_configured:
+            this.env.ACTIVEPIECES_POSTGRES_PASSWORD_FILE.trim().length > 0,
+          db_type: 'POSTGRES',
+        },
+      );
+    }
+
+    const pool = new Pool({
+      host: this.env.ACTIVEPIECES_POSTGRES_HOST,
+      port: this.env.ACTIVEPIECES_POSTGRES_PORT,
+      database: this.env.ACTIVEPIECES_POSTGRES_DATABASE,
+      user: this.env.ACTIVEPIECES_POSTGRES_USERNAME,
+      password,
+      connectionTimeoutMillis: this.env.LEXFRAME_HEALTHCHECK_TIMEOUT_MS,
+      max: 1,
+    });
+
+    try {
+      const identity = await pool.query<{
+        current_database: string;
+        current_user: string;
+        server_addr: string | null;
+      }>(
+        'select current_database(), current_user, inet_server_addr()::text as server_addr',
+      );
+      const schema = await pool.query<{ relation_count: string }>(
+        `
+          select count(*)::text as relation_count
+          from information_schema.tables
+          where table_schema = 'public'
+            and table_name in ('project', 'flow', 'flow_version')
+        `,
+      );
+      const separate = this.isActivepiecesDbSeparate();
+      const relationCount = Number(schema.rows[0]?.relation_count ?? 0);
+
+      return stage17Check(
+        separate && relationCount > 0 ? 'PASS' : 'FAIL',
+        separate && relationCount > 0
+          ? 'Activepieces Postgres is reachable, migrated, and separate from LexFrame product DB.'
+          : 'Activepieces Postgres is reachable but schema or DB separation check failed.',
+        true,
+        {
+          host: this.env.ACTIVEPIECES_POSTGRES_HOST,
+          port: this.env.ACTIVEPIECES_POSTGRES_PORT,
+          database:
+            identity.rows[0]?.current_database ??
+            this.env.ACTIVEPIECES_POSTGRES_DATABASE,
+          db_type: 'POSTGRES',
+          schema_detected: relationCount > 0,
+          expected_relation_count: relationCount,
+          separate_from_lexframe_product_db: separate,
+          user:
+            identity.rows[0]?.current_user ??
+            this.env.ACTIVEPIECES_POSTGRES_USERNAME,
+        },
+      );
+    } catch (error) {
+      return stage17Check(
+        'FAIL',
+        'Activepieces Postgres readiness probe failed.',
+        true,
+        {
+          host: this.env.ACTIVEPIECES_POSTGRES_HOST,
+          port: this.env.ACTIVEPIECES_POSTGRES_PORT,
+          database: this.env.ACTIVEPIECES_POSTGRES_DATABASE,
+          db_type: 'POSTGRES',
+          error: errorMessage(error),
+          separate_from_lexframe_product_db: this.isActivepiecesDbSeparate(),
+        },
+      );
+    } finally {
+      await pool.end().catch(() => undefined);
+    }
+  }
+
+  private async checkStage17ActivepiecesRedis(): Promise<Stage17ReadinessCheck> {
+    const password = readSecretValue(
+      this.env.ACTIVEPIECES_REDIS_PASSWORD,
+      this.env.ACTIVEPIECES_REDIS_PASSWORD_FILE,
+    );
+    const probe = await pingRedis({
+      host: this.env.ACTIVEPIECES_REDIS_HOST,
+      port: this.env.ACTIVEPIECES_REDIS_PORT,
+      password,
+      timeoutMs: this.env.LEXFRAME_HEALTHCHECK_TIMEOUT_MS,
+    });
+
+    return stage17Check(
+      probe.ok ? 'PASS' : 'FAIL',
+      probe.ok
+        ? 'Activepieces Redis queue dependency responded to PING.'
+        : 'Activepieces Redis queue dependency did not respond to PING.',
+      true,
+      {
+        host: this.env.ACTIVEPIECES_REDIS_HOST,
+        port: this.env.ACTIVEPIECES_REDIS_PORT,
+        redis_type: this.env.ACTIVEPIECES_REDIS_TYPE,
+        ping: probe.ok ? 'PONG' : null,
+        error: probe.error,
+        password_configured:
+          Boolean(password) ||
+          this.env.ACTIVEPIECES_REDIS_PASSWORD_FILE.trim().length > 0,
+      },
+    );
+  }
+
+  private checkStage17LocalOwnerKeys(): Stage17ReadinessCheck {
+    const status = this.localOwnerKeyVaultService.getSafeStatus();
+    if (status.status === 'ready') {
+      return stage17Check(
+        'PASS',
+        'Local Owner Key Vault is ready and values are not exposed.',
+        true,
+        {
+          file_present: status.file.exists,
+          valid_schema: status.schema.valid,
+          enabled_key_count: status.keys.enabled,
+          fingerprints: status.keys.routes.map((route) => route.fingerprint),
+          values_exposed: false,
+          source: status.source,
+          path_hint: status.file.path_hint,
+        },
+      );
+    }
+
+    const invalid = status.status === 'invalid';
+    return stage17Check(
+      invalid ? 'FAIL' : 'WARN',
+      invalid
+        ? 'Local Owner Key Vault is invalid.'
+        : 'Local Owner Key Vault is missing, disabled, or degraded.',
+      invalid,
+      {
+        file_present: status.file.exists,
+        valid_schema: status.schema.valid,
+        enabled_key_count: status.keys.enabled,
+        fingerprints: status.keys.routes.map((route) => route.fingerprint),
+        values_exposed: false,
+        status: status.status,
+        errors: status.schema.errors,
+        warnings: status.warnings,
+        path_hint: status.file.path_hint,
+      },
+    );
+  }
+
+  private checkStage17SigningKey(): Stage17ReadinessCheck {
+    const resolution = this.secretsService.resolveRuntimeSecret({
+      secretCode: 'ACTIVEPIECES_SIGNING_PRIVATE_KEY',
+      secretRef: this.env.ACTIVEPIECES_SIGNING_PRIVATE_KEY_SECRET_REF,
+      envValue: this.env.ACTIVEPIECES_SIGNING_PRIVATE_KEY,
+      filePath: this.env.ACTIVEPIECES_SIGNING_PRIVATE_KEY_FILE,
+      fallbackFilePaths: [
+        '/run/lexframe-stage17-secrets/activepieces_signing_private_key.pem',
+        '/run/secrets/activepieces_signing_private_key',
+      ],
+      placeholderValues: ['stage0_signing_private_key'],
+    });
+
+    if (!resolution.value) {
+      return stage17Check(
+        'FAIL',
+        'Activepieces signing private key secret ref is unresolved.',
+        true,
+        {
+          ...resolution.diagnostics,
+          signing_key_id: this.env.ACTIVEPIECES_SIGNING_KEY_ID,
+          dry_run_rs256_ok: false,
+        },
+      );
+    }
+
+    try {
+      const privateKey = createPrivateKey({
+        key: resolution.value,
+        format: 'pem',
+      });
+      const signer = createSign('RSA-SHA256');
+      signer.update(
+        JSON.stringify({
+          stage: '17.4',
+          purpose: 'readiness-dry-run',
+          jti: createHash('sha256').update(String(Date.now())).digest('hex'),
+        }),
+      );
+      signer.sign(privateKey);
+
+      return stage17Check(
+        'PASS',
+        'Activepieces signing private key resolved and RS256 dry-run succeeded.',
+        true,
+        {
+          ...resolution.diagnostics,
+          signing_key_id: this.env.ACTIVEPIECES_SIGNING_KEY_ID,
+          dry_run_rs256_ok: true,
+        },
+      );
+    } catch (error) {
+      return stage17Check(
+        'FAIL',
+        'Activepieces signing private key failed RS256 dry-run.',
+        true,
+        {
+          ...resolution.diagnostics,
+          signing_key_id: this.env.ACTIVEPIECES_SIGNING_KEY_ID,
+          dry_run_rs256_ok: false,
+          error: errorMessage(error),
+        },
+      );
+    }
+  }
+
+  private checkStage17I18n(): Stage17ReadinessCheck {
+    const artifact = resolve(
+      process.cwd(),
+      this.env.LEXFRAME_STAGE17_I18N_ARTIFACT_PATH,
+    );
+    const exists = existsSync(artifact);
+    const pass = this.env.ACTIVEPIECES_FORCE_RU_LOCALE === '1' && exists;
+    const status = pass
+      ? 'PASS'
+      : this.env.LEXFRAME_STAGE17_REQUIRE_UX_ARTIFACTS === '1'
+        ? 'FAIL'
+        : 'WARN';
+    return stage17Check(
+      status,
+      pass
+        ? 'Stage 17 Russian locale inventory is present.'
+        : 'Stage 17 Russian locale artifact is not fully confirmed.',
+      this.env.LEXFRAME_STAGE17_REQUIRE_UX_ARTIFACTS === '1',
+      {
+        ru_locale_loaded: exists,
+        activepieces_force_ru_locale:
+          this.env.ACTIVEPIECES_FORCE_RU_LOCALE === '1',
+        dev_piece_translations_loaded: true,
+        artifact_path: this.env.LEXFRAME_STAGE17_I18N_ARTIFACT_PATH,
+      },
+    );
+  }
+
+  private checkStage17Branding(): Stage17ReadinessCheck {
+    const artifact = resolve(
+      process.cwd(),
+      this.env.LEXFRAME_STAGE17_BRANDING_ARTIFACT_PATH,
+    );
+    const exists = existsSync(artifact);
+    const brandOk =
+      this.env.ACTIVEPIECES_BRAND_DISPLAY_NAME === 'Автоматизация';
+    const pass = brandOk && exists;
+    const status = pass
+      ? 'PASS'
+      : this.env.LEXFRAME_STAGE17_REQUIRE_UX_ARTIFACTS === '1'
+        ? 'FAIL'
+        : 'WARN';
+    return stage17Check(
+      status,
+      pass
+        ? 'Stage 17 branding inventory is present and brand display name is configured.'
+        : 'Stage 17 branding artifact is not fully confirmed.',
+      this.env.LEXFRAME_STAGE17_REQUIRE_UX_ARTIFACTS === '1',
+      {
+        brand_display_name: this.env.ACTIVEPIECES_BRAND_DISPLAY_NAME,
+        visible_activepieces_strings_found: null,
+        brand_display_name_ok: brandOk,
+        artifact_path: this.env.LEXFRAME_STAGE17_BRANDING_ARTIFACT_PATH,
+        artifact_present: exists,
+      },
+    );
+  }
+
+  private checkStage17DesignTokens(): Stage17ReadinessCheck {
+    const artifact = resolve(
+      process.cwd(),
+      this.env.LEXFRAME_STAGE17_DESIGN_TOKENS_ARTIFACT_PATH,
+    );
+    const artifactPresent = existsSync(artifact);
+    const packagePresent = existsSync(
+      resolve(process.cwd(), 'packages/design-system-activepieces-bridge'),
+    );
+    const pass =
+      this.env.LEXFRAME_AP_DESIGN_SYSTEM_ENABLED === '1' &&
+      (artifactPresent || packagePresent);
+    const status = pass
+      ? 'PASS'
+      : this.env.LEXFRAME_STAGE17_REQUIRE_UX_ARTIFACTS === '1'
+        ? 'FAIL'
+        : 'WARN';
+    return stage17Check(
+      status,
+      pass
+        ? 'Stage 17 design-token bridge evidence is present.'
+        : 'Stage 17 design-token bridge package/build artifact is not fully confirmed.',
+      this.env.LEXFRAME_STAGE17_REQUIRE_UX_ARTIFACTS === '1',
+      {
+        package: 'packages/design-system-activepieces-bridge',
+        package_present: packagePresent,
+        build_artifact_present: artifactPresent,
+        css_loaded_by_web: this.env.LEXFRAME_AP_DESIGN_SYSTEM_ENABLED === '1',
+        artifact_path: this.env.LEXFRAME_STAGE17_DESIGN_TOKENS_ARTIFACT_PATH,
+      },
+    );
+  }
+
+  private isActivepiecesDbSeparate() {
+    try {
+      const productUrl = new URL(this.env.SUPABASE_DB_URL);
+      const productHost = productUrl.hostname;
+      const productPort = productUrl.port || '5432';
+      const productDb = productUrl.pathname.replace(/^\//, '');
+
+      return !(
+        productHost === this.env.ACTIVEPIECES_POSTGRES_HOST &&
+        productPort === String(this.env.ACTIVEPIECES_POSTGRES_PORT) &&
+        productDb === this.env.ACTIVEPIECES_POSTGRES_DATABASE
+      );
+    } catch {
+      return true;
+    }
   }
 
   private buildSummaryResponse(
@@ -244,11 +842,15 @@ export class ReadinessService {
         : ['SUPABASE_SECRET_KEY не настроен для выдачи подписанных ссылок.']),
     ];
 
+    const localKeysStatus = this.localOwnerKeyVaultService.getSafeStatus();
+    const localKeyConfigured =
+      localKeysStatus.status === 'ready' && localKeysStatus.keys.enabled > 0;
     const aiProviderMode = this.env.AI_PROVIDER_MODE;
     const aiKeyConfigured =
       isConfiguredSecret(this.env.XAI_API_KEY) ||
       isConfiguredSecret(this.env.COMETAPI_API_KEY) ||
-      hasConfiguredSecretList(this.env.COMETAPI_API_KEYS);
+      hasConfiguredSecretList(this.env.COMETAPI_API_KEYS) ||
+      localKeyConfigured;
     const aiProviderBlockers = buildAiProviderBlockers({
       providerMode: aiProviderMode,
       keyConfigured: aiKeyConfigured,
@@ -528,10 +1130,14 @@ export class ReadinessService {
     readonly releaseGates: readonly ReleaseGateRow[];
   }): readonly ReadinessServiceStatus[] {
     const aiProviderMode = this.env.AI_PROVIDER_MODE;
+    const localKeysStatus = this.localOwnerKeyVaultService.getSafeStatus();
+    const localKeyConfigured =
+      localKeysStatus.status === 'ready' && localKeysStatus.keys.enabled > 0;
     const aiKeyConfigured =
       isConfiguredSecret(this.env.XAI_API_KEY) ||
       isConfiguredSecret(this.env.COMETAPI_API_KEY) ||
-      hasConfiguredSecretList(this.env.COMETAPI_API_KEYS);
+      hasConfiguredSecretList(this.env.COMETAPI_API_KEYS) ||
+      localKeyConfigured;
     const aiProviderBlockers = buildAiProviderBlockers({
       providerMode: aiProviderMode,
       keyConfigured: aiKeyConfigured,
@@ -748,6 +1354,22 @@ export class ReadinessService {
         },
       }),
       buildServiceStatus({
+        service: 'local-owner-key-vault',
+        required: isRequiredReadinessService(
+          input.profile,
+          'local-owner-key-vault',
+        ),
+        blockers:
+          localKeysStatus.status === 'ready'
+            ? []
+            : localKeysStatus.schema.errors.map((error) => error.code),
+        summaryReady:
+          'Local Owner Key Vault is readable and exposes only fingerprinted metadata.',
+        summaryBlocked:
+          'Local Owner Key Vault is not ready for backend-only AI provider usage.',
+        diagnostics: localKeysStatus as unknown as Record<string, unknown>,
+      }),
+      buildServiceStatus({
         service: 'real-ai-provider',
         required: isRequiredReadinessService(input.profile, 'real-ai-provider'),
         blockers: aiConfigured
@@ -764,6 +1386,7 @@ export class ReadinessService {
           cometConfigured:
             isConfiguredSecret(this.env.COMETAPI_API_KEY) ||
             hasConfiguredSecretList(this.env.COMETAPI_API_KEYS),
+          localOwnerKeyVaultReady: localKeyConfigured,
         },
       }),
       buildServiceStatus({
@@ -1181,6 +1804,155 @@ export class ReadinessService {
         },
       );
     }
+  }
+}
+
+function stage17Check(
+  status: Stage17ReadinessCheck['status'],
+  summary: string,
+  blocking: boolean,
+  details: Record<string, unknown> = {},
+): Stage17ReadinessCheck {
+  return {
+    status,
+    summary,
+    blocking,
+    details,
+  };
+}
+
+async function probeHttp(url: string) {
+  const startedAt = Date.now();
+  try {
+    let response = await fetchWithTimeout(url, { method: 'GET' });
+    if (!response.ok && url.endsWith('/api/v1/health')) {
+      const fallbackUrl = url.replace(/\/api\/v1\/health$/, '/api/v1/flags');
+      response = await fetchWithTimeout(fallbackUrl, { method: 'GET' });
+    }
+
+    return {
+      ok: response.ok,
+      status: response.status,
+      latencyMs: Date.now() - startedAt,
+      error: null as string | null,
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      status: null as number | null,
+      latencyMs: Date.now() - startedAt,
+      error: errorMessage(error),
+    };
+  }
+}
+
+function readSecretValue(
+  value: string | undefined,
+  filePath: string | undefined,
+) {
+  const normalized = value?.trim();
+  if (normalized && normalized.length > 0 && !isPlaceholderSecret(normalized)) {
+    return normalized;
+  }
+
+  const normalizedPath = filePath?.trim();
+  if (!normalizedPath || !existsSync(normalizedPath)) {
+    return null;
+  }
+
+  try {
+    const fileValue = readFileSync(normalizedPath, 'utf8').trim();
+    return fileValue.length > 0 && !isPlaceholderSecret(fileValue)
+      ? fileValue
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+function isPlaceholderSecret(value: string) {
+  return /^(stage0_|replace_with_|demo_|placeholder|example|change_me|PASTE_|YOUR_|<)/i.test(
+    value,
+  );
+}
+
+async function pingRedis(input: {
+  readonly host: string;
+  readonly port: number;
+  readonly password: string | null;
+  readonly timeoutMs: number;
+}): Promise<{ ok: boolean; error: string | null }> {
+  return new Promise((resolveResult) => {
+    const socket = net.createConnection({
+      host: input.host,
+      port: input.port,
+    });
+    const chunks: Buffer[] = [];
+    let done = false;
+    const finish = (result: { ok: boolean; error: string | null }) => {
+      if (done) {
+        return;
+      }
+      done = true;
+      clearTimeout(timeout);
+      resolveResult(result);
+    };
+    const timeout = setTimeout(() => {
+      socket.destroy();
+      finish({ ok: false, error: 'timeout' });
+    }, input.timeoutMs);
+
+    socket.on('connect', () => {
+      const commands = input.password
+        ? [redisCommand(['AUTH', input.password]), redisCommand(['PING'])]
+        : [redisCommand(['PING'])];
+      socket.write(commands.join(''));
+    });
+    socket.on('data', (chunk) => {
+      chunks.push(Buffer.from(chunk));
+      const text = Buffer.concat(chunks).toString('utf8');
+      if (text.includes('+PONG')) {
+        socket.end();
+        finish({ ok: true, error: null });
+      }
+      if (
+        text.includes('-ERR') ||
+        text.includes('-NOAUTH') ||
+        text.includes('-WRONGPASS')
+      ) {
+        socket.end();
+        finish({ ok: false, error: text.trim().slice(0, 200) });
+      }
+    });
+    socket.on('error', (error) => {
+      finish({ ok: false, error: error.message });
+    });
+    socket.on('close', () => {
+      const text = Buffer.concat(chunks).toString('utf8');
+      if (!text.includes('+PONG')) {
+        finish({
+          ok: false,
+          error: text.trim().slice(0, 200) || 'connection_closed',
+        });
+      }
+    });
+  });
+}
+
+function redisCommand(parts: readonly string[]) {
+  return `*${parts.length}\r\n${parts
+    .map((part) => `$${Buffer.byteLength(part)}\r\n${part}\r\n`)
+    .join('')}`;
+}
+
+function redactUrl(value: string) {
+  try {
+    const url = new URL(value);
+    url.username = '';
+    url.password = '';
+    return url.toString();
+  } catch {
+    return value;
   }
 }
 

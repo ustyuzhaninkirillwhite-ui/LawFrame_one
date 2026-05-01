@@ -1,6 +1,8 @@
 export function isAutomationCanvasRoute(pathname: string | null | undefined) {
   return Boolean(
-    pathname?.match(/^\/app\/projects\/[^/]+\/automations\/[^/]+\/canvas\/?$/),
+    pathname?.match(
+      /^\/app\/projects\/[^/]+\/automations\/[^/]+\/(?:automation|canvas)\/?$/,
+    ),
   );
 }
 

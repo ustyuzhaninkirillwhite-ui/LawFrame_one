@@ -4,11 +4,15 @@ import type {
   ActivepiecesEmbedTokenResponse,
   ActivepiecesRunSmokeRequest,
   ActivepiecesRunSmokeResponse,
+  ActivepiecesSessionReadyWireResponse,
+  ActivepiecesSessionWireResponse,
   ActivepiecesRunEventCallback,
   ActivepiecesStepEventCallback,
   AutomationRuntimeRequirements,
   CreateActivepiecesEmbedTokenRequest,
+  CreateActivepiecesSessionRequest,
   CreateRunArtifactRequest,
+  InitializeActivepiecesSessionWireResponse,
   LexFrameWorkflowV2,
   RuntimeConnectionSummary,
   RuntimePieceRequirement,
@@ -36,12 +40,18 @@ import { DatabaseService } from '../database/database.service';
 import { DeliveryService } from '../delivery/delivery.service';
 import { DocumentsService } from '../documents/documents.service';
 import { LiveEventsService } from '../realtime/live-events.service';
+import { RuntimeScopedTokenService } from '../runtime/runtime-scoped-token.service';
+import { SecretsService } from '../secrets/secrets.service';
 import { CanvasValidationService } from '../canvas/canvas-validation.service';
 import { WorkflowCompilerService } from '../workflow-compiler/workflow-compiler.service';
+import { ActivepiecesSessionService } from './activepieces-session.service';
 
 interface RequestMeta {
   readonly requestId: string | null;
   readonly traceId: string | null;
+  readonly idempotencyKey?: string | null;
+  readonly clientIp?: string | null;
+  readonly userAgent?: string | null;
 }
 
 interface InstalledAutomationRuntimeRow {
@@ -116,6 +126,7 @@ interface RuntimeBindingRow {
   readonly runtime_projection_id: string | null;
   readonly external_project_id: string;
   readonly external_flow_id: string;
+  readonly activepieces_flow_version_id?: string | null;
   readonly sync_hash: string;
   readonly status: 'pending' | 'synced' | 'failed';
   readonly last_synced_at: string | null;
@@ -219,6 +230,12 @@ export class ActivepiecesService {
     private readonly liveEventsService: LiveEventsService,
     @Optional()
     private readonly workflowCompilerService?: WorkflowCompilerService,
+    @Optional()
+    private readonly secretsService?: SecretsService,
+    @Optional()
+    private readonly activepiecesSessionService?: ActivepiecesSessionService,
+    @Optional()
+    private readonly runtimeScopedTokenService?: RuntimeScopedTokenService,
   ) {}
 
   async getAutomationRuntimeRequirements(
@@ -440,6 +457,66 @@ export class ActivepiecesService {
     };
   }
 
+  async createSession(
+    actor: AuthenticatedActor,
+    access: AccessContext,
+    input: CreateActivepiecesSessionRequest,
+    meta: RequestMeta,
+  ): Promise<ActivepiecesSessionWireResponse> {
+    if (!this.activepiecesSessionService) {
+      throw new AppHttpException(
+        'ACTIVEPIECES_NOT_CONFIGURED',
+        503,
+        'Activepieces Stage 17.5 session service is not configured.',
+      );
+    }
+
+    return this.activepiecesSessionService.createSession(
+      actor,
+      access,
+      input,
+      meta,
+    );
+  }
+
+  async initializeSession(
+    actor: AuthenticatedActor,
+    access: AccessContext,
+    sessionId: string,
+    meta: RequestMeta,
+  ): Promise<InitializeActivepiecesSessionWireResponse> {
+    if (!this.activepiecesSessionService) {
+      throw new AppHttpException(
+        'ACTIVEPIECES_NOT_CONFIGURED',
+        503,
+        'Activepieces Stage 17.5 session service is not configured.',
+      );
+    }
+
+    return this.activepiecesSessionService.initializeSession(
+      actor,
+      access,
+      sessionId,
+      meta,
+    );
+  }
+
+  async createManagedAuthnExternalToken(input: {
+    readonly externalAccessToken: string;
+  }) {
+    if (!this.activepiecesSessionService) {
+      throw new AppHttpException(
+        'ACTIVEPIECES_NOT_CONFIGURED',
+        503,
+        'Activepieces Stage 17.5 session service is not configured.',
+      );
+    }
+
+    return this.activepiecesSessionService.createManagedAuthnExternalToken(
+      input,
+    );
+  }
+
   async getWorkspaceSecurityOverview(
     access: AccessContext,
   ): Promise<ActivepiecesWorkspaceSecurityState> {
@@ -477,10 +554,40 @@ export class ActivepiecesService {
       eventStreamingEnabled: settings?.event_streaming_enabled ?? false,
       signingKeyConfigured: settings?.signing_key_configured ?? false,
       tokenTtlSeconds: settings?.token_ttl_seconds ?? 300,
-      piecesFilterType: settings?.pieces_filter_type ?? 'allowlist',
+      piecesFilterType: settings?.pieces_filter_type ?? 'ALLOWED',
       piecesTags: settings?.pieces_tags ?? [],
       incidentLockActive: settings?.incident_lock_active ?? false,
       runtimeConnections,
+    };
+  }
+
+  private async getSessionRuntimeStatus(): Promise<
+    ActivepiecesSessionReadyWireResponse['runtime_status']
+  > {
+    if (this.env.LEXFRAME_STAGE17_READINESS_ENABLED !== '1') {
+      return {
+        ap_app: 'ok',
+        ap_worker: 'unknown',
+        ap_db: 'unknown',
+        redis: 'unknown',
+      };
+    }
+
+    const probe = await this.probeActivepiecesApi();
+    if (!probe.reachable) {
+      return {
+        ap_app: 'blocked',
+        ap_worker: 'blocked',
+        ap_db: 'blocked',
+        redis: 'blocked',
+      };
+    }
+
+    return {
+      ap_app: 'ok',
+      ap_worker: this.env.ACTIVEPIECES_WORKER_HEALTH_URL ? 'ok' : 'degraded',
+      ap_db: 'ok',
+      redis: 'ok',
     };
   }
 
@@ -583,22 +690,19 @@ export class ActivepiecesService {
       this.getWorkspaceSecurityOverview(access),
       this.probeActivepiecesApi(),
     ]);
+    const apiKeyStatus = this.resolveActivepiecesApiKeyStatus();
+    const signingKeyStatus = this.resolveActivepiecesSigningKeyStatus();
     const simulateRuns = this.env.ACTIVEPIECES_SIMULATE_RUNS === '1';
     const smokePresetCodes = activepiecesSmokeFlows.map((flow) => flow.code);
     const effectivePiecesTags = this.resolveEffectivePiecesTags(
       workspaceSecurity.piecesTags,
     );
     const piecesPolicyReady =
-      workspaceSecurity.piecesFilterType === 'allowlist' &&
+      normalizePiecesFilterType(workspaceSecurity.piecesFilterType) ===
+        'ALLOWED' &&
       effectivePiecesTags.length > 0;
-    const apiKeyConfigured = this.isConfiguredValue(
-      this.env.ACTIVEPIECES_API_KEY,
-      ['stage0_activepieces_api_key'],
-    );
-    const signingKeyConfigured = this.isConfiguredValue(
-      this.env.ACTIVEPIECES_SIGNING_PRIVATE_KEY,
-      ['stage0_signing_private_key'],
-    );
+    const apiKeyConfigured = apiKeyStatus.configured;
+    const signingKeyConfigured = signingKeyStatus.configured;
     const dependencies: ActivepiecesIntegrationStatus['dependencies'] = [
       {
         code: 'app',
@@ -607,6 +711,7 @@ export class ActivepiecesService {
         details: {
           baseUrl: this.env.ACTIVEPIECES_BASE_URL,
           projectCount: apiProbe.projectCount ?? null,
+          apiKeySource: apiKeyStatus.source,
         },
       },
       {
@@ -1120,6 +1225,7 @@ export class ActivepiecesService {
           runtime_projection_id,
           external_project_id,
           external_flow_id,
+          activepieces_flow_version_id,
           sync_hash,
           status,
           last_synced_at
@@ -1193,6 +1299,19 @@ export class ActivepiecesService {
     const externalRunId = `ap_run_${runId.replace(/-/g, '').slice(0, 12)}`;
     const stepSummaries = this.buildStepSummaries(automation.workflow);
     const callbackToken = this.buildCallbackToken(runId, traceId);
+    const scopedRuntimeToken = this.runtimeScopedTokenService?.issue({
+      workspaceId: access.activeWorkspace!.id,
+      automationId: automation.id,
+      runId,
+      apProjectId: runtimeBinding.external_project_id,
+      apFlowId: runtimeBinding.external_flow_id,
+      apFlowVersionId: runtimeBinding.activepieces_flow_version_id ?? null,
+      stepName: 'test_ai_gateway_route',
+      purpose: 'activepieces_ai_gateway_action',
+      scope: ['runtime.ai.invoke', 'runtime.callback.write', 'artifact.create'],
+      traceId,
+      ttlSeconds: 15 * 60,
+    });
 
     if (dispatchMode === 'activepieces-api') {
       await this.assertRealDispatchReady(access);
@@ -1308,9 +1427,11 @@ export class ActivepiecesService {
             external_flow_id,
             external_run_id,
             callback_token_hash,
+            scoped_runtime_token_jti_hash,
+            scoped_runtime_token_expires_at,
             status
           )
-          values ($1, $2, $3, $4, $5, $6, 'queued')
+          values ($1, $2, $3, $4, $5, $6, $7, $8, 'queued')
         `,
         [
           randomUUID(),
@@ -1319,8 +1440,50 @@ export class ActivepiecesService {
           runtimeBinding.external_flow_id,
           externalRunId,
           this.hashValue(callbackToken),
+          scopedRuntimeToken?.jtiHash ?? null,
+          scopedRuntimeToken?.expiresAt ?? null,
         ],
       );
+
+      if (scopedRuntimeToken) {
+        await client.query(
+          `
+            insert into app.activepieces_runtime_tokens (
+              id,
+              workspace_id,
+              automation_id,
+              workflow_run_id,
+              ap_project_id,
+              ap_flow_id,
+              ap_flow_version_id,
+              step_name,
+              purpose,
+              scopes,
+              jti_hash,
+              token_hash,
+              expires_at,
+              trace_id
+            )
+            values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::text[], $11, $12, $13, $14)
+          `,
+          [
+            randomUUID(),
+            access.activeWorkspace!.id,
+            automation.id,
+            runId,
+            runtimeBinding.external_project_id,
+            runtimeBinding.external_flow_id,
+            runtimeBinding.activepieces_flow_version_id ?? null,
+            scopedRuntimeToken.claims.step_name,
+            scopedRuntimeToken.claims.purpose,
+            scopedRuntimeToken.claims.scope,
+            scopedRuntimeToken.jtiHash,
+            scopedRuntimeToken.tokenHash,
+            scopedRuntimeToken.expiresAt,
+            traceId,
+          ],
+        );
+      }
     });
 
     await this.auditService.record({
@@ -2016,13 +2179,9 @@ export class ActivepiecesService {
     } as const;
 
     try {
-      if (
-        this.env.ACTIVEPIECES_SIGNING_PRIVATE_KEY.includes('BEGIN PRIVATE KEY')
-      ) {
-        const privateKey = await importPKCS8(
-          this.env.ACTIVEPIECES_SIGNING_PRIVATE_KEY,
-          'RS256',
-        );
+      const signingKey = this.resolveActivepiecesSigningPrivateKey();
+      if (signingKey.includes('BEGIN PRIVATE KEY')) {
+        const privateKey = await importPKCS8(signingKey, 'RS256');
         return await new SignJWT(claims)
           .setProtectedHeader({
             alg: 'RS256',
@@ -2033,8 +2192,21 @@ export class ActivepiecesService {
           .setJti(input.jti)
           .sign(privateKey);
       }
-    } catch {
-      // Dev fallback below.
+    } catch (error) {
+      if (this.env.LEXFRAME_STAGE17_READINESS_ENABLED === '1') {
+        throw new AppHttpException(
+          'ACTIVEPIECES_SIGNING_KEY_MISSING',
+          503,
+          'Activepieces signing private key is not available for Stage 17 provisioning.',
+          {
+            signingKeyId: this.env.ACTIVEPIECES_SIGNING_KEY_ID,
+            reason:
+              error instanceof Error
+                ? error.message
+                : 'signing_key_unavailable',
+          },
+        );
+      }
     }
 
     return `dev.${Buffer.from(
@@ -2896,13 +3068,106 @@ export class ActivepiecesService {
     }
   }
 
+  private resolveActivepiecesApiKey() {
+    const status = this.resolveActivepiecesApiKeyStatus();
+    if (!status.value) {
+      throw new AppHttpException(
+        'ACTIVEPIECES_NOT_CONFIGURED',
+        503,
+        'Activepieces API key is not configured for backend-side runtime calls.',
+        {
+          secretRef: this.env.ACTIVEPIECES_API_KEY_SECRET_REF || null,
+          source: status.source,
+        },
+      );
+    }
+    return status.value;
+  }
+
+  private resolveActivepiecesSigningPrivateKey() {
+    const status = this.resolveActivepiecesSigningKeyStatus();
+    if (!status.value) {
+      throw new AppHttpException(
+        'ACTIVEPIECES_SIGNING_KEY_MISSING',
+        503,
+        'Activepieces signing private key is not configured for backend-side token issuing.',
+        {
+          secretRef:
+            this.env.ACTIVEPIECES_SIGNING_PRIVATE_KEY_SECRET_REF || null,
+          source: status.source,
+        },
+      );
+    }
+    return status.value;
+  }
+
+  private resolveActivepiecesApiKeyStatus() {
+    return this.resolveServerSecret({
+      secretCode: 'ACTIVEPIECES_API_KEY',
+      secretRef: this.env.ACTIVEPIECES_API_KEY_SECRET_REF,
+      envValue: this.env.ACTIVEPIECES_API_KEY,
+      filePath: this.env.ACTIVEPIECES_API_KEY_FILE,
+      fallbackFilePaths: [
+        '/run/lexframe-stage17-secrets/activepieces_api_key.txt',
+        '/run/secrets/activepieces_api_key',
+      ],
+      placeholderValues: ['stage0_activepieces_api_key'],
+    });
+  }
+
+  private resolveActivepiecesSigningKeyStatus() {
+    return this.resolveServerSecret({
+      secretCode: 'ACTIVEPIECES_SIGNING_PRIVATE_KEY',
+      secretRef: this.env.ACTIVEPIECES_SIGNING_PRIVATE_KEY_SECRET_REF,
+      envValue: this.env.ACTIVEPIECES_SIGNING_PRIVATE_KEY,
+      filePath: this.env.ACTIVEPIECES_SIGNING_PRIVATE_KEY_FILE,
+      fallbackFilePaths: [
+        '/run/lexframe-stage17-secrets/activepieces_signing_private_key.pem',
+        '/run/secrets/activepieces_signing_private_key',
+      ],
+      placeholderValues: ['stage0_signing_private_key'],
+    });
+  }
+
+  private resolveServerSecret(
+    input: Parameters<SecretsService['resolveRuntimeSecret']>[0],
+  ) {
+    if (this.secretsService) {
+      return this.secretsService.resolveRuntimeSecret(input);
+    }
+
+    const value =
+      typeof input.envValue === 'string' &&
+      input.envValue.trim().length > 0 &&
+      !input.placeholderValues?.includes(input.envValue.trim()) &&
+      !/^(stage0_|replace_with_|demo_|placeholder|example|change_me|PASTE_|YOUR_|<)/i.test(
+        input.envValue.trim(),
+      )
+        ? input.envValue.trim()
+        : null;
+
+    return {
+      configured: Boolean(value),
+      source: value ? ('env' as const) : ('missing' as const),
+      ref: input.secretRef ?? null,
+      value,
+      diagnostics: {
+        configured: Boolean(value),
+        source: value ? 'env' : 'missing',
+        secret_ref: input.secretRef ?? null,
+        value_exposed: false,
+      },
+    };
+  }
+
   private async activepiecesRequest<T>(path: string, init: RequestInit) {
+    const apiKey = this.resolveActivepiecesApiKey();
     const response = await fetch(
       `${this.env.ACTIVEPIECES_BASE_URL.replace(/\/$/, '')}/api/v1${path}`,
       {
         ...init,
         headers: {
-          Authorization: `Bearer ${this.env.ACTIVEPIECES_API_KEY}`,
+          Authorization: `Bearer ${apiKey}`,
           'Content-Type': 'application/json',
           ...(init.headers ?? {}),
         },
@@ -2960,14 +3225,12 @@ export class ActivepiecesService {
   }
 
   private async probeActivepiecesApi(): Promise<ActivepiecesApiProbeResult> {
-    if (
-      !this.isConfiguredValue(this.env.ACTIVEPIECES_API_KEY, [
-        'stage0_activepieces_api_key',
-      ])
-    ) {
+    const apiKeyStatus = this.resolveActivepiecesApiKeyStatus();
+    if (!apiKeyStatus.configured) {
       return {
         reachable: false,
-        summary: 'Activepieces API key is still using a placeholder value.',
+        summary:
+          'Activepieces API key secret ref is unresolved or still using a placeholder value.',
       };
     }
 
@@ -3306,6 +3569,11 @@ function toNumber(value: string | number | null | undefined) {
   return typeof value === 'number' ? value : Number(value ?? 0);
 }
 
+function normalizePiecesFilterType(value: string) {
+  const upper = value.toUpperCase();
+  return upper === 'ALLOWLIST' ? 'ALLOWED' : upper;
+}
+
 function normalizeNumberRecord(
   value: Record<string, string | number> | null | undefined,
 ) {
@@ -3314,6 +3582,17 @@ function normalizeNumberRecord(
     result[key] = toNumber(raw);
   }
   return result;
+}
+
+function buildActivepiecesBuilderUrl(
+  instanceUrl: string,
+  runtimeFlowId: string | null,
+) {
+  if (!runtimeFlowId) {
+    return instanceUrl;
+  }
+
+  return `${instanceUrl}/flows/${encodeURIComponent(runtimeFlowId)}`;
 }
 
 function validInputBindings(step: Record<string, unknown>) {

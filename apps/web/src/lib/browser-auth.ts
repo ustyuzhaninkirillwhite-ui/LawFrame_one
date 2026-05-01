@@ -3,8 +3,36 @@
 import { loadPublicEnv } from "@lexframe/config/src/public-env";
 import { createClient, type Session, type SupabaseClient } from "@supabase/supabase-js";
 
-const env = loadPublicEnv();
+const env = loadPublicEnv({
+  NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL,
+  NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
+  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+  NEXT_PUBLIC_ACTIVEPIECES_INSTANCE_URL:
+    process.env.NEXT_PUBLIC_ACTIVEPIECES_INSTANCE_URL,
+  NEXT_PUBLIC_ACTIVEPIECES_RUNTIME_URL:
+    process.env.NEXT_PUBLIC_ACTIVEPIECES_RUNTIME_URL,
+  NEXT_PUBLIC_ACTIVEPIECES_MVP_CANVAS_ENABLED:
+    process.env.NEXT_PUBLIC_ACTIVEPIECES_MVP_CANVAS_ENABLED,
+  NEXT_PUBLIC_LEXFRAME_CANVAS_RESERVE_ENABLED:
+    process.env.NEXT_PUBLIC_LEXFRAME_CANVAS_RESERVE_ENABLED,
+  NEXT_PUBLIC_LEXFRAME_AP_DESIGN_SYSTEM_ENABLED:
+    process.env.NEXT_PUBLIC_LEXFRAME_AP_DESIGN_SYSTEM_ENABLED,
+  NEXT_PUBLIC_ACTIVEPIECES_EMBED_SDK_URL:
+    process.env.NEXT_PUBLIC_ACTIVEPIECES_EMBED_SDK_URL,
+  NEXT_PUBLIC_POSTHOG_KEY: process.env.NEXT_PUBLIC_POSTHOG_KEY,
+  NEXT_PUBLIC_CONTRACTS_VERSION: process.env.NEXT_PUBLIC_CONTRACTS_VERSION,
+  NEXT_PUBLIC_ENABLE_MSW: process.env.NEXT_PUBLIC_ENABLE_MSW,
+});
 const DEV_TOKEN_STORAGE_KEY = "lexframe.dev.access-token";
+const SEEDED_DEV_USER_IDS: Record<string, string> = {
+  "stage16.owner@lexframe.test": "16000000-0000-4000-8000-000000000001",
+  "stage16.admin@lexframe.test": "16000000-0000-4000-8000-000000000002",
+  "stage16.lawyer@lexframe.test": "16000000-0000-4000-8000-000000000003",
+  "stage16.viewer@lexframe.test": "16000000-0000-4000-8000-000000000004",
+  "stage16.security@lexframe.test": "16000000-0000-4000-8000-000000000005",
+  "stage16.owner-b@lexframe.test": "16000000-0000-4000-8000-000000000006",
+};
 
 let browserClient: SupabaseClient | null = null;
 
@@ -63,7 +91,9 @@ export async function createDevAccessToken(input: {
   readonly fullName?: string;
 }) {
   const normalizedEmail = input.email.trim().toLowerCase();
-  const userId = await hashEmailToUuid(normalizedEmail);
+  const userId =
+    SEEDED_DEV_USER_IDS[normalizedEmail] ??
+    (await hashEmailToUuid(normalizedEmail));
   const payload = {
     id: userId,
     email: normalizedEmail,

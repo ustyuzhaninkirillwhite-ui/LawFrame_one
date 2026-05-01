@@ -1,6 +1,10 @@
 import { expect, type APIRequestContext, type Page } from "@playwright/test";
 
-const apiBaseUrl = process.env.LEXFRAME_API_BASE_URL ?? "http://127.0.0.1:3100";
+const apiBaseUrl =
+  process.env.LEXFRAME_API_BASE_URL ??
+  (process.env.LEXFRAME_STAGE17_17_10_LIVE === "1"
+    ? "http://127.0.0.1:3100/api"
+    : "http://127.0.0.1:3100");
 
 interface SessionContextPayload {
   readonly activeWorkspace: {

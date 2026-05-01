@@ -1,0 +1,54 @@
+﻿Stage 17.1 LexFrame screenshot capture
+redaction=Screenshots target local synthetic/demo routes; no secrets typed or submitted.
+viewport=1440x900
+browser=playwright-cli chromium
+
+## LF-01 http://localhost:3000/app
+Navigating to http://localhost:3000/app
+Capturing screenshot into E:\Law_frame_main\artifacts\stage17.1\screenshots\lexframe\lf-01-appshell-workspace-home-1440x900-ec145113.png
+exit_code=0
+
+## LF-02 http://localhost:3000/app/projects/project_claim_001
+Navigating to http://localhost:3000/app/projects/project_claim_001
+Capturing screenshot into E:\Law_frame_main\artifacts\stage17.1\screenshots\lexframe\lf-02-project-home-1440x900-ec145113.png
+exit_code=0
+
+## LF-03 http://localhost:3000/app/projects/project_claim_001/automations
+Navigating to http://localhost:3000/app/projects/project_claim_001/automations
+Capturing screenshot into E:\Law_frame_main\artifacts\stage17.1\screenshots\lexframe\lf-03-automations-list-1440x900-ec145113.png
+exit_code=0
+
+## LF-04 http://localhost:3000/app/projects/project_claim_001/automations/aut_01hzyd8md4j4yhr40t1k0f8p9n
+Navigating to http://localhost:3000/app/projects/project_claim_001/automations/aut_01hzyd8md4j4yhr40t1k0f8p9n
+Capturing screenshot into E:\Law_frame_main\artifacts\stage17.1\screenshots\lexframe\lf-04-automation-detail-1440x900-ec145113.png
+exit_code=0
+
+## LF-05 http://localhost:3000/app/projects/project_claim_001/chats/chat_project_claim_001
+Navigating to http://localhost:3000/app/projects/project_claim_001/chats/chat_project_claim_001
+Capturing screenshot into E:\Law_frame_main\artifacts\stage17.1\screenshots\lexframe\lf-05-chat-1440x900-ec145113.png
+exit_code=0
+
+## LF-06 http://localhost:3000/documents
+Navigating to http://localhost:3000/documents
+Capturing screenshot into E:\Law_frame_main\artifacts\stage17.1\screenshots\lexframe\lf-06-documents-ui-1440x900-ec145113.png
+exit_code=0
+
+## LF-07 http://localhost:3000/app/runs
+Navigating to http://localhost:3000/app/runs
+Capturing screenshot into E:\Law_frame_main\artifacts\stage17.1\screenshots\lexframe\lf-07-run-center-1440x900-ec145113.png
+exit_code=0
+
+## LF-08 http://localhost:3000/admin/security/activepieces
+Navigating to http://localhost:3000/admin/security/activepieces
+Capturing screenshot into E:\Law_frame_main\artifacts\stage17.1\screenshots\lexframe\lf-08-admin-integrations-1440x900-ec145113.png
+exit_code=0
+
+## LF-09 http://localhost:3000/settings/profile
+Navigating to http://localhost:3000/settings/profile
+Capturing screenshot into E:\Law_frame_main\artifacts\stage17.1\screenshots\lexframe\lf-09-forms-settings-1440x900-ec145113.png
+exit_code=0
+
+## LF-10 http://localhost:3000/app/projects/project_claim_001/automations/missing_automation_17_1
+Navigating to http://localhost:3000/app/projects/project_claim_001/automations/missing_automation_17_1
+Capturing screenshot into E:\Law_frame_main\artifacts\stage17.1\screenshots\lexframe\lf-10-error-empty-loading-1440x900-ec145113.png
+exit_code=0

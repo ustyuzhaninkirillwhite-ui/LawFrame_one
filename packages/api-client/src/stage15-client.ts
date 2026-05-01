@@ -6,13 +6,10 @@ import type {
   Stage15ProjectDetail,
   Stage15ProjectListResponse,
   Stage15ProjectSnapshot,
+  Stage17CanvasEnsureResponse,
+  Stage17CanvasEnsureWireResponse,
 } from "@lexframe/contracts";
-import {
-  buildQueryString,
-  requestJson,
-  withJsonBody,
-  type FetchOptions,
-} from "./core";
+import { requestJson, withJsonBody, type FetchOptions } from "./core";
 
 export interface Stage15Api {
   listProjects(): Promise<Stage15ProjectListResponse>;
@@ -30,6 +27,9 @@ export interface Stage15Api {
   listProjectAutomations(
     projectId: string,
   ): Promise<readonly InstalledAutomationDetail[]>;
+  ensureStage17CanvasAutomation(
+    projectId: string,
+  ): Promise<Stage17CanvasEnsureResponse>;
 }
 
 export function createStage15Client(options: FetchOptions): Stage15Api {
@@ -37,10 +37,7 @@ export function createStage15Client(options: FetchOptions): Stage15Api {
     listProjects: () => requestJson(options, "/projects"),
     getProject: (projectId) => requestJson(options, `/projects/${projectId}`),
     getProjectDashboardSnapshot: (projectId) =>
-      requestJson(
-        options,
-        `/dashboard/snapshot${buildQueryString({ projectId })}`,
-      ),
+      requestJson(options, `/projects/${projectId}/snapshot`),
     listProjectChats: (projectId) =>
       requestJson(options, `/projects/${projectId}/chats`),
     createProjectChat: (projectId, input = {}) =>
@@ -51,5 +48,28 @@ export function createStage15Client(options: FetchOptions): Stage15Api {
       ),
     listProjectAutomations: (projectId) =>
       requestJson(options, `/projects/${projectId}/automations`),
+    ensureStage17CanvasAutomation: async (projectId) =>
+      mapStage17CanvasEnsureResponse(
+        await requestJson<Stage17CanvasEnsureWireResponse>(
+          options,
+          `/projects/${projectId}/automations/stage17-canvas/ensure`,
+          { method: "POST" },
+        ),
+      ),
+  };
+}
+
+function mapStage17CanvasEnsureResponse(
+  response: Stage17CanvasEnsureWireResponse,
+): Stage17CanvasEnsureResponse {
+  return {
+    status: response.status,
+    readinessCode: response.readiness_code,
+    automationId: response.automation_id,
+    projectId: response.project_id,
+    route: response.route,
+    activepiecesProjectId: response.activepieces_project_id,
+    activepiecesFlowId: response.activepieces_flow_id,
+    activepiecesFlowVersionId: response.activepieces_flow_version_id,
   };
 }

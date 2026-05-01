@@ -170,14 +170,14 @@ export function WorkflowBuilderV1({
             {automation.data.title}
           </h1>
           <p className="mt-4 max-w-3xl text-base leading-7 text-[color:var(--muted)]">
-            Controlled canvas показывает LexFrame workflow как продуктовый черновик; Activepieces
-            остается advanced runtime route.
+            Резервный Canvas показывает LexFrame workflow как продуктовый черновик; основной
+            вход в рабочую автоматизацию открыт через управляемый контур LexFrame.
           </p>
         </div>
         <div className="flex flex-wrap gap-3">
           <Button asChild variant="ghost">
-            <Link href={`/app/projects/${projectId}/automations/${automationId}/advanced-builder`}>
-              Advanced Builder
+            <Link href={`/app/projects/${projectId}/automations/${automationId}/automation`}>
+              Автоматизация
             </Link>
           </Button>
           <Button

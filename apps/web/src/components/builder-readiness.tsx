@@ -116,7 +116,7 @@ export function BuilderReadiness({
           jwtToken: tokenData.token,
           containerId,
           prefix: projectId
-            ? `/app/projects/${projectId}/automations/${automationId}/advanced-builder`
+            ? `/app/projects/${projectId}/automations/${automationId}/automation`
             : `/automations/${automationId}/builder`,
           disableNavigation: "keep_home_button_only",
           hideFlowName: false,
@@ -202,7 +202,7 @@ export function BuilderReadiness({
         <Card>
           <CardHeader>
             <Badge variant="muted">runtime-блокеры</Badge>
-            <CardTitle>Что мешает открыть конструктор</CardTitle>
+            <CardTitle>Что мешает открыть автоматизацию</CardTitle>
             <CardDescription>
               UI не принимает решение сам: он показывает то, что вернул backend.
             </CardDescription>

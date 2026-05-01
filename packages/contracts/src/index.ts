@@ -34,6 +34,7 @@ import canvasValidationSchemaJson from "./canvas/validation.schema.json";
 import canvasAiMessageSchemaJson from "./canvas/canvas-ai-message.schema.json";
 import canvasAiPatchProposalSchemaJson from "./canvas/canvas-ai-patch-proposal.schema.json";
 import canvasAiStructuredOutputSchemaJson from "./canvas/canvas-ai-structured-output.schema.json";
+import localOwnerKeysSchemaJson from "./local-owner-key-vault/local-owner-keys.schema.json";
 
 export const workflowSchema = workflowSchemaJson;
 export const workflowPatchSchema = workflowPatchSchemaJson;
@@ -52,3 +53,4 @@ export const canvasValidationSchema = canvasValidationSchemaJson;
 export const canvasAiMessageSchema = canvasAiMessageSchemaJson;
 export const canvasAiPatchProposalSchema = canvasAiPatchProposalSchemaJson;
 export const canvasAiStructuredOutputSchema = canvasAiStructuredOutputSchemaJson;
+export const localOwnerKeysSchema = localOwnerKeysSchemaJson;

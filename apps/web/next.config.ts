@@ -7,6 +7,7 @@ const nextConfig: NextConfig = {
     "@lexframe/api-client",
     "@lexframe/config",
     "@lexframe/contracts",
+    "@lexframe/design-system-activepieces-bridge",
     "@lexframe/workflow",
   ],
 };

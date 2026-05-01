@@ -4,12 +4,24 @@ import { AppHttpException } from '../errors/app-http.exception';
 export interface RequestMeta {
   readonly requestId: string | null;
   readonly traceId: string | null;
+  readonly idempotencyKey?: string | null;
+  readonly clientIp?: string | null;
+  readonly userAgent?: string | null;
 }
 
 export function requestMeta(request: LexframeRequest): RequestMeta {
   return {
     requestId: request.requestId ?? request.headers['x-request-id'] ?? null,
     traceId: request.traceId ?? request.headers['x-trace-id'] ?? null,
+    idempotencyKey:
+      request.headers['x-idempotency-key']?.trim() ||
+      request.headers['idempotency-key']?.trim() ||
+      null,
+    clientIp:
+      request.headers['x-forwarded-for']?.split(',')[0]?.trim() ||
+      request.headers['x-real-ip']?.trim() ||
+      null,
+    userAgent: request.headers['user-agent']?.trim() || null,
   };
 }
 

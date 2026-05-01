@@ -16,7 +16,8 @@
     "src/canvas/canvas-ai-message.schema.json",
     "src/canvas/canvas-ai-patch-proposal.schema.json",
     "src/canvas/canvas-ai-structured-output.schema.json",
-    "src/release/release-manifest.schema.json"
+    "src/release/release-manifest.schema.json",
+    "src/local-owner-key-vault/local-owner-keys.schema.json"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",

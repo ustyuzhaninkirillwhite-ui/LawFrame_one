@@ -21,17 +21,19 @@ import { useSessionBridge } from "@/providers/session-provider";
 import { formatDateTime, formatStatus, t } from "@/lib/i18n";
 
 export function AutomationDetailPanel({
-  projectId: _projectId,
+  projectId,
 }: {
   readonly projectId?: string;
 }) {
-  void _projectId;
   const params = useParams<{ id?: string; automationId?: string }>();
   const router = useRouter();
   const automationId =
     readParam(params.automationId) ??
     readParam(params.id) ??
     "aut_01hzyd8md4j4yhr40t1k0f8p9n";
+  const automationRoute = projectId
+    ? `/app/projects/${projectId}/automations/${automationId}/automation`
+    : `/automations/${automationId}/builder`;
   const { sessionContext } = useSessionBridge();
   const automation = useAutomationDetail(automationId);
   const runtime = useAutomationRuntimeRequirements(automationId);
@@ -160,7 +162,7 @@ export function AutomationDetailPanel({
                   {createRunMutation.isPending ? "Запускаем..." : "Запустить"}
                 </Button>
                 <Button asChild variant="ghost">
-                  <Link href={`/automations/${automationId}/builder`}>Открыть конструктор</Link>
+                  <Link href={automationRoute}>Автоматизация</Link>
                 </Button>
                 <Button asChild variant="ghost">
                   <Link href={`/automations/${automationId}/updates`}>Обновления источника</Link>

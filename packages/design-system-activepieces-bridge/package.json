@@ -1,0 +1,42 @@
+{
+  "name": "@lexframe/design-system-activepieces-bridge",
+  "version": "0.1.0",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./src/index.ts",
+      "require": "./dist/index.js"
+    },
+    "./tokens": {
+      "types": "./src/tokens/index.ts",
+      "import": "./src/tokens/index.ts",
+      "require": "./dist/tokens/index.js"
+    },
+    "./recipes": {
+      "types": "./src/recipes/index.ts",
+      "import": "./src/recipes/index.ts",
+      "require": "./dist/recipes/index.js"
+    },
+    "./tailwind": {
+      "types": "./src/tailwind/index.ts",
+      "import": "./src/tailwind/index.ts",
+      "require": "./dist/tailwind/index.js"
+    },
+    "./css/activepieces-theme.css": "./src/css/activepieces-theme.css",
+    "./css/activepieces-theme.dark.css": "./src/css/activepieces-theme.dark.css",
+    "./activepieces.generated.json": "./src/tokens/activepieces.generated.json"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "extract": "node scripts/extract-activepieces-tokens.mjs --write",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint \"src/**/*.ts\"",
+    "test": "node scripts/validate-token-map.mjs"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}

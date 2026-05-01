@@ -179,7 +179,7 @@ export function AutomationWorkbench({ projectId }: { readonly projectId: string 
     validationIssues,
   });
   const advancedDisabledReason = !selectedAutomationId
-    ? "Для Advanced выберите сохраненную автоматизацию."
+    ? "Чтобы открыть автоматизацию, выберите сохраненную автоматизацию."
     : !canOpenAdvanced
       ? "Нужно право activepieces.open_builder."
       : null;
@@ -563,13 +563,13 @@ export function AutomationWorkbench({ projectId }: { readonly projectId: string 
       <CanvasActionHud
         advancedDisabledReason={advancedDisabledReason}
         canOpenAdvanced={canOpenAdvanced}
+        projectId={projectId}
         onAddBlock={() => openPaletteAt({ x: 420, y: 220 })}
         onCreateDraft={createLocalDraft}
         onPreflight={() =>
           setConnectNotice("Локальная проверка пройдена. Runtime sync и delivery не запускались.")
         }
         onSave={() => setForcedStatus("autosaving")}
-        projectId={projectId}
         runDisabledReason={runDisabledReason}
         saveDisabledReason={saveDisabledReason}
         selectedAutomationId={selectedAutomationId}
@@ -658,7 +658,7 @@ function CanvasHud({
               : "bg-[color:var(--success)]",
         )}
       />
-      <span className="shrink-0 font-semibold">Builder</span>
+      <span className="shrink-0 font-semibold">Конструктор</span>
       <span className="shrink-0 text-[color:var(--muted)]">{statusLabels[status]}</span>
       <span className="shrink-0 text-[color:var(--muted)]">
         {blockingIssueCount > 0
@@ -678,22 +678,22 @@ function CanvasHud({
 function CanvasActionHud({
   advancedDisabledReason,
   canOpenAdvanced,
+  projectId,
   onAddBlock,
   onCreateDraft,
   onPreflight,
   onSave,
-  projectId,
   runDisabledReason,
   saveDisabledReason,
   selectedAutomationId,
 }: {
   readonly advancedDisabledReason: string | null;
   readonly canOpenAdvanced: boolean;
+  readonly projectId: string;
   readonly onAddBlock: () => void;
   readonly onCreateDraft: () => void;
   readonly onPreflight: () => void;
   readonly onSave: () => void;
-  readonly projectId: string;
   readonly runDisabledReason: string | null;
   readonly saveDisabledReason: string | null;
   readonly selectedAutomationId: string | null;
@@ -713,14 +713,14 @@ function CanvasActionHud({
         <Play className="h-4 w-4" />
       </IconAction>
       {advancedDisabledReason || !canOpenAdvanced || !selectedAutomationId ? (
-        <IconAction label="Advanced" reason={advancedDisabledReason ?? "Недоступно"}>
+        <IconAction label="Автоматизация" reason={advancedDisabledReason ?? "Недоступно"}>
           <Zap className="h-4 w-4" />
         </IconAction>
       ) : (
         <Link
-          href={`/app/projects/${projectId}/automations/${selectedAutomationId}/advanced-builder`}
+          href={`/app/projects/${projectId}/automations/${selectedAutomationId}/automation`}
           className="flex h-9 w-9 items-center justify-center rounded-full text-[color:var(--muted)] transition hover:bg-white/6 hover:text-[color:var(--foreground)]"
-          title="Advanced"
+          title="Автоматизация"
         >
           <Zap className="h-4 w-4" />
         </Link>
@@ -895,7 +895,7 @@ function canAddCanvasCatalogModule(status: ModuleAvailabilityStatus) {
 
 function sourceLabelForPalette(source: CanvasModuleCard["source"] | BlockPaletteItem["source"]) {
   if (source === "activepieces") {
-    return "Activepieces";
+    return "Runtime";
   }
   if (source === "external") {
     return "External";
@@ -999,7 +999,7 @@ function BlockPalette({
             всего: {items.length}
           </span>
           <span className="rounded-full border border-[color:var(--line)] px-2 py-1">
-            Activepieces: {activepiecesCount}
+            Runtime: {activepiecesCount}
           </span>
           {catalogLoading ? (
             <span className="rounded-full border border-[color:var(--accent)]/45 px-2 py-1 text-[color:var(--accent-strong)]">

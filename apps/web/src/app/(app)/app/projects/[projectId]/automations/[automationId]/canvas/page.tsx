@@ -1,4 +1,4 @@
-import { WorkflowCanvasPage } from "@/features/canvas/pages";
+import { redirect } from "next/navigation";
 
 export default async function ProjectAutomationCanvasPage({
   params,
@@ -10,5 +10,5 @@ export default async function ProjectAutomationCanvasPage({
 }) {
   const { projectId, automationId } = await params;
 
-  return <WorkflowCanvasPage projectId={projectId} automationId={automationId} />;
+  redirect(`/app/projects/${projectId}/automations/${automationId}/automation`);
 }

@@ -58,7 +58,7 @@ export class RuntimeHealthService {
       ),
     ]);
 
-    return [
+    const dependencies: readonly RuntimeDependencyStatus[] = [
       {
         code: 'storage',
         status: storageHealthy ? 'healthy' : 'blocked',
@@ -72,11 +72,19 @@ export class RuntimeHealthService {
       search,
       worker,
     ];
+
+    return normalizeDependenciesForProfile(
+      dependencies,
+      this.env.LEXFRAME_READINESS_PROFILE,
+    );
   }
 
   async getReadySummary(): Promise<RuntimeHealthSummary> {
     const dependencies = await this.getDependencies();
-    const status = summarizeHealth(dependencies);
+    const status = summarizeHealthForProfile(
+      dependencies,
+      this.env.LEXFRAME_READINESS_PROFILE,
+    );
 
     return {
       status,
@@ -101,20 +109,30 @@ export class RuntimeHealthService {
       summary: dependency.summary,
       checkedAt,
     }));
-    const overall = mapRuntimeStatusToSystemStatus(
-      summarizeHealth(dependencies),
+    const profileStatus = summarizeHealthForProfile(
+      dependencies,
+      this.env.LEXFRAME_READINESS_PROFILE,
     );
+    const overall = mapRuntimeStatusToSystemStatus(profileStatus);
+    const hasOptionalDegradedComponents =
+      this.env.LEXFRAME_READINESS_PROFILE === 'local-integrated' &&
+      dependencies.some(
+        (dependency) =>
+          isLocalIntegratedOptionalDependency(dependency.code) &&
+          dependency.status === 'degraded',
+      );
 
     return {
       overall,
-      summary:
-        overall === 'healthy'
-          ? 'Все runtime-зависимости доступны; автоматизации работают в полном режиме.'
-          : 'Некоторые runtime-зависимости недоступны; функции автоматизаций временно ограничены.',
+      summary: buildSystemStatusSummary(
+        overall,
+        hasOptionalDegradedComponents,
+      ),
       checkedAt,
       incidentsOpen: 0,
       components,
     };
+
   }
 
   async renderMetrics(): Promise<string> {
@@ -163,6 +181,66 @@ function summarizeHealth(
   }
 
   return 'ok';
+}
+
+function summarizeHealthForProfile(
+  dependencies: readonly RuntimeDependencyStatus[],
+  profile: ServerEnv['LEXFRAME_READINESS_PROFILE'],
+): RuntimeHealthSummary['status'] {
+  if (profile !== 'local-integrated') {
+    return summarizeHealth(dependencies);
+  }
+
+  return summarizeHealth(
+    dependencies.filter(
+      (dependency) => !isLocalIntegratedOptionalDependency(dependency.code),
+    ),
+  );
+}
+
+function normalizeDependenciesForProfile(
+  dependencies: readonly RuntimeDependencyStatus[],
+  profile: ServerEnv['LEXFRAME_READINESS_PROFILE'],
+): readonly RuntimeDependencyStatus[] {
+  if (profile !== 'local-integrated') {
+    return dependencies;
+  }
+
+  return dependencies.map((dependency) => {
+    if (
+      !isLocalIntegratedOptionalDependency(dependency.code) ||
+      dependency.status !== 'blocked'
+    ) {
+      return dependency;
+    }
+
+    return {
+      ...dependency,
+      status: 'degraded',
+      summary: `${dependency.summary} Optional for local-integrated Stage 17 AP Canvas readiness.`,
+    };
+  });
+}
+
+function isLocalIntegratedOptionalDependency(
+  code: RuntimeDependencyStatus['code'],
+) {
+  return code === 'ai' || code === 'search' || code === 'realtime';
+}
+
+function buildSystemStatusSummary(
+  overall: SystemStatusSummary['overall'],
+  hasOptionalDegradedComponents: boolean,
+) {
+  if (overall === 'healthy' && hasOptionalDegradedComponents) {
+    return 'Core Stage 17 AP Canvas dependencies are available; optional local-integrated services are degraded.';
+  }
+
+  if (overall === 'healthy') {
+    return 'All runtime dependencies are available; automations are running in full mode.';
+  }
+
+  return 'Some runtime dependencies are unavailable; automation features are temporarily limited.';
 }
 
 function mapRuntimeStatusToSystemStatus(

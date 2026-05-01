@@ -246,10 +246,10 @@ export function CanvasHeader({
         {permissions.can_open_advanced_builder ? (
           <Button asChild size="sm">
             <Link
-              href={`/app/projects/${projectId}/automations/${automationId}/advanced-builder`}
+              href={`/app/projects/${projectId}/automations/${automationId}/automation`}
             >
               <ExternalLink aria-hidden data-icon="inline-start" />
-              Advanced
+              Автоматизация
             </Link>
           </Button>
         ) : null}

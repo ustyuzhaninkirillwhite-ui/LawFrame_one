@@ -13,6 +13,7 @@ export const activepiecesSmokeFlows = [
     requiredPieces: [
       "@lexframe/piece-legal-search",
       "@lexframe/piece-legal-rag",
+      "@lexframe/piece-ai-gateway",
       "@lexframe/piece-document-template",
       "@lexframe/piece-document-validation",
       "@lexframe/piece-approval-request",
@@ -70,6 +71,19 @@ export interface ApprovalRequestPieceInput {
   readonly generationJobId: string;
   readonly approvalRouteId?: string | null;
   readonly title: string;
+}
+
+export interface AiGatewayPieceInput {
+  readonly runId: string;
+  readonly stepId: string;
+  readonly prompt?: string;
+  readonly provider?: "xai" | "openai_compatible" | "cometapi" | "local";
+  readonly routeId?: string | null;
+  readonly inputRefs?: Record<string, unknown>;
+  readonly scopedRuntimeToken?: string;
+  readonly apProjectId?: string;
+  readonly apFlowId?: string;
+  readonly apFlowVersionId?: string | null;
 }
 
 export interface RuntimePieceDefinition<TInput> {
@@ -173,6 +187,27 @@ export const approvalRequestPiece: RuntimePieceDefinition<ApprovalRequestPieceIn
   },
 };
 
+export const aiGatewayPiece: RuntimePieceDefinition<AiGatewayPieceInput> = {
+  packageName: "@lexframe/piece-ai-gateway",
+  displayName: "LexFrame AI Gateway",
+  description:
+    "Calls LexFrame backend AI Gateway with a scoped runtime token; provider keys remain backend-only.",
+  endpoint: "/api/runtime/activepieces/ai-gateway/actions/test",
+  requiredPermission: "ai.chat.use",
+  runtimeAuth: "workspace_token",
+  writesArtifactType: "ai_gateway_result",
+  defaultInput: {
+    runId: "",
+    stepId: "",
+    routeId: null,
+    inputRefs: {},
+    scopedRuntimeToken: "",
+    apProjectId: "",
+    apFlowId: "",
+    apFlowVersionId: null,
+  },
+};
+
 export const legalResearchWorkflowPreset = {
   code: "legal-research-to-draft",
   title: "Find practice, analyze, transfer to draft",
@@ -186,6 +221,11 @@ export const legalResearchWorkflowPreset = {
       code: "legal_rag",
       piece: legalRagPiece.packageName,
       artifactType: legalRagPiece.writesArtifactType,
+    },
+    {
+      code: "ai_gateway",
+      piece: aiGatewayPiece.packageName,
+      artifactType: aiGatewayPiece.writesArtifactType,
     },
     {
       code: "draft_handoff",

@@ -1,5 +1,6 @@
 export {
   useCreateStage15ProjectChat,
+  useEnsureStage17CanvasAutomation,
   useMaterializeWorkflowDraft,
   useStage15Project,
   useStage15ProjectAutomations,

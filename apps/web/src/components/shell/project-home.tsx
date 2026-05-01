@@ -1,6 +1,7 @@
 "use client";
 
 import type { Stage15ProjectChatSummary } from "@lexframe/contracts";
+import { panelRecipe } from "@lexframe/design-system-activepieces-bridge/recipes";
 import {
   Clock3,
   FileText,
@@ -215,7 +216,7 @@ export function ProjectHome({ projectId }: { readonly projectId: string }) {
       className="grid min-h-[calc(100vh-96px)] gap-5 xl:grid-cols-[280px_minmax(0,1fr)_320px]"
     >
       <aside className="grid content-start gap-4">
-        <div className="rounded-[24px] border border-[color:var(--line)] bg-black/18 p-4">
+        <div className={cn(panelRecipe.muted, "p-4")}>
           <div className="flex items-center gap-3">
             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[16px] border border-[color:var(--accent)]/40 bg-[color:var(--accent)]/10 font-[family-name:var(--font-display)] text-xl text-[color:var(--accent-strong)]">
               {project.icon}
@@ -322,8 +323,8 @@ export function ProjectHome({ projectId }: { readonly projectId: string }) {
         </ContextSection>
       </aside>
 
-      <main className="flex min-h-[680px] flex-col rounded-[28px] border border-[color:var(--line)] bg-black/16">
-        <div className="border-b border-[color:var(--line)] px-5 py-4">
+      <main className="flex min-h-[680px] flex-col rounded-[var(--lf-radius-panel)] border border-[color:var(--lf-border)] bg-[color:var(--lf-bg-card)]">
+        <div className="border-b border-[color:var(--lf-border)] px-5 py-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex flex-wrap items-center gap-2">
               {quickTopics.map((topic) => (
@@ -331,10 +332,10 @@ export function ProjectHome({ projectId }: { readonly projectId: string }) {
                   key={topic}
                   type="button"
                   className={cn(
-                    "rounded-full border px-3 py-1.5 text-sm transition",
+                    "rounded-[var(--lf-radius-control)] border px-3 py-1.5 text-sm transition-colors",
                     context.selectedQuickTopic === topic
-                      ? "border-[color:var(--accent)] bg-[color:var(--accent)]/12 text-[color:var(--accent-strong)]"
-                      : "border-[color:var(--line)] text-[color:var(--muted)] hover:text-[color:var(--foreground)]",
+                      ? "border-[color:var(--lf-primary)]/40 bg-[color:var(--lf-state-active)] text-[color:var(--lf-text-primary)]"
+                      : "border-[color:var(--lf-border)] text-[color:var(--lf-text-muted)] hover:bg-[color:var(--lf-state-hover)] hover:text-[color:var(--lf-text-primary)]",
                   )}
                   onClick={() =>
                     setContext((current) => ({
@@ -360,7 +361,7 @@ export function ProjectHome({ projectId }: { readonly projectId: string }) {
 
         <div className="flex flex-1 flex-col justify-end gap-5 p-5">
           <div className="mx-auto grid w-full max-w-3xl gap-4">
-            <div className="rounded-[24px] border border-[color:var(--line)] bg-[color:var(--panel)]/70 p-4">
+            <div className={cn(panelRecipe.muted, "p-4")}>
               <div className="flex items-center gap-2 text-sm font-semibold">
                 <Sparkles className="h-4 w-4 text-[color:var(--accent-strong)]" />
                 Pravacontour
@@ -386,11 +387,11 @@ export function ProjectHome({ projectId }: { readonly projectId: string }) {
               </div>
             ) : null}
 
-            <div className="rounded-[26px] border border-[color:var(--line)] bg-[color:var(--panel)]/90 p-2">
+            <div className="rounded-[var(--lf-radius-panel)] border border-[color:var(--lf-border)] bg-[color:var(--lf-bg-panel)] p-2">
               <div className="flex items-end gap-2">
                 <button
                   type="button"
-                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[color:var(--line)] text-[color:var(--muted)] hover:border-[color:var(--accent)] hover:text-[color:var(--accent-strong)]"
+                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[var(--lf-radius-control)] border border-[color:var(--lf-border)] text-[color:var(--lf-text-muted)] hover:border-[color:var(--lf-primary)] hover:text-[color:var(--lf-primary-hover)]"
                   onClick={() => fileInputRef.current?.click()}
                   aria-label="Прикрепить файл"
                 >
@@ -406,7 +407,7 @@ export function ProjectHome({ projectId }: { readonly projectId: string }) {
                 />
                 <button
                   type="button"
-                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[color:var(--accent)] text-black hover:bg-[color:var(--accent-strong)]"
+                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[var(--lf-radius-control)] bg-[color:var(--lf-primary)] text-[color:var(--lf-primary-fg)] hover:bg-[color:var(--lf-primary-hover)]"
                   onClick={() => void submitPrompt()}
                   aria-label="Отправить"
                 >
@@ -449,7 +450,7 @@ export function ProjectHome({ projectId }: { readonly projectId: string }) {
           )}
         </ContextSection>
 
-        <div className="rounded-[24px] border border-[color:var(--line)] bg-black/18 p-4">
+        <div className={cn(panelRecipe.muted, "p-4")}>
           <div className="grid grid-cols-3 gap-3 text-center">
             <MiniMetric label="Чаты" value={project.counters.chats} />
             <MiniMetric label="Источники" value={project.counters.documents} />
@@ -508,7 +509,7 @@ function ContextSection({
   readonly title: string;
 }) {
   return (
-    <section className="grid gap-3 rounded-[24px] border border-[color:var(--line)] bg-black/18 p-4">
+    <section className={cn(panelRecipe.muted, "grid gap-3 p-4")}>
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2 text-sm font-semibold">
           <span className="text-[color:var(--accent-strong)]">{icon}</span>
@@ -536,10 +537,10 @@ function ContextToggle({
     <button
       type="button"
       className={cn(
-        "rounded-[16px] border px-3 py-3 text-left transition",
+        "rounded-[var(--lf-radius-card)] border px-3 py-3 text-left transition-colors",
         active
-          ? "border-[color:var(--accent)] bg-[color:var(--accent)]/12"
-          : "border-[color:var(--line)] bg-black/16 hover:border-[color:var(--accent)]",
+          ? "border-[color:var(--lf-primary)]/40 bg-[color:var(--lf-state-active)]"
+          : "border-[color:var(--lf-border)] bg-[color:var(--lf-bg-card)] hover:border-[color:var(--lf-primary)]",
       )}
       onClick={onClick}
     >
@@ -559,7 +560,7 @@ function ChatLink({
   return (
     <Link
       href={`/app/projects/${projectId}/chats/${chat.id}`}
-      className="rounded-[16px] border border-[color:var(--line)] bg-black/16 px-3 py-3 transition hover:border-[color:var(--accent)]"
+      className="rounded-[var(--lf-radius-card)] border border-[color:var(--lf-border)] bg-[color:var(--lf-bg-card)] px-3 py-3 transition-colors hover:border-[color:var(--lf-primary)]"
     >
       <div className="flex items-center gap-2">
         <Badge variant={chat.status === "active" ? "success" : "muted"}>
@@ -592,7 +593,7 @@ function MiniMetric({
 
 function EmptyLine({ text }: { readonly text: string }) {
   return (
-    <div className="rounded-[16px] border border-[color:var(--line)] bg-black/16 px-3 py-3 text-sm text-[color:var(--muted)]">
+    <div className={cn(panelRecipe.empty, "px-3 py-3 text-sm text-[color:var(--lf-text-muted)]")}>
       {text}
     </div>
   );

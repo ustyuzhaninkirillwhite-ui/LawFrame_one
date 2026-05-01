@@ -66,6 +66,22 @@ import {
   type StructuredAiRequest,
   type StructuredAiResponse,
 } from './ai-provider.adapters';
+import type {
+  ActivepiecesAiGatewayTestRequest,
+  ActivepiecesRuntimeCallbackRequest,
+  RuntimeAiGatewayActionRequest,
+} from './ai-gateway-runtime.controller';
+import type { ScopedRuntimeTokenClaims } from '../runtime/runtime-scoped-token.service';
+import type {
+  KeyResolverResult,
+  LocalOwnerKeyProvider,
+  LocalOwnerKeyPurpose,
+} from '../local-owner-key-vault/local-owner-key-vault.types';
+import { LocalKeyResolver } from '../local-owner-key-vault/local-key-resolver';
+import {
+  LocalOwnerKeyVaultService,
+  toAiProvider,
+} from '../local-owner-key-vault/local-owner-key-vault.service';
 import {
   buildDocumentAnalysisDescription,
   buildSecurityLabels,
@@ -185,6 +201,23 @@ interface DraftPatchRow {
   readonly created_at: string;
 }
 
+interface WorkflowRunBindingRow {
+  readonly workflow_run_id: string;
+  readonly workspace_id: string;
+  readonly callback_token_hash: string;
+}
+
+interface RuntimeWorkflowRunRow {
+  readonly id: string;
+  readonly workspace_id: string;
+  readonly installed_automation_id?: string | null;
+  readonly trace_id: string;
+  readonly created_by_user_id: string | null;
+  readonly external_project_id?: string | null;
+  readonly external_flow_id?: string | null;
+  readonly activepieces_flow_version_id?: string | null;
+}
+
 interface MissingFieldRow {
   readonly field: string;
   readonly label: string;
@@ -248,6 +281,39 @@ interface ProviderDecision {
   readonly routeReason: string;
 }
 
+interface AiGatewayAuditEventInput {
+  readonly workspaceId: string;
+  readonly automationId?: string | null;
+  readonly runId?: string | null;
+  readonly apProjectId?: string | null;
+  readonly apFlowId?: string | null;
+  readonly apFlowVersionId?: string | null;
+  readonly stepName?: string | null;
+  readonly eventType: string;
+  readonly keyId?: string | null;
+  readonly keyFingerprint?: string | null;
+  readonly provider?: string | null;
+  readonly model?: string | null;
+  readonly route?: string | null;
+  readonly dataClassification?: string | null;
+  readonly tokenUsage?: Record<string, unknown> | null;
+  readonly inputHash?: string | null;
+  readonly outputHash?: string | null;
+  readonly errorCode?: string | null;
+  readonly durationMs?: number | null;
+  readonly traceId: string;
+}
+
+interface RuntimeEvidenceArtifactInput {
+  readonly workspaceId: string;
+  readonly automationId: string | null;
+  readonly runId: string | null;
+  readonly stepName: string;
+  readonly artifactType?: string;
+  readonly traceId: string;
+  readonly safeMetadata: Record<string, unknown>;
+}
+
 interface DraftPersistenceInput {
   readonly workspaceId: string;
   readonly ownerId: string;
@@ -290,6 +356,8 @@ export class AIGatewayService {
     private readonly auditService: AuditService,
     private readonly aiPolicyService: AiPolicyService,
     private readonly aiProviderRegistry: AiProviderRegistry,
+    private readonly localKeyResolver: LocalKeyResolver,
+    private readonly localOwnerKeyVaultService: LocalOwnerKeyVaultService,
   ) {}
 
   async planStructuredRoute(input: {
@@ -361,6 +429,7 @@ export class AIGatewayService {
       route: 'backend-module',
       providerMode: this.env.AI_PROVIDER_MODE,
       providers: this.aiProviderRegistry.listProviders(),
+      localOwnerKeyVault: this.localOwnerKeyVaultService.getSafeStatus(),
       directBrowserAccess: false,
       structuredOutputsRequired: true,
       sensitivityClasses: [
@@ -416,6 +485,15 @@ export class AIGatewayService {
     }
 
     const adapter = this.aiProviderRegistry.get(route.provider);
+    const localOwnerKey = this.resolveLocalOwnerKeyForProvider({
+      purpose:
+        input.taskType === 'workflow_planning'
+          ? 'workflow_planning'
+          : 'ai_gateway',
+      provider: route.provider,
+      workspaceId: input.access.activeWorkspace?.id ?? null,
+      traceId: input.traceId ?? null,
+    });
     const response = await adapter.generateStructured({
       provider: route.provider,
       model: route.model,
@@ -426,9 +504,395 @@ export class AIGatewayService {
       tools: input.tools,
       maxToolCalls: input.maxToolCalls,
       traceId: input.traceId ?? null,
+      localOwnerKey,
     });
 
     return { route, response };
+  }
+
+  async executeRuntimeAiGatewayAction(
+    authorization: string | undefined,
+    input: RuntimeAiGatewayActionRequest,
+  ) {
+    const run = await this.verifyRuntimeAuthorization(
+      input.runId,
+      authorization,
+    );
+    const localOwnerKey = this.localKeyResolver.resolveKey({
+      purpose: 'activepieces_custom_piece',
+      provider: input.provider,
+      routeId: input.routeId ?? undefined,
+      workspaceId: run.workspace_id,
+      traceId: run.trace_id,
+    });
+    const provider = toAiProvider(localOwnerKey.provider);
+
+    if (!provider) {
+      throw new AppHttpException(
+        'AI_PROVIDER_ROUTE_BLOCKED',
+        400,
+        'Local owner key provider is not supported by the runtime AI gateway action.',
+        {
+          provider: localOwnerKey.provider,
+          key_id: localOwnerKey.key_id,
+          fingerprint: localOwnerKey.fingerprint,
+        },
+      );
+    }
+
+    const adapter = this.aiProviderRegistry.get(provider);
+    const response = await adapter.generateStructured({
+      provider,
+      model: localOwnerKey.model,
+      prompt: input.prompt,
+      schemaId: 'lexframe.runtime.ai_gateway_action.v1',
+      fallback: {
+        summary: 'Runtime AI Gateway fallback response.',
+        inputRefs: input.inputRefs ?? {},
+      },
+      jsonSchema: {
+        name: 'runtime_ai_gateway_action',
+        strict: true,
+        schema: {
+          type: 'object',
+          additionalProperties: true,
+        },
+      },
+      traceId: run.trace_id,
+      localOwnerKey,
+    });
+
+    await this.auditService.record({
+      actorUserId: run.created_by_user_id,
+      actorEmail: null,
+      workspaceId: run.workspace_id,
+      action: 'ai.local_key.used',
+      result: response.usedFallback ? 'error' : 'success',
+      requestId: null,
+      traceId: run.trace_id,
+      entityType: 'workflow_run',
+      entityId: run.id,
+      eventCategory: 'ai',
+      metadata: {
+        run_id: run.id,
+        step_id: input.stepId,
+        key_id: localOwnerKey.key_id,
+        fingerprint: localOwnerKey.fingerprint,
+        provider: localOwnerKey.provider,
+        model: localOwnerKey.model,
+        purpose: localOwnerKey.purpose,
+        route: localOwnerKey.route,
+        input_tokens: response.inputTokens,
+        output_tokens: response.outputTokens,
+        used_fallback: response.usedFallback,
+      },
+    });
+
+    return {
+      status: response.usedFallback ? 'fallback' : 'completed',
+      run_id: run.id,
+      step_id: input.stepId,
+      provider: localOwnerKey.provider,
+      model: localOwnerKey.model,
+      key_id: localOwnerKey.key_id,
+      fingerprint: localOwnerKey.fingerprint,
+      output: response.output,
+      input_tokens: response.inputTokens,
+      output_tokens: response.outputTokens,
+      trace_id: run.trace_id,
+    };
+  }
+
+  async executeActivepiecesRuntimeTestAction(
+    claims: ScopedRuntimeTokenClaims,
+    input: ActivepiecesAiGatewayTestRequest,
+    headerTraceId: string | null,
+  ) {
+    const run = await this.loadScopedRuntimeRun(claims);
+    const traceId = headerTraceId ?? claims.trace_id ?? run.trace_id;
+    const prompt =
+      input.input.testPrompt ??
+      'Return a short JSON object confirming that LexFrame AI Gateway routing is available.';
+    const providerFilter = input.provider;
+    const localOwnerKey = this.localKeyResolver.resolveKey({
+      purpose: 'activepieces_custom_piece',
+      provider: providerFilter,
+      routeId: input.routeId ?? undefined,
+      workspaceId: claims.workspace_id,
+      traceId,
+    });
+    const provider = toAiProvider(localOwnerKey.provider);
+
+    if (!provider) {
+      await this.recordAiGatewayAuditEvent({
+        workspaceId: claims.workspace_id,
+        automationId: claims.automation_id,
+        runId: claims.run_id,
+        apProjectId: claims.ap_project_id,
+        apFlowId: claims.ap_flow_id,
+        apFlowVersionId: claims.ap_flow_version_id ?? null,
+        stepName: claims.step_name,
+        eventType: 'ai_gateway.route.failed',
+        keyId: localOwnerKey.key_id,
+        keyFingerprint: localOwnerKey.fingerprint,
+        provider: localOwnerKey.provider,
+        model: localOwnerKey.model,
+        route: localOwnerKey.route,
+        dataClassification: input.input.classification ?? 'workspace_internal',
+        errorCode: 'AI_ROUTE_BLOCKED_BY_WORKSPACE_POLICY',
+        traceId,
+      });
+      throw new AppHttpException(
+        'AI_ROUTE_BLOCKED_BY_WORKSPACE_POLICY',
+        403,
+        'Workspace policy blocks this AI route for the selected data class.',
+        {
+          provider: localOwnerKey.provider,
+          key_id: localOwnerKey.key_id,
+          fingerprint: localOwnerKey.fingerprint,
+        },
+      );
+    }
+
+    await this.recordAiGatewayAuditEvent({
+      workspaceId: claims.workspace_id,
+      automationId: claims.automation_id,
+      runId: claims.run_id,
+      apProjectId: claims.ap_project_id,
+      apFlowId: claims.ap_flow_id,
+      apFlowVersionId: claims.ap_flow_version_id ?? null,
+      stepName: claims.step_name,
+      eventType: 'ai_gateway.route.resolved',
+      keyId: localOwnerKey.key_id,
+      keyFingerprint: localOwnerKey.fingerprint,
+      provider: localOwnerKey.provider,
+      model: localOwnerKey.model,
+      route: localOwnerKey.route,
+      dataClassification: input.input.classification ?? 'workspace_internal',
+      inputHash: hashText(prompt),
+      traceId,
+    });
+
+    const startedAt = Date.now();
+    try {
+      const adapter = this.aiProviderRegistry.get(provider);
+      const response = await adapter.generateStructured({
+        provider,
+        model: localOwnerKey.model,
+        prompt,
+        schemaId: 'lexframe.stage17_9.ai_gateway_route_test.v1',
+        fallback: {
+          status: 'ok',
+          summary: 'Runtime AI Gateway fallback response.',
+          inputRefs: input.input.inputRefs ?? {},
+        },
+        jsonSchema: {
+          name: 'stage17_ai_gateway_route_test',
+          strict: true,
+          schema: {
+            type: 'object',
+            additionalProperties: true,
+          },
+        },
+        traceId,
+        localOwnerKey,
+      });
+      const tokenUsage = {
+        prompt_tokens: response.inputTokens,
+        completion_tokens: response.outputTokens,
+        total_tokens: response.inputTokens + response.outputTokens,
+        source: response.usedFallback ? 'gateway_estimated' : 'provider_reported',
+        token_usage_status: 'available',
+      };
+      const outputHash = hashText(JSON.stringify(response.output));
+
+      await this.recordAiGatewayAuditEvent({
+        workspaceId: claims.workspace_id,
+        automationId: claims.automation_id,
+        runId: claims.run_id,
+        apProjectId: claims.ap_project_id,
+        apFlowId: claims.ap_flow_id,
+        apFlowVersionId: claims.ap_flow_version_id ?? null,
+        stepName: claims.step_name,
+        eventType: response.usedFallback
+          ? 'ai_gateway.provider_call.failed'
+          : 'ai_gateway.provider_call.completed',
+        keyId: localOwnerKey.key_id,
+        keyFingerprint: localOwnerKey.fingerprint,
+        provider: localOwnerKey.provider,
+        model: localOwnerKey.model,
+        route: localOwnerKey.route,
+        dataClassification: input.input.classification ?? 'workspace_internal',
+        tokenUsage,
+        inputHash: hashText(prompt),
+        outputHash,
+        durationMs: response.latencyMs,
+        errorCode: response.usedFallback ? 'AI_PROVIDER_ERROR' : null,
+        traceId,
+      });
+      await this.markLocalOwnerKeyUsed(localOwnerKey);
+
+      const artifact = input.outputPolicy.createArtifact
+        ? await this.createRuntimeEvidenceArtifact({
+            workspaceId: claims.workspace_id,
+            automationId: claims.automation_id,
+            runId: claims.run_id,
+            stepName: claims.step_name,
+            traceId,
+            safeMetadata: {
+              key_id: localOwnerKey.key_id,
+              fingerprint: localOwnerKey.fingerprint,
+              provider: localOwnerKey.provider,
+              model: localOwnerKey.model,
+              route: localOwnerKey.route,
+              token_usage: tokenUsage,
+              output_hash: outputHash,
+              used_fallback: response.usedFallback,
+            },
+          })
+        : null;
+
+      return {
+        status: response.usedFallback ? 'fallback' : 'ok',
+        trace_id: traceId,
+        run_id: claims.run_id,
+        artifact: artifact
+          ? {
+              artifact_id: artifact.id,
+              artifact_type: artifact.artifactType,
+              sha256: artifact.contentHash,
+            }
+          : null,
+        route_evidence: {
+          key_id: localOwnerKey.key_id,
+          fingerprint: localOwnerKey.fingerprint,
+          provider: localOwnerKey.provider,
+          model: localOwnerKey.model,
+          route: localOwnerKey.route,
+          token_usage: tokenUsage,
+        },
+        redaction: {
+          raw_confidential_payload_logged: false,
+          provider_key_exposed: false,
+        },
+        duration_ms: Date.now() - startedAt,
+      };
+    } catch (error) {
+      if (error instanceof AppHttpException) {
+        throw error;
+      }
+
+      await this.recordAiGatewayAuditEvent({
+        workspaceId: claims.workspace_id,
+        automationId: claims.automation_id,
+        runId: claims.run_id,
+        apProjectId: claims.ap_project_id,
+        apFlowId: claims.ap_flow_id,
+        apFlowVersionId: claims.ap_flow_version_id ?? null,
+        stepName: claims.step_name,
+        eventType: 'ai_gateway.provider_call.failed',
+        keyId: localOwnerKey.key_id,
+        keyFingerprint: localOwnerKey.fingerprint,
+        provider: localOwnerKey.provider,
+        model: localOwnerKey.model,
+        route: localOwnerKey.route,
+        dataClassification: input.input.classification ?? 'workspace_internal',
+        inputHash: hashText(prompt),
+        errorCode: 'AI_PROVIDER_ERROR',
+        durationMs: Date.now() - startedAt,
+        traceId,
+      });
+
+      throw new AppHttpException(
+        'AI_PROVIDER_ERROR',
+        502,
+        'AI provider call failed inside LexFrame backend.',
+        {
+          provider: localOwnerKey.provider,
+          key_id: localOwnerKey.key_id,
+          fingerprint: localOwnerKey.fingerprint,
+        },
+      );
+    }
+  }
+
+  async handleActivepiecesRuntimeCallback(
+    claims: ScopedRuntimeTokenClaims,
+    input: ActivepiecesRuntimeCallbackRequest,
+  ) {
+    const run = await this.loadScopedRuntimeRun(claims);
+    assertSafeRuntimePayload(input.metadata);
+    if (input.artifact) {
+      assertSafeRuntimePayload(input.artifact);
+    }
+
+    const receiptKey = input.externalEventId ?? claims.jti;
+    const safePayload = {
+      run_id: claims.run_id,
+      step_name: claims.step_name,
+      status: input.status ?? 'received',
+      metadata: input.metadata,
+      artifact: input.artifact ?? null,
+      trace_id: claims.trace_id,
+    };
+    await this.databaseService.query(
+      `
+        insert into app.activepieces_callback_receipts (
+          id,
+          workspace_id,
+          workflow_run_id,
+          callback_type,
+          receipt_key,
+          payload,
+          status,
+          processed_at
+        )
+        values ($1, $2, $3, 'runtime_callback', $4, $5::jsonb, 'processed', timezone('utc', now()))
+        on conflict (receipt_key) do nothing
+      `,
+      [
+        randomUUID(),
+        run.workspace_id,
+        run.id,
+        receiptKey,
+        JSON.stringify(safePayload),
+      ],
+    );
+
+    const artifact = input.artifact
+      ? await this.createRuntimeEvidenceArtifact({
+          workspaceId: claims.workspace_id,
+          automationId: claims.automation_id,
+          runId: claims.run_id,
+          stepName: claims.step_name,
+          traceId: claims.trace_id,
+          safeMetadata: {
+            callback_status: input.status ?? 'received',
+            callback_metadata_hash: hashText(JSON.stringify(input.metadata)),
+            artifact_metadata: input.artifact,
+          },
+        })
+      : null;
+
+    await this.recordAiGatewayAuditEvent({
+      workspaceId: claims.workspace_id,
+      automationId: claims.automation_id,
+      runId: claims.run_id,
+      apProjectId: claims.ap_project_id,
+      apFlowId: claims.ap_flow_id,
+      apFlowVersionId: claims.ap_flow_version_id ?? null,
+      stepName: claims.step_name,
+      eventType: 'runtime.callback.received',
+      inputHash: hashText(JSON.stringify(safePayload)),
+      traceId: claims.trace_id,
+    });
+
+    return {
+      status: 'processed',
+      run_id: claims.run_id,
+      trace_id: claims.trace_id,
+      artifact_id: artifact?.id ?? null,
+    };
   }
 
   async listSessions(
@@ -1078,12 +1542,19 @@ export class AIGatewayService {
 
     const adapter = this.aiProviderRegistry.get(providerDecision.provider);
     const fallback = this.redactText(input.text, input.redactionPolicy);
+    const localOwnerKey = this.resolveLocalOwnerKeyForProvider({
+      purpose: 'ai_gateway',
+      provider: providerDecision.provider,
+      workspaceId,
+      traceId: meta.traceId,
+    });
     const providerResponse = await adapter.generateStructured({
       provider: providerDecision.provider,
       model: providerDecision.model,
       prompt: input.text,
       schemaId: AI_SCHEMA_IDS.redactionPreview,
       fallback,
+      localOwnerKey,
     });
     this.assertProviderResponseReady(providerDecision, providerResponse);
 
@@ -1138,6 +1609,7 @@ export class AIGatewayService {
       providerResponse.latencyMs,
       input.text,
       providerResponse.output,
+      providerResponse.localOwnerKey,
     );
 
     await this.databaseService.query(
@@ -1307,6 +1779,12 @@ export class AIGatewayService {
     });
 
     const adapter = this.aiProviderRegistry.get(providerDecision.provider);
+    const localOwnerKey = this.resolveLocalOwnerKeyForProvider({
+      purpose: 'workflow_planning',
+      provider: providerDecision.provider,
+      workspaceId: input.access.activeWorkspace!.id,
+      traceId: input.meta.traceId,
+    });
     const providerResponse = await adapter.generateStructured({
       provider: providerDecision.provider,
       model: providerDecision.model,
@@ -1320,6 +1798,7 @@ export class AIGatewayService {
         workflow,
         warnings: policyReport.warnings,
       },
+      localOwnerKey,
     });
     this.assertProviderResponseReady(providerDecision, providerResponse);
 
@@ -1330,6 +1809,7 @@ export class AIGatewayService {
       providerResponse.latencyMs,
       input.message,
       providerResponse.output,
+      providerResponse.localOwnerKey,
     );
 
     await this.completeAiRequest(input.requestId, {
@@ -1525,12 +2005,19 @@ export class AIGatewayService {
     }
 
     const adapter = this.aiProviderRegistry.get(providerDecision.provider);
+    const localOwnerKey = this.resolveLocalOwnerKeyForProvider({
+      purpose: 'workflow_planning',
+      provider: providerDecision.provider,
+      workspaceId: input.access.activeWorkspace!.id,
+      traceId: input.meta.traceId,
+    });
     const providerResponse = await adapter.generateStructured({
       provider: providerDecision.provider,
       model: providerDecision.model,
       prompt: `${input.baseVersionId}\n${input.instruction}`,
       schemaId: AI_SCHEMA_IDS.workflowPatch,
       fallback: patch,
+      localOwnerKey,
     });
     this.assertProviderResponseReady(providerDecision, providerResponse);
 
@@ -1560,6 +2047,7 @@ export class AIGatewayService {
       providerResponse.latencyMs,
       input.instruction,
       providerResponse.output,
+      providerResponse.localOwnerKey,
     );
 
     await this.completeAiRequest(input.requestId, {
@@ -2599,6 +3087,7 @@ export class AIGatewayService {
     latencyMs: number,
     prompt: string,
     output: unknown,
+    localOwnerKey?: StructuredAiResponse<unknown>['localOwnerKey'],
   ): Promise<void> {
     await this.databaseService.query(
       `
@@ -2628,6 +3117,22 @@ export class AIGatewayService {
         latencyMs,
       ],
     );
+
+    if (localOwnerKey) {
+      await this.recordRequestEvent(
+        requestId,
+        workspaceId,
+        'ai.local_key.used',
+        {
+          key_id: localOwnerKey.key_id,
+          fingerprint: localOwnerKey.fingerprint,
+          provider: localOwnerKey.provider,
+          model: localOwnerKey.model,
+          purpose: localOwnerKey.purpose,
+          route: localOwnerKey.route,
+        },
+      );
+    }
   }
 
   private async recordUsage(
@@ -2660,6 +3165,331 @@ export class AIGatewayService {
         outputTokens,
       ],
     );
+  }
+
+  private async loadScopedRuntimeRun(
+    claims: ScopedRuntimeTokenClaims,
+  ): Promise<RuntimeWorkflowRunRow> {
+    const run = await this.databaseService.one<RuntimeWorkflowRunRow>(
+      `
+        select
+          r.id,
+          r.workspace_id,
+          r.installed_automation_id,
+          r.trace_id,
+          r.created_by_user_id,
+          b.external_project_id,
+          b.external_flow_id,
+          b.activepieces_flow_version_id
+        from app.workflow_runs r
+        left join app.automation_runtime_bindings b
+          on b.id = r.automation_runtime_binding_id
+        where r.id = $1
+        limit 1
+      `,
+      [claims.run_id],
+    );
+
+    if (!run) {
+      throw new AppHttpException(
+        'RUN_NOT_FOUND',
+        404,
+        'Workflow run was not found.',
+      );
+    }
+
+    if (
+      run.workspace_id !== claims.workspace_id ||
+      (run.installed_automation_id &&
+        run.installed_automation_id !== claims.automation_id) ||
+      (run.external_project_id &&
+        run.external_project_id !== claims.ap_project_id) ||
+      (run.external_flow_id && run.external_flow_id !== claims.ap_flow_id) ||
+      (run.activepieces_flow_version_id &&
+        claims.ap_flow_version_id &&
+        run.activepieces_flow_version_id !== claims.ap_flow_version_id)
+    ) {
+      throw new AppHttpException(
+        'WORKSPACE_ACCESS_DENIED',
+        403,
+        'Scoped runtime token does not match the workflow run boundary.',
+      );
+    }
+
+    return run;
+  }
+
+  private async recordAiGatewayAuditEvent(input: AiGatewayAuditEventInput) {
+    const tokenUsage = input.tokenUsage ?? null;
+    if (tokenUsage) {
+      assertSafeRuntimePayload(tokenUsage);
+    }
+
+    await this.databaseService.query(
+      `
+        insert into app.ai_gateway_audit_events (
+          id,
+          workspace_id,
+          automation_id,
+          run_id,
+          ap_project_id,
+          ap_flow_id,
+          ap_flow_version_id,
+          step_name,
+          event_type,
+          key_id,
+          key_fingerprint,
+          provider,
+          model,
+          route,
+          data_classification,
+          token_usage,
+          input_hash,
+          output_hash,
+          error_code,
+          duration_ms,
+          trace_id
+        )
+        values (
+          $1,
+          $2,
+          $3,
+          $4,
+          $5,
+          $6,
+          $7,
+          $8,
+          $9,
+          $10,
+          $11,
+          $12,
+          $13,
+          $14,
+          $15,
+          $16::jsonb,
+          $17,
+          $18,
+          $19,
+          $20,
+          $21
+        )
+      `,
+      [
+        randomUUID(),
+        input.workspaceId,
+        input.automationId ?? null,
+        input.runId ?? null,
+        input.apProjectId ?? null,
+        input.apFlowId ?? null,
+        input.apFlowVersionId ?? null,
+        input.stepName ?? null,
+        input.eventType,
+        input.keyId ?? null,
+        input.keyFingerprint ?? null,
+        input.provider ?? null,
+        input.model ?? null,
+        input.route ?? null,
+        input.dataClassification ?? null,
+        tokenUsage ? JSON.stringify(tokenUsage) : null,
+        input.inputHash ?? null,
+        input.outputHash ?? null,
+        input.errorCode ?? null,
+        input.durationMs ?? null,
+        input.traceId,
+      ],
+    );
+
+    await this.auditService.record({
+      actorUserId: null,
+      actorEmail: null,
+      workspaceId: input.workspaceId,
+      action: input.eventType,
+      entityType: input.runId ? 'workflow_run' : 'ai_gateway',
+      entityId: input.runId ?? input.automationId ?? null,
+      result: input.errorCode ? 'error' : 'success',
+      requestId: null,
+      traceId: input.traceId,
+      eventCategory: 'ai',
+      metadata: {
+        automation_id: input.automationId ?? null,
+        ap_project_id: input.apProjectId ?? null,
+        ap_flow_id: input.apFlowId ?? null,
+        ap_flow_version_id: input.apFlowVersionId ?? null,
+        step_name: input.stepName ?? null,
+        key_id: input.keyId ?? null,
+        fingerprint: input.keyFingerprint ?? null,
+        provider: input.provider ?? null,
+        model: input.model ?? null,
+        route: input.route ?? null,
+        data_classification: input.dataClassification ?? null,
+        token_usage: tokenUsage,
+        input_hash: input.inputHash ?? null,
+        output_hash: input.outputHash ?? null,
+        error_code: input.errorCode ?? null,
+        duration_ms: input.durationMs ?? null,
+      },
+    });
+  }
+
+  private async createRuntimeEvidenceArtifact(
+    input: RuntimeEvidenceArtifactInput,
+  ) {
+    assertSafeRuntimePayload(input.safeMetadata);
+    const artifactType =
+      input.artifactType ?? 'stage17_ai_gateway_route_evidence';
+    const contentHash = hashText(JSON.stringify(input.safeMetadata));
+    const row = await this.databaseService.one<{
+      readonly id: string;
+      readonly artifact_type: string;
+      readonly content_hash: string;
+    }>(
+      `
+        insert into app.activepieces_runtime_artifacts (
+          id,
+          workspace_id,
+          automation_id,
+          workflow_run_id,
+          step_name,
+          artifact_type,
+          content_hash,
+          safe_metadata,
+          trace_id
+        )
+        values ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9)
+        returning id, artifact_type, content_hash
+      `,
+      [
+        randomUUID(),
+        input.workspaceId,
+        input.automationId,
+        input.runId,
+        input.stepName,
+        artifactType,
+        contentHash,
+        JSON.stringify(input.safeMetadata),
+        input.traceId,
+      ],
+    );
+
+    if (!row) {
+      throw new AppHttpException(
+        'RUN_ARTIFACT_NOT_FOUND',
+        500,
+        'Runtime artifact insert did not return a row.',
+      );
+    }
+
+    await this.recordAiGatewayAuditEvent({
+      workspaceId: input.workspaceId,
+      automationId: input.automationId,
+      runId: input.runId,
+      stepName: input.stepName,
+      eventType: 'runtime.artifact.created',
+      outputHash: contentHash,
+      traceId: input.traceId,
+    });
+
+    return {
+      id: row.id,
+      artifactType: row.artifact_type,
+      contentHash: row.content_hash,
+    };
+  }
+
+  private async markLocalOwnerKeyUsed(key: KeyResolverResult) {
+    await this.databaseService.query(
+      `
+        update app.local_owner_key_status
+        set
+          last_used_at = timezone('utc', now()),
+          last_validation_status = 'valid',
+          updated_at = timezone('utc', now())
+        where key_id = $1
+          and purpose = $2
+      `,
+      [key.key_id, key.purpose],
+    );
+  }
+
+  private resolveLocalOwnerKeyForProvider(input: {
+    readonly purpose: LocalOwnerKeyPurpose;
+    readonly provider: AiProvider;
+    readonly workspaceId: string | null;
+    readonly traceId: string | null;
+  }): KeyResolverResult | null {
+    if (input.provider === 'local') {
+      return null;
+    }
+
+    try {
+      return this.localKeyResolver.resolveKey({
+        purpose: input.purpose,
+        provider: input.provider as LocalOwnerKeyProvider,
+        workspaceId: input.workspaceId ?? undefined,
+        traceId: input.traceId ?? 'trace_unavailable',
+      });
+    } catch (error) {
+      if (
+        error instanceof AppHttpException &&
+        error.code === 'AI_LOCAL_KEY_UNAVAILABLE'
+      ) {
+        return null;
+      }
+
+      throw error;
+    }
+  }
+
+  private async verifyRuntimeAuthorization(
+    runId: string,
+    authorization: string | undefined,
+  ) {
+    const token = authorization?.replace(/^Bearer\s+/i, '').trim();
+    if (!token) {
+      throw new AppHttpException(
+        'AUTH_REQUIRED',
+        401,
+        'Runtime authorization token is required.',
+      );
+    }
+
+    const binding = await this.databaseService.one<WorkflowRunBindingRow>(
+      `
+        select workflow_run_id, workspace_id, callback_token_hash
+        from app.activepieces_run_bindings
+        where workflow_run_id = $1
+        limit 1
+      `,
+      [runId],
+    );
+
+    if (!binding || binding.callback_token_hash !== hashText(token)) {
+      throw new AppHttpException(
+        'WORKSPACE_ACCESS_DENIED',
+        403,
+        'Runtime authorization token is invalid.',
+      );
+    }
+
+    const run = await this.databaseService.one<RuntimeWorkflowRunRow>(
+      `
+        select id, workspace_id, trace_id, created_by_user_id
+        from app.workflow_runs
+        where id = $1
+        limit 1
+      `,
+      [runId],
+    );
+
+    if (!run) {
+      throw new AppHttpException(
+        'RUN_NOT_FOUND',
+        404,
+        'Workflow run was not found.',
+      );
+    }
+
+    return run;
   }
 
   private async loadSelectionContext(
@@ -3461,4 +4291,63 @@ export class AIGatewayService {
 
     return row ? this.mapMessageRow(row) : null;
   }
+}
+
+const FORBIDDEN_RUNTIME_PAYLOAD_KEYS = new Set([
+  'api_key',
+  'apikey',
+  'apiKey',
+  'authorization',
+  'Authorization',
+  'bearer',
+  'secret',
+  'private_key',
+  'provider_key',
+  'raw_prompt',
+  'raw_output',
+  'document_text',
+  'client_material_text',
+]);
+
+function assertSafeRuntimePayload(value: unknown) {
+  const path = findForbiddenRuntimePayloadPath(value, '$');
+  if (path) {
+    throw new AppHttpException(
+      'VALIDATION_ERROR',
+      400,
+      'Runtime payload contains a forbidden secret or raw-content field.',
+      { path },
+    );
+  }
+}
+
+function findForbiddenRuntimePayloadPath(
+  value: unknown,
+  path: string,
+): string | null {
+  if (Array.isArray(value)) {
+    for (const [index, item] of value.entries()) {
+      const match = findForbiddenRuntimePayloadPath(item, `${path}[${index}]`);
+      if (match) {
+        return match;
+      }
+    }
+    return null;
+  }
+
+  if (typeof value !== 'object' || value === null) {
+    return null;
+  }
+
+  for (const [key, item] of Object.entries(value)) {
+    if (FORBIDDEN_RUNTIME_PAYLOAD_KEYS.has(key)) {
+      return `${path}.${key}`;
+    }
+    const match = findForbiddenRuntimePayloadPath(item, `${path}.${key}`);
+    if (match) {
+      return match;
+    }
+  }
+
+  return null;
 }

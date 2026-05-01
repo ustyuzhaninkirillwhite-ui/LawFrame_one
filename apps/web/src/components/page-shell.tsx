@@ -13,14 +13,14 @@ interface PageShellProps {
 export function PageShell({ eyebrow, title, description, badge, children }: PageShellProps) {
   return (
     <section className="flex flex-col gap-8">
-      <header className="flex flex-col gap-4">
+      <header className="flex flex-col gap-3">
         <div className="flex items-center gap-3">
-          <div className="text-[11px] uppercase tracking-[0.3em] text-[color:var(--accent)]">{t(eyebrow)}</div>
+          <div className="text-xs font-medium uppercase tracking-normal text-[color:var(--lf-primary)]">{t(eyebrow)}</div>
           {badge ? <Badge variant="muted">{t(badge)}</Badge> : null}
         </div>
         <div className="max-w-4xl">
-          <h1 className="font-[family-name:var(--font-display)] text-5xl leading-[0.92]">{t(title)}</h1>
-          <p className="mt-4 max-w-3xl text-base leading-7 text-[color:var(--muted)]">{t(description)}</p>
+          <h1 className="text-3xl font-semibold leading-tight tracking-normal md:text-4xl">{t(title)}</h1>
+          <p className="mt-3 max-w-3xl text-sm leading-6 text-[color:var(--lf-text-muted)]">{t(description)}</p>
         </div>
       </header>
       {children}

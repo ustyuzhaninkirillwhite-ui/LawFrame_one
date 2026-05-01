@@ -4,6 +4,8 @@ export type ActivepiecesConnectionStatus =
   | 'blocked_by_policy'
   | 'requires_approval';
 
+export { ActivepiecesCanvasRoute } from './activepieces-canvas-route';
+
 export interface EmbeddedBuilderUrlInput {
   readonly baseUrl: string;
   readonly projectId: string;
@@ -39,13 +41,13 @@ export function getConnectionStatusLabel(
 ): string {
   switch (status) {
     case 'configured':
-      return 'Configured';
+      return 'Настроено';
     case 'missing':
-      return 'Missing connection';
+      return 'Нет подключения';
     case 'blocked_by_policy':
-      return 'Blocked by policy';
+      return 'Заблокировано политикой';
     case 'requires_approval':
-      return 'Requires approval';
+      return 'Требует согласования';
   }
 }
 

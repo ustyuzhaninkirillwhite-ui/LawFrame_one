@@ -1,0 +1,4 @@
+#!/usr/bin/env sh
+set -eu
+
+corepack pnpm security:check-no-local-secrets

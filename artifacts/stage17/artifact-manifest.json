@@ -1,0 +1,175 @@
+{
+  "stage": "17.10",
+  "generated_at": "2026-04-30T17:33:06.685Z",
+  "status": "PASS",
+  "entries": [
+    {
+      "path": "docs/stage17/17.1/ADR-17.1-local-owner-key-vault.md",
+      "severity": "P0",
+      "status": "PASS",
+      "bytes": 1704
+    },
+    {
+      "path": "docs/stage17/17.1/ADR-17.2-activepieces-design-unification.md",
+      "severity": "P0",
+      "status": "PASS",
+      "bytes": 1601
+    },
+    {
+      "path": "docs/stage17/17.1/source-inventory.md",
+      "severity": "P1",
+      "status": "PASS",
+      "bytes": 2550
+    },
+    {
+      "path": "docs/stage17/secret-surface-inventory.md",
+      "severity": "P0",
+      "status": "PASS",
+      "bytes": 1061
+    },
+    {
+      "path": "docs/stage17/localization-coverage-report.md",
+      "severity": "P1",
+      "status": "PASS",
+      "bytes": 899
+    },
+    {
+      "path": "docs/stage17/debranding-coverage-report.md",
+      "severity": "P1",
+      "status": "PASS",
+      "bytes": 880
+    },
+    {
+      "path": "docs/stage17/design-token-mapping.md",
+      "severity": "P1",
+      "status": "PASS",
+      "bytes": 853
+    },
+    {
+      "path": "docs/stage17/functionality-preservation-report.md",
+      "severity": "P1",
+      "status": "PASS",
+      "bytes": 796
+    },
+    {
+      "path": "docs/stage17/local-key-vault-security-report.md",
+      "severity": "P0",
+      "status": "PASS",
+      "bytes": 890
+    },
+    {
+      "path": "docs/stage17/activepieces-runtime-evidence.md",
+      "severity": "P0",
+      "status": "PASS",
+      "bytes": 437
+    },
+    {
+      "path": "docs/stage17/visual-regression-report.md",
+      "severity": "P0",
+      "status": "PASS",
+      "bytes": 619
+    },
+    {
+      "path": "docs/stage17/stage17-release-gate-report.md",
+      "severity": "P0",
+      "status": "PASS",
+      "bytes": 1055
+    },
+    {
+      "path": "artifacts/stage17/release-gate.json",
+      "severity": "P0",
+      "status": "PASS",
+      "bytes": 8929
+    },
+    {
+      "path": "artifacts/stage17/runtime-evidence.json",
+      "severity": "P0",
+      "status": "PASS",
+      "bytes": 2506
+    },
+    {
+      "path": "artifacts/stage17/browser-secret-scan.json",
+      "severity": "P0",
+      "status": "PASS",
+      "bytes": 293
+    },
+    {
+      "path": "scripts/secrets/init-local-keys.ps1",
+      "severity": "P1",
+      "status": "PASS",
+      "bytes": 1265
+    },
+    {
+      "path": "scripts/security/check-no-local-secrets.mjs",
+      "severity": "P0",
+      "status": "PASS",
+      "bytes": 3072
+    },
+    {
+      "path": "scripts/stage17/release-gate.mjs",
+      "severity": "P0",
+      "status": "PASS",
+      "bytes": 9250
+    },
+    {
+      "path": "scripts/stage17/verify-artifacts.mjs",
+      "severity": "P0",
+      "status": "PASS",
+      "bytes": 9608
+    },
+    {
+      "path": "scripts/stage17/collect-runtime-evidence.mjs",
+      "severity": "P0",
+      "status": "PASS",
+      "bytes": 14649
+    },
+    {
+      "path": "scripts/stage17/scan-browser-evidence.mjs",
+      "severity": "P0",
+      "status": "PASS",
+      "bytes": 3615
+    },
+    {
+      "path": "packages/design-system-activepieces-bridge/src/index.ts",
+      "severity": "P1",
+      "status": "PASS",
+      "bytes": 81
+    },
+    {
+      "path": "apps/backend/src/modules/local-owner-key-vault/local-owner-key-vault.service.ts",
+      "severity": "P0",
+      "status": "PASS",
+      "bytes": 13842
+    },
+    {
+      "path": "apps/backend/src/modules/activepieces/activepieces-session.service.ts",
+      "severity": "P0",
+      "status": "PASS",
+      "bytes": 38033
+    },
+    {
+      "path": "apps/web/src/features/automation-canvas/activepieces-canvas-route.tsx",
+      "severity": "P0",
+      "status": "PASS",
+      "bytes": 3052
+    },
+    {
+      "path": "tests/e2e/stage17-activepieces-canvas.spec.ts",
+      "severity": "P0",
+      "status": "PASS",
+      "bytes": 5970
+    },
+    {
+      "path": "tests/e2e/stage17-local-keys-security.spec.ts",
+      "severity": "P0",
+      "status": "PASS",
+      "bytes": 4451
+    },
+    {
+      "path": "tests/e2e/stage17-design-convergence.spec.ts",
+      "severity": "P0",
+      "status": "PASS",
+      "bytes": 3083
+    }
+  ]
+}

@@ -31,12 +31,57 @@ describe('ReadinessService', () => {
       query: jest.fn(),
       one: jest.fn(),
     };
+    const localOwnerKeyVaultService = {
+      getSafeStatus: jest.fn().mockReturnValue({
+        status: 'disabled',
+        disabled: true,
+        source: null,
+        file: {
+          exists: false,
+          readable: false,
+          acl_ok: false,
+          path_hint: null,
+        },
+        schema: {
+          valid: false,
+          schema_version: null,
+          errors: [
+            {
+              code: 'LOCAL_KEYS_DISABLED',
+              path: '$env.LEXFRAME_LOCAL_KEYS_DISABLED',
+            },
+          ],
+        },
+        keys: {
+          total: 0,
+          enabled: 0,
+          disabled: 0,
+          routes: [],
+        },
+        warnings: [],
+      }),
+    };
+    const secretsService = {
+      resolveRuntimeSecret: jest.fn().mockReturnValue({
+        configured: false,
+        source: 'missing',
+        ref: null,
+        value: null,
+        diagnostics: {
+          configured: false,
+          source: 'missing',
+          value_exposed: false,
+        },
+      }),
+    };
 
     const service = new ReadinessService(
       workflowsService as never,
       aiGatewayService as never,
       auditService as never,
       databaseService as never,
+      localOwnerKeyVaultService as never,
+      secretsService as never,
     );
 
     return {
@@ -45,6 +90,8 @@ describe('ReadinessService', () => {
       workflowsService,
       aiGatewayService,
       auditService,
+      localOwnerKeyVaultService,
+      secretsService,
       restoreEnv() {
         process.env = originalEnv;
       },

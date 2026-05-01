@@ -10,5 +10,5 @@ export default async function ProjectAutomationBuilderPage({
 }) {
   const { projectId, automationId } = await params;
 
-  redirect(`/app/projects/${projectId}/automations/${automationId}/canvas`);
+  redirect(`/app/projects/${projectId}/automations/${automationId}/automation`);
 }

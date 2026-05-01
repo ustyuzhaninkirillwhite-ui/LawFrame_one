@@ -1,0 +1,59 @@
+﻿Stage 17.1 LexFrame source/toolchain state
+generated_at=2026-04-28T00:00:00+02:00
+cwd=E:\Law_frame_main
+shell=powershell
+redaction=No secret values captured; source state only.
+
+## git status --short
+?? artifacts/
+?? stage16-audit-evidence-20260426-000827/
+
+## git rev-parse --abbrev-ref HEAD
+codex/17
+
+## git rev-parse HEAD
+ec145113ad4fdeba40a7826a4122032b8f52e9d3
+
+## git log -1 --date=iso --pretty=fuller
+commit ec145113ad4fdeba40a7826a4122032b8f52e9d3
+Author:     Codex <codex@local>
+AuthorDate: 2026-04-28 15:01:23 +0200
+Commit:     Codex <codex@local>
+CommitDate: 2026-04-28 15:01:23 +0200
+
+    Добавлен full-runtime режим Stage 16
+
+## toolchain
+node=v22.16.0
+corepack=0.32.0
+corepack_pnpm=10.11.1
+pnpm_direct=NOT_FOUND
+
+## root directories
+
+Name
+----
+.codex-dev-logs
+.codex-runtime
+.git
+.github
+.playwright-mcp
+activepieces
+apps
+artifacts
+config
+docs
+infra
+node_modules
+packages
+scripts
+stage16-audit-evidence-20260426-000827
+supabase
+tests
+tmp
+tmp_docker_diag
+
+## package metadata
+name=lexframe
+version=0.1.0
+packageManager=pnpm@10.11.1

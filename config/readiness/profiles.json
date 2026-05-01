@@ -11,6 +11,7 @@
         "redis",
         "opensearch",
         "delivery-sandbox",
+        "local-owner-key-vault",
         "real-ai-provider",
         "realtime"
       ]
@@ -28,7 +29,11 @@
         "opensearch",
         "delivery-sandbox"
       ],
-      "optionalServices": ["real-ai-provider", "realtime"]
+      "optionalServices": [
+        "local-owner-key-vault",
+        "real-ai-provider",
+        "realtime"
+      ]
     },
     "staging-rc": {
       "description": "Release-candidate staging profile with integrated runtime and search dependencies.",
@@ -41,6 +46,7 @@
         "activepieces",
         "redis",
         "opensearch",
+        "local-owner-key-vault",
         "real-ai-provider",
         "realtime"
       ],
@@ -58,6 +64,7 @@
         "redis",
         "opensearch",
         "delivery-sandbox",
+        "local-owner-key-vault",
         "real-ai-provider",
         "realtime"
       ],

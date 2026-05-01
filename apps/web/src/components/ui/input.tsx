@@ -1,3 +1,4 @@
+import { formRecipe } from "@lexframe/design-system-activepieces-bridge/recipes";
 import * as React from "react";
 import { t } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
@@ -8,10 +9,7 @@ export const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"in
       <input
         ref={ref}
         placeholder={placeholder ? t(placeholder) : undefined}
-        className={cn(
-          "h-11 w-full rounded-full border border-[color:var(--line)] bg-white/4 px-4 text-sm text-[color:var(--foreground)] outline-none transition focus:border-[color:var(--accent)]",
-          className,
-        )}
+        className={cn(formRecipe.input, className)}
         {...props}
       />
     );

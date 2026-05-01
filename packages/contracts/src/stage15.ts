@@ -1,7 +1,4 @@
-import type {
-  AiChatSessionSummary,
-  WorkflowDraftDetail,
-} from "./ai";
+import type { AiChatSessionSummary, WorkflowDraftDetail } from "./ai";
 import type {
   DocumentSummary,
   InstalledAutomationDetail,
@@ -110,6 +107,28 @@ export interface Stage15CreateProjectChatRequest {
 export interface Stage15ProjectChatCreatedResponse {
   readonly chat: Stage15ProjectChatSummary;
   readonly session: AiChatSessionSummary;
+}
+
+export interface Stage17CanvasEnsureResponse {
+  readonly status: "ready" | "degraded";
+  readonly readinessCode: string;
+  readonly automationId: string;
+  readonly projectId: string;
+  readonly route: string;
+  readonly activepiecesProjectId: string;
+  readonly activepiecesFlowId: string;
+  readonly activepiecesFlowVersionId: string;
+}
+
+export interface Stage17CanvasEnsureWireResponse {
+  readonly status: "ready" | "degraded";
+  readonly readiness_code: string;
+  readonly automation_id: string;
+  readonly project_id: string;
+  readonly route: string;
+  readonly activepieces_project_id: string;
+  readonly activepieces_flow_id: string;
+  readonly activepieces_flow_version_id: string;
 }
 
 export interface Stage15WorkflowDraftMaterializeRequest {

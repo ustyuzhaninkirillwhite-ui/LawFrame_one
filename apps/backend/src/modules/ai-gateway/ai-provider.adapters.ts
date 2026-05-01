@@ -1,4 +1,8 @@
 import type { AiProvider } from '@lexframe/contracts';
+import type {
+  KeyResolverResult,
+  SafeLocalKeyRoute,
+} from '../local-owner-key-vault/local-owner-key-vault.types';
 import { loadServerEnv } from '@lexframe/config';
 import { Injectable } from '@nestjs/common';
 
@@ -20,6 +24,7 @@ export interface StructuredAiRequest<T> {
   }[];
   readonly maxToolCalls?: number;
   readonly traceId?: string | null;
+  readonly localOwnerKey?: KeyResolverResult | null;
 }
 
 export interface StructuredAiResponse<T> {
@@ -30,6 +35,13 @@ export interface StructuredAiResponse<T> {
   readonly outputTokens: number;
   readonly latencyMs: number;
   readonly usedFallback: boolean;
+  readonly localOwnerKey?: Pick<
+    SafeLocalKeyRoute,
+    'key_id' | 'provider' | 'model' | 'fingerprint'
+  > & {
+    readonly purpose: KeyResolverResult['purpose'];
+    readonly route: string;
+  };
 }
 
 export interface AiProviderAdapter {
@@ -79,6 +91,9 @@ function buildFallbackResponse<T>(
     outputTokens: estimateTokens(JSON.stringify(request.fallback)),
     latencyMs: Date.now() - startedAt,
     usedFallback: true,
+    ...(request.localOwnerKey
+      ? { localOwnerKey: toSafeLocalOwnerKey(request.localOwnerKey) }
+      : {}),
   };
 }
 
@@ -168,6 +183,9 @@ async function requestOpenAiCompatibleStructuredOutput<T>(input: {
       outputTokens: completionTokens,
       latencyMs: Date.now() - startedAt,
       usedFallback: false,
+      ...(input.request.localOwnerKey
+        ? { localOwnerKey: toSafeLocalOwnerKey(input.request.localOwnerKey) }
+        : {}),
     };
   } catch {
     return buildFallbackResponse(input.provider, input.request, startedAt);
@@ -207,13 +225,15 @@ export class XAiAdapter implements AiProviderAdapter {
   async generateStructured<T>(
     request: StructuredAiRequest<T>,
   ): Promise<StructuredAiResponse<T>> {
-    if (!isConfiguredSecret(this.env.XAI_API_KEY)) {
+    if (!request.localOwnerKey && !isConfiguredSecret(this.env.XAI_API_KEY)) {
       return buildFallbackResponse(this.provider, request, Date.now());
     }
 
     return requestOpenAiCompatibleStructuredOutput({
       provider: this.provider,
-      apiKey: this.env.XAI_API_KEY,
+      apiKey:
+        request.localOwnerKey?.api_key.revealForProviderCall() ??
+        this.env.XAI_API_KEY,
       endpoint: 'https://api.x.ai/v1/chat/completions',
       request,
     });
@@ -238,13 +258,14 @@ export class CometApiAdapter implements AiProviderAdapter {
   ): Promise<StructuredAiResponse<T>> {
     const apiKey = this.nextApiKey();
 
-    if (!apiKey) {
+    if (!request.localOwnerKey && !apiKey) {
       return buildFallbackResponse(this.provider, request, Date.now());
     }
 
     return requestOpenAiCompatibleStructuredOutput({
       provider: this.provider,
-      apiKey,
+      apiKey:
+        request.localOwnerKey?.api_key.revealForProviderCall() ?? apiKey ?? '',
       endpoint: 'https://api.cometapi.com/v1/chat/completions',
       request,
     });
@@ -306,6 +327,17 @@ function isConfiguredSecret(value: string | undefined) {
     !value.startsWith('stage0_') &&
     !value.startsWith('replace_with_')
   );
+}
+
+function toSafeLocalOwnerKey(key: KeyResolverResult) {
+  return {
+    key_id: key.key_id,
+    provider: key.provider,
+    model: key.model,
+    fingerprint: key.fingerprint,
+    purpose: key.purpose,
+    route: key.route,
+  };
 }
 
 function coerceCompletionContent(payload: ChatCompletionResponse) {

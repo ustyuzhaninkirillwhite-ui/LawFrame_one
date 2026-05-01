@@ -54,7 +54,7 @@ export function InstalledAutomationList() {
                 <Link href={`/automations/${automation.id}`}>Открыть детали</Link>
               </Button>
               <Button asChild variant="ghost">
-                <Link href={`/automations/${automation.id}/builder`}>Конструктор</Link>
+                <Link href={`/automations/${automation.id}/builder`}>Автоматизация</Link>
               </Button>
               <Button asChild>
                 <Link href={`/automations/${automation.id}/updates`}>Обновления источника</Link>

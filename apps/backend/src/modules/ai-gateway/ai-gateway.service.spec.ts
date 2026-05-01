@@ -107,6 +107,34 @@ function createService(policy: AiPolicyContext) {
     {} as never,
     aiPolicyService as never,
     aiProviderRegistry as never,
+    {
+      resolveKey: jest.fn(),
+    } as never,
+    {
+      getSafeStatus: jest.fn().mockReturnValue({
+        status: 'disabled',
+        disabled: true,
+        source: null,
+        file: {
+          exists: false,
+          readable: false,
+          acl_ok: false,
+          path_hint: null,
+        },
+        schema: {
+          valid: false,
+          schema_version: null,
+          errors: [],
+        },
+        keys: {
+          total: 0,
+          enabled: 0,
+          disabled: 0,
+          routes: [],
+        },
+        warnings: [],
+      }),
+    } as never,
   );
 }
 

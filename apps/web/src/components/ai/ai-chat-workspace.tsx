@@ -44,8 +44,10 @@ import { formatDateTime, formatStatus, t } from "@/lib/i18n";
 
 export function AiChatWorkspace({
   initialSource,
+  projectId,
 }: {
   readonly initialSource?: AiChatSource;
+  readonly projectId?: string;
 } = {}) {
   const searchParams = useSearchParams();
   const store = useAiChatStore({
@@ -314,6 +316,7 @@ export function AiChatWorkspace({
           <RequestTimelineCard request={currentRequest} events={currentRequestEvents} />
           <WorkflowPreviewCard
             draft={activeDraft}
+            projectId={projectId}
             onSaveSnapshot={handleSaveSnapshot}
           />
           <ValidationCard draft={activeDraft} />
@@ -720,6 +723,7 @@ function RequestTimelineCard(props: {
 
 function WorkflowPreviewCard(props: {
   readonly draft: WorkflowDraftDetail | null;
+  readonly projectId?: string;
   readonly onSaveSnapshot: () => void;
 }) {
   if (!props.draft) {
@@ -793,12 +797,23 @@ function WorkflowPreviewCard(props: {
           {props.draft.linkedAutomationId ? (
             <>
               <Button asChild type="button" variant="ghost">
-                <Link href={`/automations/${props.draft.linkedAutomationId}`}>
-                  Открыть конструктор
+                <Link
+                  href={automationHref(
+                    props.projectId,
+                    props.draft.linkedAutomationId,
+                  )}
+                >
+                  Автоматизация
                 </Link>
               </Button>
               <Button asChild type="button" variant="ghost">
-                <Link href={`/automations/${props.draft.linkedAutomationId}`}>
+                <Link
+                  href={automationHref(
+                    props.projectId,
+                    props.draft.linkedAutomationId,
+                    "runs",
+                  )}
+                >
                   Настроить пробный запуск
                 </Link>
               </Button>
@@ -808,6 +823,19 @@ function WorkflowPreviewCard(props: {
       </CardContent>
     </Card>
   );
+}
+
+function automationHref(
+  projectId: string | undefined,
+  automationId: string,
+  tab?: "runs",
+) {
+  if (!projectId) {
+    return `/automations/${automationId}${tab === "runs" ? "" : "/builder"}`;
+  }
+
+  const route = `/app/projects/${projectId}/automations/${automationId}/automation`;
+  return tab ? `${route}?tab=${tab}` : route;
 }
 
 function ValidationCard(props: { readonly draft: WorkflowDraftDetail | null }) {

@@ -1,0 +1,16 @@
+.dark,
+[data-theme="dark"] {
+  --lf-bg-app: #0a0a0a;
+  --lf-bg-card: #171717;
+  --lf-bg-panel: #1f1f1f;
+  --lf-bg-muted: #262626;
+  --lf-text-primary: #fafafa;
+  --lf-text-secondary: #e5e5e5;
+  --lf-text-muted: #a3a3a3;
+  --lf-border: rgba(255, 255, 255, 0.08);
+  --lf-border-input: rgba(255, 255, 255, 0.08);
+  --lf-ring: #737373;
+  --lf-primary: hsl(210 90% 50%);
+  --lf-primary-hover: hsl(210 90% 56%);
+  --lf-primary-fg: #f8fafc;
+}

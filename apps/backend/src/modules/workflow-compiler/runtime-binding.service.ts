@@ -198,6 +198,7 @@ export class RuntimeBindingService {
     return this.databaseService.transaction(async (client) => {
       const binding = await this.upsertBinding(client, input);
       const snapshotId = await this.insertSnapshot(client, binding.id, input);
+      await this.upsertStage17FlowBinding(client, binding.id, snapshotId, input);
       await this.markSyncedSnapshot(client, binding.id, snapshotId, input);
       await this.replaceStepMappings(client, binding.id, input);
       await this.updateInstalledAutomation(client, input);
@@ -432,6 +433,7 @@ export class RuntimeBindingService {
         update app.automation_runtime_bindings
         set
           last_synced_snapshot_id = $4,
+          last_snapshot_id = $4,
           last_synced_snapshot_hash = $5,
           last_synced_workflow_hash = $6,
           last_synced_mapping_hash = $7,
@@ -450,6 +452,102 @@ export class RuntimeBindingService {
         input.sourceWorkflowHash,
         input.projectionHash,
       ],
+    );
+  }
+
+  private async upsertStage17FlowBinding(
+    client: PoolClient,
+    runtimeBindingId: string,
+    snapshotId: string,
+    input: PersistSyncSuccessInput,
+  ) {
+    await this.runQuery(
+      client,
+      `
+        insert into app.activepieces_flow_bindings (
+          id,
+          workspace_id,
+          automation_id,
+          automation_version_id,
+          runtime_binding_id,
+          ap_project_id,
+          ap_flow_id,
+          ap_flow_version_id,
+          source_workflow_hash,
+          runtime_hash,
+          last_synced_hash,
+          sync_status,
+          last_synced_at,
+          last_read_back_at,
+          last_snapshot_id,
+          error_code
+        )
+        values (
+          $1,
+          $2,
+          $3,
+          $4,
+          $5,
+          $6,
+          $7,
+          $8,
+          $9,
+          $10,
+          $10,
+          'synced',
+          timezone('utc', now()),
+          timezone('utc', now()),
+          $11,
+          null
+        )
+        on conflict (workspace_id, automation_id) do update
+        set
+          automation_version_id = excluded.automation_version_id,
+          runtime_binding_id = excluded.runtime_binding_id,
+          ap_project_id = excluded.ap_project_id,
+          ap_flow_id = excluded.ap_flow_id,
+          ap_flow_version_id = excluded.ap_flow_version_id,
+          source_workflow_hash = excluded.source_workflow_hash,
+          runtime_hash = excluded.runtime_hash,
+          last_synced_hash = excluded.last_synced_hash,
+          sync_status = 'synced',
+          last_synced_at = timezone('utc', now()),
+          last_read_back_at = timezone('utc', now()),
+          last_snapshot_id = excluded.last_snapshot_id,
+          error_code = null,
+          updated_at = timezone('utc', now())
+      `,
+      [
+        randomUUID(),
+        input.workspaceId,
+        input.automationId,
+        input.automationVersionId,
+        runtimeBindingId,
+        input.projectId,
+        input.flowId,
+        input.flowVersionId,
+        input.sourceWorkflowHash,
+        input.runtimeHash,
+        snapshotId,
+      ],
+    );
+
+    await this.runQuery(
+      client,
+      `
+        update app.activepieces_flow_snapshots s
+        set
+          flow_binding_id = fb.id,
+          snapshot_kind = coalesce(snapshot_kind, 'after_update'),
+          runtime_hash = coalesce(runtime_hash, snapshot_hash),
+          redaction_report = coalesce(redaction_report, '{}'::jsonb),
+          trace_id = coalesce(trace_id, $4)
+        from app.activepieces_flow_bindings fb
+        where s.id = $1
+          and fb.workspace_id = $2
+          and fb.automation_id = $3
+      `,
+      [snapshotId, input.workspaceId, input.automationId, input.traceId ?? randomUUID()],
     );
   }
 

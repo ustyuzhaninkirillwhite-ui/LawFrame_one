@@ -9,5 +9,6 @@ import { AutomationLibraryService } from './automation-library.service';
   imports: [DatabaseModule, AuditModule, IdentityModule],
   controllers: [AutomationLibraryController],
   providers: [AutomationLibraryService],
+  exports: [AutomationLibraryService],
 })
 export class AutomationLibraryModule {}

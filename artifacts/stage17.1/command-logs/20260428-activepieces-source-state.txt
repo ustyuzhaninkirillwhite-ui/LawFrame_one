@@ -1,0 +1,67 @@
+﻿Stage 17.1 Activepieces source/toolchain state
+generated_at=2026-04-28T00:00:00+02:00
+cwd=E:\activepieces-main
+shell=powershell
+redaction=No secret values captured; source state only.
+
+## git status --short
+git : fatal: not a git repository (or any of the parent directories): .git
+At line:11 char:12
++ $lines += (git status --short 2>&1 | Out-String).TrimEnd();
++            ~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (fatal: not a gi...ectories): .git:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+## git rev-parse --abbrev-ref HEAD
+git : fatal: not a git repository (or any of the parent directories): .git
+At line:14 char:12
++ $lines += (git rev-parse --abbrev-ref HEAD 2>&1 | Out-String).TrimEnd ...
++            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (fatal: not a gi...ectories): .git:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+## git rev-parse HEAD
+git : fatal: not a git repository (or any of the parent directories): .git
+At line:17 char:12
++ $lines += (git rev-parse HEAD 2>&1 | Out-String).TrimEnd();
++            ~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (fatal: not a gi...ectories): .git:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+## toolchain
+node=v22.16.0
+bun=NOT_FOUND
+corepack=0.32.0
+
+## root directories
+
+Name
+----
+.agents
+.claude
+.cursor
+.devcontainer
+.github
+.husky
+.verdaccio
+.vscode
+assets
+benchmark
+deploy
+docs
+packages
+scripts
+smoke-test
+tools
+
+## package metadata
+name=activepieces
+version=0.82.0
+packageManager=bun@1.3.3
+workspaces=packages/shared, packages/cli, packages/server/engine, packages/web, packages/server/api, packages/server/utils, packages/server/worker, packages/ee/embed-sdk, packages/tests-e2e, packages/pieces/framework, packages/pieces/common, packages/pieces/core/*, packages/pieces/community/*, packages/pieces/custom/*
+
+## lockfiles
+bun.lock=True
+pnpm-lock.yaml=False
+package-lock.json=False
+yarn.lock=False

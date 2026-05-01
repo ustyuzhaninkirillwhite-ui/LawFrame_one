@@ -5,9 +5,20 @@ import { DatabaseModule } from '../database/database.module';
 import { DeliveryModule } from '../delivery/delivery.module';
 import { DocumentsModule } from '../documents/documents.module';
 import { IdentityModule } from '../identity/identity.module';
+import { LocalOwnerKeyVaultModule } from '../local-owner-key-vault/local-owner-key-vault.module';
 import { RealtimeModule } from '../realtime/realtime.module';
+import { RuntimeModule } from '../runtime/runtime.module';
+import { SecretsModule } from '../secrets/secrets.module';
 import { WorkflowCompilerModule } from '../workflow-compiler/workflow-compiler.module';
 import { ActivepiecesController } from './activepieces.controller';
+import { ActivepiecesAuditWriter } from './activepieces-audit-writer';
+import { ActivepiecesCanvasProvisioningService } from './activepieces-canvas-provisioning.service';
+import { ActivepiecesFlowProvisioningService } from './activepieces-flow-provisioning.service';
+import { ActivepiecesIdentityBridge } from './activepieces-identity-bridge';
+import { ActivepiecesJwtSigner } from './activepieces-jwt-signer';
+import { ActivepiecesPiecesPolicyService } from './activepieces-pieces-policy.service';
+import { ActivepiecesRoleMapper } from './activepieces-role-mapper';
+import { ActivepiecesSessionService } from './activepieces-session.service';
 import { ActivepiecesService } from './activepieces.service';
 
 @Module({
@@ -19,10 +30,27 @@ import { ActivepiecesService } from './activepieces.service';
     ApprovalsModule,
     DeliveryModule,
     RealtimeModule,
+    RuntimeModule,
+    SecretsModule,
     WorkflowCompilerModule,
+    LocalOwnerKeyVaultModule,
   ],
   controllers: [ActivepiecesController],
-  providers: [ActivepiecesService],
-  exports: [ActivepiecesService],
+  providers: [
+    ActivepiecesService,
+    ActivepiecesCanvasProvisioningService,
+    ActivepiecesSessionService,
+    ActivepiecesRoleMapper,
+    ActivepiecesPiecesPolicyService,
+    ActivepiecesIdentityBridge,
+    ActivepiecesFlowProvisioningService,
+    ActivepiecesJwtSigner,
+    ActivepiecesAuditWriter,
+  ],
+  exports: [
+    ActivepiecesService,
+    ActivepiecesCanvasProvisioningService,
+    ActivepiecesSessionService,
+  ],
 })
 export class ActivepiecesModule {}

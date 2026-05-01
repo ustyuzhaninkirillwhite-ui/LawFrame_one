@@ -1,4 +1,6 @@
 @import "tailwindcss";
+@import "@lexframe/design-system-activepieces-bridge/css/activepieces-theme.css";
+@import "@lexframe/design-system-activepieces-bridge/css/activepieces-theme.dark.css";
 @import "@fontsource/ibm-plex-sans/400.css";
 @import "@fontsource/ibm-plex-sans/500.css";
 @import "@fontsource/ibm-plex-sans/600.css";
@@ -9,21 +11,23 @@
 @import "@xyflow/react/dist/style.css";
 
 :root {
-  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-display: "IBM Plex Serif", Georgia, "Times New Roman", serif;
-  --background: #0e1116;
-  --background-soft: #161b23;
-  --panel: rgba(20, 25, 34, 0.76);
-  --panel-strong: rgba(17, 20, 29, 0.92);
-  --foreground: #f5f2ea;
-  --muted: #a5acb8;
-  --muted-strong: #d1c7b7;
-  --line: rgba(245, 236, 220, 0.12);
-  --accent: #c7a46a;
-  --accent-strong: #f1cf91;
-  --danger: #f89a8a;
-  --success: #7fcb9d;
-  --shadow: 0 30px 80px rgba(0, 0, 0, 0.38);
+  --font-body: var(--lf-font-sans);
+  --font-display: var(--lf-font-heading);
+  --background: var(--lf-bg-app);
+  --background-soft: var(--lf-bg-muted);
+  --panel: color-mix(in srgb, var(--lf-bg-panel) 92%, transparent);
+  --panel-strong: var(--lf-bg-card);
+  --surface: var(--lf-bg-card);
+  --foreground: var(--lf-text-primary);
+  --muted: var(--lf-text-muted);
+  --muted-strong: var(--lf-text-secondary);
+  --line: var(--lf-border);
+  --accent: var(--lf-primary);
+  --accent-strong: var(--lf-primary-hover);
+  --danger: var(--lf-destructive);
+  --success: var(--lf-success);
+  --warning: var(--lf-warning);
+  --shadow: var(--lf-shadow-panel);
 }
 
 * {
@@ -33,10 +37,7 @@
 html,
 body {
   min-height: 100%;
-  background:
-    radial-gradient(circle at top left, rgba(199, 164, 106, 0.18), transparent 36%),
-    radial-gradient(circle at 82% 20%, rgba(116, 141, 177, 0.12), transparent 24%),
-    linear-gradient(180deg, #0e1116 0%, #090b10 100%);
+  background: var(--lf-bg-app);
   color: var(--foreground);
 }
 
@@ -57,7 +58,7 @@ input {
 }
 
 ::selection {
-  background: rgba(199, 164, 106, 0.35);
+  background: color-mix(in srgb, var(--lf-primary) 35%, transparent);
 }
 
 .shell-grid {
@@ -67,17 +68,14 @@ input {
 }
 
 .sidebar-sheen {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 32%),
-    linear-gradient(180deg, rgba(12, 14, 19, 0.95), rgba(8, 10, 14, 0.98));
+  background: var(--lf-bg-card);
   border-right: 1px solid var(--line);
 }
 
 .panel-surface {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.01));
+  background: var(--lf-bg-card);
   border: 1px solid var(--line);
-  box-shadow: var(--shadow);
-  backdrop-filter: blur(18px);
+  box-shadow: var(--lf-shadow-card);
 }
 
 .noise-overlay::before {

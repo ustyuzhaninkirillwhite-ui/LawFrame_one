@@ -8,12 +8,17 @@ describe("isAutomationCanvasRoute", () => {
   it("matches only project automation index routes", () => {
     expect(
       isAutomationCanvasRoute(
-        "/app/projects/project_claim_001/automations/automation_001/canvas",
+        "/app/projects/project_claim_001/automations/automation_001/automation",
       ),
     ).toBe(true);
     expect(
       isAutomationCanvasRoute(
-        "/app/projects/project_claim_001/automations/automation_001/canvas/",
+        "/app/projects/project_claim_001/automations/automation_001/automation/",
+      ),
+    ).toBe(true);
+    expect(
+      isAutomationCanvasRoute(
+        "/app/projects/project_claim_001/automations/automation_001/canvas",
       ),
     ).toBe(true);
 

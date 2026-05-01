@@ -105,6 +105,10 @@ describe('ActivepiecesService', () => {
     const liveEventsService = {
       recordEvent: jest.fn(),
     };
+    const activepiecesSessionService = {
+      createSession: jest.fn(),
+      initializeSession: jest.fn(),
+    };
 
     return {
       service: new ActivepiecesService(
@@ -114,9 +118,13 @@ describe('ActivepiecesService', () => {
         approvalsService as never,
         deliveryService as never,
         liveEventsService as never,
+        undefined,
+        undefined,
+        activepiecesSessionService as never,
       ),
       databaseService,
       auditService,
+      activepiecesSessionService,
     };
   }
 
@@ -174,6 +182,141 @@ describe('ActivepiecesService', () => {
         }),
       ]),
     );
+  });
+
+  it('delegates the Stage 17.5 session bridge to the orchestration service', async () => {
+    const { service, activepiecesSessionService } = createService();
+    activepiecesSessionService.createSession.mockResolvedValue({
+      status: 'ready',
+      readiness_code: 'READY',
+      session_id: 'sess_stage17',
+      mode: 'iframe_embed',
+      issued_at: '2026-04-28T14:03:00.000Z',
+      instance_url: 'http://localhost:3100/automation-runtime',
+      builder_url:
+        'http://localhost:3100/automation-runtime/flows/flow_stage17',
+      initial_route: '/flows/flow_stage17',
+      jwt_token: 'stage17-session-token',
+      expires_at: '2026-04-28T14:05:00.000Z',
+      ttl_seconds: 120,
+      locale: 'ru',
+      brand_display_name: 'РђРІС‚РѕРјР°С‚РёР·Р°С†РёСЏ',
+      role: 'EDITOR',
+      permissions: {
+        can_view: true,
+        can_edit: true,
+        can_manage_connections: false,
+        can_open_diagnostics: false,
+      },
+      pieces_policy: {
+        pieces_filter_type: 'ALLOWED',
+        pieces_tags: ['lexframe-core', 'legal-core'],
+        policy_hash: 'sha256:policy',
+      },
+      sdk_config: {
+        container_id: 'activepieces-canvas-sess_stage17',
+        prefix: '/automation-runtime',
+        locale: 'ru',
+        brand_display_name: 'РђРІС‚РѕРјР°С‚РёР·Р°С†РёСЏ',
+        design_system: 'activepieces_like',
+        navigation_sync: true,
+      },
+      design_system: 'activepieces_like',
+      flow_binding: {
+        automation_id: 'aut_stage17',
+        activepieces_project_id: 'proj_stage17',
+        activepieces_flow_id: 'flow_stage17',
+        activepieces_flow_version_id: null,
+        sync_status: 'synced',
+      },
+      runtime_status: {
+        ap_app: 'ok',
+        ap_worker: 'unknown',
+        ap_db: 'unknown',
+        redis: 'unknown',
+      },
+    });
+
+    const result = await service.createSession(
+      actor,
+      access,
+      {
+        workspaceId: access.activeWorkspace!.id,
+        projectId: 'project_claim_001',
+        automationId: 'aut_stage17',
+        purpose: 'automation_canvas',
+        clientRoute:
+          '/app/projects/project_claim_001/automations/aut_stage17/automation',
+        preferredMode: 'auto',
+      },
+      {
+        requestId: 'req_stage17',
+        traceId: 'trace_stage17',
+      },
+    );
+
+    expect(result).toMatchObject({
+      status: 'ready',
+      session_id: 'sess_stage17',
+      mode: 'iframe_embed',
+      instance_url: 'http://localhost:3100/automation-runtime',
+      builder_url:
+        'http://localhost:3100/automation-runtime/flows/flow_stage17',
+      jwt_token: 'stage17-session-token',
+      locale: 'ru',
+      brand_display_name: expect.any(String),
+      role: 'EDITOR',
+      design_system: 'activepieces_like',
+      flow_binding: {
+        automation_id: 'aut_stage17',
+        activepieces_project_id: 'proj_stage17',
+        activepieces_flow_id: 'flow_stage17',
+        activepieces_flow_version_id: null,
+        sync_status: 'synced',
+      },
+    });
+    expect(activepiecesSessionService.createSession).toHaveBeenCalledWith(
+      actor,
+      access,
+      expect.objectContaining({
+        automationId: 'aut_stage17',
+        purpose: 'automation_canvas',
+      }),
+      expect.objectContaining({
+        requestId: 'req_stage17',
+        traceId: 'trace_stage17',
+      }),
+    );
+  });
+
+  it('propagates Stage 17.5 session access denial from the orchestration service', async () => {
+    const { service, activepiecesSessionService } = createService();
+    activepiecesSessionService.createSession.mockRejectedValue(
+      Object.assign(new Error('workspace mismatch'), {
+        code: 'WORKSPACE_ACCESS_DENIED',
+      }),
+    );
+
+    await expect(
+      service.createSession(
+        actor,
+        access,
+        {
+          workspaceId: 'ws_other',
+          projectId: 'project_claim_001',
+        automationId: 'aut_stage17',
+        purpose: 'automation_canvas',
+        clientRoute:
+          '/app/projects/project_claim_001/automations/aut_stage17/automation',
+      },
+        {
+          requestId: 'req_stage17',
+          traceId: 'trace_stage17',
+        },
+      ),
+    ).rejects.toMatchObject({
+      code: 'WORKSPACE_ACCESS_DENIED',
+    });
   });
 
   it('reuses an existing remote project binding when local CE returns a shared project id', async () => {

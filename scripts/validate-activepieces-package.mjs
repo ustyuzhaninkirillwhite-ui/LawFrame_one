@@ -26,6 +26,15 @@ check(
 check(source.includes("legalSearchPiece"), "Legal search piece is exported");
 check(source.includes("documentTemplatePiece"), "Document template piece is exported");
 check(source.includes("approvalRequestPiece"), "Approval request piece is exported");
+check(source.includes("aiGatewayPiece"), "AI Gateway piece is exported");
+check(
+  source.includes('endpoint: "/workflow-runtime/ai-gateway/actions/analyze"'),
+  "AI Gateway piece calls the LexFrame runtime endpoint",
+);
+check(
+  !/provider(Api)?Key|api[_-]?key/i.test(source),
+  "Activepieces package surface does not expose provider key fields",
+);
 check(source.includes("legalResearchWorkflowPreset"), "Workflow preset exists for smoke/runtime validation");
 check(source.includes("activepiecesSmokeFlows"), "Smoke flow manifest is exported");
 check(source.includes("activepiecesCompatibilityNotes"), "Compatibility notes are exported");

@@ -1,0 +1,20 @@
+{
+  "stage": "17.8",
+  "status": "implemented-live-visual-evidence-pending",
+  "date": "2026-04-28",
+  "artifacts": [
+    "packages/design-system-activepieces-bridge",
+    "docs/stage17/17.8/design-token-mapping.md",
+    "docs/stage17/17.8/license-decision-log.md",
+    "docs/stage17/17.8/visual-regression-plan.md",
+    "docs/stage17/17.8/a11y-report.md",
+    "docs/stage17/17.8/canvas-stock-like-proof.md",
+    "docs/stage17/17.8/acceptance-report.md",
+    "docs/evidence/stage17/17.8/check-results.md"
+  ],
+  "required_live_evidence_before_pass": [
+    "visual screenshots for required LexFrame routes",
+    "axe/keyboard/focus/contrast report",
+    "Activepieces Canvas stock-like screenshot and locator proof"
+  ]
+}

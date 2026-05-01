@@ -47,14 +47,9 @@ export function ProjectAutomations({ projectId }: { readonly projectId: string }
                   Детали
                 </Link>
               </Button>
-              <Button asChild variant="ghost">
-                <Link href={`/app/projects/${projectId}/automations/${automation.id}/builder`}>
-                  Builder
-                </Link>
-              </Button>
               <Button asChild>
-                <Link href={`/app/projects/${projectId}/automations/${automation.id}/advanced-builder`}>
-                  Advanced
+                <Link href={`/app/projects/${projectId}/automations/${automation.id}/automation`}>
+                  Автоматизация
                 </Link>
               </Button>
             </div>

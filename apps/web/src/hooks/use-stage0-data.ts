@@ -406,6 +406,19 @@ export function useStage15ProjectAutomations(projectId?: string | null) {
   });
 }
 
+export function useEnsureStage17CanvasAutomation(projectId?: string | null) {
+  const { apiClient } = useSessionBridge();
+  const { workspaceId } = useWorkspaceEnabled();
+  const invalidate = useStage15Invalidation();
+
+  return useMutation({
+    mutationFn: () => apiClient.ensureStage17CanvasAutomation(projectId!),
+    onSuccess: () => {
+      void invalidate(workspaceId);
+    },
+  });
+}
+
 export function useAutomationDetail(id = "aut_01hzyd8md4j4yhr40t1k0f8p9n") {
   const { apiClient } = useSessionBridge();
   const { enabled, workspaceId } = useWorkspaceEnabled();

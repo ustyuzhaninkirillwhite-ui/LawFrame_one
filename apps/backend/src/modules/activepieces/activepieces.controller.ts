@@ -3,6 +3,7 @@ import type {
   ActivepiecesRunSmokeRequest,
   ActivepiecesStepEventCallback,
   CreateActivepiecesEmbedTokenRequest,
+  CreateActivepiecesSessionRequest,
   CreateRunArtifactRequest,
   RuntimeApprovalGateCallback,
   RuntimeDeliveryGateCallback,
@@ -23,12 +24,14 @@ import {
   asRecord,
   expectString,
   expectStringArray,
+  optionalString,
   requestMeta,
 } from '../../common/http/request-parsing';
 import {
   Body,
   Controller,
   Get,
+  Header,
   Headers,
   HttpCode,
   Param,
@@ -62,6 +65,60 @@ export class ActivepiecesController {
       context.actor,
       context.access,
       parseCreateEmbedTokenRequest(body),
+      requestMeta(request),
+    );
+  }
+
+  @Post('activepieces/session')
+  @HttpCode(200)
+  @Header('Cache-Control', 'no-store, no-cache, private')
+  @Header('Referrer-Policy', 'no-referrer')
+  @UseGuards(AuthGuard, WorkspaceContextGuard)
+  createSession(
+    @LexframeRequestContext() context: LexframeRequest['lexframe'],
+    @Body() body: unknown,
+    @Req() request: LexframeRequest,
+  ) {
+    if (!context?.actor || !context.access) {
+      throw new Error('Workspace access context was not attached.');
+    }
+
+    return this.activepiecesService.createSession(
+      context.actor,
+      context.access,
+      parseCreateSessionRequest(body),
+      requestMeta(request),
+    );
+  }
+
+  @Post('activepieces/managed-authn/external-token')
+  @HttpCode(200)
+  @Header('Cache-Control', 'no-store, no-cache, private')
+  @Header('Referrer-Policy', 'no-referrer')
+  createManagedAuthnExternalToken(@Body() body: unknown) {
+    return this.activepiecesService.createManagedAuthnExternalToken(
+      parseManagedAuthnExternalTokenRequest(body),
+    );
+  }
+
+  @Post('activepieces/session/:sessionId/initialized')
+  @HttpCode(200)
+  @Header('Cache-Control', 'no-store, no-cache, private')
+  @Header('Referrer-Policy', 'no-referrer')
+  @UseGuards(AuthGuard, WorkspaceContextGuard)
+  initializeSession(
+    @LexframeRequestContext() context: LexframeRequest['lexframe'],
+    @Param('sessionId') sessionId: string,
+    @Req() request: LexframeRequest,
+  ) {
+    if (!context?.actor || !context.access) {
+      throw new Error('Workspace access context was not attached.');
+    }
+
+    return this.activepiecesService.initializeSession(
+      context.actor,
+      context.access,
+      sessionId,
       requestMeta(request),
     );
   }
@@ -353,6 +410,155 @@ function parseCreateEmbedTokenRequest(
     ),
     ...(purpose ? { purpose } : {}),
   };
+}
+
+function parseCreateSessionRequest(
+  body: unknown,
+): CreateActivepiecesSessionRequest {
+  const value = asRecord(body);
+  const purpose = value.purpose;
+  const preferredMode = value.preferred_mode;
+  const modePreference = value.mode_preference;
+  const rawAutomationId = value.automation_id;
+  const deniedField = SESSION_REQUEST_DENYLIST.find((field) => field in value);
+
+  if (deniedField) {
+    throw new AppHttpException(
+      'INVALID_CLIENT_FIELD',
+      400,
+      `Activepieces session field ${deniedField} is server-controlled.`,
+    );
+  }
+
+  if (purpose !== 'automation_canvas') {
+    throw new AppHttpException(
+      'INVALID_REQUEST',
+      400,
+      'Activepieces session purpose is invalid.',
+    );
+  }
+
+  const parsedPreferredMode = expectPreferredMode(
+    preferredMode,
+    'preferred_mode',
+  );
+  const parsedModePreference = expectPreferredMode(
+    modePreference,
+    'mode_preference',
+  );
+  if (
+    parsedPreferredMode &&
+    parsedModePreference &&
+    parsedPreferredMode !== parsedModePreference
+  ) {
+    throw new AppHttpException(
+      'INVALID_CLIENT_FIELD',
+      400,
+      'Activepieces session mode_preference conflicts with preferred_mode.',
+    );
+  }
+
+  if (
+    rawAutomationId !== undefined &&
+    rawAutomationId !== null &&
+    (typeof rawAutomationId !== 'string' || rawAutomationId.trim().length === 0)
+  ) {
+    throw new AppHttpException(
+      'INVALID_REQUEST',
+      400,
+      'Activepieces session automation_id must be a string or null.',
+    );
+  }
+
+  const workspaceId = optionalString(value.workspace_id);
+
+  return {
+    ...(workspaceId ? { workspaceId } : {}),
+    projectId: expectString(
+      value.project_id,
+      'Activepieces session project_id is required.',
+    ),
+    automationId:
+      typeof rawAutomationId === 'string' ? rawAutomationId.trim() : null,
+    purpose: 'automation_canvas',
+    clientRoute: expectString(
+      value.client_route,
+      'Activepieces session client_route is required.',
+    ),
+    ...(parsedPreferredMode
+      ? {
+          preferredMode: parsedPreferredMode,
+        }
+      : {}),
+    ...(parsedModePreference
+      ? {
+          modePreference: parsedModePreference,
+        }
+      : {}),
+    ...(typeof value.return_builder_config === 'boolean'
+      ? { returnBuilderConfig: value.return_builder_config }
+      : {}),
+    ...(typeof value.client_trace_id === 'string'
+      ? { clientTraceId: value.client_trace_id.trim() || null }
+      : value.client_trace_id === null
+        ? { clientTraceId: null }
+        : {}),
+    ...(typeof value.idempotency_key === 'string'
+      ? { idempotencyKey: value.idempotency_key.trim() || null }
+      : value.idempotency_key === null
+        ? { idempotencyKey: null }
+        : {}),
+  };
+}
+
+function parseManagedAuthnExternalTokenRequest(body: unknown) {
+  const value = asRecord(body);
+  return {
+    externalAccessToken: expectString(
+      value.externalAccessToken,
+      'Activepieces managed auth externalAccessToken is required.',
+    ),
+  };
+}
+
+const SESSION_REQUEST_DENYLIST = [
+  'role',
+  'activepieces_project_id',
+  'activepiecesProjectId',
+  'activepieces_flow_id',
+  'activepiecesFlowId',
+  'piecesFilterType',
+  'pieces_filter_type',
+  'piecesTags',
+  'pieces_tags',
+  'api_key',
+  'apiKey',
+  'signing_key',
+  'signingKey',
+  'provider_key',
+  'providerKey',
+  'connection_credentials',
+  'connectionCredentials',
+] as const;
+
+function expectPreferredMode(value: unknown, fieldName: string) {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (
+    value === 'auto' ||
+    value === 'iframe_embed' ||
+    value === 'reverse_proxy'
+  ) {
+    return value;
+  }
+
+  throw new AppHttpException(
+    'INVALID_CLIENT_FIELD',
+    400,
+    `Activepieces session ${fieldName} is invalid.`,
+  );
 }
 
 function parseSyncRuntimeRequest(body: unknown): SyncAutomationRuntimeRequest {

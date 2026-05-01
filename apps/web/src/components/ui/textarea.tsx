@@ -1,3 +1,4 @@
+import { formRecipe } from "@lexframe/design-system-activepieces-bridge/recipes";
 import * as React from "react";
 import { t } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
@@ -10,10 +11,7 @@ export const Textarea = React.forwardRef<
     <textarea
       ref={ref}
       placeholder={placeholder ? t(placeholder) : undefined}
-      className={cn(
-        "min-h-32 w-full rounded-[24px] border border-[color:var(--line)] bg-white/4 px-4 py-3 text-sm text-[color:var(--foreground)] outline-none transition focus:border-[color:var(--accent)]",
-        className,
-      )}
+      className={cn(formRecipe.textarea, className)}
       {...props}
     />
   );

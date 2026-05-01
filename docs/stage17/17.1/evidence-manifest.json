@@ -1,0 +1,329 @@
+{
+    "stage":  "17.1",
+    "status":  "BLOCKED",
+    "generated_at":  "2026-04-28T16:16:07.1876368+02:00",
+    "activepieces":  {
+                         "source_dir":  "E:\\activepieces-main",
+                         "git_repository":  false,
+                         "commit":  null,
+                         "branch":  null,
+                         "dirty":  null,
+                         "package":  "activepieces@0.82.0",
+                         "package_manager":  "bun@1.3.3",
+                         "bun_available":  false
+                     },
+    "lexframe":  {
+                     "source_dir":  "E:\\Law_frame_main",
+                     "commit":  "ec145113ad4fdeba40a7826a4122032b8f52e9d3",
+                     "branch":  "codex/17",
+                     "dirty":  true,
+                     "package":  "lexframe@0.1.0",
+                     "package_manager":  "pnpm@10.11.1 via corepack"
+                 },
+    "artifacts":  [
+                      {
+                          "type":  "doc",
+                          "id":  "activepieces-design-token-inventory",
+                          "path":  "docs/stage17/17.1/activepieces-design-token-inventory.md",
+                          "sha256":  "86ad074c0ca91ab2ea7c4cf6ec44c9da0244015a906494904cafc754dc005e47"
+                      },
+                      {
+                          "type":  "doc",
+                          "id":  "activepieces-i18n-branding-inventory",
+                          "path":  "docs/stage17/17.1/activepieces-i18n-branding-inventory.md",
+                          "sha256":  "3f1351575d0eb904a15427e8fc69703d62a2804426b5d3c4fe5395a1032d6951"
+                      },
+                      {
+                          "type":  "doc",
+                          "id":  "activepieces-license-boundary",
+                          "path":  "docs/stage17/17.1/activepieces-license-boundary.md",
+                          "sha256":  "b9b75c373e0e2dcabc1dcd3aefded28d19068f768d0a1cd89dcf22e08350065c"
+                      },
+                      {
+                          "type":  "doc",
+                          "id":  "ADR-17.1-local-owner-key-vault",
+                          "path":  "docs/stage17/17.1/ADR-17.1-local-owner-key-vault.md",
+                          "sha256":  "bbac7fb914e81194d31cde2489e1636c8cc65d8685b37456cce683202587cd01"
+                      },
+                      {
+                          "type":  "doc",
+                          "id":  "ADR-17.2-activepieces-design-unification",
+                          "path":  "docs/stage17/17.1/ADR-17.2-activepieces-design-unification.md",
+                          "sha256":  "835c0921f27c3fb5358a228bbdafda406561b66d57bfac9d2e3fce1e90ab482d"
+                      },
+                      {
+                          "type":  "doc",
+                          "id":  "ADR-17.3-activepieces-license-boundary",
+                          "path":  "docs/stage17/17.1/ADR-17.3-activepieces-license-boundary.md",
+                          "sha256":  "1d852ae04f9fda4fb47faef9663557c5f3201fda582f10d52e7243bc790d6a88"
+                      },
+                      {
+                          "type":  "doc",
+                          "id":  "ADR-17.4-stage17-requirements-freeze",
+                          "path":  "docs/stage17/17.1/ADR-17.4-stage17-requirements-freeze.md",
+                          "sha256":  "e9393deefa50b75df2401ee23f5f374f7691211d0a432cc2a8d5d3e857a37a49"
+                      },
+                      {
+                          "type":  "doc",
+                          "id":  "change-request-log",
+                          "path":  "docs/stage17/17.1/change-request-log.csv",
+                          "sha256":  "d5f312a5e1836bfcb7f7b21effc708cee12476063f0acb6c11e1ee146873be9d"
+                      },
+                      {
+                          "type":  "doc",
+                          "id":  "lexframe-ui-design-inventory",
+                          "path":  "docs/stage17/17.1/lexframe-ui-design-inventory.md",
+                          "sha256":  "97bb7bf81e9a46fc7b30e12d5fb620f2784c6e21dd8d400778d3b22cce17fdb0"
+                      },
+                      {
+                          "type":  "doc",
+                          "id":  "readiness-summary",
+                          "path":  "docs/stage17/17.1/readiness-summary.md",
+                          "sha256":  "c44ee05e2940898c6e8943ba708f0460b273d3f1ae7630ff72d9207b2f58f159"
+                      },
+                      {
+                          "type":  "doc",
+                          "id":  "README",
+                          "path":  "docs/stage17/17.1/README.md",
+                          "sha256":  "d0ded9f95443270eda793e2b921792180544be5e1dc52c5289b37286eb8a8baf"
+                      },
+                      {
+                          "type":  "doc",
+                          "id":  "requirements-freeze",
+                          "path":  "docs/stage17/17.1/requirements-freeze.md",
+                          "sha256":  "913ca45f4b3d5026facfeb2f709a03a71b3b1a81cba05eb9866edc24a3d3864c"
+                      },
+                      {
+                          "type":  "doc",
+                          "id":  "secret-config-surface",
+                          "path":  "docs/stage17/17.1/secret-config-surface.md",
+                          "sha256":  "a8283e1dd6ead482c81f6c58cd73ffb248595a5a34bd42dc67cc289f233ceb7f"
+                      },
+                      {
+                          "type":  "doc",
+                          "id":  "source-inventory",
+                          "path":  "docs/stage17/17.1/source-inventory.md",
+                          "sha256":  "26beb5fae67890413f2e301fbb4d7961a2368ebe877c0f40597f9dface5b2f9c"
+                      },
+                      {
+                          "type":  "evidence",
+                          "id":  "20260428-activepieces-source-state",
+                          "path":  "artifacts/stage17.1/command-logs/20260428-activepieces-source-state.txt",
+                          "sha256":  "c082934116c04570eab9e4ed19212a865614e6f41c8c0046e3af920493320ba4"
+                      },
+                      {
+                          "type":  "evidence",
+                          "id":  "20260428-lexframe-authenticated-screenshot-capture",
+                          "path":  "artifacts/stage17.1/command-logs/20260428-lexframe-authenticated-screenshot-capture.txt",
+                          "sha256":  "bbbdf5c0b23bc830ec322d8c0952be8482413a3f905e232cefe98e1a9174cffd"
+                      },
+                      {
+                          "type":  "evidence",
+                          "id":  "20260428-lexframe-screenshot-capture",
+                          "path":  "artifacts/stage17.1/command-logs/20260428-lexframe-screenshot-capture.txt",
+                          "sha256":  "613d49098b1596f0afbfe152a98550dae373dcddfcbed8aea390e1e237700f7a"
+                      },
+                      {
+                          "type":  "evidence",
+                          "id":  "20260428-lexframe-source-state",
+                          "path":  "artifacts/stage17.1/command-logs/20260428-lexframe-source-state.txt",
+                          "sha256":  "503b47b6d13afbf1b3cc7ca626aed9a820d2e80a75ab8f30400eddb978be0290"
+                      },
+                      {
+                          "type":  "evidence",
+                          "id":  "activepieces-secret-config-sanitized",
+                          "path":  "artifacts/stage17.1/inventories/activepieces-secret-config-sanitized.txt",
+                          "sha256":  "17d68f4f573c3af941b63463ccb9f1a46e0ca8c46e8b965ea002dd165a00cd9f"
+                      },
+                      {
+                          "type":  "evidence",
+                          "id":  "activepieces-source-files-sanitized",
+                          "path":  "artifacts/stage17.1/inventories/activepieces-source-files-sanitized.txt",
+                          "sha256":  "cdf4c58262c7839aacb720ceb80a38fcff84271ab90b1f049e263d7292332008"
+                      },
+                      {
+                          "type":  "evidence",
+                          "id":  "lexframe-secret-config-sanitized",
+                          "path":  "artifacts/stage17.1/inventories/lexframe-secret-config-sanitized.txt",
+                          "sha256":  "5e4d264ce3a214799250df2d944674f2560d2303663869aa58fb9a633b3773a1"
+                      },
+                      {
+                          "type":  "evidence",
+                          "id":  "lexframe-ui-design-sanitized",
+                          "path":  "artifacts/stage17.1/inventories/lexframe-ui-design-sanitized.txt",
+                          "sha256":  "fe38086681873e79f357dac1a148889915b36fa11b2ec98a893f766a08664225"
+                      },
+                      {
+                          "type":  "evidence",
+                          "id":  "secret-scan-redacted",
+                          "path":  "artifacts/stage17.1/reports/secret-scan-redacted.txt",
+                          "sha256":  "ad748e884de497e4966105102b8cfe0fc371d4cf2b7458622f66f6ece82e0a76"
+                      },
+                      {
+                          "type":  "evidence",
+                          "id":  "BLOCKED-activepieces-baseline",
+                          "path":  "artifacts/stage17.1/screenshots/activepieces/BLOCKED-activepieces-baseline.txt",
+                          "sha256":  "3a48c5e03ab6a550941bfa19a46bf19b99a29515f708ca08709d0948ced435f3"
+                      },
+                      {
+                          "type":  "evidence",
+                          "id":  "BLOCKED-lexframe-baseline-caveat",
+                          "path":  "artifacts/stage17.1/screenshots/lexframe/BLOCKED-lexframe-baseline-caveat.txt",
+                          "sha256":  "0f2628fce17b7de651e89d7baf4fe3c65942d3079652f67ab540ae70b43a08b1"
+                      },
+                      {
+                          "type":  "screenshot",
+                          "id":  "lf-01-appshell-1440x900-ec145113",
+                          "path":  "artifacts/stage17.1/screenshots/lexframe/lf-01-appshell-1440x900-ec145113.png",
+                          "sha256":  "fb0201f82247813b79f04957d28bd632da44e2cb900881836f3207a7dddf25c3"
+                      },
+                      {
+                          "type":  "screenshot-metadata",
+                          "id":  "lf-01-appshell-workspace-home-1440x900-ec145113.metadata",
+                          "path":  "artifacts/stage17.1/screenshots/lexframe/lf-01-appshell-workspace-home-1440x900-ec145113.metadata.json",
+                          "sha256":  "c38d1e708af752ac5b640cb1fa04dd45e86fa76aaf1145ceab1722d3280f0f99"
+                      },
+                      {
+                          "type":  "screenshot",
+                          "id":  "lf-01-appshell-workspace-home-1440x900-ec145113",
+                          "path":  "artifacts/stage17.1/screenshots/lexframe/lf-01-appshell-workspace-home-1440x900-ec145113.png",
+                          "sha256":  "5f5c8dcb41bc1e7edcb41d7ef41482fdd47fe9db85632b07d01aca449f6c41c5"
+                      },
+                      {
+                          "type":  "screenshot",
+                          "id":  "lf-01-appshell-workspace-home-1440x900-ec145113-wait",
+                          "path":  "artifacts/stage17.1/screenshots/lexframe/lf-01-appshell-workspace-home-1440x900-ec145113-wait.png",
+                          "sha256":  "bd0ce2d543b6e762a09d00be47175a327f6500e64e8b74cd770aced111324ca1"
+                      },
+                      {
+                          "type":  "screenshot-metadata",
+                          "id":  "lf-02-project-home-1440x900-ec145113.metadata",
+                          "path":  "artifacts/stage17.1/screenshots/lexframe/lf-02-project-home-1440x900-ec145113.metadata.json",
+                          "sha256":  "2285ae0967fcadc91dd5e42677afed19671351342939fc3e872488b0d4826733"
+                      },
+                      {
+                          "type":  "screenshot",
+                          "id":  "lf-02-project-home-1440x900-ec145113",
+                          "path":  "artifacts/stage17.1/screenshots/lexframe/lf-02-project-home-1440x900-ec145113.png",
+                          "sha256":  "5f5c8dcb41bc1e7edcb41d7ef41482fdd47fe9db85632b07d01aca449f6c41c5"
+                      },
+                      {
+                          "type":  "screenshot-metadata",
+                          "id":  "lf-03-automations-list-1440x900-ec145113.metadata",
+                          "path":  "artifacts/stage17.1/screenshots/lexframe/lf-03-automations-list-1440x900-ec145113.metadata.json",
+                          "sha256":  "ae5b66cb86df9bc7d64a7bb6f17c3ff063181cd686a4693cf84869711fbd94c1"
+                      },
+                      {
+                          "type":  "screenshot",
+                          "id":  "lf-03-automations-list-1440x900-ec145113",
+                          "path":  "artifacts/stage17.1/screenshots/lexframe/lf-03-automations-list-1440x900-ec145113.png",
+                          "sha256":  "5f5c8dcb41bc1e7edcb41d7ef41482fdd47fe9db85632b07d01aca449f6c41c5"
+                      },
+                      {
+                          "type":  "screenshot-metadata",
+                          "id":  "lf-04-automation-detail-1440x900-ec145113.metadata",
+                          "path":  "artifacts/stage17.1/screenshots/lexframe/lf-04-automation-detail-1440x900-ec145113.metadata.json",
+                          "sha256":  "6a40a9abe407b15cfeeccfe2f8ca0bd7ca036ac5ce2f6e7e346f1d4a1c5865d3"
+                      },
+                      {
+                          "type":  "screenshot",
+                          "id":  "lf-04-automation-detail-1440x900-ec145113",
+                          "path":  "artifacts/stage17.1/screenshots/lexframe/lf-04-automation-detail-1440x900-ec145113.png",
+                          "sha256":  "5f5c8dcb41bc1e7edcb41d7ef41482fdd47fe9db85632b07d01aca449f6c41c5"
+                      },
+                      {
+                          "type":  "screenshot-metadata",
+                          "id":  "lf-05-chat-1440x900-ec145113.metadata",
+                          "path":  "artifacts/stage17.1/screenshots/lexframe/lf-05-chat-1440x900-ec145113.metadata.json",
+                          "sha256":  "46d46a9548ac157bcb7417c0ca0a91be7ccf267fc3d2077f1258bf50153cee06"
+                      },
+                      {
+                          "type":  "screenshot",
+                          "id":  "lf-05-chat-1440x900-ec145113",
+                          "path":  "artifacts/stage17.1/screenshots/lexframe/lf-05-chat-1440x900-ec145113.png",
+                          "sha256":  "5f5c8dcb41bc1e7edcb41d7ef41482fdd47fe9db85632b07d01aca449f6c41c5"
+                      },
+                      {
+                          "type":  "screenshot-metadata",
+                          "id":  "lf-06-documents-ui-1440x900-ec145113.metadata",
+                          "path":  "artifacts/stage17.1/screenshots/lexframe/lf-06-documents-ui-1440x900-ec145113.metadata.json",
+                          "sha256":  "9ed0164aceb9349e4e032403a8d717bff8e41407acbbb288cbcfe9f4d0fb38db"
+                      },
+                      {
+                          "type":  "screenshot",
+                          "id":  "lf-06-documents-ui-1440x900-ec145113",
+                          "path":  "artifacts/stage17.1/screenshots/lexframe/lf-06-documents-ui-1440x900-ec145113.png",
+                          "sha256":  "5f5c8dcb41bc1e7edcb41d7ef41482fdd47fe9db85632b07d01aca449f6c41c5"
+                      },
+                      {
+                          "type":  "screenshot-metadata",
+                          "id":  "lf-07-run-center-1440x900-ec145113.metadata",
+                          "path":  "artifacts/stage17.1/screenshots/lexframe/lf-07-run-center-1440x900-ec145113.metadata.json",
+                          "sha256":  "50799cb1ef839597d9e0e34c7fb5f257891f77876bef1382f2834e57905495b6"
+                      },
+                      {
+                          "type":  "screenshot",
+                          "id":  "lf-07-run-center-1440x900-ec145113",
+                          "path":  "artifacts/stage17.1/screenshots/lexframe/lf-07-run-center-1440x900-ec145113.png",
+                          "sha256":  "86a234661be43949473efe65c459fed84aaf6f44d990f412a2e0513d3e750173"
+                      },
+                      {
+                          "type":  "screenshot-metadata",
+                          "id":  "lf-08-admin-integrations-1440x900-ec145113.metadata",
+                          "path":  "artifacts/stage17.1/screenshots/lexframe/lf-08-admin-integrations-1440x900-ec145113.metadata.json",
+                          "sha256":  "fb244e6faffb302acb80e2a34e39bc1b7dba2f0dc7d0c39863323558552e8224"
+                      },
+                      {
+                          "type":  "screenshot",
+                          "id":  "lf-08-admin-integrations-1440x900-ec145113",
+                          "path":  "artifacts/stage17.1/screenshots/lexframe/lf-08-admin-integrations-1440x900-ec145113.png",
+                          "sha256":  "5f5c8dcb41bc1e7edcb41d7ef41482fdd47fe9db85632b07d01aca449f6c41c5"
+                      },
+                      {
+                          "type":  "screenshot-metadata",
+                          "id":  "lf-09-forms-settings-1440x900-ec145113.metadata",
+                          "path":  "artifacts/stage17.1/screenshots/lexframe/lf-09-forms-settings-1440x900-ec145113.metadata.json",
+                          "sha256":  "959c09f4386f398c6493b618720f12943fb376b90bbad4d24f7e0028743633ba"
+                      },
+                      {
+                          "type":  "screenshot",
+                          "id":  "lf-09-forms-settings-1440x900-ec145113",
+                          "path":  "artifacts/stage17.1/screenshots/lexframe/lf-09-forms-settings-1440x900-ec145113.png",
+                          "sha256":  "86a234661be43949473efe65c459fed84aaf6f44d990f412a2e0513d3e750173"
+                      },
+                      {
+                          "type":  "screenshot-metadata",
+                          "id":  "lf-10-error-empty-loading-1440x900-ec145113.metadata",
+                          "path":  "artifacts/stage17.1/screenshots/lexframe/lf-10-error-empty-loading-1440x900-ec145113.metadata.json",
+                          "sha256":  "697c4ad0962a5aa97e4e90cf106dbbdef2cd5ee3f572e78e69fea97cabc8723a"
+                      },
+                      {
+                          "type":  "screenshot",
+                          "id":  "lf-10-error-empty-loading-1440x900-ec145113",
+                          "path":  "artifacts/stage17.1/screenshots/lexframe/lf-10-error-empty-loading-1440x900-ec145113.png",
+                          "sha256":  "5f5c8dcb41bc1e7edcb41d7ef41482fdd47fe9db85632b07d01aca449f6c41c5"
+                      }
+                  ],
+    "open_blockers":  [
+                          "B-17.1-001 Activepieces source is not a git checkout",
+                          "B-17.1-002 bun@1.3.3 is not available in PATH",
+                          "B-17.1-003 Activepieces runtime unavailable; AP-01..AP-08 not captured",
+                          "B-17.1-004 LexFrame demo auth bootstrap returned HTTP 500; LF baseline partial",
+                          "B-17.1-005 Legal/license sign-off pending",
+                          "B-17.1-006 Product/security/design/technical owner sign-off pending"
+                      ],
+    "accepted_adrs":  [
+                          "ADR-17.1",
+                          "ADR-17.2",
+                          "ADR-17.4"
+                      ],
+    "conditionally_accepted_adrs":  [
+                                        "ADR-17.3"
+                                    ],
+    "contains_secret_values":  false,
+    "secret_scan":  {
+                        "project_script":  "passed",
+                        "gitleaks":  "not_found",
+                        "report":  "artifacts/stage17.1/reports/secret-scan-redacted.txt"
+                    }
+}

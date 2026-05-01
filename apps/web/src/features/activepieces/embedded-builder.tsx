@@ -14,7 +14,7 @@ export function ActivepiecesEmbeddedBuilder({
   baseUrl,
   projectId,
   flowId,
-  title = 'Activepieces builder',
+  title = 'Конструктор автоматизаций',
   requirements = [],
 }: ActivepiecesEmbeddedBuilderProps) {
   const blocked = requirements.some(
@@ -25,13 +25,13 @@ export function ActivepiecesEmbeddedBuilder({
 
   if (blocked) {
     return (
-      <section aria-label="Activepieces runtime requirements">
-        <h2>Runtime requirements</h2>
+      <section aria-label="Требования runtime конструктора">
+        <h2>Требования runtime конструктора</h2>
         <ul>
           {requirements.map((requirement) => (
             <li key={requirement.code}>
               <span>{requirement.label}</span>
-              <span>{requirement.status}</span>
+              <span>{formatRequirementStatus(requirement.status)}</span>
             </li>
           ))}
         </ul>
@@ -54,4 +54,17 @@ export function ActivepiecesEmbeddedBuilder({
       }}
     />
   );
+}
+
+function formatRequirementStatus(status: RuntimeRequirementView['status']) {
+  switch (status) {
+    case 'configured':
+      return 'Готово';
+    case 'missing':
+      return 'Не настроено';
+    case 'blocked_by_policy':
+      return 'Заблокировано политикой';
+    default:
+      return 'Неизвестно';
+  }
 }

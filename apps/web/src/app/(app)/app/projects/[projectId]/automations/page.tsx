@@ -1,4 +1,4 @@
-import { AutomationWorkbench } from "@/components/automations/automation-workbench";
+import { ProjectAutomationsLanding } from "@/components/shell/project-automations-landing";
 
 export default async function ProjectAutomationsPage({
   params,
@@ -7,5 +7,5 @@ export default async function ProjectAutomationsPage({
 }) {
   const { projectId } = await params;
 
-  return <AutomationWorkbench projectId={projectId} />;
+  return <ProjectAutomationsLanding projectId={projectId} />;
 }

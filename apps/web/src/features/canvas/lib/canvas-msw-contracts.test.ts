@@ -16,6 +16,7 @@ describe("Canvas MSW contract gate", () => {
     expect(canvasMswContractEndpoints).toContain(
       "POST /automations/:id/canvas/compile-preview",
     );
+    expect(canvasMswContractEndpoints).toContain("POST /activepieces/session");
     expect(canvasMswContractEndpoints).toContain("POST /activepieces/embed-token");
   });
 
@@ -40,6 +41,8 @@ describe("Canvas MSW contract gate", () => {
         "autosave conflict",
         "publish blocked by validation",
         "compile preview succeeds",
+        "automation session degraded by local keys",
+        "automation session unavailable",
         "reverse sync conflict",
       ]),
     );

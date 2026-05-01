@@ -121,11 +121,11 @@ export const ruMessages: Record<string, string> = {
   "created": "создано",
   "progress": "ход",
   "View source updates": "Проверить обновления источника",
-  "Open builder": "Открыть конструктор",
+  "Open builder": "Автоматизация",
   "Back to documents": "Назад к документам",
   "Back to runs": "Назад к запускам",
   "Open document": "Открыть документ",
-  "Open Activepieces": "Открыть Activepieces",
+  "Open Activepieces": "Открыть автоматизацию",
   "Sync runtime": "Синхронизировать runtime",
   "Run smoke": "Запустить проверку",
   "Start run": "Запустить",
@@ -188,7 +188,7 @@ export const ruPageMessages: Record<string, string> = {
   "Р—РґРµСЃСЊ СЃС…РѕРґСЏС‚СЃСЏ security assumptions LexFrame: backend-only secrets, approval-first external delivery, traceability, reauth РґР»СЏ risk actions Рё browser access С‚РѕР»СЊРєРѕ Рє RLS-safe РґР°РЅРЅС‹Рј.":
     "Здесь сходятся допущения безопасности LexFrame: секреты только на backend, внешняя отправка через согласование, трассируемость, повторная авторизация для рискованных действий и доступ браузера только к RLS-safe данным.",
   "owner / admin / security_admin": "владелец / администратор / администратор безопасности",
-  activepieces: "Activepieces",
+  activepieces: "Автоматизация",
   "Builder access is short-lived, scoped and incident-aware.":
     "Доступ к конструктору краткосрочный, ограниченный и учитывает инциденты.",
   "The control plane shows token TTL, incident locks and runtime connection posture without ever exposing backend credentials.":
@@ -240,7 +240,7 @@ export const ruPageMessages: Record<string, string> = {
   "Stage 4 binds install, sync, builder, and execution into one runtime contour.":
     "Этап 4 связывает установку, синхронизацию, конструктор и выполнение в единый runtime-контур.",
   "The detail card keeps the pinned automation, runtime binding, connections, pieces, warnings, and run history in one place. Activepieces stays downstream runtime, not the source of truth.":
-    "Карточка деталей объединяет закреплённую автоматизацию, runtime-привязку, подключения, pieces, предупреждения и историю запусков. Activepieces остаётся исполнительным runtime, а не источником истины.",
+    "Карточка деталей объединяет закреплённую автоматизацию, runtime-привязку, подключения, модули, предупреждения и историю запусков. Конструктор остаётся исполнительным runtime, а не источником истины.",
   runtime: "runtime",
   builder: "конструктор",
   "Builder session РєРѕСЂРѕС‚РєРѕР¶РёРІСѓС‰Р°СЏ, backend-issued Рё РїСЂРёРІСЏР·Р°РЅР° Рє runtime binding.":
@@ -280,7 +280,7 @@ export const ruPageMessages: Record<string, string> = {
   "Product templates remain canonical long before runtime is production-ready.":
     "Продуктовые шаблоны остаются каноническими задолго до готовности runtime.",
   "Р—РґРµСЃСЊ РєР°С‚Р°Р»РѕРі С€Р°Р±Р»РѕРЅРѕРІ СѓР¶Рµ СЃСѓС‰РµСЃС‚РІСѓРµС‚ РєР°Рє С‡Р°СЃС‚СЊ product model: ownership, readiness, module requirements Рё permission vocabulary РІРёРґРЅС‹ РґРѕ СЂРµР°Р»СЊРЅРѕРіРѕ Activepieces execution.":
-    "Каталог шаблонов уже существует как часть продуктовой модели: владение, готовность, требования модулей и словарь прав видны до реального выполнения в Activepieces.",
+    "Каталог шаблонов уже существует как часть продуктовой модели: владение, готовность, требования модулей и словарь прав видны до реального runtime-выполнения.",
   "contract driven": "по контракту",
   "my templates": "мои шаблоны",
   "Workspace drafts stay separate from product and public templates.":
@@ -622,7 +622,7 @@ export const ruPermissionScopes: Record<string, string> = {
   module: "модули",
   ai: "ИИ",
   automation: "автоматизации",
-  activepieces: "Activepieces",
+  activepieces: "Автоматизация",
   approval: "согласования",
   connection: "подключения",
   moderation: "модерация",
@@ -825,12 +825,12 @@ export const ruPermissions: Record<string, { readonly label: string; readonly de
     description: "Использование внутреннего стенда проверки ИИ и подсказок.",
   },
   "activepieces.open_builder": {
-    label: "Открытие конструктора Activepieces",
+    label: "Открытие конструктора автоматизаций",
     description: "Открытие встроенного конструктора с ограниченным токеном.",
   },
   "activepieces.sync_flow": {
-    label: "Синхронизация Activepieces",
-    description: "Синхронизация runtime-проекта и flow.",
+    label: "Синхронизация конструктора автоматизаций",
+    description: "Синхронизация runtime-проекта и автоматизации.",
   },
   "approval.route.manage": {
     label: "Управление маршрутами согласования",

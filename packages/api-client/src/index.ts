@@ -1,8 +1,13 @@
 import type {
   AccessReviewCampaign,
+  ActivepiecesAiTestPolicyWire,
   ActivepiecesIntegrationStatus,
   ActivepiecesRunSmokeRequest,
   ActivepiecesRunSmokeResponse,
+  ActivepiecesSessionResponse,
+  ActivepiecesSessionDiagnosticsWire,
+  ActivepiecesSessionWarningWire,
+  ActivepiecesSessionWireResponse,
   ActivepiecesWorkspaceSecurityState,
   AiChatMessageSummary,
   AiChatResponse,
@@ -129,6 +134,12 @@ import type {
   ClauseLibraryItemSummary,
   CreateApprovalRouteRequest,
   CreateActivepiecesEmbedTokenRequest,
+  CreateActivepiecesSessionRequest,
+  CreateActivepiecesSessionWireRequest,
+  InitializeActivepiecesSessionRequest,
+  InitializeActivepiecesSessionResponse,
+  InitializeActivepiecesSessionWireResponse,
+  InitializeActivepiecesSessionWireRequest,
   CreateAutomationTemplateRequest,
   CreateAutomationTemplateVersionRequest,
   CreateClauseLibraryItemRequest,
@@ -252,6 +263,7 @@ import type {
   Stage15ProjectDetail,
   Stage15ProjectListResponse,
   Stage15ProjectSnapshot,
+  Stage17CanvasEnsureResponse,
   Stage15WorkflowDraftMaterializeRequest,
   Stage15WorkflowDraftMaterializeResponse,
   StartAutomationRunResponse,
@@ -497,7 +509,11 @@ export interface ApiClient {
   ): Promise<CanvasAuditListResponse["events"][number]>;
   exportAutomationCanvasAuditEvents(
     id: string,
-    input: { readonly from?: string | null; readonly to?: string | null; readonly format?: "json" | "jsonl" },
+    input: {
+      readonly from?: string | null;
+      readonly to?: string | null;
+      readonly format?: "json" | "jsonl";
+    },
   ): Promise<CanvasAuditExportResponse>;
   getAutomationCanvasAuditHashChainStatus(
     id: string,
@@ -528,7 +544,9 @@ export interface ApiClient {
     id: string,
     input?: CanvasDraftRequest,
   ): Promise<CanvasDraftOpenResponse>;
-  getAutomationCanvasVersionState(id: string): Promise<CanvasVersionStateResponse>;
+  getAutomationCanvasVersionState(
+    id: string,
+  ): Promise<CanvasVersionStateResponse>;
   getAutomationCanvasVersions(
     id: string,
     input?: {
@@ -709,7 +727,10 @@ export interface ApiClient {
   ): Promise<CanvasRollbackResponse>;
   emergencyDisableAutomationCanvas(
     id: string,
-    input: { readonly reason: string; readonly idempotency_key?: string | null },
+    input: {
+      readonly reason: string;
+      readonly idempotency_key?: string | null;
+    },
   ): Promise<CanvasRollbackResponse>;
   getAutomationCanvasRuntimeProjection(
     id: string,
@@ -736,7 +757,9 @@ export interface ApiClient {
     input: RuntimeSyncRequest,
   ): Promise<CompileResponse>;
   getAutomationRuntimeBinding(id: string): Promise<RuntimeBindingDto | null>;
-  getAutomationRuntimeSyncStatus(id: string): Promise<RuntimeSyncStatusResponse>;
+  getAutomationRuntimeSyncStatus(
+    id: string,
+  ): Promise<RuntimeSyncStatusResponse>;
   pullAutomationRuntime(
     id: string,
     input?: RuntimePullRequest,
@@ -766,7 +789,10 @@ export interface ApiClient {
   pullAutomationRuntimeSnapshot(id: string): Promise<RuntimeSnapshotResponse>;
   acquireCanvasLock(
     id: string,
-    input?: { readonly draftId?: string | null; readonly ttlSeconds?: number | null },
+    input?: {
+      readonly draftId?: string | null;
+      readonly ttlSeconds?: number | null;
+    },
   ): Promise<CanvasLockState>;
   heartbeatCanvasLock(
     id: string,
@@ -778,7 +804,10 @@ export interface ApiClient {
   ): Promise<CanvasLockState>;
   releaseCanvasLock(
     id: string,
-    input?: { readonly draftId?: string | null; readonly lockId?: string | null },
+    input?: {
+      readonly draftId?: string | null;
+      readonly lockId?: string | null;
+    },
   ): Promise<CanvasLockState>;
   listCanvasBlockTypes(): Promise<readonly CanvasBlockDefinition[]>;
   getCanvasBlockType(code: string): Promise<CanvasBlockDefinition>;
@@ -846,6 +875,9 @@ export interface ApiClient {
   listProjectAutomations(
     projectId: string,
   ): Promise<readonly InstalledAutomationDetail[]>;
+  ensureStage17CanvasAutomation(
+    projectId: string,
+  ): Promise<Stage17CanvasEnsureResponse>;
   listLegalSources(): Promise<readonly LegalSourceSummary[]>;
   getLegalSource(sourceId: string): Promise<LegalSourceDetail>;
   createLegalImportJob(
@@ -928,6 +960,12 @@ export interface ApiClient {
   getAutomationRuntimeRequirements(
     id: string,
   ): Promise<AutomationRuntimeRequirements>;
+  createActivepiecesSession(
+    input: CreateActivepiecesSessionRequest,
+  ): Promise<ActivepiecesSessionResponse>;
+  initializeActivepiecesSession(
+    input: InitializeActivepiecesSessionRequest,
+  ): Promise<InitializeActivepiecesSessionResponse>;
   syncAutomationRuntime(
     id: string,
     input: SyncAutomationRuntimeRequest,
@@ -1158,6 +1196,228 @@ export interface ApiClient {
   previewAiRedaction(
     input: AiRedactionPreviewRequest,
   ): Promise<AiRedactionPreviewResponse>;
+}
+
+function toActivepiecesSessionWireRequest(
+  input: CreateActivepiecesSessionRequest,
+): CreateActivepiecesSessionWireRequest {
+  return {
+    ...(input.workspaceId ? { workspace_id: input.workspaceId } : {}),
+    project_id: input.projectId,
+    automation_id: input.automationId,
+    purpose: input.purpose,
+    client_route: input.clientRoute,
+    ...(input.preferredMode ? { preferred_mode: input.preferredMode } : {}),
+    ...(input.modePreference ? { mode_preference: input.modePreference } : {}),
+    ...(input.returnBuilderConfig !== undefined
+      ? { return_builder_config: input.returnBuilderConfig }
+      : {}),
+    ...(input.clientTraceId !== undefined
+      ? { client_trace_id: input.clientTraceId }
+      : {}),
+    ...(input.idempotencyKey !== undefined
+      ? { idempotency_key: input.idempotencyKey }
+      : {}),
+  };
+}
+
+function toInitializeActivepiecesSessionWireRequest(
+  input: InitializeActivepiecesSessionRequest,
+): InitializeActivepiecesSessionWireRequest {
+  return {
+    ...(input.clientTraceId !== undefined
+      ? { client_trace_id: input.clientTraceId }
+      : {}),
+  };
+}
+
+function mapActivepiecesSessionResponse(
+  response: ActivepiecesSessionWireResponse,
+): ActivepiecesSessionResponse {
+  if (response.status === "blocked" || response.status === "unavailable") {
+    const failureResponse = {
+      readinessCode: response.readiness_code,
+      jwtToken: null,
+      expiresAt: null,
+      role: null,
+      message: response.message,
+      fallback: {
+        showBuilderUnavailableState:
+          response.fallback.show_builder_unavailable_state,
+        allowLexframeCanvasReserve:
+          response.fallback.allow_lexframe_canvas_reserve,
+        allowRunsTab: response.fallback.allow_runs_tab,
+        allowSettingsTab: response.fallback.allow_settings_tab,
+        allowDiagnosticsTab: response.fallback.allow_diagnostics_tab,
+      },
+      ...(response.warnings
+        ? { warnings: response.warnings.map(mapActivepiecesSessionWarning) }
+        : {}),
+      ...(response.status === "blocked" && response.ai_test_policy
+        ? { aiTestPolicy: mapActivepiecesAiTestPolicy(response.ai_test_policy) }
+        : {}),
+      ...(response.diagnostics
+        ? {
+            diagnostics: mapActivepiecesSessionDiagnostics(
+              response.diagnostics,
+            ),
+          }
+        : {}),
+    } as const;
+
+    if (response.status === "blocked") {
+      return {
+        status: "blocked",
+        ...failureResponse,
+      };
+    }
+
+    return {
+      status: "unavailable",
+      ...failureResponse,
+    };
+  }
+
+  return {
+    status: response.status,
+    readinessCode: response.readiness_code,
+    sessionId: response.session_id,
+    mode: response.mode,
+    issuedAt: response.issued_at,
+    instanceUrl: response.instance_url,
+    builderUrl: response.builder_url,
+    initialRoute: response.initial_route,
+    jwtToken: response.jwt_token,
+    expiresAt: response.expires_at,
+    ttlSeconds: response.ttl_seconds,
+    locale: response.locale,
+    brandDisplayName: response.brand_display_name,
+    brand: {
+      shortName: response.brand.short_name,
+      longName: response.brand.long_name,
+      documentTitle: response.brand.document_title,
+      logoAlt: response.brand.logo_alt,
+      ariaLabel: response.brand.aria_label,
+    },
+    role: response.role,
+    permissions: {
+      canView: response.permissions.can_view,
+      canEdit: response.permissions.can_edit,
+      canManageConnections: response.permissions.can_manage_connections,
+      canOpenDiagnostics: response.permissions.can_open_diagnostics,
+    },
+    piecesPolicy: {
+      piecesFilterType: response.pieces_policy.pieces_filter_type,
+      piecesTags: response.pieces_policy.pieces_tags,
+      policyHash: response.pieces_policy.policy_hash,
+    },
+    sdkConfig: {
+      containerId: response.sdk_config.container_id,
+      prefix: response.sdk_config.prefix,
+      locale: response.sdk_config.locale,
+      brandDisplayName: response.sdk_config.brand_display_name,
+      designSystem: response.sdk_config.design_system,
+      navigationSync: response.sdk_config.navigation_sync,
+      embedding: {
+        containerId: response.sdk_config.embedding.container_id,
+        locale: response.sdk_config.embedding.locale,
+        builder: {
+          disableNavigation:
+            response.sdk_config.embedding.builder.disable_navigation,
+          hideFlowName: response.sdk_config.embedding.builder.hide_flow_name,
+          homeButtonIcon:
+            response.sdk_config.embedding.builder.home_button_icon,
+        },
+        dashboard: {
+          hideSidebar: response.sdk_config.embedding.dashboard.hide_sidebar,
+          hideFlowsPageNavbar:
+            response.sdk_config.embedding.dashboard.hide_flows_page_navbar,
+          hidePageHeader:
+            response.sdk_config.embedding.dashboard.hide_page_header,
+        },
+        hideFolders: response.sdk_config.embedding.hide_folders,
+        hideExportAndImportFlow:
+          response.sdk_config.embedding.hide_export_and_import_flow,
+        hideDuplicateFlow: response.sdk_config.embedding.hide_duplicate_flow,
+        navigationSync: response.sdk_config.embedding.navigation_sync,
+      },
+    },
+    designSystem: response.design_system,
+    flowBinding: {
+      automationId: response.flow_binding.automation_id,
+      activepiecesProjectId: response.flow_binding.activepieces_project_id,
+      activepiecesFlowId: response.flow_binding.activepieces_flow_id,
+      activepiecesFlowVersionId:
+        response.flow_binding.activepieces_flow_version_id,
+      syncStatus: response.flow_binding.sync_status,
+      syncHash: response.flow_binding.sync_hash,
+    },
+    runtimeStatus: {
+      apApp: response.runtime_status.ap_app,
+      apWorker: response.runtime_status.ap_worker,
+      apDb: response.runtime_status.ap_db,
+      redis: response.runtime_status.redis,
+    },
+    ...(response.warnings
+      ? { warnings: response.warnings.map(mapActivepiecesSessionWarning) }
+      : {}),
+    ...(response.ai_test_policy
+      ? { aiTestPolicy: mapActivepiecesAiTestPolicy(response.ai_test_policy) }
+      : {}),
+    ...(response.diagnostics
+      ? { diagnostics: mapActivepiecesSessionDiagnostics(response.diagnostics) }
+      : {}),
+  };
+}
+
+function mapActivepiecesSessionWarning(
+  warning: ActivepiecesSessionWarningWire,
+) {
+  return {
+    code: warning.code,
+    severity: warning.severity,
+    title: warning.title,
+    message: warning.message,
+  };
+}
+
+function mapActivepiecesAiTestPolicy(policy: ActivepiecesAiTestPolicyWire) {
+  return {
+    status: policy.status,
+    blockRequiredAiTests: policy.block_required_ai_tests,
+    allowNonAiCanvasEditing: policy.allow_non_ai_canvas_editing,
+  };
+}
+
+function mapActivepiecesSessionDiagnostics(
+  diagnostics: ActivepiecesSessionDiagnosticsWire,
+) {
+  return {
+    traceId: diagnostics.trace_id,
+    ...(diagnostics.audit_event_id !== undefined
+      ? { auditEventId: diagnostics.audit_event_id }
+      : {}),
+    ...(diagnostics.safe_to_show !== undefined
+      ? { safeToShow: diagnostics.safe_to_show }
+      : {}),
+    ...(diagnostics.ap_app !== undefined ? { apApp: diagnostics.ap_app } : {}),
+    ...(diagnostics.ap_worker !== undefined
+      ? { apWorker: diagnostics.ap_worker }
+      : {}),
+    ...(diagnostics.local_owner_keys !== undefined
+      ? { localOwnerKeys: diagnostics.local_owner_keys }
+      : {}),
+  };
+}
+
+function mapInitializeActivepiecesSessionResponse(
+  response: InitializeActivepiecesSessionWireResponse,
+): InitializeActivepiecesSessionResponse {
+  return {
+    status: response.status,
+    sessionId: response.session_id,
+    initializedAt: response.initialized_at,
+  };
 }
 
 export function createApiClient(options: FetchOptions): ApiClient {
@@ -1634,7 +1894,10 @@ export function createApiClient(options: FetchOptions): ApiClient {
       requestJson(
         options,
         `/automations/${id}/canvas/ai/propose-patch`,
-        withJsonBody({ ...input, mode: input.mode ?? "edit" }, { method: "POST" }),
+        withJsonBody(
+          { ...input, mode: input.mode ?? "edit" },
+          { method: "POST" },
+        ),
       ),
     explainCanvasWithAi: (id, input = {}) =>
       requestJson(
@@ -2115,6 +2378,29 @@ export function createApiClient(options: FetchOptions): ApiClient {
       requestJson(options, "/health/readiness/details"),
     getAutomationRuntimeRequirements: (id) =>
       requestJson(options, `/automations/${id}/runtime/requirements`),
+    createActivepiecesSession: async (input) =>
+      mapActivepiecesSessionResponse(
+        await requestJson<ActivepiecesSessionWireResponse>(
+          options,
+          "/activepieces/session",
+          withJsonBody(toActivepiecesSessionWireRequest(input), {
+            method: "POST",
+            ...(input.idempotencyKey
+              ? { headers: { "x-idempotency-key": input.idempotencyKey } }
+              : {}),
+          }),
+        ),
+      ),
+    initializeActivepiecesSession: async (input) =>
+      mapInitializeActivepiecesSessionResponse(
+        await requestJson<InitializeActivepiecesSessionWireResponse>(
+          options,
+          `/activepieces/session/${encodeURIComponent(input.sessionId)}/initialized`,
+          withJsonBody(toInitializeActivepiecesSessionWireRequest(input), {
+            method: "POST",
+          }),
+        ),
+      ),
     syncAutomationRuntime: (id, input) =>
       requestJson(
         options,

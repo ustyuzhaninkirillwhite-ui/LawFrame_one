@@ -44,6 +44,7 @@ export class ErrorMappingFilter implements ExceptionFilter {
         },
         path: request.url,
         requestId: request.requestId ?? request.headers['x-request-id'] ?? null,
+        trace_id: request.traceId ?? request.headers['x-trace-id'] ?? null,
       });
       return;
     }
@@ -57,6 +58,7 @@ export class ErrorMappingFilter implements ExceptionFilter {
         },
         path: request.url,
         requestId: request.requestId ?? request.headers['x-request-id'] ?? null,
+        trace_id: request.traceId ?? request.headers['x-trace-id'] ?? null,
       });
       return;
     }
@@ -86,6 +88,7 @@ export class ErrorMappingFilter implements ExceptionFilter {
       },
       path: request.url,
       requestId: request.requestId ?? request.headers['x-request-id'] ?? null,
+      trace_id: request.traceId ?? request.headers['x-trace-id'] ?? null,
     });
   }
 
