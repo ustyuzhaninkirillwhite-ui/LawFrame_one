@@ -1,0 +1,58 @@
+{
+  "stage": "17.12",
+  "locale": "ru",
+  "mode": "bundle-first-overlay-fallback",
+  "forbiddenUserFacingEnglish": [
+    "Flows",
+    "Runs",
+    "Versions",
+    "Publish",
+    "Manual Run",
+    "Manual Trigger",
+    "Manage Flow",
+    "Loop on Items",
+    "Router",
+    "Code",
+    "Choose a piece",
+    "Select a piece first",
+    "Please select a piece first",
+    "Connections",
+    "No results",
+    "Create connection",
+    "Test step",
+    "Step settings",
+    "Trigger",
+    "Action",
+    "Activepieces"
+  ],
+  "surfaces": [
+    "dashboard",
+    "flows",
+    "builder_canvas",
+    "palette",
+    "inspector",
+    "step_settings",
+    "connections",
+    "runs",
+    "versions",
+    "publish",
+    "router",
+    "loop",
+    "code",
+    "pieces"
+  ],
+  "technicalAllowlistPatterns": [
+    "^@activepieces/",
+    "^packages/",
+    "^api/",
+    "^/api/",
+    "piece-[a-z0-9-]+",
+    "^[a-z0-9_.:-]+$"
+  ],
+  "fallbackPolicy": {
+    "allowed": true,
+    "purpose": "Only hardcoded or stale user-facing strings not present in patched bundles.",
+    "metrics": ["count", "fingerprint"],
+    "rawTextLogging": false
+  }
+}

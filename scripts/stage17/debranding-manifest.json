@@ -1,0 +1,26 @@
+{
+  "stage": "17.12",
+  "neutralAssets": [
+    "apps/web/public/lexframe-automation-icon.svg",
+    "apps/web/public/lexframe-automation-logo.svg",
+    "E:/activepieces-main/packages/web/public/lexframe-automation-icon.svg",
+    "E:/activepieces-main/packages/web/public/lexframe-automation-logo.svg"
+  ],
+  "visibleForbiddenBrandTerms": [
+    "Activepieces",
+    "Powered by Activepieces"
+  ],
+  "allowedContexts": [
+    "package_names",
+    "technical_identifiers",
+    "license_notices",
+    "docs_evidence",
+    "internal_api_route_names"
+  ],
+  "requiredVisibleTitle": "Конструктор автоматизаций",
+  "remoteBrandAssetForbiddenPatterns": [
+    "cdn.activepieces.com/brand",
+    "activepieces.com/brand",
+    "/brand/logo"
+  ]
+}

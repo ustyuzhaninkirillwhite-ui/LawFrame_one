@@ -4,6 +4,9 @@ import path from "node:path";
 const repoRoot = process.cwd();
 const activepiecesRoot =
   process.env.ACTIVEPIECES_SOURCE_DIR ?? "E:/activepieces-main";
+const manifestPath = path.join(repoRoot, "scripts/stage17/debranding-manifest.json");
+const iconEvidencePath = path.join(repoRoot, "artifacts/stage17/debranding-icon-evidence.json");
+const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
 
 const forbiddenTerms = [
   "Powered by Activepieces",
@@ -72,20 +75,81 @@ const themeChecks = {
   htmlLangRu: indexSource.includes('<html lang="ru">'),
   htmlNoDefaultLogoSvg: !indexSource.includes('href="/logo.svg"'),
 };
+const neutralAssetChecks = Object.fromEntries(
+  manifest.neutralAssets.map((assetPath) => {
+    const absolutePath = path.isAbsolute(assetPath)
+      ? assetPath
+      : path.join(repoRoot, assetPath);
+    const exists = fs.existsSync(absolutePath);
+    const content = exists ? fs.readFileSync(absolutePath, "utf8") : "";
+    const repoAsset = assetPath.startsWith("apps/web/public/");
+    return [
+      assetPath,
+      {
+        exists,
+        local: !/(?:href|src)=["']https?:\/\//i.test(content),
+        noActivepiecesMark: !/activepieces/i.test(content),
+        hasAccessibleTitle: repoAsset
+          ? /<title[^>]*>LexFrame Automation<\/title>/i.test(content)
+          : true,
+      },
+    ];
+  }),
+);
+const remoteBrandAssetHits = [
+  themeSource,
+  indexSource,
+  ...manifest.neutralAssets
+    .map((assetPath) => {
+      const absolutePath = path.isAbsolute(assetPath)
+        ? assetPath
+        : path.join(repoRoot, assetPath);
+      return fs.existsSync(absolutePath)
+        ? fs.readFileSync(absolutePath, "utf8")
+        : "";
+    }),
+].flatMap((content, index) =>
+  manifest.remoteBrandAssetForbiddenPatterns
+    .filter((pattern) => content.includes(pattern))
+    .map((pattern) => ({ sourceIndex: index, pattern })),
+);
 
 const report = {
+  stage: "17.12",
   forbiddenTerms,
   translationHits,
   stringLiteralHits,
   themeChecks,
+  neutralAssetChecks,
+  remoteBrandAssetHits,
 };
 
 console.log(JSON.stringify(report, null, 2));
+fs.mkdirSync(path.dirname(iconEvidencePath), { recursive: true });
+fs.writeFileSync(iconEvidencePath, `${JSON.stringify({
+  stage: "17.12",
+  generated_at: new Date().toISOString(),
+  status:
+    translationHits.length === 0 &&
+    stringLiteralHits.length === 0 &&
+    remoteBrandAssetHits.length === 0 &&
+    Object.values(themeChecks).every((value) => value) &&
+    Object.values(neutralAssetChecks).every((check) =>
+      Object.values(check).every((value) => value),
+    )
+      ? "PASS"
+      : "FAIL",
+  report,
+}, null, 2)}\n`, "utf8");
 
 if (
   translationHits.length > 0 ||
   stringLiteralHits.length > 0 ||
-  Object.values(themeChecks).some((value) => !value)
+  remoteBrandAssetHits.length > 0 ||
+  Object.values(themeChecks).some((value) => !value) ||
+  Object.values(neutralAssetChecks).some((check) =>
+    Object.values(check).some((value) => !value),
+  )
 ) {
   process.exit(1);
 }
@@ -98,7 +162,27 @@ function isRuntimeTranslationOverlayLiteral(hit) {
   return (
     hit.surface ===
       "apps/web/src/features/automation-canvas/activepieces-canvas-wrapper.tsx" &&
-    ["Activepieces", "Runs", "Publish"].includes(hit.value)
+    [
+      "Activepieces",
+      "Runs",
+      "Publish",
+      "Manual Run",
+      "Connections",
+      "Trigger",
+      "Action",
+      "Router",
+      "Code",
+      "Versions",
+      "Step settings",
+      "No results",
+      "Create connection",
+      "Test step",
+      "Choose a piece",
+      "Select a piece first",
+      "Please select a piece first",
+      "Loop on Items",
+      "Manage Flow",
+    ].includes(hit.value)
   );
 }
 

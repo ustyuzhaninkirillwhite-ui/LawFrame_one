@@ -1,7 +1,7 @@
 {
-  "stage": "17.10",
-  "generated_at": "2026-04-30T17:33:08.284Z",
+  "stage": "17.12",
+  "generated_at": "2026-05-03T12:44:39.457Z",
   "status": "PASS",
-  "scanned_files": 1216,
+  "scanned_files": 1079,
   "findings": []
 }

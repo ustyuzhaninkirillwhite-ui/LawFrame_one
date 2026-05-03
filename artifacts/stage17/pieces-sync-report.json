@@ -1,0 +1,19 @@
+{
+  "stage": "17.12",
+  "generatedAt": "2026-05-03T12:41:33.615Z",
+  "activepiecesRoot": "E:/activepieces-main",
+  "status": "DOCUMENTED",
+  "result": {
+    "attempted": false,
+    "status": "not_attempted",
+    "reason": "Sync requires STAGE17_ACTIVEPIECES_SYNC=1, STAGE17_ACTIVEPIECES_API_URL and STAGE17_ACTIVEPIECES_API_KEY. Stage 17.12 records local installable cache evidence without committing secrets.",
+    "syncEnabled": false,
+    "apiUrlConfigured": false,
+    "apiKeyPresent": false
+  },
+  "safety": {
+    "credentialsCommitted": false,
+    "browserSecretsAllowed": false,
+    "realAccountsConnected": false
+  }
+}

@@ -1,0 +1,57 @@
+{
+  "stage": "17.12",
+  "generated_at": "2026-05-03T12:42:55.007Z",
+  "status": "PASS",
+  "report": {
+    "stage": "17.12",
+    "forbiddenTerms": [
+      "Powered by Activepieces",
+      "Activepieces",
+      "Connections",
+      "Settings",
+      "Warning",
+      "Publish",
+      "Error",
+      "Runs",
+      "Save",
+      "Run"
+    ],
+    "translationHits": [],
+    "stringLiteralHits": [],
+    "themeChecks": {
+      "websiteNameDebranded": true,
+      "cdnBrandAssetsRemoved": true,
+      "localAutomationLogo": true,
+      "localAutomationIcon": true,
+      "htmlLangRu": true,
+      "htmlNoDefaultLogoSvg": true
+    },
+    "neutralAssetChecks": {
+      "apps/web/public/lexframe-automation-icon.svg": {
+        "exists": true,
+        "local": true,
+        "noActivepiecesMark": true,
+        "hasAccessibleTitle": true
+      },
+      "apps/web/public/lexframe-automation-logo.svg": {
+        "exists": true,
+        "local": true,
+        "noActivepiecesMark": true,
+        "hasAccessibleTitle": true
+      },
+      "E:/activepieces-main/packages/web/public/lexframe-automation-icon.svg": {
+        "exists": true,
+        "local": true,
+        "noActivepiecesMark": true,
+        "hasAccessibleTitle": true
+      },
+      "E:/activepieces-main/packages/web/public/lexframe-automation-logo.svg": {
+        "exists": true,
+        "local": true,
+        "noActivepiecesMark": true,
+        "hasAccessibleTitle": true
+      }
+    },
+    "remoteBrandAssetHits": []
+  }
+}

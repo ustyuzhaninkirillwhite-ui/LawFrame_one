@@ -23,13 +23,18 @@ const gatePlan = [
     gate: "G1",
     name: "Static/unit/contract",
     severity: "P0",
-    commands: [pnpm("stage17:test:unit")],
+    commands: [pnpm("stage17:test:unit"), pnpm("stage17:pieces:inventory")],
   },
   {
     gate: "G2",
     name: "Integration",
     severity: "P0",
-    commands: [pnpm("stage17:test:integration")],
+    commands: [
+      pnpm("stage17:test:integration"),
+      pnpm("stage17:pieces:build"),
+      pnpm("stage17:pieces:sync"),
+      pnpm("stage17:pieces:verify"),
+    ],
   },
   {
     gate: "G3",
@@ -88,13 +93,19 @@ const gatePlan = [
     severity: "P0",
     commands: [pnpm("stage17:stop-list:verify")],
   },
+  {
+    gate: "G10",
+    name: "Stage 17.12 closure",
+    severity: "P0",
+    commands: [pnpm("stage17:closure:verify")],
+  },
 ];
 
 fs.mkdirSync(logsDir, { recursive: true });
 fs.mkdirSync(docsDir, { recursive: true });
 
 const report = {
-  stage: "17.10",
+  stage: "17.12",
   status: "RUNNING",
   acceptance: "PENDING",
   started_at: new Date().toISOString(),
@@ -281,7 +292,7 @@ function renderMarkdown() {
   );
 
   return [
-    "# Stage 17.10 Release Gate Report",
+    "# Stage 17.12 Release Gate Report",
     "",
     `Status: ${report.status}`,
     `Acceptance: ${report.acceptance}`,
@@ -302,6 +313,9 @@ function renderMarkdown() {
     "- Command logs: `artifacts/stage17/logs/`",
     "- Runtime evidence: `artifacts/stage17/runtime-evidence.json`",
     "- Browser secret scan: `artifacts/stage17/browser-secret-scan.json`",
+    "- Localization flicker evidence: `artifacts/stage17/localization-flicker-evidence.json`",
+    "- Debranding icon evidence: `artifacts/stage17/debranding-icon-evidence.json`",
+    "- Pieces inventory/build/sync: `artifacts/stage17/pieces-*.json`",
     "- Stop-list result: `artifacts/stage17/stop-list-compliance.json`",
     "",
   ].join("\n");

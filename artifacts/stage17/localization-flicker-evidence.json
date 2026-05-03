@@ -1,0 +1,67 @@
+{
+  "stage": "17.12",
+  "generated_at": "2026-05-03T12:42:54.262Z",
+  "status": "PASS",
+  "strategy": "bundle-first-overlay-fallback",
+  "manifest_path": "scripts\\stage17\\localization-manifest.json",
+  "known_forbidden_terms": [
+    "Flows",
+    "Runs",
+    "Versions",
+    "Publish",
+    "Manual Run",
+    "Manual Trigger",
+    "Manage Flow",
+    "Loop on Items",
+    "Router",
+    "Code",
+    "Choose a piece",
+    "Select a piece first",
+    "Please select a piece first",
+    "Connections",
+    "No results",
+    "Create connection",
+    "Test step",
+    "Step settings",
+    "Trigger",
+    "Action",
+    "Activepieces"
+  ],
+  "initial_visible_paint_guard": {
+    "ru_forced_before_react_mount": true,
+    "i18n_lng_forced": true,
+    "i18n_fallback_forced": true,
+    "empty_strings_rejected": true,
+    "known_english_values_in_ru_bundle": 0
+  },
+  "overlay_policy": {
+    "allowed": true,
+    "purpose": "Only hardcoded or stale user-facing strings not present in patched bundles.",
+    "metrics": [
+      "count",
+      "fingerprint"
+    ],
+    "rawTextLogging": false
+  },
+  "overlay_invocation_count_expected": "0 for covered strings; non-zero only for stale/hardcoded fallback",
+  "report": {
+    "stage": "17.12",
+    "locale": "ru",
+    "mode": "bundle-first-overlay-fallback",
+    "baseKeys": 1503,
+    "translatedKeys": 1521,
+    "missingKeys": [],
+    "extraKeys": [],
+    "emptyValues": [],
+    "fallbackHitsFromPlaywright": 0,
+    "forbiddenValueHits": [],
+    "resolverChecks": {
+      "resolverReturnsRu": true,
+      "i18nForcedLng": true,
+      "i18nForcedFallback": true,
+      "i18nRejectsEmptyStrings": true,
+      "mainImportsI18nBeforeApp": true,
+      "embedUsesResolver": true
+    }
+  }
+}

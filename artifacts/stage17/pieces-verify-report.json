@@ -1,0 +1,20 @@
+{
+  "stage": "17.12",
+  "generatedAt": "2026-05-03T12:41:34.137Z",
+  "status": "PASS",
+  "findings": [],
+  "inventorySummary": {
+    "total": 684,
+    "core": 27,
+    "community": 657,
+    "gmail": "found",
+    "cometapi": "found"
+  },
+  "buildSummary": {
+    "built": 0,
+    "failed": 0,
+    "skipped": 2,
+    "missing": 0
+  },
+  "syncStatus": "not_attempted"
+}

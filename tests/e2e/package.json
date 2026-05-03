@@ -23,10 +23,10 @@
     "test:canvas:integrated": "playwright test canvas canvas-activepieces",
     "test:canvas:performance": "playwright test canvas-performance",
     "test:stage16-live-audit": "playwright test stage16-live-audit",
-    "test:stage17:activepieces-canvas": "playwright test stage17-activepieces-canvas.spec.ts stage17-local-keys-security.spec.ts",
+    "test:stage17:activepieces-canvas": "playwright test stage17-activepieces-canvas.spec.ts stage17-local-keys-security.spec.ts stage17-localization-flicker.spec.ts stage17-debranding-icon.spec.ts stage17-pieces-palette.spec.ts",
     "test:stage17:local-keys-security": "playwright test stage17-local-keys-security.spec.ts",
     "test:stage17:design-convergence": "playwright test stage17-design-convergence.spec.ts",
-    "test:stage17:release-gate": "playwright test stage17-activepieces-canvas.spec.ts stage17-local-keys-security.spec.ts stage17-design-convergence.spec.ts"
+    "test:stage17:release-gate": "playwright test stage17-activepieces-canvas.spec.ts stage17-local-keys-security.spec.ts stage17-design-convergence.spec.ts stage17-localization-flicker.spec.ts stage17-debranding-icon.spec.ts stage17-pieces-palette.spec.ts"
   },
   "devDependencies": {
     "@playwright/test": "^1.52.0",

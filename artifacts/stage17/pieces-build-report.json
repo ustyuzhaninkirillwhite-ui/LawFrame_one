@@ -1,0 +1,53 @@
+{
+  "stage": "17.12",
+  "generatedAt": "2026-05-03T12:41:33.098Z",
+  "activepiecesRoot": "E:/activepieces-main",
+  "status": "DOCUMENTED_BLOCKER",
+  "prerequisites": {
+    "activepiecesRootExists": true,
+    "gitMetadataAvailable": false,
+    "bunAvailable": false,
+    "nodeModulesPresent": false,
+    "packageJsonPresent": true
+  },
+  "requestedSlugs": [
+    "gmail",
+    "cometapi"
+  ],
+  "summary": {
+    "built": 0,
+    "failed": 0,
+    "skipped": 2,
+    "missing": 0
+  },
+  "results": [
+    {
+      "slug": "gmail",
+      "packageName": "@activepieces/piece-gmail",
+      "path": "packages/pieces/community/gmail",
+      "status": "documented_blocker",
+      "reason": "Activepieces build prerequisites are unavailable in this workspace.",
+      "blockers": [
+        "gitMetadataAvailable",
+        "bunAvailable",
+        "nodeModulesPresent"
+      ],
+      "officialCommand": "npm run build-piece -- gmail",
+      "distPresent": false
+    },
+    {
+      "slug": "cometapi",
+      "packageName": "@activepieces/piece-cometapi",
+      "path": "packages/pieces/community/cometapi",
+      "status": "documented_blocker",
+      "reason": "Activepieces build prerequisites are unavailable in this workspace.",
+      "blockers": [
+        "gitMetadataAvailable",
+        "bunAvailable",
+        "nodeModulesPresent"
+      ],
+      "officialCommand": "npm run build-piece -- cometapi",
+      "distPresent": false
+    }
+  ]
+}

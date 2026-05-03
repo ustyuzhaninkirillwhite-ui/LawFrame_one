@@ -1,9 +1,9 @@
 {
-  "stage": "17.10",
+  "stage": "17.12",
   "status": "PASS",
   "acceptance": "ACCEPT",
-  "started_at": "2026-04-30T17:31:47.878Z",
-  "finished_at": "2026-04-30T17:33:08.390Z",
+  "started_at": "2026-05-03T12:39:52.341Z",
+  "finished_at": "2026-05-03T12:43:26.016Z",
   "continue_on_p0": false,
   "environment": {
     "cwd": "E:\\Law_frame_main",
@@ -11,8 +11,8 @@
     "hostname": "Kirill",
     "node": "v22.16.0",
     "pnpm": "10.11.1",
-    "lexframe_commit": "ec145113ad4fdeba40a7826a4122032b8f52e9d3",
-    "activepieces_commit": "ec145113ad4fdeba40a7826a4122032b8f52e9d3"
+    "lexframe_commit": "08e0b3ce733d568988de46b504f2451027a3218e",
+    "activepieces_commit": "08e0b3ce733d568988de46b504f2451027a3218e"
   },
   "results": [
     {
@@ -21,9 +21,9 @@
       "status": "pass",
       "severity": "P0",
       "command": "pnpm stage17:readiness:evidence",
-      "started_at": "2026-04-30T17:31:48.407Z",
-      "finished_at": "2026-04-30T17:31:49.301Z",
-      "duration_ms": 894,
+      "started_at": "2026-05-03T12:39:52.869Z",
+      "finished_at": "2026-05-03T12:39:54.011Z",
+      "duration_ms": 1141,
       "artifacts": [
         "artifacts\\stage17\\logs\\G0-readiness-inputs-1-pnpm-stage17-readiness-evidence.log"
       ],
@@ -32,7 +32,7 @@
         {
           "label": "pnpm stage17:readiness:evidence",
           "status": 0,
-          "duration_ms": 894,
+          "duration_ms": 1141,
           "log_path": "artifacts\\stage17\\logs\\G0-readiness-inputs-1-pnpm-stage17-readiness-evidence.log",
           "artifacts": [
             "artifacts\\stage17\\logs\\G0-readiness-inputs-1-pnpm-stage17-readiness-evidence.log"
@@ -45,22 +45,32 @@
       "name": "Static/unit/contract",
       "status": "pass",
       "severity": "P0",
-      "command": "pnpm stage17:test:unit",
-      "started_at": "2026-04-30T17:31:49.326Z",
-      "finished_at": "2026-04-30T17:31:55.058Z",
-      "duration_ms": 5732,
+      "command": "pnpm stage17:test:unit && pnpm stage17:pieces:inventory",
+      "started_at": "2026-05-03T12:39:54.036Z",
+      "finished_at": "2026-05-03T12:41:21.971Z",
+      "duration_ms": 87935,
       "artifacts": [
-        "artifacts\\stage17\\logs\\G1-static-unit-contract-1-pnpm-stage17-test-unit.log"
+        "artifacts\\stage17\\logs\\G1-static-unit-contract-1-pnpm-stage17-test-unit.log",
+        "artifacts\\stage17\\logs\\G1-static-unit-contract-2-pnpm-stage17-pieces-inventory.log"
       ],
       "findings": [],
       "commands": [
         {
           "label": "pnpm stage17:test:unit",
           "status": 0,
-          "duration_ms": 5732,
+          "duration_ms": 23944,
           "log_path": "artifacts\\stage17\\logs\\G1-static-unit-contract-1-pnpm-stage17-test-unit.log",
           "artifacts": [
             "artifacts\\stage17\\logs\\G1-static-unit-contract-1-pnpm-stage17-test-unit.log"
+          ]
+        },
+        {
+          "label": "pnpm stage17:pieces:inventory",
+          "status": 0,
+          "duration_ms": 63990,
+          "log_path": "artifacts\\stage17\\logs\\G1-static-unit-contract-2-pnpm-stage17-pieces-inventory.log",
+          "artifacts": [
+            "artifacts\\stage17\\logs\\G1-static-unit-contract-2-pnpm-stage17-pieces-inventory.log"
           ]
         }
       ]
@@ -70,22 +80,52 @@
       "name": "Integration",
       "status": "pass",
       "severity": "P0",
-      "command": "pnpm stage17:test:integration",
-      "started_at": "2026-04-30T17:31:55.084Z",
-      "finished_at": "2026-04-30T17:32:02.226Z",
-      "duration_ms": 7142,
+      "command": "pnpm stage17:test:integration && pnpm stage17:pieces:build && pnpm stage17:pieces:sync && pnpm stage17:pieces:verify",
+      "started_at": "2026-05-03T12:41:21.995Z",
+      "finished_at": "2026-05-03T12:41:34.196Z",
+      "duration_ms": 12201,
       "artifacts": [
-        "artifacts\\stage17\\logs\\G2-integration-1-pnpm-stage17-test-integration.log"
+        "artifacts\\stage17\\logs\\G2-integration-1-pnpm-stage17-test-integration.log",
+        "artifacts\\stage17\\logs\\G2-integration-2-pnpm-stage17-pieces-build.log",
+        "artifacts\\stage17\\logs\\G2-integration-3-pnpm-stage17-pieces-sync.log",
+        "artifacts\\stage17\\logs\\G2-integration-4-pnpm-stage17-pieces-verify.log"
       ],
       "findings": [],
       "commands": [
         {
           "label": "pnpm stage17:test:integration",
           "status": 0,
-          "duration_ms": 7142,
+          "duration_ms": 10572,
           "log_path": "artifacts\\stage17\\logs\\G2-integration-1-pnpm-stage17-test-integration.log",
           "artifacts": [
             "artifacts\\stage17\\logs\\G2-integration-1-pnpm-stage17-test-integration.log"
+          ]
+        },
+        {
+          "label": "pnpm stage17:pieces:build",
+          "status": 0,
+          "duration_ms": 609,
+          "log_path": "artifacts\\stage17\\logs\\G2-integration-2-pnpm-stage17-pieces-build.log",
+          "artifacts": [
+            "artifacts\\stage17\\logs\\G2-integration-2-pnpm-stage17-pieces-build.log"
+          ]
+        },
+        {
+          "label": "pnpm stage17:pieces:sync",
+          "status": 0,
+          "duration_ms": 502,
+          "log_path": "artifacts\\stage17\\logs\\G2-integration-3-pnpm-stage17-pieces-sync.log",
+          "artifacts": [
+            "artifacts\\stage17\\logs\\G2-integration-3-pnpm-stage17-pieces-sync.log"
+          ]
+        },
+        {
+          "label": "pnpm stage17:pieces:verify",
+          "status": 0,
+          "duration_ms": 517,
+          "log_path": "artifacts\\stage17\\logs\\G2-integration-4-pnpm-stage17-pieces-verify.log",
+          "artifacts": [
+            "artifacts\\stage17\\logs\\G2-integration-4-pnpm-stage17-pieces-verify.log"
           ]
         }
       ]
@@ -96,9 +136,9 @@
       "status": "pass",
       "severity": "P0",
       "command": "pnpm stage17:e2e:activepieces-canvas",
-      "started_at": "2026-04-30T17:32:02.252Z",
-      "finished_at": "2026-04-30T17:32:20.850Z",
-      "duration_ms": 18598,
+      "started_at": "2026-05-03T12:41:34.219Z",
+      "finished_at": "2026-05-03T12:42:06.662Z",
+      "duration_ms": 32443,
       "artifacts": [
         "artifacts\\stage17\\logs\\G3-playwright-live-e2e-1-pnpm-stage17-e2e-activepieces-canvas.log"
       ],
@@ -107,7 +147,7 @@
         {
           "label": "pnpm stage17:e2e:activepieces-canvas",
           "status": 0,
-          "duration_ms": 18598,
+          "duration_ms": 32442,
           "log_path": "artifacts\\stage17\\logs\\G3-playwright-live-e2e-1-pnpm-stage17-e2e-activepieces-canvas.log",
           "artifacts": [
             "artifacts\\stage17\\logs\\G3-playwright-live-e2e-1-pnpm-stage17-e2e-activepieces-canvas.log"
@@ -121,9 +161,9 @@
       "status": "pass",
       "severity": "P0",
       "command": "pnpm stage17:security:scan-secrets && pnpm stage17:security:scan-frontend-bundle && pnpm stage17:security:scan-browser-evidence",
-      "started_at": "2026-04-30T17:32:20.874Z",
-      "finished_at": "2026-04-30T17:32:24.874Z",
-      "duration_ms": 4000,
+      "started_at": "2026-05-03T12:42:06.686Z",
+      "finished_at": "2026-05-03T12:42:53.702Z",
+      "duration_ms": 47016,
       "artifacts": [
         "artifacts\\stage17\\logs\\G4-security-and-secret-scan-1-pnpm-stage17-security-scan-secrets.log",
         "artifacts\\stage17\\logs\\G4-security-and-secret-scan-2-pnpm-stage17-security-scan-frontend-bundle.log",
@@ -134,7 +174,7 @@
         {
           "label": "pnpm stage17:security:scan-secrets",
           "status": 0,
-          "duration_ms": 2508,
+          "duration_ms": 40861,
           "log_path": "artifacts\\stage17\\logs\\G4-security-and-secret-scan-1-pnpm-stage17-security-scan-secrets.log",
           "artifacts": [
             "artifacts\\stage17\\logs\\G4-security-and-secret-scan-1-pnpm-stage17-security-scan-secrets.log"
@@ -143,7 +183,7 @@
         {
           "label": "pnpm stage17:security:scan-frontend-bundle",
           "status": 0,
-          "duration_ms": 867,
+          "duration_ms": 5562,
           "log_path": "artifacts\\stage17\\logs\\G4-security-and-secret-scan-2-pnpm-stage17-security-scan-frontend-bundle.log",
           "artifacts": [
             "artifacts\\stage17\\logs\\G4-security-and-secret-scan-2-pnpm-stage17-security-scan-frontend-bundle.log"
@@ -152,7 +192,7 @@
         {
           "label": "pnpm stage17:security:scan-browser-evidence",
           "status": 0,
-          "duration_ms": 625,
+          "duration_ms": 593,
           "log_path": "artifacts\\stage17\\logs\\G4-security-and-secret-scan-3-pnpm-stage17-security-scan-browser-evidence.log",
           "artifacts": [
             "artifacts\\stage17\\logs\\G4-security-and-secret-scan-3-pnpm-stage17-security-scan-browser-evidence.log"
@@ -166,9 +206,9 @@
       "status": "pass",
       "severity": "P1",
       "command": "pnpm stage17:localization:check && pnpm stage17:debranding:check",
-      "started_at": "2026-04-30T17:32:24.898Z",
-      "finished_at": "2026-04-30T17:32:26.178Z",
-      "duration_ms": 1280,
+      "started_at": "2026-05-03T12:42:53.726Z",
+      "finished_at": "2026-05-03T12:42:55.169Z",
+      "duration_ms": 1443,
       "artifacts": [
         "artifacts\\stage17\\logs\\G5-localization-and-debranding-1-pnpm-stage17-localization-check.log",
         "artifacts\\stage17\\logs\\G5-localization-and-debranding-2-pnpm-stage17-debranding-check.log"
@@ -178,7 +218,7 @@
         {
           "label": "pnpm stage17:localization:check",
           "status": 0,
-          "duration_ms": 631,
+          "duration_ms": 684,
           "log_path": "artifacts\\stage17\\logs\\G5-localization-and-debranding-1-pnpm-stage17-localization-check.log",
           "artifacts": [
             "artifacts\\stage17\\logs\\G5-localization-and-debranding-1-pnpm-stage17-localization-check.log"
@@ -187,7 +227,7 @@
         {
           "label": "pnpm stage17:debranding:check",
           "status": 0,
-          "duration_ms": 649,
+          "duration_ms": 759,
           "log_path": "artifacts\\stage17\\logs\\G5-localization-and-debranding-2-pnpm-stage17-debranding-check.log",
           "artifacts": [
             "artifacts\\stage17\\logs\\G5-localization-and-debranding-2-pnpm-stage17-debranding-check.log"
@@ -201,9 +241,9 @@
       "status": "pass",
       "severity": "P0",
       "command": "pnpm stage17:visual:regression",
-      "started_at": "2026-04-30T17:32:26.202Z",
-      "finished_at": "2026-04-30T17:33:04.181Z",
-      "duration_ms": 37979,
+      "started_at": "2026-05-03T12:42:55.193Z",
+      "finished_at": "2026-05-03T12:43:22.226Z",
+      "duration_ms": 27033,
       "artifacts": [
         "artifacts\\stage17\\logs\\G6-visual-regression-1-pnpm-stage17-visual-regression.log"
       ],
@@ -212,7 +252,7 @@
         {
           "label": "pnpm stage17:visual:regression",
           "status": 0,
-          "duration_ms": 37979,
+          "duration_ms": 27033,
           "log_path": "artifacts\\stage17\\logs\\G6-visual-regression-1-pnpm-stage17-visual-regression.log",
           "artifacts": [
             "artifacts\\stage17\\logs\\G6-visual-regression-1-pnpm-stage17-visual-regression.log"
@@ -226,9 +266,9 @@
       "status": "pass",
       "severity": "P0",
       "command": "pnpm stage17:runtime:evidence",
-      "started_at": "2026-04-30T17:33:04.206Z",
-      "finished_at": "2026-04-30T17:33:06.211Z",
-      "duration_ms": 2005,
+      "started_at": "2026-05-03T12:43:22.250Z",
+      "finished_at": "2026-05-03T12:43:24.058Z",
+      "duration_ms": 1808,
       "artifacts": [
         "artifacts\\stage17\\logs\\G7-runtime-evidence-1-pnpm-stage17-runtime-evidence.log"
       ],
@@ -237,7 +277,7 @@
         {
           "label": "pnpm stage17:runtime:evidence",
           "status": 0,
-          "duration_ms": 2005,
+          "duration_ms": 1808,
           "log_path": "artifacts\\stage17\\logs\\G7-runtime-evidence-1-pnpm-stage17-runtime-evidence.log",
           "artifacts": [
             "artifacts\\stage17\\logs\\G7-runtime-evidence-1-pnpm-stage17-runtime-evidence.log"
@@ -251,9 +291,9 @@
       "status": "pass",
       "severity": "P1",
       "command": "pnpm stage17:artifacts:verify",
-      "started_at": "2026-04-30T17:33:06.236Z",
-      "finished_at": "2026-04-30T17:33:06.794Z",
-      "duration_ms": 558,
+      "started_at": "2026-05-03T12:43:24.083Z",
+      "finished_at": "2026-05-03T12:43:24.763Z",
+      "duration_ms": 680,
       "artifacts": [
         "artifacts\\stage17\\logs\\G8-artifacts-completeness-1-pnpm-stage17-artifacts-verify.log"
       ],
@@ -262,7 +302,7 @@
         {
           "label": "pnpm stage17:artifacts:verify",
           "status": 0,
-          "duration_ms": 558,
+          "duration_ms": 680,
           "log_path": "artifacts\\stage17\\logs\\G8-artifacts-completeness-1-pnpm-stage17-artifacts-verify.log",
           "artifacts": [
             "artifacts\\stage17\\logs\\G8-artifacts-completeness-1-pnpm-stage17-artifacts-verify.log"
@@ -276,9 +316,9 @@
       "status": "pass",
       "severity": "P0",
       "command": "pnpm stage17:stop-list:verify",
-      "started_at": "2026-04-30T17:33:06.828Z",
-      "finished_at": "2026-04-30T17:33:08.362Z",
-      "duration_ms": 1534,
+      "started_at": "2026-05-03T12:43:24.775Z",
+      "finished_at": "2026-05-03T12:43:25.483Z",
+      "duration_ms": 707,
       "artifacts": [
         "artifacts\\stage17\\logs\\G9-stop-list-compliance-1-pnpm-stage17-stop-list-verify.log"
       ],
@@ -287,10 +327,35 @@
         {
           "label": "pnpm stage17:stop-list:verify",
           "status": 0,
-          "duration_ms": 1534,
+          "duration_ms": 706,
           "log_path": "artifacts\\stage17\\logs\\G9-stop-list-compliance-1-pnpm-stage17-stop-list-verify.log",
           "artifacts": [
             "artifacts\\stage17\\logs\\G9-stop-list-compliance-1-pnpm-stage17-stop-list-verify.log"
+          ]
+        }
+      ]
+    },
+    {
+      "gate": "G10",
+      "name": "Stage 17.12 closure",
+      "status": "pass",
+      "severity": "P0",
+      "command": "pnpm stage17:closure:verify",
+      "started_at": "2026-05-03T12:43:25.496Z",
+      "finished_at": "2026-05-03T12:43:25.992Z",
+      "duration_ms": 496,
+      "artifacts": [
+        "artifacts\\stage17\\logs\\G10-stage-17-12-closure-1-pnpm-stage17-closure-verify.log"
+      ],
+      "findings": [],
+      "commands": [
+        {
+          "label": "pnpm stage17:closure:verify",
+          "status": 0,
+          "duration_ms": 496,
+          "log_path": "artifacts\\stage17\\logs\\G10-stage-17-12-closure-1-pnpm-stage17-closure-verify.log",
+          "artifacts": [
+            "artifacts\\stage17\\logs\\G10-stage-17-12-closure-1-pnpm-stage17-closure-verify.log"
           ]
         }
       ]

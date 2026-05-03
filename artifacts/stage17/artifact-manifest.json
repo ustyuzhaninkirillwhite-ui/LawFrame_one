@@ -1,19 +1,19 @@
 {
-  "stage": "17.10",
-  "generated_at": "2026-04-30T17:33:06.685Z",
+  "stage": "17.12",
+  "generated_at": "2026-05-03T12:44:39.222Z",
   "status": "PASS",
   "entries": [
     {
       "path": "docs/stage17/17.1/ADR-17.1-local-owner-key-vault.md",
       "severity": "P0",
       "status": "PASS",
-      "bytes": 1704
+      "bytes": 1703
     },
     {
       "path": "docs/stage17/17.1/ADR-17.2-activepieces-design-unification.md",
       "severity": "P0",
       "status": "PASS",
-      "bytes": 1601
+      "bytes": 1600
     },
     {
       "path": "docs/stage17/17.1/source-inventory.md",
@@ -31,13 +31,13 @@
       "path": "docs/stage17/localization-coverage-report.md",
       "severity": "P1",
       "status": "PASS",
-      "bytes": 899
+      "bytes": 1304
     },
     {
       "path": "docs/stage17/debranding-coverage-report.md",
       "severity": "P1",
       "status": "PASS",
-      "bytes": 880
+      "bytes": 1292
     },
     {
       "path": "docs/stage17/design-token-mapping.md",
@@ -73,13 +73,91 @@
       "path": "docs/stage17/stage17-release-gate-report.md",
       "severity": "P0",
       "status": "PASS",
-      "bytes": 1055
+      "bytes": 1445
+    },
+    {
+      "path": "docs/stage17/17.12-audit-start.md",
+      "severity": "P0",
+      "status": "PASS",
+      "bytes": 2788
+    },
+    {
+      "path": "docs/stage17/stage17-final-closure.md",
+      "severity": "P0",
+      "status": "PASS",
+      "bytes": 4340
+    },
+    {
+      "path": "docs/stage17/stage17-traceability-matrix.md",
+      "severity": "P0",
+      "status": "PASS",
+      "bytes": 3653
+    },
+    {
+      "path": "docs/stage17/ADR-stage17-canvas-strategy.md",
+      "severity": "P0",
+      "status": "PASS",
+      "bytes": 2198
+    },
+    {
+      "path": "docs/stage17/stage17-known-limitations.md",
+      "severity": "P1",
+      "status": "PASS",
+      "bytes": 1133
+    },
+    {
+      "path": "docs/stage17/stage17-risk-register.md",
+      "severity": "P1",
+      "status": "PASS",
+      "bytes": 1529
+    },
+    {
+      "path": "docs/stage17/stage17-evidence-index.md",
+      "severity": "P0",
+      "status": "PASS",
+      "bytes": 1747
+    },
+    {
+      "path": "docs/stage17/localization-runtime-audit.md",
+      "severity": "P1",
+      "status": "PASS",
+      "bytes": 1220
+    },
+    {
+      "path": "docs/stage17/localization-flicker-hardening.md",
+      "severity": "P0",
+      "status": "PASS",
+      "bytes": 1181
+    },
+    {
+      "path": "docs/stage17/debranding-runtime-audit.md",
+      "severity": "P1",
+      "status": "PASS",
+      "bytes": 887
+    },
+    {
+      "path": "docs/stage17/open-source-pieces-pack.md",
+      "severity": "P0",
+      "status": "PASS",
+      "bytes": 1358
+    },
+    {
+      "path": "docs/stage17/pieces-source-inventory.md",
+      "severity": "P1",
+      "status": "PASS",
+      "bytes": 52553
+    },
+    {
+      "path": "docs/stage17/pieces-localization-report.md",
+      "severity": "P1",
+      "status": "PASS",
+      "bytes": 785
     },
     {
       "path": "artifacts/stage17/release-gate.json",
       "severity": "P0",
       "status": "PASS",
-      "bytes": 8929
+      "bytes": 13354
     },
     {
       "path": "artifacts/stage17/runtime-evidence.json",
@@ -92,6 +170,48 @@
       "severity": "P0",
       "status": "PASS",
       "bytes": 293
+    },
+    {
+      "path": "artifacts/stage17/evidence-index.json",
+      "severity": "P0",
+      "status": "PASS",
+      "bytes": 1600
+    },
+    {
+      "path": "artifacts/stage17/localization-flicker-evidence.json",
+      "severity": "P0",
+      "status": "PASS",
+      "bytes": 1720
+    },
+    {
+      "path": "artifacts/stage17/debranding-icon-evidence.json",
+      "severity": "P0",
+      "status": "PASS",
+      "bytes": 1479
+    },
+    {
+      "path": "artifacts/stage17/pieces-inventory.json",
+      "severity": "P0",
+      "status": "PASS",
+      "bytes": 802758
+    },
+    {
+      "path": "artifacts/stage17/pieces-build-report.json",
+      "severity": "P0",
+      "status": "PASS",
+      "bytes": 1426
+    },
+    {
+      "path": "artifacts/stage17/pieces-sync-report.json",
+      "severity": "P0",
+      "status": "PASS",
+      "bytes": 627
+    },
+    {
+      "path": "artifacts/stage17/pieces-localization-report.json",
+      "severity": "P0",
+      "status": "PASS",
+      "bytes": 1096
     },
     {
       "path": "scripts/secrets/init-local-keys.ps1",
@@ -109,13 +229,13 @@
       "path": "scripts/stage17/release-gate.mjs",
       "severity": "P0",
       "status": "PASS",
-      "bytes": 9250
+      "bytes": 9784
     },
     {
       "path": "scripts/stage17/verify-artifacts.mjs",
       "severity": "P0",
       "status": "PASS",
-      "bytes": 9608
+      "bytes": 10715
     },
     {
       "path": "scripts/stage17/collect-runtime-evidence.mjs",

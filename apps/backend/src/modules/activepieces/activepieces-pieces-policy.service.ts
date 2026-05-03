@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import { AppHttpException } from '../../common/errors/app-http.exception';
+import { loadServerEnv } from '@lexframe/config';
 import { Injectable } from '@nestjs/common';
 import type {
   ActivepiecesInstalledAutomationForSession,
@@ -12,6 +13,8 @@ const DENYLISTED_PIECES = STAGE17_DIRECT_AI_PROVIDER_PIECES;
 
 @Injectable()
 export class ActivepiecesPiecesPolicyService {
+  private readonly env = loadServerEnv();
+
   buildAutomationCanvasPolicy(input: {
     readonly workspaceSecurity: ActivepiecesWorkspaceSecurityForSession;
     readonly automation: ActivepiecesInstalledAutomationForSession;
@@ -34,7 +37,17 @@ export class ActivepiecesPiecesPolicyService {
       .map((tag) => tag.trim())
       .filter((tag) => tag.length > 0);
     const derivedTags = derivePiecesTags(input.automation.workflow);
-    const piecesTags = [...new Set([...configuredTags, ...derivedTags])].sort();
+    const localDevTags = this.isLocalAllOpenSourceProfile()
+      ? [
+          'stage17-local-all-open-source-pieces',
+          'activepieces-core',
+          'activepieces-community',
+          'open-source-pieces',
+        ]
+      : [];
+    const piecesTags = [
+      ...new Set([...configuredTags, ...derivedTags, ...localDevTags]),
+    ].sort();
 
     if (piecesTags.length === 0) {
       throw new AppHttpException(
@@ -47,13 +60,24 @@ export class ActivepiecesPiecesPolicyService {
     const policy = {
       piecesFilterType: 'ALLOWED' as const,
       piecesTags,
-      denylistedPieces: [...DENYLISTED_PIECES],
+      denylistedPieces: this.isLocalAllOpenSourceProfile()
+        ? []
+        : [...DENYLISTED_PIECES],
     };
 
     return {
       ...policy,
       policyHash: `sha256:${hashCanonical(policy)}`,
     };
+  }
+
+  private isLocalAllOpenSourceProfile() {
+    return (
+      this.env.LEXFRAME_STAGE17_PIECES_PROFILE ===
+        'stage17-local-all-open-source-pieces' &&
+      this.env.LEXFRAME_DEPLOY_ENV !== 'production' &&
+      this.env.LEXFRAME_ENV_PROFILE !== 'production'
+    );
   }
 }
 
@@ -111,7 +135,9 @@ function stableStringify(value: unknown): string {
   if (value && typeof value === 'object') {
     return `{${Object.entries(value as Record<string, unknown>)
       .sort(([left], [right]) => left.localeCompare(right))
-      .map(([key, nested]) => `${JSON.stringify(key)}:${stableStringify(nested)}`)
+      .map(
+        ([key, nested]) => `${JSON.stringify(key)}:${stableStringify(nested)}`,
+      )
       .join(',')}}`;
   }
   return JSON.stringify(value);

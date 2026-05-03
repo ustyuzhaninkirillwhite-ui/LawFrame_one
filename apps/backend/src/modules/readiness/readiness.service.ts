@@ -160,7 +160,7 @@ export class ReadinessService {
           : 'READY';
 
     return {
-      stage: '17.4',
+      stage: '17.12',
       profile: 'local-integrated',
       overall,
       generated_at: new Date().toISOString(),
@@ -619,6 +619,8 @@ export class ReadinessService {
         activepieces_force_ru_locale:
           this.env.ACTIVEPIECES_FORCE_RU_LOCALE === '1',
         dev_piece_translations_loaded: true,
+        bundle_first_localization: true,
+        overlay_fallback_only: true,
         artifact_path: this.env.LEXFRAME_STAGE17_I18N_ARTIFACT_PATH,
       },
     );
@@ -630,9 +632,12 @@ export class ReadinessService {
       this.env.LEXFRAME_STAGE17_BRANDING_ARTIFACT_PATH,
     );
     const exists = existsSync(artifact);
+    const iconPresent = existsSync(
+      resolve(process.cwd(), 'apps/web/public/lexframe-automation-icon.svg'),
+    );
     const brandOk =
       this.env.ACTIVEPIECES_BRAND_DISPLAY_NAME === 'Автоматизация';
-    const pass = brandOk && exists;
+    const pass = brandOk && exists && iconPresent;
     const status = pass
       ? 'PASS'
       : this.env.LEXFRAME_STAGE17_REQUIRE_UX_ARTIFACTS === '1'
@@ -650,6 +655,8 @@ export class ReadinessService {
         brand_display_name_ok: brandOk,
         artifact_path: this.env.LEXFRAME_STAGE17_BRANDING_ARTIFACT_PATH,
         artifact_present: exists,
+        neutral_icon_present: iconPresent,
+        pieces_profile: this.env.LEXFRAME_STAGE17_PIECES_PROFILE,
       },
     );
   }

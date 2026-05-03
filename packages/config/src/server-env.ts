@@ -92,8 +92,11 @@ export const serverEnvSchema = z.object({
   LEXFRAME_STAGE17_READINESS_ENABLED: z.enum(["0", "1"]).default("0"),
   LEXFRAME_STAGE17_REQUIRE_WORKER_HEARTBEAT: z.enum(["0", "1"]).default("0"),
   LEXFRAME_STAGE17_REQUIRE_UX_ARTIFACTS: z.enum(["0", "1"]).default("0"),
-  LEXFRAME_STAGE17_I18N_ARTIFACT_PATH: z.string().default("docs/stage17/17.1/activepieces-i18n-branding-inventory.md"),
-  LEXFRAME_STAGE17_BRANDING_ARTIFACT_PATH: z.string().default("docs/stage17/17.1/activepieces-i18n-branding-inventory.md"),
+  LEXFRAME_STAGE17_PIECES_PROFILE: z
+    .enum(["stage17-production-allowlist", "stage17-local-all-open-source-pieces"])
+    .default("stage17-production-allowlist"),
+  LEXFRAME_STAGE17_I18N_ARTIFACT_PATH: z.string().default("docs/stage17/localization-coverage-report.md"),
+  LEXFRAME_STAGE17_BRANDING_ARTIFACT_PATH: z.string().default("docs/stage17/debranding-coverage-report.md"),
   LEXFRAME_STAGE17_DESIGN_TOKENS_ARTIFACT_PATH: z.string().default("docs/stage17/17.1/activepieces-design-token-inventory.md"),
   LEXFRAME_AP_DESIGN_SYSTEM_ENABLED: z.enum(["0", "1"]).default("0"),
   LEXFRAME_AI_TEST_FORCE_COMETAPI: z.enum(["0", "1"]).default("0"),

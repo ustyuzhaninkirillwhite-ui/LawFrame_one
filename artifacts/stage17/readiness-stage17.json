@@ -1,12 +1,12 @@
 {
-  "generated_at": "2026-04-30T17:31:49.255Z",
+  "generated_at": "2026-05-03T12:39:53.947Z",
   "readiness_url": "http://localhost:3100/api/readiness/stage17",
   "readiness": {
     "http_status": 200,
-    "stage": "17.4",
+    "stage": "17.12",
     "profile": "local-integrated",
     "overall": "DEGRADED",
-    "generated_at": "2026-04-30T17:31:49.248Z",
+    "generated_at": "2026-05-03T12:39:53.937Z",
     "checks": {
       "activepieces_app": {
         "status": "PASS",
@@ -18,7 +18,7 @@
           "reverse_proxy_url": "http://reverse-proxy/automation-runtime/api/v1/health",
           "reverse_proxy_status": 200,
           "through_reverse_proxy": true,
-          "latency_ms": 12
+          "latency_ms": 69
         }
       },
       "activepieces_worker": {
@@ -29,8 +29,8 @@
           "heartbeat": true,
           "heartbeat_source": "activepieces_db.worker_machine",
           "worker_count": 1,
-          "latest_heartbeat_at": "2026-04-30T17:31:35.263Z",
-          "latest_heartbeat_age_seconds": 14,
+          "latest_heartbeat_at": "2026-05-03T12:39:49.755Z",
+          "latest_heartbeat_age_seconds": 4,
           "cache_volume_mounted": true,
           "worker_token_secret_ref_configured": true
         }
@@ -106,6 +106,8 @@
           "ru_locale_loaded": true,
           "activepieces_force_ru_locale": true,
           "dev_piece_translations_loaded": true,
+          "bundle_first_localization": true,
+          "overlay_fallback_only": true,
           "artifact_path": "docs/stage17/17.1/activepieces-i18n-branding-inventory.md"
         }
       },
@@ -118,7 +120,9 @@
           "visible_activepieces_strings_found": null,
           "brand_display_name_ok": true,
           "artifact_path": "docs/stage17/17.1/activepieces-i18n-branding-inventory.md",
-          "artifact_present": true
+          "artifact_present": true,
+          "neutral_icon_present": true,
+          "pieces_profile": "stage17-production-allowlist"
         }
       },
       "design_tokens": {
@@ -143,12 +147,12 @@
     "services": [
       {
         "Command": "\"./docker-entrypoint…\"",
-        "CreatedAt": "2026-04-30 04:22:29 +0200 CEST",
+        "CreatedAt": "2026-05-03 14:05:29 +0200 CEST",
         "ExitCode": 0,
         "Health": "healthy",
-        "ID": "afdad7a9b39c",
+        "ID": "f2aa01f24db5",
         "Image": "activepieces/activepieces:0.44.0",
-        "Labels": "com.docker.compose.depends_on=activepieces-redis:service_healthy:false,activepieces-postgres:service_healthy:false,com.docker.compose.image=sha256:de8e2ef919f46635a21266821a85ca49179ecb47f85193f4f1a1d195ba540e3d,com.docker.compose.oneoff=False,com.docker.compose.project.working_dir=E:\\Law_frame_main\\infra\\docker,com.docker.compose.replace=activepieces-app-1,service=activepieces,com.docker.compose.config-hash=eb152cf544a69864d0a4e8b2076dfffa5c565184139557984157e0aac4801f8e,com.docker.compose.container-number=1,com.docker.compose.project=lexframe-stage17,com.docker.compose.project.config_files=E:\\Law_frame_main\\infra\\docker\\docker-compose.stage17.local-integrated.yml,com.docker.compose.project.environment_file=E:\\Law_frame_main\\.env.stage17.local,com.docker.compose.service=activepieces-app,com.docker.compose.version=5.1.1,desktop.docker.io/ports.scheme=v2",
+        "Labels": "com.docker.compose.project.config_files=E:\\Law_frame_main\\infra\\docker\\docker-compose.stage17.local-integrated.yml,com.docker.compose.project.working_dir=E:\\Law_frame_main\\infra\\docker,com.docker.compose.service=activepieces-app,com.docker.compose.version=5.1.1,com.docker.compose.config-hash=eb152cf544a69864d0a4e8b2076dfffa5c565184139557984157e0aac4801f8e,com.docker.compose.depends_on=activepieces-postgres:service_healthy:false,activepieces-redis:service_healthy:false,com.docker.compose.project.environment_file=E:\\Law_frame_main\\.env.stage17.local,desktop.docker.io/ports.scheme=v2,service=activepieces,com.docker.compose.container-number=1,com.docker.compose.image=sha256:de8e2ef919f46635a21266821a85ca49179ecb47f85193f4f1a1d195ba540e3d,com.docker.compose.oneoff=False,com.docker.compose.project=lexframe-stage17",
         "LocalVolumes": "0",
         "Mounts": "",
         "Name": "lexframe-stage17-activepieces-app-1",
@@ -164,20 +168,20 @@
             "Protocol": "tcp"
           }
         ],
-        "RunningFor": "15 hours ago",
+        "RunningFor": "34 minutes ago",
         "Service": "activepieces-app",
         "Size": "0B",
         "State": "running",
-        "Status": "Up 39 minutes (healthy)"
+        "Status": "Up 34 minutes (healthy)"
       },
       {
         "Command": "\"docker-entrypoint.s…\"",
-        "CreatedAt": "2026-04-28 18:50:22 +0200 CEST",
+        "CreatedAt": "2026-05-03 14:05:25 +0200 CEST",
         "ExitCode": 0,
         "Health": "healthy",
-        "ID": "b2c52c720424",
+        "ID": "b8347b97f196",
         "Image": "postgres:16-alpine",
-        "Labels": "desktop.docker.io/mounts/0/Source=E:\\Law_frame_main\\.local\\secrets\\stage17\\ap_postgres_password.txt,desktop.docker.io/mounts/0/SourceKind=hostFile,com.docker.compose.container-number=1,com.docker.compose.project.working_dir=E:\\Law_frame_main\\infra\\docker,com.docker.compose.config-hash=a2db4ce354a832c97f7138deb2b43d371129eaccf695973fb9d1983329230252,com.docker.compose.oneoff=False,com.docker.compose.project.config_files=E:\\Law_frame_main\\infra\\docker\\docker-compose.stage17.local-integrated.yml,com.docker.compose.project.environment_file=E:\\Law_frame_main\\.env.stage17.local,com.docker.compose.version=5.1.1,desktop.docker.io/mounts/0/Target=/run/secrets/ap_postgres_password,desktop.docker.io/ports.scheme=v2,com.docker.compose.service=activepieces-postgres,com.docker.compose.depends_on=,com.docker.compose.image=sha256:20edbde7749f822887a1a022ad526fde0a47d6b2be9a8364433605cf65099416,com.docker.compose.project=lexframe-stage17",
+        "Labels": "com.docker.compose.container-number=1,com.docker.compose.project.environment_file=E:\\Law_frame_main\\.env.stage17.local,desktop.docker.io/mounts/0/Target=/run/secrets/ap_postgres_password,desktop.docker.io/ports.scheme=v2,com.docker.compose.oneoff=False,com.docker.compose.project.config_files=E:\\Law_frame_main\\infra\\docker\\docker-compose.stage17.local-integrated.yml,desktop.docker.io/mounts/0/Source=E:\\Law_frame_main\\.local\\secrets\\stage17\\ap_postgres_password.txt,com.docker.compose.depends_on=,com.docker.compose.image=sha256:20edbde7749f822887a1a022ad526fde0a47d6b2be9a8364433605cf65099416,com.docker.compose.project=lexframe-stage17,com.docker.compose.project.working_dir=E:\\Law_frame_main\\infra\\docker,com.docker.compose.service=activepieces-postgres,desktop.docker.io/mounts/0/SourceKind=hostFile,com.docker.compose.config-hash=a2db4ce354a832c97f7138deb2b43d371129eaccf695973fb9d1983329230252,com.docker.compose.version=5.1.1",
         "LocalVolumes": "1",
         "Mounts": "/run/desktop/m…,lexframe-stage…",
         "Name": "lexframe-stage17-activepieces-postgres-1",
@@ -193,20 +197,20 @@
             "Protocol": "tcp"
           }
         ],
-        "RunningFor": "2 days ago",
+        "RunningFor": "34 minutes ago",
         "Service": "activepieces-postgres",
         "Size": "0B",
         "State": "running",
-        "Status": "Up 49 minutes (healthy)"
+        "Status": "Up 34 minutes (healthy)"
       },
       {
         "Command": "\"docker-entrypoint.s…\"",
-        "CreatedAt": "2026-04-28 18:50:22 +0200 CEST",
+        "CreatedAt": "2026-05-03 14:05:25 +0200 CEST",
         "ExitCode": 0,
         "Health": "healthy",
-        "ID": "d04bf5d2d28e",
+        "ID": "457fd8a697de",
         "Image": "redis:7-alpine",
-        "Labels": "com.docker.compose.container-number=1,com.docker.compose.project.config_files=E:\\Law_frame_main\\infra\\docker\\docker-compose.stage17.local-integrated.yml,desktop.docker.io/mounts/0/Source=E:\\Law_frame_main\\.local\\secrets\\stage17\\ap_redis_password.txt,desktop.docker.io/mounts/0/Target=/run/secrets/ap_redis_password,desktop.docker.io/ports.scheme=v2,com.docker.compose.project.working_dir=E:\\Law_frame_main\\infra\\docker,com.docker.compose.service=activepieces-redis,com.docker.compose.version=5.1.1,desktop.docker.io/mounts/0/SourceKind=hostFile,com.docker.compose.config-hash=9c82466406b5c6ab3d4020b7ba6e7e7305ccbe8a68ef8a25cdb7635391ae324e,com.docker.compose.depends_on=,com.docker.compose.image=sha256:8b81dd37ff027bec4e516d41acfbe9fe2460070dc6d4a4570a2ac5b9d59df065,com.docker.compose.oneoff=False,com.docker.compose.project=lexframe-stage17,com.docker.compose.project.environment_file=E:\\Law_frame_main\\.env.stage17.local",
+        "Labels": "com.docker.compose.config-hash=9c82466406b5c6ab3d4020b7ba6e7e7305ccbe8a68ef8a25cdb7635391ae324e,com.docker.compose.oneoff=False,com.docker.compose.project=lexframe-stage17,desktop.docker.io/mounts/0/Target=/run/secrets/ap_redis_password,desktop.docker.io/ports.scheme=v2,com.docker.compose.depends_on=,desktop.docker.io/mounts/0/SourceKind=hostFile,com.docker.compose.image=sha256:8b81dd37ff027bec4e516d41acfbe9fe2460070dc6d4a4570a2ac5b9d59df065,com.docker.compose.project.config_files=E:\\Law_frame_main\\infra\\docker\\docker-compose.stage17.local-integrated.yml,com.docker.compose.project.working_dir=E:\\Law_frame_main\\infra\\docker,com.docker.compose.container-number=1,com.docker.compose.project.environment_file=E:\\Law_frame_main\\.env.stage17.local,com.docker.compose.service=activepieces-redis,com.docker.compose.version=5.1.1,desktop.docker.io/mounts/0/Source=E:\\Law_frame_main\\.local\\secrets\\stage17\\ap_redis_password.txt",
         "LocalVolumes": "1",
         "Mounts": "lexframe-stage…,/run/desktop/m…",
         "Name": "lexframe-stage17-activepieces-redis-1",
@@ -222,20 +226,20 @@
             "Protocol": "tcp"
           }
         ],
-        "RunningFor": "2 days ago",
+        "RunningFor": "34 minutes ago",
         "Service": "activepieces-redis",
         "Size": "0B",
         "State": "running",
-        "Status": "Up 49 minutes (healthy)"
+        "Status": "Up 34 minutes (healthy)"
       },
       {
         "Command": "\"./docker-entrypoint…\"",
-        "CreatedAt": "2026-04-28 18:50:23 +0200 CEST",
+        "CreatedAt": "2026-05-03 14:05:29 +0200 CEST",
         "ExitCode": 0,
         "Health": "",
-        "ID": "f7d1891ff204",
+        "ID": "b4b7ef6e1076",
         "Image": "activepieces/activepieces:0.44.0",
-        "Labels": "service=activepieces,com.docker.compose.config-hash=a55f8bcde5e86d4ce4ba4b7d9d20c715d72e5b737f28aaec41020e115e603806,com.docker.compose.depends_on=activepieces-redis:service_healthy:false,activepieces-app:service_healthy:false,com.docker.compose.project.config_files=E:\\Law_frame_main\\infra\\docker\\docker-compose.stage17.local-integrated.yml,com.docker.compose.project.working_dir=E:\\Law_frame_main\\infra\\docker,com.docker.compose.version=5.1.1,desktop.docker.io/ports.scheme=v2,com.docker.compose.container-number=1,com.docker.compose.image=sha256:de8e2ef919f46635a21266821a85ca49179ecb47f85193f4f1a1d195ba540e3d,com.docker.compose.oneoff=False,com.docker.compose.project=lexframe-stage17,com.docker.compose.project.environment_file=E:\\Law_frame_main\\.env.stage17.local,com.docker.compose.service=activepieces-worker",
+        "Labels": "com.docker.compose.container-number=1,com.docker.compose.depends_on=activepieces-app:service_healthy:false,activepieces-redis:service_healthy:false,com.docker.compose.version=5.1.1,desktop.docker.io/ports.scheme=v2,service=activepieces,com.docker.compose.config-hash=a55f8bcde5e86d4ce4ba4b7d9d20c715d72e5b737f28aaec41020e115e603806,com.docker.compose.image=sha256:de8e2ef919f46635a21266821a85ca49179ecb47f85193f4f1a1d195ba540e3d,com.docker.compose.oneoff=False,com.docker.compose.project=lexframe-stage17,com.docker.compose.project.config_files=E:\\Law_frame_main\\infra\\docker\\docker-compose.stage17.local-integrated.yml,com.docker.compose.project.environment_file=E:\\Law_frame_main\\.env.stage17.local,com.docker.compose.project.working_dir=E:\\Law_frame_main\\infra\\docker,com.docker.compose.service=activepieces-worker",
         "LocalVolumes": "1",
         "Mounts": "lexframe-stage…",
         "Name": "lexframe-stage17-activepieces-worker-1",
@@ -251,20 +255,20 @@
             "Protocol": "tcp"
           }
         ],
-        "RunningFor": "2 days ago",
+        "RunningFor": "34 minutes ago",
         "Service": "activepieces-worker",
         "Size": "0B",
         "State": "running",
-        "Status": "Up 49 minutes"
+        "Status": "Up 33 minutes"
       },
       {
         "Command": "\"docker-entrypoint.s…\"",
-        "CreatedAt": "2026-04-30 19:24:47 +0200 CEST",
+        "CreatedAt": "2026-05-03 14:29:31 +0200 CEST",
         "ExitCode": 0,
         "Health": "healthy",
-        "ID": "a78a965bfe3a",
+        "ID": "03ba6e960a90",
         "Image": "lexframe-backend:stage17-local",
-        "Labels": "com.docker.compose.depends_on=activepieces-redis:service_healthy:false,lexframe-product-db-bootstrap:service_completed_successfully:false,activepieces-app:service_healthy:false,com.docker.compose.image=sha256:b5fb050903095f13d32f3846ba343d06cc637a2a2b839c41904494504e8e0a30,com.docker.compose.project.config_files=E:\\Law_frame_main\\infra\\docker\\docker-compose.stage17.local-integrated.yml,com.docker.compose.project.environment_file=E:\\Law_frame_main\\.env.stage17.local,com.docker.compose.project.working_dir=E:\\Law_frame_main\\infra\\docker,com.docker.compose.service=lexframe-backend,com.docker.compose.version=5.1.1,desktop.docker.io/binds/1/SourceKind=hostFile,com.docker.compose.container-number=1,desktop.docker.io/binds/0/Source=C:\\\\Users\\\\ustyu\\\\.lexframe\\\\secrets,desktop.docker.io/binds/1/Source=E:\\Law_frame_main\\.local\\secrets\\stage17,desktop.docker.io/binds/1/Target=/run/lexframe-stage17-secrets,com.docker.compose.oneoff=False,com.docker.compose.project=lexframe-stage17,com.docker.compose.replace=lexframe-backend-1,desktop.docker.io/binds/0/Target=/run/lexframe-local-secrets,desktop.docker.io/ports.scheme=v2,com.docker.compose.config-hash=4ac6201eab77d33886bf516640a386521dfbfea6e63a0dbcb644521233350b7f,desktop.docker.io/binds/0/SourceKind=hostFile",
+        "Labels": "com.docker.compose.version=5.1.1,desktop.docker.io/binds/1/SourceKind=hostFile,com.docker.compose.container-number=1,com.docker.compose.image=sha256:c397356abb4b2ea9c61c615949e1608469343f126521d7df18109ac1534cba82,com.docker.compose.project=lexframe-stage17,com.docker.compose.replace=lexframe-backend-1,desktop.docker.io/binds/0/Source=C:\\\\Users\\\\ustyu\\\\.lexframe\\\\secrets,desktop.docker.io/binds/0/SourceKind=hostFile,desktop.docker.io/binds/0/Target=/run/lexframe-local-secrets,desktop.docker.io/binds/1/Target=/run/lexframe-stage17-secrets,com.docker.compose.config-hash=4ac6201eab77d33886bf516640a386521dfbfea6e63a0dbcb644521233350b7f,com.docker.compose.project.environment_file=E:\\Law_frame_main\\.env.stage17.local,desktop.docker.io/ports.scheme=v2,com.docker.compose.depends_on=activepieces-redis:service_healthy:false,lexframe-product-db-bootstrap:service_completed_successfully:false,activepieces-app:service_healthy:false,com.docker.compose.project.working_dir=E:\\Law_frame_main\\infra\\docker,desktop.docker.io/binds/1/Source=E:\\Law_frame_main\\.local\\secrets\\stage17,com.docker.compose.oneoff=False,com.docker.compose.project.config_files=E:\\Law_frame_main\\infra\\docker\\docker-compose.stage17.local-integrated.yml,com.docker.compose.service=lexframe-backend",
         "LocalVolumes": "0",
         "Mounts": "/run/desktop/m…,/run/desktop/m…",
         "Name": "lexframe-stage17-lexframe-backend-1",
@@ -280,20 +284,20 @@
             "Protocol": "tcp"
           }
         ],
-        "RunningFor": "7 minutes ago",
+        "RunningFor": "10 minutes ago",
         "Service": "lexframe-backend",
         "Size": "0B",
         "State": "running",
-        "Status": "Up 6 minutes (healthy)"
+        "Status": "Up 9 minutes (healthy)"
       },
       {
         "Command": "\"docker-entrypoint.s…\"",
-        "CreatedAt": "2026-04-28 18:50:22 +0200 CEST",
+        "CreatedAt": "2026-05-03 14:05:25 +0200 CEST",
         "ExitCode": 0,
         "Health": "healthy",
-        "ID": "aff49e2ca0c7",
+        "ID": "1c286c4840a5",
         "Image": "postgres:16-alpine",
-        "Labels": "com.docker.compose.container-number=1,com.docker.compose.project.config_files=E:\\Law_frame_main\\infra\\docker\\docker-compose.stage17.local-integrated.yml,com.docker.compose.project.environment_file=E:\\Law_frame_main\\.env.stage17.local,desktop.docker.io/mounts/0/SourceKind=hostFile,com.docker.compose.depends_on=,com.docker.compose.project=lexframe-stage17,com.docker.compose.project.working_dir=E:\\Law_frame_main\\infra\\docker,com.docker.compose.version=5.1.1,desktop.docker.io/mounts/0/Source=E:\\Law_frame_main\\.local\\secrets\\stage17\\lexframe_product_postgres_password.txt,desktop.docker.io/ports.scheme=v2,com.docker.compose.config-hash=71d18bd6f0de3201240a7528e0c5d3e80bb2ebb945499b49ba1eadbac13be74b,com.docker.compose.service=lexframe-product-postgres,com.docker.compose.image=sha256:20edbde7749f822887a1a022ad526fde0a47d6b2be9a8364433605cf65099416,com.docker.compose.oneoff=False,desktop.docker.io/mounts/0/Target=/run/secrets/lexframe_product_postgres_password",
+        "Labels": "com.docker.compose.project.working_dir=E:\\Law_frame_main\\infra\\docker,com.docker.compose.service=lexframe-product-postgres,desktop.docker.io/ports.scheme=v2,com.docker.compose.image=sha256:20edbde7749f822887a1a022ad526fde0a47d6b2be9a8364433605cf65099416,com.docker.compose.project=lexframe-stage17,com.docker.compose.project.config_files=E:\\Law_frame_main\\infra\\docker\\docker-compose.stage17.local-integrated.yml,com.docker.compose.depends_on=,com.docker.compose.oneoff=False,desktop.docker.io/mounts/0/Target=/run/secrets/lexframe_product_postgres_password,com.docker.compose.version=5.1.1,desktop.docker.io/mounts/0/Source=E:\\Law_frame_main\\.local\\secrets\\stage17\\lexframe_product_postgres_password.txt,desktop.docker.io/mounts/0/SourceKind=hostFile,com.docker.compose.config-hash=71d18bd6f0de3201240a7528e0c5d3e80bb2ebb945499b49ba1eadbac13be74b,com.docker.compose.container-number=1,com.docker.compose.project.environment_file=E:\\Law_frame_main\\.env.stage17.local",
         "LocalVolumes": "1",
         "Mounts": "/run/desktop/m…,lexframe-stage…",
         "Name": "lexframe-stage17-lexframe-product-postgres-1",
@@ -309,20 +313,20 @@
             "Protocol": "tcp"
           }
         ],
-        "RunningFor": "2 days ago",
+        "RunningFor": "34 minutes ago",
         "Service": "lexframe-product-postgres",
         "Size": "0B",
         "State": "running",
-        "Status": "Up 49 minutes (healthy)"
+        "Status": "Up 34 minutes (healthy)"
       },
       {
         "Command": "\"docker-entrypoint.s…\"",
-        "CreatedAt": "2026-04-30 19:24:49 +0200 CEST",
+        "CreatedAt": "2026-05-03 14:29:34 +0200 CEST",
         "ExitCode": 0,
         "Health": "healthy",
-        "ID": "c6ce2d01508c",
+        "ID": "bb8ee2c316cd",
         "Image": "lexframe-web:stage17-local",
-        "Labels": "com.docker.compose.project.environment_file=E:\\Law_frame_main\\.env.stage17.local,com.docker.compose.project.working_dir=E:\\Law_frame_main\\infra\\docker,com.docker.compose.service=lexframe-web,desktop.docker.io/ports.scheme=v2,com.docker.compose.container-number=1,com.docker.compose.image=sha256:fcafd4403ddf7bfd4959ad8b373be24837278ba8e1d56c2a49c1424fac38e88a,com.docker.compose.project.config_files=E:\\Law_frame_main\\infra\\docker\\docker-compose.stage17.local-integrated.yml,com.docker.compose.replace=lexframe-web-1,com.docker.compose.version=5.1.1,com.docker.compose.config-hash=47a94cc3d4695b6c2f55d2e0a0260223d8790f16e6e42186298dcca3c495dc8b,com.docker.compose.depends_on=lexframe-backend:service_healthy:false,com.docker.compose.oneoff=False,com.docker.compose.project=lexframe-stage17",
+        "Labels": "com.docker.compose.project.working_dir=E:\\Law_frame_main\\infra\\docker,com.docker.compose.service=lexframe-web,desktop.docker.io/ports.scheme=v2,com.docker.compose.config-hash=47a94cc3d4695b6c2f55d2e0a0260223d8790f16e6e42186298dcca3c495dc8b,com.docker.compose.container-number=1,com.docker.compose.depends_on=lexframe-backend:service_healthy:false,com.docker.compose.image=sha256:04e90eb38b4ec146f20e17a9203e847812118503e4df53e91a0b8c86a7d0a2c0,com.docker.compose.project=lexframe-stage17,com.docker.compose.project.config_files=E:\\Law_frame_main\\infra\\docker\\docker-compose.stage17.local-integrated.yml,com.docker.compose.replace=lexframe-web-1,com.docker.compose.version=5.1.1,com.docker.compose.oneoff=False,com.docker.compose.project.environment_file=E:\\Law_frame_main\\.env.stage17.local",
         "LocalVolumes": "0",
         "Mounts": "",
         "Name": "lexframe-stage17-lexframe-web-1",
@@ -338,20 +342,20 @@
             "Protocol": "tcp"
           }
         ],
-        "RunningFor": "7 minutes ago",
+        "RunningFor": "10 minutes ago",
         "Service": "lexframe-web",
         "Size": "0B",
         "State": "running",
-        "Status": "Up 6 minutes (healthy)"
+        "Status": "Up 9 minutes (healthy)"
       },
       {
         "Command": "\"/docker-entrypoint.…\"",
-        "CreatedAt": "2026-04-28 18:50:23 +0200 CEST",
+        "CreatedAt": "2026-05-03 14:05:30 +0200 CEST",
         "ExitCode": 0,
         "Health": "healthy",
-        "ID": "a2ff1d8cfc46",
+        "ID": "2a15335bb518",
         "Image": "nginx:1.27-alpine",
-        "Labels": "com.docker.compose.depends_on=activepieces-app:service_healthy:false,lexframe-web:service_healthy:false,lexframe-backend:service_healthy:false,com.docker.compose.oneoff=False,com.docker.compose.project.config_files=E:\\Law_frame_main\\infra\\docker\\docker-compose.stage17.local-integrated.yml,com.docker.compose.project.environment_file=E:\\Law_frame_main\\.env.stage17.local,com.docker.compose.project.working_dir=E:\\Law_frame_main\\infra\\docker,desktop.docker.io/binds/0/Source=E:\\Law_frame_main\\infra\\docker\\nginx.stage17.local-integrated.conf,desktop.docker.io/ports/80/tcp=:3100,com.docker.compose.config-hash=14b0eb72c448c183fe9bc0498cec795f8a4735a2e69a80af4bd0d7d78030dba0,com.docker.compose.project=lexframe-stage17,com.docker.compose.service=reverse-proxy,maintainer=NGINX Docker Maintainers <docker-maint@nginx.com>,com.docker.compose.version=5.1.1,desktop.docker.io/binds/0/SourceKind=hostFile,com.docker.compose.container-number=1,com.docker.compose.image=sha256:65645c7bb6a0661892a8b03b89d0743208a18dd2f3f17a54ef4b76fb8e2f2a10,desktop.docker.io/binds/0/Target=/etc/nginx/conf.d/default.conf,desktop.docker.io/ports.scheme=v2",
+        "Labels": "com.docker.compose.container-number=1,com.docker.compose.oneoff=False,desktop.docker.io/binds/0/SourceKind=hostFile,desktop.docker.io/binds/0/Target=/etc/nginx/conf.d/default.conf,com.docker.compose.depends_on=lexframe-backend:service_healthy:false,activepieces-app:service_healthy:false,lexframe-web:service_healthy:false,com.docker.compose.project=lexframe-stage17,desktop.docker.io/binds/0/Source=E:\\Law_frame_main\\infra\\docker\\nginx.stage17.local-integrated.conf,desktop.docker.io/ports/80/tcp=:3100,com.docker.compose.service=reverse-proxy,com.docker.compose.version=5.1.1,maintainer=NGINX Docker Maintainers <docker-maint@nginx.com>,com.docker.compose.config-hash=14b0eb72c448c183fe9bc0498cec795f8a4735a2e69a80af4bd0d7d78030dba0,com.docker.compose.image=sha256:65645c7bb6a0661892a8b03b89d0743208a18dd2f3f17a54ef4b76fb8e2f2a10,com.docker.compose.project.config_files=E:\\Law_frame_main\\infra\\docker\\docker-compose.stage17.local-integrated.yml,com.docker.compose.project.environment_file=E:\\Law_frame_main\\.env.stage17.local,com.docker.compose.project.working_dir=E:\\Law_frame_main\\infra\\docker,desktop.docker.io/ports.scheme=v2",
         "LocalVolumes": "0",
         "Mounts": "/run/desktop/m…",
         "Name": "lexframe-stage17-reverse-proxy-1",
@@ -373,11 +377,11 @@
             "Protocol": "tcp"
           }
         ],
-        "RunningFor": "2 days ago",
+        "RunningFor": "34 minutes ago",
         "Service": "reverse-proxy",
         "Size": "0B",
         "State": "running",
-        "Status": "Up 49 minutes (healthy)"
+        "Status": "Up 33 minutes (healthy)"
       }
     ]
   },

@@ -45,6 +45,7 @@ declare global {
     activepieces?: ActivepiecesEmbedSdk;
     ActivepiecesEmbeddedBuilder?: ActivepiecesEmbedSdk;
     ActivepiecesEmbed?: ActivepiecesEmbedSdk;
+    __LEXFRAME_STAGE17_LOCALIZATION_FALLBACK__?: LocalizationFallbackMetrics;
   }
 }
 
@@ -143,20 +144,31 @@ export function ActivepiecesCanvasWrapper({
           initialRoute: session.initialRoute,
           navigationHandler: handleNavigation,
         };
-        await sdk.configure(configureInput);
-        disposeLocalizationOverlay =
-          installEmbeddedLocalizationOverlay(containerId);
+        disposeLocalizationOverlay = installEmbeddedLocalizationOverlay(containerId);
 
+        await sdk.configure(configureInput);
+
+        if (!disposed && typeof sdk.navigate === "function" && session.initialRoute) {
+          await sdk.navigate({ route: session.initialRoute });
+          await wait(250);
+        }
+
+        let localizationReadiness =
+          await verifyEmbeddedLocalizationBeforeVisible(containerId);
         if (
+          !localizationReadiness.surfaceReady &&
           !disposed &&
           typeof sdk.navigate === "function" &&
           session.initialRoute
         ) {
-          window.setTimeout(() => {
-            if (!disposed) {
-              void sdk.navigate?.({ route: session.initialRoute });
-            }
-          }, 250);
+          await sdk.navigate({ route: session.initialRoute });
+          await wait(500);
+          localizationReadiness =
+            await verifyEmbeddedLocalizationBeforeVisible(containerId);
+        }
+
+        if (!localizationReadiness.surfaceReady) {
+          throw new Error("Конструктор автоматизаций не отрисовал рабочую область.");
         }
 
         if (!disposed) {
@@ -321,10 +333,78 @@ const visibleTextTranslations = new Map<string, string>([
 ]);
 
 const embeddedAutomationIconUrl = "/lexframe-automation-icon.svg";
+const knownUserFacingEnglishTerms = [
+  "Flows",
+  "Runs",
+  "Versions",
+  "Publish",
+  "Manual Run",
+  "Manual Trigger",
+  "Manage Flow",
+  "Loop on Items",
+  "Router",
+  "Code",
+  "Choose a piece",
+  "Select a piece first",
+  "Please select a piece first",
+  "Connections",
+  "No results",
+  "Create connection",
+  "Test step",
+  "Step settings",
+  "Trigger",
+  "Action",
+  "Activepieces",
+] as const;
+
+type LocalizationFallbackMetrics = {
+  readonly invocations: number;
+  readonly replacements: number;
+  readonly fingerprints: readonly string[];
+  readonly lastCheckedAt: string;
+};
+
+async function verifyEmbeddedLocalizationBeforeVisible(containerId: string) {
+  const startedAt = Date.now();
+  let doc = await waitForEmbeddedDocument(containerId, 5_000);
+  if (!doc?.body) {
+    return { knownEnglishHits: 0, surfaceReady: false };
+  }
+
+  let hits: Array<(typeof knownUserFacingEnglishTerms)[number]> = [];
+  let visiblePayload = "";
+  do {
+    translateEmbeddedDocument(doc);
+    visiblePayload = collectVisiblePayload(doc);
+    hits = knownUserFacingEnglishTerms.filter((term) =>
+      containsUserFacingTerm(visiblePayload, term),
+    );
+    if (visiblePayload.trim().length > 0 && hits.length === 0) {
+      break;
+    }
+
+    await wait(100);
+    doc =
+      document
+        .getElementById(containerId)
+        ?.querySelector("iframe")
+        ?.contentDocument ?? doc;
+  } while (Date.now() - startedAt < 8_000);
+  recordLocalizationFallback({
+    invocations: 0,
+    replacements: hits.length,
+    fingerprints: hits.map(hashString),
+  });
+
+  return {
+    knownEnglishHits: hits.length,
+    surfaceReady: visiblePayload.trim().length > 0,
+  };
+}
 
 function installEmbeddedLocalizationOverlay(containerId: string) {
-  const disposers: Array<() => void> = [];
-  let attempts = 0;
+  let activeDocument: Document | null = null;
+  let activeObserver: MutationObserver | null = null;
 
   const attach = () => {
     const iframe = document
@@ -332,19 +412,18 @@ function installEmbeddedLocalizationOverlay(containerId: string) {
       ?.querySelector("iframe");
     const doc = iframe?.contentDocument;
     if (!doc?.body) {
-      attempts += 1;
-      if (attempts > 60) {
-        window.clearInterval(intervalId);
-      }
       return;
     }
 
-    window.clearInterval(intervalId);
-    translateEmbeddedDocument(doc);
-    const currentIframe = iframe;
-    if (!currentIframe) {
+    if (doc === activeDocument) {
+      translateEmbeddedDocument(doc);
       return;
     }
+
+    activeObserver?.disconnect();
+    activeDocument = doc;
+    translateEmbeddedDocument(doc);
+
     let scheduled = false;
     const scheduleTranslate = () => {
       if (scheduled) {
@@ -353,27 +432,19 @@ function installEmbeddedLocalizationOverlay(containerId: string) {
       scheduled = true;
       window.setTimeout(() => {
         scheduled = false;
-        translateEmbeddedDocument(doc);
-      }, 100);
+        if (activeDocument?.body) {
+          translateEmbeddedDocument(activeDocument);
+        }
+      }, 50);
     };
-    const observer = new MutationObserver(scheduleTranslate);
-    observer.observe(doc.body, {
+    activeObserver = new MutationObserver(scheduleTranslate);
+    activeObserver.observe(doc.body, {
       childList: true,
       subtree: true,
       characterData: true,
       attributes: true,
       attributeFilter: ["aria-label", "alt", "title", "placeholder"],
     });
-    disposers.push(() => observer.disconnect());
-
-    const handleLoad = () => {
-      const nextDoc = currentIframe.contentDocument;
-      if (nextDoc?.body) {
-        translateEmbeddedDocument(nextDoc);
-      }
-    };
-    currentIframe.addEventListener("load", handleLoad);
-    disposers.push(() => currentIframe.removeEventListener("load", handleLoad));
   };
 
   const intervalId = window.setInterval(attach, 250);
@@ -381,16 +452,14 @@ function installEmbeddedLocalizationOverlay(containerId: string) {
 
   return () => {
     window.clearInterval(intervalId);
-    for (const dispose of disposers) {
-      dispose();
-    }
+    activeObserver?.disconnect();
   };
 }
 
 function translateEmbeddedDocument(doc: Document) {
   doc.documentElement.lang = "ru";
   doc.title = "Конструктор автоматизаций";
-  translateTextNodes(doc.body);
+  let replacements = translateTextNodes(doc.body);
   replaceBrandedImages(doc);
   for (const element of doc.body.querySelectorAll<HTMLElement>("*")) {
     for (const attribute of ["aria-label", "alt", "title", "placeholder"]) {
@@ -399,9 +468,17 @@ function translateEmbeddedDocument(doc: Document) {
         const nextValue = translateVisibleString(value);
         if (nextValue !== value) {
           element.setAttribute(attribute, nextValue);
+          replacements += 1;
         }
       }
     }
+  }
+  if (replacements > 0) {
+    recordLocalizationFallback({
+      invocations: 1,
+      replacements,
+      fingerprints: [hashString(String(replacements))],
+    });
   }
 }
 
@@ -427,12 +504,15 @@ function translateTextNodes(root: Node) {
     nodes.push(walker.currentNode as Text);
   }
 
+  let replacements = 0;
   for (const node of nodes) {
     const nextValue = translateVisibleString(node.nodeValue ?? "");
     if (nextValue !== node.nodeValue) {
       node.nodeValue = nextValue;
+      replacements += 1;
     }
   }
+  return replacements;
 }
 
 function translateVisibleString(value: string) {
@@ -468,4 +548,94 @@ function nextFrame() {
   return new Promise<void>((resolve) => {
     requestAnimationFrame(() => resolve());
   });
+}
+
+function wait(milliseconds: number) {
+  return new Promise<void>((resolve) => {
+    window.setTimeout(() => resolve(), milliseconds);
+  });
+}
+
+function waitForEmbeddedDocument(containerId: string, timeoutMs: number) {
+  const startedAt = Date.now();
+
+  return new Promise<Document | null>((resolve) => {
+    const check = () => {
+      const iframe = document
+        .getElementById(containerId)
+        ?.querySelector("iframe");
+      const doc = iframe?.contentDocument ?? null;
+      if (doc?.body) {
+        resolve(doc);
+        return;
+      }
+
+      if (Date.now() - startedAt >= timeoutMs) {
+        resolve(null);
+        return;
+      }
+
+      window.setTimeout(check, 50);
+    };
+
+    check();
+  });
+}
+
+function collectVisiblePayload(doc: Document) {
+  const values: string[] = [doc.title];
+  const walker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT);
+  while (walker.nextNode()) {
+    const value = walker.currentNode.nodeValue?.trim();
+    if (value) {
+      values.push(value);
+    }
+  }
+  for (const element of doc.body.querySelectorAll<HTMLElement>("*")) {
+    for (const attribute of ["aria-label", "alt", "title", "placeholder"]) {
+      const value = element.getAttribute(attribute)?.trim();
+      if (value) {
+        values.push(value);
+      }
+    }
+  }
+  return values.join("\n");
+}
+
+function containsUserFacingTerm(payload: string, term: string) {
+  return term.includes(" ")
+    ? payload.includes(term)
+    : new RegExp(`\\b${escapeRegExp(term)}\\b`).test(payload);
+}
+
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function recordLocalizationFallback(input: {
+  readonly invocations: number;
+  readonly replacements: number;
+  readonly fingerprints: readonly string[];
+}) {
+  const current = window.__LEXFRAME_STAGE17_LOCALIZATION_FALLBACK__ ?? {
+    invocations: 0,
+    replacements: 0,
+    fingerprints: [],
+    lastCheckedAt: new Date(0).toISOString(),
+  };
+  window.__LEXFRAME_STAGE17_LOCALIZATION_FALLBACK__ = {
+    invocations: current.invocations + input.invocations,
+    replacements: current.replacements + input.replacements,
+    fingerprints: [...current.fingerprints, ...input.fingerprints].slice(-50),
+    lastCheckedAt: new Date().toISOString(),
+  };
+}
+
+function hashString(value: string) {
+  let hash = 0x811c9dc5;
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index);
+    hash = Math.imul(hash, 0x01000193);
+  }
+  return `fnv1a:${(hash >>> 0).toString(16).padStart(8, "0")}`;
 }

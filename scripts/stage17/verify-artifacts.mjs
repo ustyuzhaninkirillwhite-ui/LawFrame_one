@@ -23,9 +23,29 @@ const requiredArtifacts = [
   ["P0", "docs/stage17/activepieces-runtime-evidence.md"],
   ["P0", "docs/stage17/visual-regression-report.md"],
   ["P0", "docs/stage17/stage17-release-gate-report.md"],
+  ["P0", "docs/stage17/17.12-audit-start.md"],
+  ["P0", "docs/stage17/stage17-final-closure.md"],
+  ["P0", "docs/stage17/stage17-traceability-matrix.md"],
+  ["P0", "docs/stage17/ADR-stage17-canvas-strategy.md"],
+  ["P1", "docs/stage17/stage17-known-limitations.md"],
+  ["P1", "docs/stage17/stage17-risk-register.md"],
+  ["P0", "docs/stage17/stage17-evidence-index.md"],
+  ["P1", "docs/stage17/localization-runtime-audit.md"],
+  ["P0", "docs/stage17/localization-flicker-hardening.md"],
+  ["P1", "docs/stage17/debranding-runtime-audit.md"],
+  ["P0", "docs/stage17/open-source-pieces-pack.md"],
+  ["P1", "docs/stage17/pieces-source-inventory.md"],
+  ["P1", "docs/stage17/pieces-localization-report.md"],
   ["P0", "artifacts/stage17/release-gate.json"],
   ["P0", "artifacts/stage17/runtime-evidence.json"],
   ["P0", "artifacts/stage17/browser-secret-scan.json"],
+  ["P0", "artifacts/stage17/evidence-index.json"],
+  ["P0", "artifacts/stage17/localization-flicker-evidence.json"],
+  ["P0", "artifacts/stage17/debranding-icon-evidence.json"],
+  ["P0", "artifacts/stage17/pieces-inventory.json"],
+  ["P0", "artifacts/stage17/pieces-build-report.json"],
+  ["P0", "artifacts/stage17/pieces-sync-report.json"],
+  ["P0", "artifacts/stage17/pieces-localization-report.json"],
   ["P1", "scripts/secrets/init-local-keys.ps1"],
   ["P0", "scripts/security/check-no-local-secrets.mjs"],
   ["P0", "scripts/stage17/release-gate.mjs"],
@@ -105,7 +125,7 @@ function verifyArtifacts() {
     };
   });
   const result = {
-    stage: "17.10",
+    stage: "17.12",
     generated_at: new Date().toISOString(),
     status: entries.every((entry) => entry.status === "PASS") ? "PASS" : "FAIL",
     entries,
@@ -176,7 +196,7 @@ function verifyStopList() {
   }
 
   const result = {
-    stage: "17.10",
+    stage: "17.12",
     generated_at: new Date().toISOString(),
     status: findings.length === 0 ? "PASS" : "FAIL",
     scanned_files: files.length,

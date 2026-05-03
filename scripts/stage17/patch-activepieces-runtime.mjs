@@ -7,6 +7,8 @@ const docker =
   process.env.DOCKER_CLI_PATH ?? (process.platform === "win32" ? "docker.exe" : "docker");
 const activepiecesRoot =
   process.env.ACTIVEPIECES_SOURCE_DIR ?? "E:/activepieces-main";
+const repoIconSource = path.join(root, "apps/web/public/lexframe-automation-icon.svg");
+const repoLogoSource = path.join(root, "apps/web/public/lexframe-automation-logo.svg");
 const ruLocaleSource = path.join(
   activepiecesRoot,
   "packages/web/public/locales/ru/translation.json",
@@ -33,17 +35,26 @@ const copies = [
     required: true,
   },
   {
-    source: path.join(activepiecesRoot, "packages/web/public/lexframe-automation-icon.svg"),
+    source: firstExisting([
+      repoIconSource,
+      path.join(activepiecesRoot, "packages/web/public/lexframe-automation-icon.svg"),
+    ]),
     target: "/usr/src/app/packages/react-ui/public/lexframe-automation-icon.svg",
     required: true,
   },
   {
-    source: path.join(activepiecesRoot, "packages/web/public/lexframe-automation-logo.svg"),
+    source: firstExisting([
+      repoLogoSource,
+      path.join(activepiecesRoot, "packages/web/public/lexframe-automation-logo.svg"),
+    ]),
     target: "/usr/src/app/packages/react-ui/public/lexframe-automation-logo.svg",
     required: true,
   },
   {
-    source: path.join(activepiecesRoot, "packages/web/public/lexframe-automation-icon.svg"),
+    source: firstExisting([
+      repoIconSource,
+      path.join(activepiecesRoot, "packages/web/public/lexframe-automation-icon.svg"),
+    ]),
     target: "/usr/src/app/packages/react-ui/public/logo.svg",
     required: true,
   },
@@ -120,4 +131,8 @@ function spawn(command, args, options = {}) {
 
 function quotePosix(value) {
   return `'${value.replace(/'/g, "'\\''")}'`;
+}
+
+function firstExisting(paths) {
+  return paths.find((candidate) => existsSync(candidate)) ?? paths[0];
 }

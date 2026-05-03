@@ -1590,7 +1590,7 @@ export interface Stage17ReadinessChecks {
 }
 
 export interface Stage17ReadinessResponse {
-  readonly stage: "17.4";
+  readonly stage: "17.12";
   readonly profile: "local-integrated";
   readonly overall: Stage17ReadinessOverall;
   readonly generated_at: string;
