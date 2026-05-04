@@ -104,7 +104,7 @@
   ActivepiecesEmbedded.prototype._setupInitialMessageHandler =
     function setupInitialMessageHandler(targetWindow, initialRoute, resolve) {
       var self = this;
-      var expectedOrigin = new URL(this._instanceUrl).origin;
+      var expectedOrigin = resolveEmbedOrigin(this._instanceUrl);
 
       function handler(event) {
         if (event.source !== targetWindow || event.origin !== expectedOrigin) {
@@ -261,8 +261,20 @@
   }
 
   function buildEmbedUrl(instanceUrl) {
+    return resolveEmbedOrigin(instanceUrl) + "/embed?currentDate=" + Date.now();
+  }
+
+  function resolveEmbedOrigin(instanceUrl) {
     var url = new URL(instanceUrl, window.location.href);
-    return url.origin + "/embed?currentDate=" + Date.now();
+    var current = new URL(window.location.href);
+    if (isLoopbackHost(url.hostname) && isLoopbackHost(current.hostname)) {
+      return current.origin;
+    }
+    return url.origin;
+  }
+
+  function isLoopbackHost(hostname) {
+    return hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1" || hostname === "[::1]";
   }
 
   var sdk = new ActivepiecesEmbedded();
