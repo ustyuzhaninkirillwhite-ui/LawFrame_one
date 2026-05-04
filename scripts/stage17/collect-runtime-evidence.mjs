@@ -194,9 +194,25 @@ function discoverStage17CanvasBinding() {
       select ia.workspace_id, ia.id as automation_id
       from app.installed_automations ia
       join app.automation_templates at on at.id = ia.template_id
-      where at.code = 'stage17.activepieces.canvas'
-        and ia.deleted_at is null
-      order by ia.updated_at desc
+      where ia.deleted_at is null
+        and (
+          at.code = 'stage17.activepieces.canvas'
+          or ia.id = '16000000-0000-4000-8000-000000008001'
+          or ia.runtime_project_id = 'lfstg17project0000001'
+          or exists (
+            select 1
+            from app.activepieces_flow_bindings afb
+            where afb.automation_id = ia.id
+              and afb.ap_project_id = 'lfstg17project0000001'
+          )
+        )
+      order by
+        case
+          when at.code = 'stage17.activepieces.canvas' then 0
+          when ia.id = '16000000-0000-4000-8000-000000008001' then 1
+          else 2
+        end,
+        ia.updated_at desc
       limit 1
     `,
   )[0];

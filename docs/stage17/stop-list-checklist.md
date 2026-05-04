@@ -1,8 +1,8 @@
 # Stage 17.10 Stop-list Compliance
 
 Status: PASS
-Scanned files: 1079
-Generated: 2026-05-03T12:44:39.457Z
+Scanned files: 1081
+Generated: 2026-05-04T18:41:02.231Z
 
 | Rule | Severity | Status | File | Finding |
 | --- | --- | --- | --- | --- |

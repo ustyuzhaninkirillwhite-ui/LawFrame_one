@@ -51,6 +51,10 @@ test.describe("Stage 17.8 design convergence", () => {
 
     const container = page.getByTestId("activepieces-canvas-container");
     await expect(container).toBeVisible({ timeout: 45_000 });
+    await expect(
+      container.getByText("Загружаем конструктор автоматизаций."),
+    ).toHaveCount(0, { timeout: 45_000 });
+    await expect(container.locator("iframe")).toBeVisible({ timeout: 45_000 });
     await expect(container).toHaveScreenshot(
       "stage17-17-8-activepieces-canvas-wrapper.png",
     );

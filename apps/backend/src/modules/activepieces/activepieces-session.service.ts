@@ -69,6 +69,9 @@ const RATE_LIMIT_WINDOW_MS = 60_000;
 const SUCCESS_SESSION_LIMIT = 10;
 const FAILED_SESSION_LIMIT = 5;
 const STAGE17_ACTIVEPIECES_PLATFORM_ID = 'lfstg17platform000001';
+const ACTIVEPIECES_RUNTIME_PROBE_ATTEMPTS = 3;
+const ACTIVEPIECES_RUNTIME_PROBE_TIMEOUT_MS = 5_000;
+const ACTIVEPIECES_RUNTIME_PROBE_RETRY_DELAY_MS = 400;
 
 @Injectable()
 export class ActivepiecesSessionService {
@@ -112,7 +115,10 @@ export class ActivepiecesSessionService {
         );
       }
 
-      if (!workspaceId || (input.workspaceId && input.workspaceId !== workspaceId)) {
+      if (
+        !workspaceId ||
+        (input.workspaceId && input.workspaceId !== workspaceId)
+      ) {
         throw new AppHttpException(
           'WORKSPACE_ACCESS_DENIED',
           403,
@@ -133,7 +139,11 @@ export class ActivepiecesSessionService {
 
       const modePreference = normalizeModePreference(input);
       const rateKey = `${actor.id}:${workspaceId}:${input.projectId}`;
-      assertNotRateLimited(this.successfulWindows, rateKey, SUCCESS_SESSION_LIMIT);
+      assertNotRateLimited(
+        this.successfulWindows,
+        rateKey,
+        SUCCESS_SESSION_LIMIT,
+      );
       assertNotRateLimited(this.failedWindows, rateKey, FAILED_SESSION_LIMIT);
 
       await this.auditWriter.record({
@@ -199,10 +209,12 @@ export class ActivepiecesSessionService {
         );
       }
 
-      const piecesPolicy = this.piecesPolicyService.buildAutomationCanvasPolicy({
-        workspaceSecurity,
-        automation,
-      });
+      const piecesPolicy = this.piecesPolicyService.buildAutomationCanvasPolicy(
+        {
+          workspaceSecurity,
+          automation,
+        },
+      );
       await this.auditWriter.record({
         actor,
         workspaceId,
@@ -341,7 +353,9 @@ export class ActivepiecesSessionService {
         role: mappedRole.role,
         piecesPolicy,
         traceId: traceMeta.traceId,
-        ipHash: meta.clientIp ? this.jwtSigner.hashRuntimeSecretScoped(meta.clientIp) : null,
+        ipHash: meta.clientIp
+          ? this.jwtSigner.hashRuntimeSecretScoped(meta.clientIp)
+          : null,
         userAgentHash: meta.userAgent
           ? this.jwtSigner.hashRuntimeSecretScoped(meta.userAgent)
           : null,
@@ -779,42 +793,61 @@ export class ActivepiecesSessionService {
       };
     }
 
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 2_000);
-    try {
-      const response = await fetch(
-        `${this.env.ACTIVEPIECES_BASE_URL.replace(/\/$/, '')}/api/v1/flags`,
-        {
+    const flagsUrl = `${this.env.ACTIVEPIECES_BASE_URL.replace(
+      /\/$/,
+      '',
+    )}/api/v1/flags`;
+    let lastError: unknown = null;
+
+    for (
+      let attempt = 1;
+      attempt <= ACTIVEPIECES_RUNTIME_PROBE_ATTEMPTS;
+      attempt += 1
+    ) {
+      const controller = new AbortController();
+      const timeout = setTimeout(
+        () => controller.abort(),
+        ACTIVEPIECES_RUNTIME_PROBE_TIMEOUT_MS,
+      );
+
+      try {
+        const response = await fetch(flagsUrl, {
           method: 'GET',
           signal: controller.signal,
-        },
-      );
+        });
 
-      if (!response.ok) {
-        throw new Error(`Activepieces readiness returned ${response.status}`);
+        if (!response.ok) {
+          throw new Error(`Activepieces readiness returned ${response.status}`);
+        }
+
+        return {
+          ap_app: 'ok',
+          ap_worker: this.env.ACTIVEPIECES_WORKER_HEALTH_URL
+            ? 'ok'
+            : 'degraded',
+          ap_db: 'ok',
+          redis: 'ok',
+        };
+      } catch (error) {
+        lastError = error;
+        if (attempt < ACTIVEPIECES_RUNTIME_PROBE_ATTEMPTS) {
+          await waitForRuntimeProbeRetry(
+            ACTIVEPIECES_RUNTIME_PROBE_RETRY_DELAY_MS * attempt,
+          );
+        }
+      } finally {
+        clearTimeout(timeout);
       }
-
-      return {
-        ap_app: 'ok',
-        ap_worker: this.env.ACTIVEPIECES_WORKER_HEALTH_URL ? 'ok' : 'degraded',
-        ap_db: 'ok',
-        redis: 'ok',
-      };
-    } catch (error) {
-      throw new AppHttpException(
-        'ACTIVEPIECES_RUNTIME_UNAVAILABLE',
-        503,
-        'Activepieces runtime readiness could not be verified.',
-        {
-          reason:
-            error instanceof Error
-              ? error.message
-              : 'activepieces_runtime_unavailable',
-        },
-      );
-    } finally {
-      clearTimeout(timeout);
     }
+
+    throw new AppHttpException(
+      'ACTIVEPIECES_RUNTIME_UNAVAILABLE',
+      503,
+      'Activepieces runtime readiness could not be verified.',
+      {
+        reason: describeRuntimeProbeError(lastError),
+      },
+    );
   }
 
   private resolveMode(
@@ -825,7 +858,8 @@ export class ActivepiecesSessionService {
     const prefix = parsed.pathname === '/' ? '' : parsed.pathname;
 
     return {
-      mode: modePreference === 'reverse_proxy' ? 'reverse_proxy' : 'iframe_embed',
+      mode:
+        modePreference === 'reverse_proxy' ? 'reverse_proxy' : 'iframe_embed',
       instanceUrl,
       prefix,
     };
@@ -850,12 +884,7 @@ export class ActivepiecesSessionService {
         order by created_at desc
         limit 1
       `,
-      [
-        input.workspaceId,
-        input.actorId,
-        input.projectId,
-        input.idempotencyKey,
-      ],
+      [input.workspaceId, input.actorId, input.projectId, input.idempotencyKey],
     );
 
     if (!row) {
@@ -1038,6 +1067,20 @@ function clampTtl(value: number) {
 function normalizeOptionalString(value: string | null | undefined) {
   const trimmed = value?.trim();
   return trimmed ? trimmed : null;
+}
+
+function waitForRuntimeProbeRetry(delayMs: number) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, delayMs);
+  });
+}
+
+function describeRuntimeProbeError(error: unknown) {
+  if (!(error instanceof Error)) {
+    return 'activepieces_runtime_unavailable';
+  }
+
+  return error.message || error.name || 'activepieces_runtime_unavailable';
 }
 
 function buildActivepiecesBuilderUrl(
@@ -1232,16 +1275,15 @@ function stableStringify(value: unknown): string {
   if (value && typeof value === 'object') {
     return `{${Object.entries(value as Record<string, unknown>)
       .sort(([left], [right]) => left.localeCompare(right))
-      .map(([key, nested]) => `${JSON.stringify(key)}:${stableStringify(nested)}`)
+      .map(
+        ([key, nested]) => `${JSON.stringify(key)}:${stableStringify(nested)}`,
+      )
       .join(',')}}`;
   }
   return JSON.stringify(value);
 }
 
-function incrementRateWindow(
-  store: Map<string, RateWindow>,
-  key: string,
-) {
+function incrementRateWindow(store: Map<string, RateWindow>, key: string) {
   const now = Date.now();
   const existing = store.get(key);
   if (!existing || now - existing.startedAtMs > RATE_LIMIT_WINDOW_MS) {

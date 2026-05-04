@@ -1,6 +1,6 @@
 {
   "stage": "17.12",
-  "generated_at": "2026-05-03T12:44:39.222Z",
+  "generated_at": "2026-05-04T18:41:01.453Z",
   "status": "PASS",
   "entries": [
     {
@@ -73,7 +73,7 @@
       "path": "docs/stage17/stage17-release-gate-report.md",
       "severity": "P0",
       "status": "PASS",
-      "bytes": 1445
+      "bytes": 1286
     },
     {
       "path": "docs/stage17/17.12-audit-start.md",
@@ -157,7 +157,7 @@
       "path": "artifacts/stage17/release-gate.json",
       "severity": "P0",
       "status": "PASS",
-      "bytes": 13354
+      "bytes": 10805
     },
     {
       "path": "artifacts/stage17/runtime-evidence.json",
@@ -241,7 +241,7 @@
       "path": "scripts/stage17/collect-runtime-evidence.mjs",
       "severity": "P0",
       "status": "PASS",
-      "bytes": 14649
+      "bytes": 15187
     },
     {
       "path": "scripts/stage17/scan-browser-evidence.mjs",
@@ -265,7 +265,7 @@
       "path": "apps/backend/src/modules/activepieces/activepieces-session.service.ts",
       "severity": "P0",
       "status": "PASS",
-      "bytes": 38033
+      "bytes": 39037
     },
     {
       "path": "apps/web/src/features/automation-canvas/activepieces-canvas-route.tsx",
@@ -289,7 +289,7 @@
       "path": "tests/e2e/stage17-design-convergence.spec.ts",
       "severity": "P0",
       "status": "PASS",
-      "bytes": 3083
+      "bytes": 3324
     }
   ]
 }

@@ -1,11 +1,11 @@
 {
   "stage": "17.10",
   "status": "PASS",
-  "generated_at": "2026-05-03T12:43:23.981Z",
+  "generated_at": "2026-05-04T18:41:00.884Z",
   "source": "scripts/stage17/collect-runtime-evidence.mjs",
   "workspace_id": "16000000-0000-4000-8000-00000000100a",
   "automation_id": "16000000-0000-4000-8000-000000008001",
-  "trace_id": "557c2a7ade1f9fb0a51f88c8f6eb0363",
+  "trace_id": "ce2da3c13d01574fc678e5287c0842c7",
   "project": {
     "lexframe_workspace_id": "16000000-0000-4000-8000-00000000100a",
     "external_project_id": "lex_ws_16000000-0000-4000-8000-00000000100a",

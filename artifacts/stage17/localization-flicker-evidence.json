@@ -1,6 +1,6 @@
 {
   "stage": "17.12",
-  "generated_at": "2026-05-03T12:42:54.262Z",
+  "generated_at": "2026-05-04T18:40:28.999Z",
   "status": "PASS",
   "strategy": "bundle-first-overlay-fallback",
   "manifest_path": "scripts\\stage17\\localization-manifest.json",

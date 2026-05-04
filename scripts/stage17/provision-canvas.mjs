@@ -190,6 +190,53 @@ begin
     last_read_back_at = timezone('utc', now()),
     last_session_trace_id = excluded.last_session_trace_id,
     updated_at = timezone('utc', now());
+
+  insert into app.activepieces_flow_bindings (
+    workspace_id,
+    automation_id,
+    runtime_binding_id,
+    ap_project_id,
+    ap_flow_id,
+    ap_flow_version_id,
+    piece_version_pin,
+    source_workflow_hash,
+    runtime_hash,
+    last_synced_hash,
+    sync_status,
+    last_synced_at,
+    last_read_back_at
+  )
+  select
+    workspace_id,
+    installed_automation_id,
+    id,
+    v_ap_project_id,
+    v_ap_flow_id,
+    v_ap_flow_version_id,
+    '0.0.5',
+    v_sync_hash,
+    v_sync_hash,
+    v_sync_hash,
+    'synced',
+    timezone('utc', now()),
+    timezone('utc', now())
+  from app.automation_runtime_bindings
+  where installed_automation_id = v_automation_id
+    and workspace_id = v_workspace_id
+  on conflict (workspace_id, automation_id) do update
+  set
+    runtime_binding_id = excluded.runtime_binding_id,
+    ap_project_id = excluded.ap_project_id,
+    ap_flow_id = excluded.ap_flow_id,
+    ap_flow_version_id = excluded.ap_flow_version_id,
+    piece_version_pin = excluded.piece_version_pin,
+    source_workflow_hash = excluded.source_workflow_hash,
+    runtime_hash = excluded.runtime_hash,
+    last_synced_hash = excluded.last_synced_hash,
+    sync_status = 'synced',
+    last_synced_at = timezone('utc', now()),
+    last_read_back_at = timezone('utc', now()),
+    updated_at = timezone('utc', now());
 end $$;
 `;
 

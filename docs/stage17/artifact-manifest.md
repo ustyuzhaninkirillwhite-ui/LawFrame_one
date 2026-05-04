@@ -1,7 +1,7 @@
 # Stage 17.10 Artifact Manifest
 
 Status: PASS
-Generated: 2026-05-03T12:44:39.222Z
+Generated: 2026-05-04T18:41:01.453Z
 
 | Severity | Status | Path | Bytes |
 | --- | --- | --- | ---: |
@@ -16,7 +16,7 @@ P1 | PASS | `docs/stage17/functionality-preservation-report.md` | 796
 P0 | PASS | `docs/stage17/local-key-vault-security-report.md` | 890
 P0 | PASS | `docs/stage17/activepieces-runtime-evidence.md` | 437
 P0 | PASS | `docs/stage17/visual-regression-report.md` | 619
-P0 | PASS | `docs/stage17/stage17-release-gate-report.md` | 1445
+P0 | PASS | `docs/stage17/stage17-release-gate-report.md` | 1286
 P0 | PASS | `docs/stage17/17.12-audit-start.md` | 2788
 P0 | PASS | `docs/stage17/stage17-final-closure.md` | 4340
 P0 | PASS | `docs/stage17/stage17-traceability-matrix.md` | 3653
@@ -30,7 +30,7 @@ P1 | PASS | `docs/stage17/debranding-runtime-audit.md` | 887
 P0 | PASS | `docs/stage17/open-source-pieces-pack.md` | 1358
 P1 | PASS | `docs/stage17/pieces-source-inventory.md` | 52553
 P1 | PASS | `docs/stage17/pieces-localization-report.md` | 785
-P0 | PASS | `artifacts/stage17/release-gate.json` | 13354
+P0 | PASS | `artifacts/stage17/release-gate.json` | 10805
 P0 | PASS | `artifacts/stage17/runtime-evidence.json` | 2506
 P0 | PASS | `artifacts/stage17/browser-secret-scan.json` | 293
 P0 | PASS | `artifacts/stage17/evidence-index.json` | 1600
@@ -44,12 +44,12 @@ P1 | PASS | `scripts/secrets/init-local-keys.ps1` | 1265
 P0 | PASS | `scripts/security/check-no-local-secrets.mjs` | 3072
 P0 | PASS | `scripts/stage17/release-gate.mjs` | 9784
 P0 | PASS | `scripts/stage17/verify-artifacts.mjs` | 10715
-P0 | PASS | `scripts/stage17/collect-runtime-evidence.mjs` | 14649
+P0 | PASS | `scripts/stage17/collect-runtime-evidence.mjs` | 15187
 P0 | PASS | `scripts/stage17/scan-browser-evidence.mjs` | 3615
 P1 | PASS | `packages/design-system-activepieces-bridge/src/index.ts` | 81
 P0 | PASS | `apps/backend/src/modules/local-owner-key-vault/local-owner-key-vault.service.ts` | 13842
-P0 | PASS | `apps/backend/src/modules/activepieces/activepieces-session.service.ts` | 38033
+P0 | PASS | `apps/backend/src/modules/activepieces/activepieces-session.service.ts` | 39037
 P0 | PASS | `apps/web/src/features/automation-canvas/activepieces-canvas-route.tsx` | 3052
 P0 | PASS | `tests/e2e/stage17-activepieces-canvas.spec.ts` | 5970
 P0 | PASS | `tests/e2e/stage17-local-keys-security.spec.ts` | 4451
-P0 | PASS | `tests/e2e/stage17-design-convergence.spec.ts` | 3083
+P0 | PASS | `tests/e2e/stage17-design-convergence.spec.ts` | 3324
