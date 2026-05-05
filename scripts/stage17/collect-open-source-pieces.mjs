@@ -82,9 +82,9 @@ async function collectInventory() {
       browserSecretsAllowed: false,
     },
     policyNotes: [
-      "stage17-local-all-open-source-pieces is local/dev only.",
-      "Production remains allowlisted and policy-filtered.",
-      "Direct AI provider pieces, including CometAPI, must not bypass LexFrame AI Gateway for production legal data.",
+      "ACTIVEPIECES_CATALOG_MODE=max exposes the broad Activepieces catalog by default.",
+      "ACTIVEPIECES_CATALOG_MODE=restricted restores the Stage17 allowlist rollback.",
+      "Direct AI provider pieces, including CometAPI, can be visible in the catalog; credentials remain policy-controlled and are not committed.",
       "Gmail requires backend-approved connection policy and OAuth credentials; none are committed.",
     ],
   };

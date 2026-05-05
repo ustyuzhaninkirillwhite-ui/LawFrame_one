@@ -115,11 +115,11 @@ test.describe("Stage 17.10 Activepieces Canvas release gate", () => {
     const builderFrame = page.frameLocator(
       'iframe[title="Конструктор автоматизаций"]',
     );
-    await expect(
-      builderFrame.getByText("Ручной запуск (Ручной запуск)"),
-    ).toBeVisible({ timeout: 45_000 });
+    await expect(builderFrame.getByText("Триггер")).toBeVisible({
+      timeout: 45_000,
+    });
+    await expect(builderFrame.getByText("Ручной запуск").first()).toBeVisible();
     await expect(builderFrame.getByText("Запуски")).toBeVisible();
-    await expect(builderFrame.getByText("Версии")).toBeVisible();
     await expect(builderFrame.getByText("Опубликовать")).toBeVisible();
   });
 });

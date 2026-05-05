@@ -37,16 +37,16 @@ export class ActivepiecesPiecesPolicyService {
       .map((tag) => tag.trim())
       .filter((tag) => tag.length > 0);
     const derivedTags = derivePiecesTags(input.automation.workflow);
-    const localDevTags = this.isLocalAllOpenSourceProfile()
+    const maxCatalogTags = this.isMaxCatalogMode()
       ? [
-          'stage17-local-all-open-source-pieces',
+          'activepieces-max-catalog',
           'activepieces-core',
           'activepieces-community',
           'open-source-pieces',
         ]
       : [];
     const piecesTags = [
-      ...new Set([...configuredTags, ...derivedTags, ...localDevTags]),
+      ...new Set([...configuredTags, ...derivedTags, ...maxCatalogTags]),
     ].sort();
 
     if (piecesTags.length === 0) {
@@ -60,9 +60,7 @@ export class ActivepiecesPiecesPolicyService {
     const policy = {
       piecesFilterType: 'ALLOWED' as const,
       piecesTags,
-      denylistedPieces: this.isLocalAllOpenSourceProfile()
-        ? []
-        : [...DENYLISTED_PIECES],
+      denylistedPieces: this.isMaxCatalogMode() ? [] : [...DENYLISTED_PIECES],
     };
 
     return {
@@ -71,13 +69,8 @@ export class ActivepiecesPiecesPolicyService {
     };
   }
 
-  private isLocalAllOpenSourceProfile() {
-    return (
-      this.env.LEXFRAME_STAGE17_PIECES_PROFILE ===
-        'stage17-local-all-open-source-pieces' &&
-      this.env.LEXFRAME_DEPLOY_ENV !== 'production' &&
-      this.env.LEXFRAME_ENV_PROFILE !== 'production'
-    );
+  private isMaxCatalogMode() {
+    return this.env.ACTIVEPIECES_CATALOG_MODE === 'max';
   }
 }
 

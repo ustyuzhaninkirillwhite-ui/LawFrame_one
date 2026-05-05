@@ -46,6 +46,7 @@ export const serverEnvSchema = z.object({
     .default("http://127.0.0.1:3100/automation-runtime"),
   ACTIVEPIECES_REVERSE_PROXY_HEALTH_URL: z.string().url().default("http://127.0.0.1:3100/automation-runtime/api/v1/health"),
   ACTIVEPIECES_MVP_CANVAS_ENABLED: z.enum(["0", "1"]).default("1"),
+  ACTIVEPIECES_CATALOG_MODE: z.enum(["max", "restricted"]).default("max"),
   ACTIVEPIECES_FORCE_RU_LOCALE: z.enum(["0", "1", "false", "true"]).default("true"),
   ACTIVEPIECES_BRAND_DISPLAY_NAME: z.string().min(1).default("Автоматизация"),
   ACTIVEPIECES_API_KEY_SECRET_REF: z.string().default(""),

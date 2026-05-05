@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { spawnSync } from "node:child_process";
 
 const root = process.cwd();
 const artifactsDir = path.join(root, "artifacts", "stage17");
@@ -27,6 +28,20 @@ if (sync && sync.status === "FAIL") {
   findings.push("pieces sync report contains failed sync");
 }
 
+const runtimeCatalog = collectRuntimeCatalog();
+if (runtimeCatalog.status === "checked") {
+  if (runtimeCatalog.distinctNames < 100) {
+    findings.push(
+      `runtime Activepieces catalog is too small: ${runtimeCatalog.distinctNames} distinct pieces`,
+    );
+  }
+  for (const [pieceName, present] of Object.entries(runtimeCatalog.knownPieces)) {
+    if (!present) {
+      findings.push(`runtime Activepieces catalog is missing ${pieceName}`);
+    }
+  }
+}
+
 const result = {
   stage: "17.12",
   generatedAt: new Date().toISOString(),
@@ -43,6 +58,11 @@ const result = {
     : null,
   buildSummary: build?.summary ?? null,
   syncStatus: sync?.result?.status ?? null,
+  builtInUtilities: {
+    code:
+      "Activepieces 0.80 exposes Code as a built-in utility action, not as piece_metadata @activepieces/piece-code.",
+  },
+  runtimeCatalog,
 };
 
 fs.writeFileSync(
@@ -62,4 +82,68 @@ function readJson(name) {
     return null;
   }
   return JSON.parse(fs.readFileSync(filePath, "utf8"));
+}
+
+function collectRuntimeCatalog() {
+  const container =
+    process.env.STAGE17_ACTIVEPIECES_POSTGRES_CONTAINER ??
+    "lexframe-stage17-activepieces-postgres-1";
+  const result = spawnSync(
+    "docker",
+    [
+      "exec",
+      container,
+      "psql",
+      "-U",
+      "activepieces",
+      "-d",
+      "activepieces",
+      "-Atc",
+      [
+        "select json_build_object(",
+        "'totalRows', count(*),",
+        "'distinctNames', count(distinct name),",
+        "'knownPieces', json_build_object(",
+        "'@activepieces/piece-openai', bool_or(name='@activepieces/piece-openai'),",
+        "'@activepieces/piece-gmail', bool_or(name='@activepieces/piece-gmail'),",
+        "'@activepieces/piece-google-drive', bool_or(name='@activepieces/piece-google-drive'),",
+        "'@activepieces/piece-slack', bool_or(name='@activepieces/piece-slack'),",
+        "'@activepieces/piece-http', bool_or(name='@activepieces/piece-http'),",
+        "'@activepieces/piece-webhook', bool_or(name='@activepieces/piece-webhook')",
+        ")",
+        ")::text from piece_metadata;",
+      ].join(" "),
+    ],
+    {
+      cwd: root,
+      encoding: "utf8",
+      windowsHide: true,
+    },
+  );
+
+  if (result.status !== 0) {
+    return {
+      status: "skipped",
+      reason: "Stage17 Activepieces Postgres container is not available.",
+      container,
+    };
+  }
+
+  try {
+    const parsed = JSON.parse(result.stdout.trim());
+    return {
+      status: "checked",
+      container,
+      totalRows: Number(parsed.totalRows ?? 0),
+      distinctNames: Number(parsed.distinctNames ?? 0),
+      knownPieces: parsed.knownPieces ?? {},
+    };
+  } catch (error) {
+    return {
+      status: "skipped",
+      reason:
+        error instanceof Error ? error.message : "catalog parse failed",
+      container,
+    };
+  }
 }

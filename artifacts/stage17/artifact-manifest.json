@@ -1,6 +1,6 @@
 {
   "stage": "17.12",
-  "generated_at": "2026-05-04T18:41:01.453Z",
+  "generated_at": "2026-05-05T07:17:22.835Z",
   "status": "PASS",
   "entries": [
     {
@@ -73,7 +73,7 @@
       "path": "docs/stage17/stage17-release-gate-report.md",
       "severity": "P0",
       "status": "PASS",
-      "bytes": 1286
+      "bytes": 1289
     },
     {
       "path": "docs/stage17/17.12-audit-start.md",
@@ -157,13 +157,13 @@
       "path": "artifacts/stage17/release-gate.json",
       "severity": "P0",
       "status": "PASS",
-      "bytes": 10805
+      "bytes": 10815
     },
     {
       "path": "artifacts/stage17/runtime-evidence.json",
       "severity": "P0",
       "status": "PASS",
-      "bytes": 2506
+      "bytes": 2518
     },
     {
       "path": "artifacts/stage17/browser-secret-scan.json",
@@ -193,7 +193,7 @@
       "path": "artifacts/stage17/pieces-inventory.json",
       "severity": "P0",
       "status": "PASS",
-      "bytes": 802758
+      "bytes": 802837
     },
     {
       "path": "artifacts/stage17/pieces-build-report.json",
@@ -277,7 +277,7 @@
       "path": "tests/e2e/stage17-activepieces-canvas.spec.ts",
       "severity": "P0",
       "status": "PASS",
-      "bytes": 5970
+      "bytes": 5950
     },
     {
       "path": "tests/e2e/stage17-local-keys-security.spec.ts",

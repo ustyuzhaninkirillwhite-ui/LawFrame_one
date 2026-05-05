@@ -1,4 +1,5 @@
 import { spawnSync } from "node:child_process";
+import { readFileSync } from "node:fs";
 
 const productContainer =
   process.env.STAGE17_PRODUCT_POSTGRES_CONTAINER ??
@@ -6,6 +7,16 @@ const productContainer =
 const activepiecesContainer =
   process.env.STAGE17_ACTIVEPIECES_POSTGRES_CONTAINER ??
   "lexframe-stage17-activepieces-postgres-1";
+const stage17SyncHash = "stage17-canvas-runtime-v3-max-catalog";
+const catalogMode =
+  process.env.ACTIVEPIECES_CATALOG_MODE === "restricted" ? "restricted" : "max";
+const allowedPieceNames = readPieceCatalogArray("STAGE17_ALLOWED_PIECE_NAMES");
+const pinnedPieceNames = readPieceCatalogArray("STAGE17_PINNED_PIECE_NAMES");
+const filteredPieceNames =
+  catalogMode === "restricted" ? allowedPieceNames : [];
+const filteredPieceBehavior = catalogMode === "restricted" ? "ALLOWED" : "BLOCKED";
+const filteredPieceNamesSql = toPostgresTextArray(filteredPieceNames);
+const pinnedPieceNamesSql = toPostgresTextArray(pinnedPieceNames);
 
 const productSql = String.raw`
 do $$
@@ -20,7 +31,7 @@ declare
   v_ap_user_id text := 'lfstg17user000001';
   v_ap_flow_id text := 'lfstg17flow0000000001';
   v_ap_flow_version_id text := 'lfstg17flowver0000001';
-  v_sync_hash text := 'stage17-canvas-seed-v1';
+  v_sync_hash text := '${stage17SyncHash}';
 begin
   update app.installed_automations
   set
@@ -344,35 +355,14 @@ begin
     "logoIconUrl",
     "fullLogoUrl",
     "favIconUrl",
-    "showPoweredBy",
     "cloudAuthEnabled",
-    "embeddingEnabled",
     "filteredPieceNames",
     "filteredPieceBehavior",
-    "environmentsEnabled",
-    "defaultLocale",
     "allowedAuthDomains",
     "enforceAllowedAuthDomains",
-    "ssoEnabled",
     "emailAuthEnabled",
     "federatedAuthProviders",
-    "auditLogEnabled",
-    "customDomainsEnabled",
-    "customAppearanceEnabled",
-    "manageProjectsEnabled",
-    "managePiecesEnabled",
-    "manageTemplatesEnabled",
-    "apiKeysEnabled",
-    "projectRolesEnabled",
-    "flowIssuesEnabled",
-    "alertsEnabled",
-    "analyticsEnabled",
-    "licenseKey",
-    smtp,
-    "pinnedPieces",
-    "globalConnectionsEnabled",
-    "customRolesEnabled",
-    "copilotSettings"
+    "pinnedPieces"
   )
   values (
     v_platform_id,
@@ -383,47 +373,26 @@ begin
     '',
     '',
     false,
-    false,
-    true,
-    array[
-      '@activepieces/piece-manual-trigger',
-      '@lexframe/piece-ai-gateway'
-    ]::varchar[],
-    'ALLOWED',
-    false,
-    'ru',
+    ${filteredPieceNamesSql},
+    '${filteredPieceBehavior}',
     array[]::varchar[],
     false,
     false,
-    false,
     '{}'::jsonb,
-    true,
-    false,
-    true,
-    true,
-    false,
-    false,
-    true,
-    false,
-    true,
-    true,
-    false,
-    null,
-    null,
-    array['@activepieces/piece-manual-trigger']::varchar[],
-    false,
-    false,
-    '{"providers":{}}'::jsonb
+    ${pinnedPieceNamesSql}
   )
   on conflict (id) do update
   set
     "ownerId" = excluded."ownerId",
     name = excluded.name,
-    "embeddingEnabled" = true,
     "filteredPieceNames" = excluded."filteredPieceNames",
-    "filteredPieceBehavior" = 'ALLOWED',
-    "defaultLocale" = 'ru',
-    "copilotSettings" = excluded."copilotSettings",
+    "filteredPieceBehavior" = excluded."filteredPieceBehavior",
+    "cloudAuthEnabled" = false,
+    "allowedAuthDomains" = excluded."allowedAuthDomains",
+    "enforceAllowedAuthDomains" = false,
+    "emailAuthEnabled" = false,
+    "federatedAuthProviders" = excluded."federatedAuthProviders",
+    "pinnedPieces" = excluded."pinnedPieces",
     updated = now();
 
   delete from piece_metadata
@@ -441,7 +410,6 @@ begin
     "maximumSupportedRelease",
     actions,
     triggers,
-    "projectId",
     auth,
     "pieceType",
     "packageType",
@@ -473,7 +441,6 @@ begin
       )
     ),
     null,
-    null,
     'OFFICIAL',
     'REGISTRY',
     null,
@@ -492,52 +459,56 @@ begin
     id,
     "ownerId",
     "displayName",
-    "notifyStatus",
     "platformId",
     "externalId",
-    "releasesEnabled"
+    "releasesEnabled",
+    icon,
+    type
   )
   values (
     v_project_id,
     v_user_id,
     'LexFrame Stage 17 Canvas',
-    'ALWAYS',
     v_platform_id,
     'lex_ws_16000000-0000-4000-8000-00000000100a',
-    false
+    false,
+    '{"color":"BLUE"}'::jsonb,
+    'PERSONAL'
   )
   on conflict (id) do update
   set
     "ownerId" = excluded."ownerId",
     "displayName" = excluded."displayName",
-    "notifyStatus" = 'ALWAYS',
     "platformId" = excluded."platformId",
     "externalId" = excluded."externalId",
+    "releasesEnabled" = false,
+    icon = excluded.icon,
+    type = excluded.type,
     updated = now();
 
   insert into project_plan (
     id,
     "projectId",
     name,
-    "stripeCustomerId",
-    "stripeSubscriptionId",
-    tasks,
-    "subscriptionStartDatetime"
+    pieces,
+    locked,
+    "piecesFilterType"
   )
   values (
     'lfstg17plan00001',
     v_project_id,
     'FREE',
-    '',
-    '',
-    100000,
-    now()
+    array[]::varchar[],
+    false,
+    'NONE'
   )
   on conflict (id) do update
   set
     "projectId" = excluded."projectId",
     name = excluded.name,
-    tasks = excluded.tasks,
+    pieces = excluded.pieces,
+    locked = false,
+    "piecesFilterType" = excluded."piecesFilterType",
     updated = now();
 
   insert into flow (
@@ -545,9 +516,10 @@ begin
     "projectId",
     "folderId",
     status,
-    schedule,
     "publishedVersionId",
-    "externalId"
+    "externalId",
+    metadata,
+    "operationStatus"
   )
   values (
     v_flow_id,
@@ -555,14 +527,16 @@ begin
     null,
     'DISABLED',
     null,
+    '16000000-0000-4000-8000-000000008001',
     null,
-    '16000000-0000-4000-8000-000000008001'
+    'NONE'
   )
   on conflict (id) do update
   set
     "projectId" = excluded."projectId",
     status = 'DISABLED',
     "externalId" = excluded."externalId",
+    "operationStatus" = 'NONE',
     updated = now();
 
   insert into flow_version (
@@ -573,7 +547,10 @@ begin
     valid,
     state,
     "updatedBy",
-    "schemaVersion"
+    "schemaVersion",
+    "connectionIds",
+    "agentIds",
+    notes
   )
   values (
     v_flow_version_id,
@@ -598,7 +575,10 @@ begin
     true,
     'DRAFT',
     v_user_id,
-    '20'
+    '20',
+    array[]::varchar[],
+    array[]::varchar[],
+    '[]'::jsonb
   )
   on conflict (id) do update
   set
@@ -608,9 +588,34 @@ begin
     state = 'DRAFT',
     "updatedBy" = excluded."updatedBy",
     "schemaVersion" = excluded."schemaVersion",
+    "connectionIds" = excluded."connectionIds",
+    "agentIds" = excluded."agentIds",
+    notes = excluded.notes,
     updated = now();
 end $$;
 `;
+
+function readPieceCatalogArray(exportName) {
+  const catalogUrl = new URL(
+    "../../apps/backend/src/modules/activepieces/activepieces-piece-catalog.ts",
+    import.meta.url,
+  );
+  const source = readFileSync(catalogUrl, "utf8");
+  const match = source.match(
+    new RegExp(`export const ${exportName} = \\[([\\s\\S]*?)\\] as const;`),
+  );
+  if (!match) {
+    throw new Error(`Unable to read ${exportName} from Activepieces piece catalog`);
+  }
+  return [...match[1].matchAll(/'([^']+)'/g)].map((piece) => piece[1]);
+}
+
+function toPostgresTextArray(values) {
+  if (values.length === 0) {
+    return "array[]::varchar[]";
+  }
+  return `array[${values.map((value) => `'${value.replaceAll("'", "''")}'`).join(", ")}]::varchar[]`;
+}
 
 runPsql({
   container: productContainer,

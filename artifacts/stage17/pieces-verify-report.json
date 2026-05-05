@@ -1,6 +1,6 @@
 {
   "stage": "17.12",
-  "generatedAt": "2026-05-04T18:39:57.465Z",
+  "generatedAt": "2026-05-05T07:15:13.553Z",
   "status": "PASS",
   "findings": [],
   "inventorySummary": {
@@ -16,5 +16,22 @@
     "skipped": 2,
     "missing": 0
   },
-  "syncStatus": "not_attempted"
+  "syncStatus": "not_attempted",
+  "builtInUtilities": {
+    "code": "Activepieces 0.80 exposes Code as a built-in utility action, not as piece_metadata @activepieces/piece-code."
+  },
+  "runtimeCatalog": {
+    "status": "checked",
+    "container": "lexframe-stage17-activepieces-postgres-1",
+    "totalRows": 9017,
+    "distinctNames": 688,
+    "knownPieces": {
+      "@activepieces/piece-openai": true,
+      "@activepieces/piece-gmail": true,
+      "@activepieces/piece-google-drive": true,
+      "@activepieces/piece-slack": true,
+      "@activepieces/piece-http": true,
+      "@activepieces/piece-webhook": true
+    }
+  }
 }

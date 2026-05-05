@@ -1,6 +1,6 @@
 {
   "stage": "17.12",
-  "generatedAt": "2026-05-04T18:41:02.802Z",
+  "generatedAt": "2026-05-05T07:17:29.847Z",
   "status": "PASS",
   "entries": [
     {
@@ -81,7 +81,7 @@
     {
       "path": "artifacts/stage17/pieces-inventory.json",
       "status": "PASS",
-      "bytes": 802758
+      "bytes": 802837
     },
     {
       "path": "artifacts/stage17/pieces-build-report.json",

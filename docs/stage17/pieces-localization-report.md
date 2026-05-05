@@ -1,6 +1,6 @@
 # Stage 17.12 Pieces Localization Report
 
-Generated: 2026-05-04T18:39:50.855Z
+Generated: 2026-05-05T07:14:56.555Z
 Status: PASS
 
 - Pieces with any i18n: 684

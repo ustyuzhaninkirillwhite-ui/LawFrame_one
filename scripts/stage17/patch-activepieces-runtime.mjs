@@ -9,6 +9,10 @@ const activepiecesRoot =
   process.env.ACTIVEPIECES_SOURCE_DIR ?? "E:/activepieces-main";
 const repoIconSource = path.join(root, "apps/web/public/lexframe-automation-icon.svg");
 const repoLogoSource = path.join(root, "apps/web/public/lexframe-automation-logo.svg");
+const localizationGuardSource = path.join(
+  root,
+  "scripts/stage17/assets/activepieces-localization-guard.js",
+);
 const ruLocaleSource = path.join(
   activepiecesRoot,
   "packages/web/public/locales/ru/translation.json",
@@ -28,10 +32,20 @@ const copies = [
     required: true,
   },
   {
+    source: ruLocaleSource,
+    target: "/usr/src/app/packages/web/public/locales/ru/translation.json",
+    required: true,
+  },
+  {
     // The upstream image can still resolve the embedded session through the
     // default language detector. Keep the user-facing default namespace Russian.
     source: ruLocaleSource,
     target: "/usr/src/app/packages/react-ui/public/locales/en/translation.json",
+    required: true,
+  },
+  {
+    source: ruLocaleSource,
+    target: "/usr/src/app/packages/web/public/locales/en/translation.json",
     required: true,
   },
   {
@@ -44,6 +58,14 @@ const copies = [
   },
   {
     source: firstExisting([
+      repoIconSource,
+      path.join(activepiecesRoot, "packages/web/public/lexframe-automation-icon.svg"),
+    ]),
+    target: "/usr/src/app/packages/web/public/lexframe-automation-icon.svg",
+    required: true,
+  },
+  {
+    source: firstExisting([
       repoLogoSource,
       path.join(activepiecesRoot, "packages/web/public/lexframe-automation-logo.svg"),
     ]),
@@ -52,10 +74,41 @@ const copies = [
   },
   {
     source: firstExisting([
+      repoLogoSource,
+      path.join(activepiecesRoot, "packages/web/public/lexframe-automation-logo.svg"),
+    ]),
+    target: "/usr/src/app/packages/web/public/lexframe-automation-logo.svg",
+    required: true,
+  },
+  {
+    source: firstExisting([
       repoIconSource,
       path.join(activepiecesRoot, "packages/web/public/lexframe-automation-icon.svg"),
     ]),
     target: "/usr/src/app/packages/react-ui/public/logo.svg",
+    required: true,
+  },
+  {
+    source: firstExisting([
+      repoIconSource,
+      path.join(activepiecesRoot, "packages/web/public/lexframe-automation-icon.svg"),
+    ]),
+    target: "/usr/src/app/packages/web/public/logo.svg",
+    required: true,
+  },
+  {
+    source: localizationGuardSource,
+    target: "/usr/src/app/packages/react-ui/public/lexframe-stage17-localization-guard.js",
+    required: true,
+  },
+  {
+    source: localizationGuardSource,
+    target: "/usr/src/app/packages/web/public/lexframe-stage17-localization-guard.js",
+    required: true,
+  },
+  {
+    source: localizationGuardSource,
+    target: "/usr/src/app/dist/packages/web/lexframe-stage17-localization-guard.js",
     required: true,
   },
 ];
@@ -103,12 +156,41 @@ for (const container of containers) {
     copied.push(item.target);
   }
 
+  const injectGuard = spawn(docker, [
+    "exec",
+    container,
+    "sh",
+    "-lc",
+    `node <<'NODE'
+const fs = require('fs');
+const paths = [
+  '/usr/src/app/packages/react-ui/index.html',
+  '/usr/src/app/packages/web/index.html',
+  '/usr/src/app/dist/packages/web/index.html',
+];
+const tag = '<script src="/lexframe-stage17-localization-guard.js"></script>';
+for (const filePath of paths) {
+  if (!fs.existsSync(filePath)) continue;
+  let html = fs.readFileSync(filePath, 'utf8');
+  if (html.includes('lexframe-stage17-localization-guard.js')) continue;
+  html = html.includes('</head>')
+    ? html.replace('</head>', tag + '</head>')
+    : tag + '\\n' + html;
+  fs.writeFileSync(filePath, html, 'utf8');
+}
+NODE`,
+  ]);
+  if (injectGuard.status !== 0) {
+    process.exit(injectGuard.status ?? 1);
+  }
+  copied.push("index.html#lexframe-stage17-localization-guard");
+
   const verify = spawn(docker, [
     "exec",
     container,
     "sh",
     "-lc",
-    "node -e \"const fs=require('fs'); for (const lang of ['ru','en']) { const p='/usr/src/app/packages/react-ui/public/locales/'+lang+'/translation.json'; const j=JSON.parse(fs.readFileSync(p,'utf8')); if (j.Flows !== 'Сценарии' || j.Runs !== 'Запуски' || j.Publish !== 'Опубликовать' || j.Activepieces !== 'Конструктор автоматизаций' || j['Please select a piece first'] !== 'Сначала выберите модуль') process.exit(2); }\"",
+    "node -e \"const fs=require('fs'); for (const base of ['/usr/src/app/packages/react-ui/public/locales','/usr/src/app/packages/web/public/locales']) for (const lang of ['ru','en']) { const p=base+'/'+lang+'/translation.json'; const j=JSON.parse(fs.readFileSync(p,'utf8')); if (j.Flows !== 'Сценарии' || j.Runs !== 'Запуски' || j.Publish !== 'Опубликовать' || j.Activepieces !== 'Конструктор автоматизаций' || j['Please select a piece first'] !== 'Сначала выберите модуль') process.exit(2); }\"",
   ]);
   if (verify.status !== 0) {
     process.exit(verify.status ?? 1);

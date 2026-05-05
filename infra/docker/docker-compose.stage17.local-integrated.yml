@@ -50,7 +50,7 @@ services:
     networks: [stage17-runtime]
 
   activepieces-postgres:
-    image: postgres:16-alpine
+    image: pgvector/pgvector:0.8.0-pg16
     profiles: ["local-integrated"]
     environment:
       POSTGRES_DB: activepieces
@@ -83,7 +83,7 @@ services:
     networks: [stage17-runtime]
 
   activepieces-app:
-    image: activepieces/activepieces:0.44.0
+    image: ghcr.io/activepieces/activepieces:0.80.1
     profiles: ["local-integrated"]
     env_file:
       - ../../.env.stage17.local
@@ -104,6 +104,8 @@ services:
       AP_ENCRYPTION_KEY: ${AP_ENCRYPTION_KEY:?run pnpm stage17:init-local-secrets}
       AP_FRONTEND_URL: http://127.0.0.1:3100/automation-runtime
       AP_EXECUTION_MODE: SANDBOX_CODE_ONLY
+      AP_PIECES_SOURCE: ${AP_PIECES_SOURCE:-CLOUD_AND_DB}
+      AP_PIECES_SYNC_MODE: ${AP_PIECES_SYNC_MODE:-OFFICIAL_AUTO}
       AP_NETWORK_MODE: ${ACTIVEPIECES_NETWORK_MODE:-STRICT}
       AP_SSRF_ALLOW_LIST: ${ACTIVEPIECES_SSRF_ALLOW_LIST:-http://lexframe-backend:3100}
       AP_LOAD_TRANSLATIONS_FOR_DEV_PIECES: "true"
@@ -121,7 +123,7 @@ services:
     networks: [stage17-runtime]
 
   activepieces-worker:
-    image: activepieces/activepieces:0.44.0
+    image: ghcr.io/activepieces/activepieces:0.80.1
     profiles: ["local-integrated"]
     env_file:
       - ../../.env.stage17.local
@@ -143,6 +145,8 @@ services:
       AP_FRONTEND_URL: http://activepieces-app:80
       AP_WORKER_TOKEN: ${AP_WORKER_TOKEN:?run pnpm stage17:init-local-secrets}
       AP_EXECUTION_MODE: SANDBOX_CODE_ONLY
+      AP_PIECES_SOURCE: ${AP_PIECES_SOURCE:-CLOUD_AND_DB}
+      AP_PIECES_SYNC_MODE: ${AP_PIECES_SYNC_MODE:-OFFICIAL_AUTO}
       AP_NETWORK_MODE: ${ACTIVEPIECES_NETWORK_MODE:-STRICT}
       AP_SSRF_ALLOW_LIST: ${ACTIVEPIECES_SSRF_ALLOW_LIST:-http://lexframe-backend:3100}
       AP_WORKER_CONCURRENCY: "5"
@@ -204,6 +208,7 @@ services:
       ACTIVEPIECES_NETWORK_MODE: ${ACTIVEPIECES_NETWORK_MODE:-STRICT}
       ACTIVEPIECES_SSRF_ALLOW_LIST: ${ACTIVEPIECES_SSRF_ALLOW_LIST:-http://lexframe-backend:3100}
       ACTIVEPIECES_MVP_CANVAS_ENABLED: "1"
+      ACTIVEPIECES_CATALOG_MODE: ${ACTIVEPIECES_CATALOG_MODE:-max}
       ACTIVEPIECES_FORCE_RU_LOCALE: "1"
       ACTIVEPIECES_BRAND_DISPLAY_NAME: Автоматизация
       ACTIVEPIECES_SIMULATE_RUNS: "0"

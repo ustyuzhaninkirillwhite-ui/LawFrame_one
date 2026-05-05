@@ -19,11 +19,13 @@ import {
 const STAGE17_TEMPLATE_CODE = 'stage17.activepieces.canvas';
 const STAGE17_TEMPLATE_VERSION = 'v17-canvas';
 const STAGE17_PLATFORM_ID = 'lfstg17platform000001';
-const STAGE17_SYNC_HASH = 'stage17-canvas-runtime-v2';
+const STAGE17_SYNC_HASH = 'stage17-canvas-runtime-v3-max-catalog';
 const STAGE17_FLOW_DISPLAY_NAME = 'Сценарий AI-шлюза LexFrame';
 const STAGE17_MANUAL_TRIGGER_DISPLAY_NAME = 'Ручной запуск';
 const STAGE17_MANUAL_TRIGGER_DESCRIPTION =
   'Запускает сценарий автоматизации вручную.';
+
+type ActivepiecesCatalogMode = 'max' | 'restricted';
 
 interface TemplateRow {
   readonly id: string;
@@ -33,6 +35,12 @@ interface TemplateRow {
 interface InstalledAutomationRow {
   readonly id: string;
   readonly title: string;
+}
+
+interface ActivepiecesPlatformPiecesPolicy {
+  readonly mode: ActivepiecesCatalogMode;
+  readonly filteredPieceNames: readonly string[];
+  readonly filteredPieceBehavior: 'ALLOWED' | 'BLOCKED';
 }
 
 @Injectable()
@@ -717,6 +725,7 @@ export class ActivepiecesCanvasProvisioningService implements OnModuleDestroy {
     try {
       await client.query('begin');
       const ids = await this.resolveActivepiecesIds(client, input);
+      const platformPiecesPolicy = this.buildActivepiecesPlatformPiecesPolicy();
       await client.query(
         `
           insert into user_identity (
@@ -770,7 +779,8 @@ export class ActivepiecesCanvasProvisioningService implements OnModuleDestroy {
         [ids.userId, `lex_user_${input.actor.id}`, ids.identityId],
       );
 
-      await client.query(
+      if (await this.hasActivepiecesColumn(client, 'platform', 'showPoweredBy')) {
+        await client.query(
         `
           insert into platform (
             id,
@@ -822,7 +832,7 @@ export class ActivepiecesCanvasProvisioningService implements OnModuleDestroy {
             false,
             true,
             $7::varchar[],
-            'ALLOWED',
+            $8::text,
             false,
             'ru',
             array[]::varchar[],
@@ -843,7 +853,7 @@ export class ActivepiecesCanvasProvisioningService implements OnModuleDestroy {
             false,
             null,
             null,
-            $8::varchar[],
+            $9::varchar[],
             false,
             false,
             '{"providers":{}}'::jsonb
@@ -859,7 +869,7 @@ export class ActivepiecesCanvasProvisioningService implements OnModuleDestroy {
             "showPoweredBy" = false,
             "embeddingEnabled" = true,
             "filteredPieceNames" = excluded."filteredPieceNames",
-            "filteredPieceBehavior" = 'ALLOWED',
+            "filteredPieceBehavior" = excluded."filteredPieceBehavior",
             "defaultLocale" = 'ru',
             "pinnedPieces" = excluded."pinnedPieces",
             "copilotSettings" = excluded."copilotSettings",
@@ -872,10 +882,17 @@ export class ActivepiecesCanvasProvisioningService implements OnModuleDestroy {
           STAGE17_AUTOMATION_BRAND.logoIconUrl,
           STAGE17_AUTOMATION_BRAND.fullLogoUrl,
           STAGE17_AUTOMATION_BRAND.favIconUrl,
-          [...STAGE17_ALLOWED_PIECE_NAMES],
+          platformPiecesPolicy.filteredPieceNames,
+          platformPiecesPolicy.filteredPieceBehavior,
           [...STAGE17_PINNED_PIECE_NAMES],
         ],
       );
+      } else {
+        await this.upsertModernPlatform(client, {
+          ownerId: ids.userId,
+          platformPiecesPolicy,
+        });
+      }
 
       await this.ensureManualTriggerPiece(client);
 
@@ -889,7 +906,8 @@ export class ActivepiecesCanvasProvisioningService implements OnModuleDestroy {
         [STAGE17_PLATFORM_ID, ids.userId],
       );
 
-      await client.query(
+      if (await this.hasActivepiecesColumn(client, 'project', 'notifyStatus')) {
+        await client.query(
         `
           insert into project (
             id,
@@ -918,8 +936,23 @@ export class ActivepiecesCanvasProvisioningService implements OnModuleDestroy {
           `lex_ws_${input.workspaceId}`,
         ],
       );
+      } else {
+        await this.upsertModernProject(client, {
+          projectId: ids.projectId,
+          ownerId: ids.userId,
+          workspaceId: input.workspaceId,
+          workspaceName: input.workspaceName,
+        });
+      }
 
-      await client.query(
+      if (
+        await this.hasActivepiecesColumn(
+          client,
+          'project_plan',
+          'stripeCustomerId',
+        )
+      ) {
+        await client.query(
         `
           insert into project_plan (
             id,
@@ -947,8 +980,12 @@ export class ActivepiecesCanvasProvisioningService implements OnModuleDestroy {
           `lexframe_subscription_${ids.planId}`,
         ],
       );
+      } else {
+        await this.upsertModernProjectPlan(client, ids);
+      }
 
-      await client.query(
+      if (await this.hasActivepiecesColumn(client, 'flow', 'schedule')) {
+        await client.query(
         `
           insert into flow (
             id,
@@ -969,8 +1006,29 @@ export class ActivepiecesCanvasProvisioningService implements OnModuleDestroy {
         `,
         [ids.flowId, ids.projectId, input.automationId],
       );
+      } else {
+        await this.upsertModernFlow(client, {
+          flowId: ids.flowId,
+          projectId: ids.projectId,
+          automationId: input.automationId,
+        });
+      }
 
-      await client.query(
+      if (
+        await this.hasActivepiecesColumn(
+          client,
+          'flow_version',
+          'connectionIds',
+        )
+      ) {
+        await this.upsertModernFlowVersion(client, {
+          flowVersionId: ids.flowVersionId,
+          flowId: ids.flowId,
+          userId: ids.userId,
+          nowExpression,
+        });
+      } else {
+        await client.query(
         `
           insert into flow_version (
             id,
@@ -1025,6 +1083,7 @@ export class ActivepiecesCanvasProvisioningService implements OnModuleDestroy {
           STAGE17_MANUAL_TRIGGER_DISPLAY_NAME,
         ],
       );
+      }
 
       await client.query('commit');
       return ids;
@@ -1041,6 +1100,297 @@ export class ActivepiecesCanvasProvisioningService implements OnModuleDestroy {
     } finally {
       client.release();
     }
+  }
+
+  private buildActivepiecesPlatformPiecesPolicy(): ActivepiecesPlatformPiecesPolicy {
+    if (this.env.ACTIVEPIECES_CATALOG_MODE === 'restricted') {
+      return {
+        mode: 'restricted',
+        filteredPieceNames: [...STAGE17_ALLOWED_PIECE_NAMES],
+        filteredPieceBehavior: 'ALLOWED',
+      };
+    }
+
+    return {
+      mode: 'max',
+      filteredPieceNames: [],
+      filteredPieceBehavior: 'BLOCKED',
+    };
+  }
+
+  private async hasActivepiecesColumn(
+    client: PoolClient,
+    tableName: string,
+    columnName: string,
+  ) {
+    const result = await client.query<{ readonly exists: boolean }>(
+      `
+        select exists (
+          select 1
+          from information_schema.columns
+          where table_schema = 'public'
+            and table_name = $1
+            and column_name = $2
+        ) as exists
+      `,
+      [tableName, columnName],
+    );
+
+    return result.rows[0]?.exists === true;
+  }
+
+  private async upsertModernPlatform(
+    client: PoolClient,
+    input: {
+      readonly ownerId: string;
+      readonly platformPiecesPolicy: ActivepiecesPlatformPiecesPolicy;
+    },
+  ) {
+    await client.query(
+      `
+        insert into platform (
+          id,
+          "ownerId",
+          name,
+          "primaryColor",
+          "logoIconUrl",
+          "fullLogoUrl",
+          "favIconUrl",
+          "cloudAuthEnabled",
+          "filteredPieceNames",
+          "filteredPieceBehavior",
+          "allowedAuthDomains",
+          "enforceAllowedAuthDomains",
+          "emailAuthEnabled",
+          "federatedAuthProviders",
+          "pinnedPieces"
+        )
+        values (
+          $1,
+          $2,
+          $3,
+          '#1688fe',
+          $4,
+          $5,
+          $6,
+          false,
+          $7::varchar[],
+          $8::text,
+          array[]::varchar[],
+          false,
+          false,
+          '{}'::jsonb,
+          $9::varchar[]
+        )
+        on conflict (id) do update
+        set
+          "ownerId" = excluded."ownerId",
+          name = excluded.name,
+          "primaryColor" = excluded."primaryColor",
+          "logoIconUrl" = excluded."logoIconUrl",
+          "fullLogoUrl" = excluded."fullLogoUrl",
+          "favIconUrl" = excluded."favIconUrl",
+          "cloudAuthEnabled" = false,
+          "filteredPieceNames" = excluded."filteredPieceNames",
+          "filteredPieceBehavior" = excluded."filteredPieceBehavior",
+          "allowedAuthDomains" = excluded."allowedAuthDomains",
+          "enforceAllowedAuthDomains" = false,
+          "emailAuthEnabled" = false,
+          "federatedAuthProviders" = excluded."federatedAuthProviders",
+          "pinnedPieces" = excluded."pinnedPieces",
+          updated = now()
+      `,
+      [
+        STAGE17_PLATFORM_ID,
+        input.ownerId,
+        STAGE17_AUTOMATION_BRAND.platformName,
+        STAGE17_AUTOMATION_BRAND.logoIconUrl,
+        STAGE17_AUTOMATION_BRAND.fullLogoUrl,
+        STAGE17_AUTOMATION_BRAND.favIconUrl,
+        input.platformPiecesPolicy.filteredPieceNames,
+        input.platformPiecesPolicy.filteredPieceBehavior,
+        [...STAGE17_PINNED_PIECE_NAMES],
+      ],
+    );
+  }
+
+  private async upsertModernProject(
+    client: PoolClient,
+    input: {
+      readonly projectId: string;
+      readonly ownerId: string;
+      readonly workspaceId: string;
+      readonly workspaceName: string;
+    },
+  ) {
+    await client.query(
+      `
+        insert into project (
+          id,
+          "ownerId",
+          "displayName",
+          "platformId",
+          "externalId",
+          "releasesEnabled",
+          icon,
+          type
+        )
+        values ($1, $2, $3, $4, $5, false, '{"color":"BLUE"}'::jsonb, 'PERSONAL')
+        on conflict (id) do update
+        set
+          "ownerId" = excluded."ownerId",
+          "displayName" = excluded."displayName",
+          "platformId" = excluded."platformId",
+          "externalId" = excluded."externalId",
+          "releasesEnabled" = false,
+          icon = excluded.icon,
+          type = excluded.type,
+          updated = now()
+      `,
+      [
+        input.projectId,
+        input.ownerId,
+        `${input.workspaceName} - Р°РІС‚РѕРјР°С‚РёР·Р°С†РёРё`,
+        STAGE17_PLATFORM_ID,
+        `lex_ws_${input.workspaceId}`,
+      ],
+    );
+  }
+
+  private async upsertModernProjectPlan(
+    client: PoolClient,
+    ids: ActivepiecesIds,
+  ) {
+    await client.query(
+      `
+        insert into project_plan (
+          id,
+          "projectId",
+          name,
+          pieces,
+          "piecesFilterType",
+          locked
+        )
+        values ($1, $2, 'FREE', array[]::varchar[], 'NONE', false)
+        on conflict (id) do update
+        set
+          "projectId" = excluded."projectId",
+          name = excluded.name,
+          pieces = excluded.pieces,
+          "piecesFilterType" = excluded."piecesFilterType",
+          locked = false,
+          updated = now()
+      `,
+      [ids.planId, ids.projectId],
+    );
+  }
+
+  private async upsertModernFlow(
+    client: PoolClient,
+    input: {
+      readonly flowId: string;
+      readonly projectId: string;
+      readonly automationId: string;
+    },
+  ) {
+    await client.query(
+      `
+        insert into flow (
+          id,
+          "projectId",
+          "folderId",
+          status,
+          "publishedVersionId",
+          "externalId",
+          metadata,
+          "operationStatus"
+        )
+        values ($1, $2, null, 'DISABLED', null, $3, null, 'NONE')
+        on conflict (id) do update
+        set
+          "projectId" = excluded."projectId",
+          status = 'DISABLED',
+          "externalId" = excluded."externalId",
+          "operationStatus" = 'NONE',
+          updated = now()
+      `,
+      [input.flowId, input.projectId, input.automationId],
+    );
+  }
+
+  private async upsertModernFlowVersion(
+    client: PoolClient,
+    input: {
+      readonly flowVersionId: string;
+      readonly flowId: string;
+      readonly userId: string;
+      readonly nowExpression: string;
+    },
+  ) {
+    await client.query(
+      `
+        insert into flow_version (
+          id,
+          "flowId",
+          "displayName",
+          trigger,
+          valid,
+          state,
+          "updatedBy",
+          "schemaVersion",
+          "connectionIds",
+          "agentIds",
+          notes
+        )
+        values (
+          $1,
+          $2,
+          $4::text,
+          jsonb_build_object(
+            'name', 'trigger',
+            'valid', true,
+            'displayName', $5::text,
+            'type', 'PIECE_TRIGGER',
+            'settings', jsonb_build_object(
+              'pieceName', '@activepieces/piece-manual-trigger',
+              'pieceVersion', '0.0.5',
+              'pieceType', 'OFFICIAL',
+              'packageType', 'REGISTRY',
+              'triggerName', 'manual_trigger',
+              'input', '{}'::jsonb,
+              'inputUiInfo', '{}'::jsonb
+            ),
+            'lastUpdatedDate', ${input.nowExpression}
+          ),
+          true,
+          'DRAFT',
+          $3,
+          '20',
+          array[]::varchar[],
+          array[]::varchar[],
+          '[]'::jsonb
+        )
+        on conflict (id) do update
+        set
+          "displayName" = excluded."displayName",
+          trigger = excluded.trigger,
+          valid = true,
+          state = 'DRAFT',
+          "updatedBy" = excluded."updatedBy",
+          "schemaVersion" = excluded."schemaVersion",
+          "connectionIds" = excluded."connectionIds",
+          "agentIds" = excluded."agentIds",
+          notes = excluded.notes,
+          updated = now()
+      `,
+      [
+        input.flowVersionId,
+        input.flowId,
+        input.userId,
+        STAGE17_FLOW_DISPLAY_NAME,
+        STAGE17_MANUAL_TRIGGER_DISPLAY_NAME,
+      ],
+    );
   }
 
   private async resolveActivepiecesIds(
@@ -1134,7 +1484,6 @@ export class ActivepiecesCanvasProvisioningService implements OnModuleDestroy {
           "maximumSupportedRelease",
           actions,
           triggers,
-          "projectId",
           auth,
           "pieceType",
           "packageType",
@@ -1165,7 +1514,6 @@ export class ActivepiecesCanvasProvisioningService implements OnModuleDestroy {
               'testStrategy', 'SIMULATION'
             )
           ),
-          null,
           null,
           'OFFICIAL',
           'REGISTRY',

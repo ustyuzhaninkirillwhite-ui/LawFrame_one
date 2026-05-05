@@ -5,15 +5,20 @@ describe('ActivepiecesPiecesPolicyService', () => {
   const originalPiecesProfile = process.env.LEXFRAME_STAGE17_PIECES_PROFILE;
   const originalDeployEnv = process.env.LEXFRAME_DEPLOY_ENV;
   const originalEnvProfile = process.env.LEXFRAME_ENV_PROFILE;
+  const originalCatalogMode = process.env.ACTIVEPIECES_CATALOG_MODE;
 
   afterEach(() => {
     restoreEnv('LEXFRAME_STAGE17_PIECES_PROFILE', originalPiecesProfile);
     restoreEnv('LEXFRAME_DEPLOY_ENV', originalDeployEnv);
     restoreEnv('LEXFRAME_ENV_PROFILE', originalEnvProfile);
+    restoreEnv('ACTIVEPIECES_CATALOG_MODE', originalCatalogMode);
   });
 
-  it('builds an ALLOWED allowlist policy with a stable policy hash', () => {
-    const policy = service.buildAutomationCanvasPolicy({
+  it('builds a restricted ALLOWED policy with a stable policy hash', () => {
+    process.env.ACTIVEPIECES_CATALOG_MODE = 'restricted';
+    const restrictedService = new ActivepiecesPiecesPolicyService();
+
+    const policy = restrictedService.buildAutomationCanvasPolicy({
       workspaceSecurity: {
         workspaceId: 'ws_test',
         incidentLockActive: false,
@@ -100,7 +105,57 @@ describe('ActivepiecesPiecesPolicyService', () => {
     }
   });
 
-  it('adds the dev-only all-open-source pieces profile outside production', () => {
+  it('adds the max catalog pieces profile by default everywhere', () => {
+    process.env.ACTIVEPIECES_CATALOG_MODE = 'max';
+    process.env.LEXFRAME_DEPLOY_ENV = 'production';
+    process.env.LEXFRAME_ENV_PROFILE = 'production';
+    const maxService = new ActivepiecesPiecesPolicyService();
+
+    const policy = maxService.buildAutomationCanvasPolicy({
+      workspaceSecurity: {
+        workspaceId: 'ws_test',
+        incidentLockActive: false,
+        tokenTtlSeconds: 120,
+        piecesFilterType: 'ALLOWED',
+        piecesTags: ['legal-core'],
+      },
+      automation: {
+        id: 'aut_test',
+        workspace_id: 'ws_test',
+        template_id: 'tpl_test',
+        source_template_version_id: 'tpv_test',
+        title: 'Policy test',
+        version: 'v1',
+        workflow_state: 'compiled',
+        builder_state: 'ready',
+        sync_state: 'synced',
+        compatibility_status: 'compatible',
+        available: true,
+        workflow: null,
+        active_canvas_version_id: null,
+        production_disabled_at: null,
+        production_disabled_reason: null,
+        runtime_project_id: 'proj_test',
+        runtime_flow_id: 'flow_test',
+        sync_hash: 'sync_test',
+      },
+    });
+
+    expect(policy.piecesTags).toEqual(
+      expect.arrayContaining([
+        'activepieces-max-catalog',
+        'activepieces-core',
+        'activepieces-community',
+        'open-source-pieces',
+      ]),
+    );
+    expect(policy.denylistedPieces).not.toContain(
+      '@activepieces/piece-cometapi',
+    );
+  });
+
+  it('keeps restricted mode as the rollback even with the legacy local profile', () => {
+    process.env.ACTIVEPIECES_CATALOG_MODE = 'restricted';
     process.env.LEXFRAME_STAGE17_PIECES_PROFILE =
       'stage17-local-all-open-source-pieces';
     process.env.LEXFRAME_DEPLOY_ENV = 'local';
@@ -137,15 +192,8 @@ describe('ActivepiecesPiecesPolicyService', () => {
       },
     });
 
-    expect(policy.piecesTags).toEqual(
-      expect.arrayContaining([
-        'stage17-local-all-open-source-pieces',
-        'activepieces-core',
-        'activepieces-community',
-        'open-source-pieces',
-      ]),
-    );
-    expect(policy.denylistedPieces).not.toContain(
+    expect(policy.piecesTags).not.toContain('activepieces-max-catalog');
+    expect(policy.denylistedPieces).toContain(
       '@activepieces/piece-cometapi',
     );
   });
