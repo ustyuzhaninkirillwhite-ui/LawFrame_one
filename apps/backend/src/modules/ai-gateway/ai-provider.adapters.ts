@@ -74,6 +74,10 @@ interface ChatCompletionResponse {
   };
 }
 
+const TRANSIENT_STATUS_CODES = new Set([
+  408, 409, 425, 429, 500, 502, 503, 504,
+]);
+
 function estimateTokens(value: string) {
   return Math.max(1, Math.ceil(value.length / 4));
 }
@@ -102,94 +106,119 @@ async function requestOpenAiCompatibleStructuredOutput<T>(input: {
   readonly apiKey: string;
   readonly endpoint: string;
   readonly request: StructuredAiRequest<T>;
+  readonly timeoutMs?: number;
+  readonly retryCount?: number;
 }): Promise<StructuredAiResponse<T>> {
   const startedAt = Date.now();
+  const maxAttempts = Math.max(1, (input.retryCount ?? 0) + 1);
 
-  try {
-    const response = await fetch(input.endpoint, {
-      method: 'POST',
-      headers: {
-        authorization: `Bearer ${input.apiKey}`,
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: input.request.model,
-        temperature: 0,
-        response_format: input.request.jsonSchema
-          ? {
-              type: 'json_schema',
-              json_schema: {
-                name: input.request.jsonSchema.name,
-                strict: input.request.jsonSchema.strict ?? true,
-                schema: input.request.jsonSchema.schema,
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    const controller = new AbortController();
+    const timeout = setTimeout(
+      () => controller.abort(),
+      input.timeoutMs ?? 90_000,
+    );
+
+    try {
+      const response = await fetch(input.endpoint, {
+        method: 'POST',
+        signal: controller.signal,
+        headers: {
+          authorization: `Bearer ${input.apiKey}`,
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: input.request.model,
+          temperature: 0,
+          response_format: input.request.jsonSchema
+            ? {
+                type: 'json_schema',
+                json_schema: {
+                  name: input.request.jsonSchema.name,
+                  strict: input.request.jsonSchema.strict ?? true,
+                  schema: input.request.jsonSchema.schema,
+                },
+              }
+            : {
+                type: 'json_object',
               },
-            }
-          : {
-              type: 'json_object',
+          tools: input.request.tools?.map((tool) => ({
+            type: 'function',
+            function: {
+              name: tool.name,
+              description: tool.description,
+              parameters: tool.parameters,
             },
-        tools: input.request.tools?.map((tool) => ({
-          type: 'function',
-          function: {
-            name: tool.name,
-            description: tool.description,
-            parameters: tool.parameters,
-          },
-        })),
-        tool_choice:
-          input.request.tools && input.request.tools.length > 0
-            ? 'auto'
-            : undefined,
-        messages: [
-          {
-            role: 'system',
-            content:
-              'Return valid JSON only. Preserve the exact top-level shape from the reference JSON and do not add markdown fences.',
-          },
-          {
-            role: 'user',
-            content: [
-              `schema_id=${input.request.schemaId}`,
-              `planner_prompt=${input.request.prompt}`,
-              `reference_json=${JSON.stringify(input.request.fallback)}`,
-            ].join('\n\n'),
-          },
-        ],
-      }),
-    });
+          })),
+          tool_choice:
+            input.request.tools && input.request.tools.length > 0
+              ? 'auto'
+              : undefined,
+          messages: [
+            {
+              role: 'system',
+              content:
+                'Return valid JSON only. Preserve the exact top-level shape from the reference JSON and do not add markdown fences.',
+            },
+            {
+              role: 'user',
+              content: [
+                `schema_id=${input.request.schemaId}`,
+                `planner_prompt=${input.request.prompt}`,
+                `reference_json=${JSON.stringify(input.request.fallback)}`,
+              ].join('\n\n'),
+            },
+          ],
+        }),
+      });
 
-    if (!response.ok) {
+      if (!response.ok) {
+        if (
+          attempt < maxAttempts &&
+          TRANSIENT_STATUS_CODES.has(response.status)
+        ) {
+          continue;
+        }
+        return buildFallbackResponse(input.provider, input.request, startedAt);
+      }
+
+      const payload = (await response.json()) as ChatCompletionResponse;
+      const content = coerceCompletionContent(payload);
+
+      if (!content) {
+        return buildFallbackResponse(input.provider, input.request, startedAt);
+      }
+
+      const output = parseJsonPayload<T>(content);
+      const promptTokens =
+        payload.usage?.prompt_tokens ?? estimateTokens(input.request.prompt);
+      const completionTokens =
+        payload.usage?.completion_tokens ??
+        estimateTokens(JSON.stringify(output));
+
+      return {
+        provider: input.provider,
+        model: input.request.model,
+        output,
+        inputTokens: promptTokens,
+        outputTokens: completionTokens,
+        latencyMs: Date.now() - startedAt,
+        usedFallback: false,
+        ...(input.request.localOwnerKey
+          ? { localOwnerKey: toSafeLocalOwnerKey(input.request.localOwnerKey) }
+          : {}),
+      };
+    } catch {
+      if (attempt < maxAttempts) {
+        continue;
+      }
       return buildFallbackResponse(input.provider, input.request, startedAt);
+    } finally {
+      clearTimeout(timeout);
     }
-
-    const payload = (await response.json()) as ChatCompletionResponse;
-    const content = coerceCompletionContent(payload);
-
-    if (!content) {
-      return buildFallbackResponse(input.provider, input.request, startedAt);
-    }
-
-    const output = parseJsonPayload<T>(content);
-    const promptTokens =
-      payload.usage?.prompt_tokens ?? estimateTokens(input.request.prompt);
-    const completionTokens =
-      payload.usage?.completion_tokens ??
-      estimateTokens(JSON.stringify(output));
-
-    return {
-      provider: input.provider,
-      model: input.request.model,
-      output,
-      inputTokens: promptTokens,
-      outputTokens: completionTokens,
-      latencyMs: Date.now() - startedAt,
-      usedFallback: false,
-      ...(input.request.localOwnerKey
-        ? { localOwnerKey: toSafeLocalOwnerKey(input.request.localOwnerKey) }
-        : {}),
-    };
-  } catch {
-    return buildFallbackResponse(input.provider, input.request, startedAt);
   }
+
+  return buildFallbackResponse(input.provider, input.request, startedAt);
 }
 
 @Injectable()
@@ -245,7 +274,7 @@ export class CometApiAdapter implements AiProviderAdapter {
   readonly provider = 'cometapi' as const;
   readonly supports = {
     structuredOutputs: true,
-    functionCalling: false,
+    functionCalling: true,
     webSearch: false,
     zeroDataRetention: false,
   };
@@ -266,8 +295,10 @@ export class CometApiAdapter implements AiProviderAdapter {
       provider: this.provider,
       apiKey:
         request.localOwnerKey?.api_key.revealForProviderCall() ?? apiKey ?? '',
-      endpoint: 'https://api.cometapi.com/v1/chat/completions',
+      endpoint: `${this.env.LEXFRAME_COMETAPI_BASE_URL.replace(/\/$/, '')}/chat/completions`,
       request,
+      timeoutMs: this.env.LEXFRAME_AI_REQUEST_TIMEOUT_MS,
+      retryCount: this.env.LEXFRAME_AI_RETRY_COUNT,
     });
   }
 

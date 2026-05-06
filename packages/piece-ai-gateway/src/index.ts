@@ -1,5 +1,13 @@
 export const LEXFRAME_AI_GATEWAY_PIECE_NAME = '@lexframe/piece-ai-gateway';
-export const LEXFRAME_AI_GATEWAY_PIECE_VERSION = '0.1.0-stage17.9.0';
+export const LEXFRAME_AI_GATEWAY_PIECE_VERSION = '0.1.0-stage18.0.0';
+
+export type LexFramePieceAiRoute = 'agent_general' | 'rag_legal_summary';
+
+export interface LexFrameAiGatewayInputRef {
+  readonly type: string;
+  readonly id: string;
+  readonly metadata?: Record<string, unknown>;
+}
 
 export interface LexFrameRuntimeCallInput {
   readonly lexframeRuntimeBaseUrl: string;
@@ -28,9 +36,12 @@ export interface InvokeAiGatewayInput extends LexFrameRuntimeCallInput {
   readonly apFlowId: string;
   readonly apFlowVersionId?: string | null;
   readonly stepName: string;
-  readonly taskType: string;
+  readonly route?: LexFramePieceAiRoute;
+  readonly task: string;
+  readonly taskType?: string;
   readonly classification?: string | null;
-  readonly inputRefs: Record<string, unknown>;
+  readonly inputRefs: readonly LexFrameAiGatewayInputRef[];
+  readonly outputSchema: string;
   readonly outputSchemaRef?: string | null;
 }
 
@@ -61,8 +72,10 @@ export const lexframeAiGatewayPieceContract = {
     invoke_ai_gateway: {
       endpoint: '/api/runtime/activepieces/ai-gateway/actions/test',
       acceptsProviderKeyProps: false,
+      acceptsProviderModelProps: false,
       acceptsLocalKeyVaultPath: false,
       returnsRawProviderResponse: false,
+      allowedPayloadKeys: ['route', 'task', 'input_refs', 'output_schema'],
     },
     write_callback_artifact: {
       endpoint: '/api/runtime/activepieces/callback',
@@ -119,12 +132,13 @@ export async function invokeAiGateway(
       ap_flow_id: input.apFlowId,
       ap_flow_version_id: input.apFlowVersionId ?? undefined,
       step_name: input.stepName,
-      task_type: input.taskType,
+      task_type: input.taskType ?? input.task,
+      ...buildInvokeAiGatewayPayload(input),
       input: {
         mode: 'ref_only',
         classification: input.classification ?? 'workspace_internal',
         input_refs: input.inputRefs,
-        output_schema_ref: input.outputSchemaRef ?? null,
+        output_schema_ref: input.outputSchemaRef ?? input.outputSchema,
       },
       output_policy: {
         return_raw_provider_response: false,
@@ -133,6 +147,28 @@ export async function invokeAiGateway(
     },
     fetchImpl,
   );
+}
+
+export function buildInvokeAiGatewayPayload(
+  input: {
+    readonly route?: LexFramePieceAiRoute;
+    readonly task: string;
+    readonly inputRefs: readonly LexFrameAiGatewayInputRef[];
+    readonly outputSchema: string;
+  },
+) {
+  assertNoForbiddenPieceFields(input as unknown as Record<string, unknown>);
+  const route = input.route ?? 'agent_general';
+  if (route !== 'agent_general' && route !== 'rag_legal_summary') {
+    throw new Error(`Unsupported Stage 18 AI Gateway route: ${route}`);
+  }
+
+  return {
+    route,
+    task: requireNonEmpty(input.task, 'task'),
+    input_refs: input.inputRefs,
+    output_schema: requireNonEmpty(input.outputSchema, 'outputSchema'),
+  };
 }
 
 export async function writeCallbackArtifact(
@@ -185,4 +221,29 @@ async function postJson(
   }
 
   return response.json();
+}
+
+function assertNoForbiddenPieceFields(input: Record<string, unknown>) {
+  const forbidden = [
+    'apiKey',
+    'api_key',
+    'provider',
+    'model',
+    'baseUrl',
+    'base_url',
+    'prompt',
+  ];
+  for (const key of forbidden) {
+    if (Object.prototype.hasOwnProperty.call(input, key)) {
+      throw new Error(`Forbidden Stage 18 AI Gateway piece field: ${key}`);
+    }
+  }
+}
+
+function requireNonEmpty(value: string, field: string) {
+  if (typeof value !== 'string' || value.trim().length === 0) {
+    throw new Error(`Stage 18 AI Gateway piece field is required: ${field}`);
+  }
+
+  return value.trim();
 }

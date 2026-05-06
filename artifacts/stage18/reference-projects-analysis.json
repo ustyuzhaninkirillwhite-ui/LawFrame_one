@@ -1,0 +1,128 @@
+{
+  "status": "pass",
+  "projects": [
+    {
+      "name": "assistant-ui",
+      "path": "E:\\assistant-ui-main",
+      "git": {
+        "branch": "not_available",
+        "commit": "not_available",
+        "status": "not_available_local_copy_has_no_git_metadata"
+      },
+      "license": {
+        "name": "assistant-ui",
+        "path_hint": "\\assistant-ui-main",
+        "license_file": "LICENSE",
+        "package_license": null,
+        "decision": "reference_only",
+        "reason": "MIT license present; Stage 18 needs only stream contract compatibility."
+      },
+      "reviewed_areas": [
+        "apps/docs/content/docs/runtimes/concepts/architecture.mdx",
+        "apps/docs/content/docs/runtimes/concepts/adapters.mdx",
+        "apps/docs/content/docs/(reference)/api-reference/hooks/runtimes.mdx"
+      ],
+      "conclusion": "Use ExternalStoreRuntime/data-stream ownership concept for Stage 19-ready stream events; no Stage 18 dependency."
+    },
+    {
+      "name": "Chatbot UI",
+      "path": "E:\\chatbot-ui-main",
+      "git": {
+        "branch": "not_available",
+        "commit": "not_available",
+        "status": "not_available_local_copy_has_no_git_metadata"
+      },
+      "license": {
+        "name": "Chatbot UI",
+        "path_hint": "\\chatbot-ui-main",
+        "license_file": "LICENSE",
+        "package_license": null,
+        "decision": "reference_only",
+        "reason": "Local license file present; use UX/settings lessons only."
+      },
+      "reviewed_areas": [
+        "app/api/chat/custom/route.ts",
+        "lib/server/server-chat-helpers.ts",
+        ".env.local.example"
+      ],
+      "conclusion": "Provider route handlers demonstrate a pattern LexFrame must avoid: user/profile provider keys and model selectors stay out of MVP user flow."
+    },
+    {
+      "name": "AnythingLLM",
+      "path": "E:\\anything-llm-master",
+      "git": {
+        "branch": "not_available",
+        "commit": "not_available",
+        "status": "not_available_local_copy_has_no_git_metadata"
+      },
+      "license": {
+        "name": "AnythingLLM",
+        "path_hint": "\\anything-llm-master",
+        "license_file": "LICENSE",
+        "package_license": "MIT",
+        "decision": "reference_only",
+        "reason": "MIT package metadata; backend/runtime not imported."
+      },
+      "reviewed_areas": [
+        "server/models/systemSettings.js",
+        "server/models/workspace.js",
+        "server/endpoints/api/workspace/index.js"
+      ],
+      "conclusion": "System/workspace/agent provider separation maps cleanly to LexFrame route policy, hidden from ordinary lawyers."
+    },
+    {
+      "name": "LibreChat",
+      "path": "E:\\LibreChat-main",
+      "git": {
+        "branch": "not_available",
+        "commit": "not_available",
+        "status": "not_available_local_copy_has_no_git_metadata"
+      },
+      "license": {
+        "name": "LibreChat",
+        "path_hint": "\\LibreChat-main",
+        "license_file": "LICENSE",
+        "package_license": "ISC",
+        "decision": "direct_import_blocked",
+        "reason": "Local LICENSE is MIT but package metadata is ISC; use architecture/reference only until resolved."
+      },
+      "reviewed_areas": [
+        "librechat.example.yaml",
+        "api/server/controllers/agents/request.js",
+        "api/app/clients/tools/util/handleTools.js"
+      ],
+      "conclusion": "Custom endpoint/model spec, fail-fast config, MCP/tool ACL and resumable stream ideas are useful clean-room references; direct import blocked."
+    }
+  ],
+  "reference_checks_by_block": [
+    {
+      "block": "Provider/route registry",
+      "references_checked": [
+        "LibreChat custom endpoints/model specs",
+        "AnythingLLM System/Workspace/Agent LLM settings",
+        "Chatbot UI provider route handlers",
+        "assistant-ui runtime architecture docs"
+      ],
+      "clean_room_decision": "Backend-owned route registry with no user model selector."
+    },
+    {
+      "block": "Streaming foundation",
+      "references_checked": [
+        "assistant-ui ExternalStoreRuntime/data-stream docs",
+        "LibreChat resumable agent request/callback flow",
+        "Chatbot UI streaming route handlers"
+      ],
+      "clean_room_decision": "LexFrame SSE event protocol with route snapshots and evidence events."
+    },
+    {
+      "block": "Activepieces piece",
+      "references_checked": [
+        "AnythingLLM agent/tool separation",
+        "LibreChat MCP/tool ACL handling",
+        "assistant-ui tool UI assumptions"
+      ],
+      "clean_room_decision": "Piece calls LexFrame runtime endpoint only; no provider client props."
+    }
+  ],
+  "generated_at": "2026-05-06T18:53:46.600Z"
+}

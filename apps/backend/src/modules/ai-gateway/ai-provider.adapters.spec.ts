@@ -7,6 +7,8 @@ describe('CometApiAdapter', () => {
   const originalEnv = {
     COMETAPI_API_KEY: process.env.COMETAPI_API_KEY,
     COMETAPI_API_KEYS: process.env.COMETAPI_API_KEYS,
+    LEXFRAME_COMETAPI_BASE_URL: process.env.LEXFRAME_COMETAPI_BASE_URL,
+    LEXFRAME_AI_DEFAULT_MODEL: process.env.LEXFRAME_AI_DEFAULT_MODEL,
   };
 
   const request: StructuredAiRequest<{ readonly ok: boolean }> = {
@@ -21,6 +23,14 @@ describe('CometApiAdapter', () => {
     jest.restoreAllMocks();
     restoreEnv('COMETAPI_API_KEY', originalEnv.COMETAPI_API_KEY);
     restoreEnv('COMETAPI_API_KEYS', originalEnv.COMETAPI_API_KEYS);
+    restoreEnv(
+      'LEXFRAME_COMETAPI_BASE_URL',
+      originalEnv.LEXFRAME_COMETAPI_BASE_URL,
+    );
+    restoreEnv(
+      'LEXFRAME_AI_DEFAULT_MODEL',
+      originalEnv.LEXFRAME_AI_DEFAULT_MODEL,
+    );
   });
 
   it('rotates through configured CometAPI keys and de-duplicates them', async () => {
@@ -64,6 +74,27 @@ describe('CometApiAdapter', () => {
       }),
     );
   });
+
+  it('uses the Stage 18 configurable OpenAI-compatible base URL', async () => {
+    process.env.COMETAPI_API_KEY = 'test_comet_single_key';
+    process.env.COMETAPI_API_KEYS = '';
+    process.env.LEXFRAME_COMETAPI_BASE_URL = 'https://gateway.example/v9';
+    process.env.LEXFRAME_AI_DEFAULT_MODEL = 'deepseek-v4-flash';
+    const fetchMock = mockCometFetch();
+    const adapter = new CometApiAdapter();
+
+    await adapter.generateStructured({
+      ...request,
+      model: 'deepseek-v4-flash',
+    });
+
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(
+      'https://gateway.example/v9/chat/completions',
+    );
+    const init = fetchMock.mock.calls[0]?.[1] as RequestInit | undefined;
+    expect(typeof init?.body).toBe('string');
+    expect(init?.body).toContain('"model":"deepseek-v4-flash"');
+  });
 });
 
 function mockCometFetch() {
@@ -85,7 +116,11 @@ function mockCometFetch() {
 }
 
 function restoreEnv(
-  key: 'COMETAPI_API_KEY' | 'COMETAPI_API_KEYS',
+  key:
+    | 'COMETAPI_API_KEY'
+    | 'COMETAPI_API_KEYS'
+    | 'LEXFRAME_COMETAPI_BASE_URL'
+    | 'LEXFRAME_AI_DEFAULT_MODEL',
   value: string | undefined,
 ) {
   if (value === undefined) {

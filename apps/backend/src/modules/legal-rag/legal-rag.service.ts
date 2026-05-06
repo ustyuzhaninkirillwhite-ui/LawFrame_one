@@ -16,7 +16,6 @@ import { Injectable } from '@nestjs/common';
 import { createHash } from 'node:crypto';
 import { AppHttpException } from '../../common/errors/app-http.exception';
 import { AIGatewayService } from '../ai-gateway/ai-gateway.service';
-import { AiProviderRegistry } from '../ai-gateway/ai-provider.adapters';
 import { AuditService } from '../audit/audit.service';
 import { DatabaseService } from '../database/database.service';
 import { LegalSearchService } from '../legal-search/legal-search.service';
@@ -57,7 +56,6 @@ export class LegalRagService {
     private readonly databaseService: DatabaseService,
     private readonly auditService: AuditService,
     private readonly aiGatewayService: AIGatewayService,
-    private readonly aiProviderRegistry: AiProviderRegistry,
     private readonly legalSearchService: LegalSearchService,
   ) {}
 
@@ -90,6 +88,7 @@ export class LegalRagService {
       hasDocuments:
         contextCandidates.length > 0 ||
         (input.workspaceDocumentIds?.length ?? 0) > 0,
+      routeCode: 'rag_legal_summary',
     });
     const requestId = await this.createRagRequest(
       actor.id,
@@ -125,14 +124,20 @@ export class LegalRagService {
 
     const fallback = buildFallbackAnalysis(input.question, contextCandidates);
     const prompt = buildPrompt(input, contextCandidates);
-    const adapter = this.aiProviderRegistry.get(routePlan.provider!);
-    const response = await adapter.generateStructured({
-      provider: routePlan.provider!,
-      model: routePlan.model ?? 'local-mock',
+    const gatewayResponse = await this.aiGatewayService.generateStructured({
+      access,
+      classification,
+      taskType: 'document_analysis',
+      hasDocuments:
+        contextCandidates.length > 0 ||
+        (input.workspaceDocumentIds?.length ?? 0) > 0,
+      route: 'rag_legal_summary',
       prompt,
       schemaId: 'lexframe.legal_analysis.v1',
       fallback,
+      traceId: meta.traceId,
     });
+    const response = gatewayResponse.response;
     const validated = validateAnalysisOutput(
       response.output,
       contextCandidates,

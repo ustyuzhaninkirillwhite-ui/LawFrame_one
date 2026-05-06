@@ -318,4 +318,25 @@ describe('ReadinessService', () => {
 
     result.restoreEnv();
   });
+
+  it('reports Stage 18 default route without exposing secret values', () => {
+    const result = createService({
+      COMETAPI_API_KEY: 'stage0_comet_api_key',
+      COMETAPI_API_KEYS: '',
+    });
+    const { service } = result;
+
+    const readiness = service.getStage18Readiness();
+
+    expect(readiness.defaultRoute).toEqual({
+      route: 'default_chat',
+      provider: 'cometapi',
+      model: 'deepseek-v4-flash',
+    });
+    expect(readiness.checks.default_route.status).toBe('pass');
+    expect(readiness.checks.reference_repos_checked).toBeDefined();
+    expect(JSON.stringify(readiness)).not.toContain('stage0_comet_api_key');
+
+    result.restoreEnv();
+  });
 });

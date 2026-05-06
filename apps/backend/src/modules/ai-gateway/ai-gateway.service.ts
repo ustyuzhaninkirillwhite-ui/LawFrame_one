@@ -9,6 +9,7 @@ import type {
   AiMessageResponseType,
   AiProvider,
   AiProviderRoute,
+  AiRouteCode,
   AiRedactionEntity,
   AiRedactionPreviewRequest,
   AiRedactionPreviewResponse,
@@ -97,6 +98,12 @@ import {
   summarizeAiResponse,
   withRoute,
 } from './ai-gateway.helpers';
+import { AiModelRouteRegistryService } from './ai-route-registry.service';
+import {
+  buildStage18StreamError,
+  buildStage18StreamEvents,
+  serializeSseEvent,
+} from './ai-stream-protocol';
 
 interface RequestMeta {
   readonly requestId: string | null;
@@ -358,6 +365,7 @@ export class AIGatewayService {
     private readonly aiProviderRegistry: AiProviderRegistry,
     private readonly localKeyResolver: LocalKeyResolver,
     private readonly localOwnerKeyVaultService: LocalOwnerKeyVaultService,
+    private readonly aiModelRouteRegistryService: AiModelRouteRegistryService = new AiModelRouteRegistryService(),
   ) {}
 
   async planStructuredRoute(input: {
@@ -365,6 +373,7 @@ export class AIGatewayService {
     readonly classification: DataClassification;
     readonly taskType: AiRequestSummary['taskType'];
     readonly hasDocuments: boolean;
+    readonly routeCode?: AiRouteCode;
   }): Promise<{
     readonly dataClass: AiDataClass;
     readonly policy: AiPolicyContext;
@@ -409,6 +418,7 @@ export class AIGatewayService {
       policy,
       input.taskType,
       input.hasDocuments,
+      input.routeCode,
     );
 
     return {
@@ -432,6 +442,7 @@ export class AIGatewayService {
       localOwnerKeyVault: this.localOwnerKeyVaultService.getSafeStatus(),
       directBrowserAccess: false,
       structuredOutputsRequired: true,
+      stage18DefaultRoute: this.aiModelRouteRegistryService.getDefaultRoute(),
       sensitivityClasses: [
         'A_PUBLIC',
         'B_INTERNAL_WORKSPACE',
@@ -439,6 +450,69 @@ export class AIGatewayService {
         'C_LEGAL_SECRET',
       ],
     };
+  }
+
+  buildStage18StreamFoundation(input: {
+    readonly route?: AiRouteCode;
+    readonly message?: string;
+    readonly requestId?: string | null;
+    readonly traceId?: string | null;
+  }) {
+    const traceId = input.traceId ?? randomUUID();
+    const requestId = input.requestId ?? randomUUID();
+    const routeCode = input.route ?? 'default_chat';
+
+    try {
+      if (routeCode === 'automation_planner_high') {
+        const event = buildStage18StreamError({
+          traceId,
+          requestId,
+          code: 'ai_route_not_allowed',
+          message: 'automation_planner_high is reserved for Stage 20.',
+        });
+        return serializeSseEvent(event);
+      }
+
+      const route = this.aiModelRouteRegistryService.getRoute(routeCode);
+      if (!route.enabled) {
+        const event = buildStage18StreamError({
+          traceId,
+          requestId,
+          code: 'ai_route_not_allowed',
+          message: 'Selected AI route is disabled.',
+        });
+        return serializeSseEvent(event);
+      }
+
+      const text =
+        input.message && input.message.trim().length > 0
+          ? 'Stage 18 streaming protocol acknowledged the backend-routed request.'
+          : 'Stage 18 streaming protocol is ready.';
+      const events = buildStage18StreamEvents({
+        traceId,
+        requestId,
+        route: {
+          routeCode: route.routeCode,
+          providerCode: route.providerCode,
+          model: route.model,
+        },
+        text,
+        usage: {
+          inputTokens: Math.max(1, Math.ceil((input.message ?? '').length / 4)),
+          outputTokens: Math.max(1, Math.ceil(text.length / 4)),
+        },
+      });
+
+      return events.map(serializeSseEvent).join('');
+    } catch {
+      const event = buildStage18StreamError({
+        traceId,
+        requestId,
+        code: 'ai_provider_unavailable',
+        message: 'Stage 18 stream route resolution failed.',
+      });
+      return serializeSseEvent(event);
+    }
   }
 
   async generateStructured<T>(input: {
@@ -452,6 +526,7 @@ export class AIGatewayService {
     readonly jsonSchema?: StructuredAiRequest<T>['jsonSchema'];
     readonly tools?: StructuredAiRequest<T>['tools'];
     readonly maxToolCalls?: number;
+    readonly route?: AiRouteCode;
     readonly traceId?: string | null;
   }): Promise<{
     readonly route: Awaited<
@@ -464,6 +539,7 @@ export class AIGatewayService {
       classification: input.classification,
       taskType: input.taskType,
       hasDocuments: input.hasDocuments,
+      routeCode: input.route,
     });
 
     if (route.blocked || !route.provider || !route.model) {
@@ -610,14 +686,16 @@ export class AIGatewayService {
   ) {
     const run = await this.loadScopedRuntimeRun(claims);
     const traceId = headerTraceId ?? claims.trace_id ?? run.trace_id;
-    const prompt =
-      input.input.testPrompt ??
-      'Return a short JSON object confirming that LexFrame AI Gateway routing is available.';
-    const providerFilter = input.provider;
+    const prompt = [
+      'Return a short JSON object confirming that LexFrame AI Gateway routing is available.',
+      `task=${input.task}`,
+      `route=${input.route}`,
+      `input_refs=${JSON.stringify(input.inputRefs ?? [])}`,
+    ].join('\n');
     const localOwnerKey = this.localKeyResolver.resolveKey({
       purpose: 'activepieces_custom_piece',
-      provider: providerFilter,
-      routeId: input.routeId ?? undefined,
+      provider: 'cometapi',
+      routeId: input.route,
       workspaceId: claims.workspace_id,
       traceId,
     });
@@ -637,7 +715,7 @@ export class AIGatewayService {
         keyFingerprint: localOwnerKey.fingerprint,
         provider: localOwnerKey.provider,
         model: localOwnerKey.model,
-        route: localOwnerKey.route,
+        route: input.route,
         dataClassification: input.input.classification ?? 'workspace_internal',
         errorCode: 'AI_ROUTE_BLOCKED_BY_WORKSPACE_POLICY',
         traceId,
@@ -667,7 +745,7 @@ export class AIGatewayService {
       keyFingerprint: localOwnerKey.fingerprint,
       provider: localOwnerKey.provider,
       model: localOwnerKey.model,
-      route: localOwnerKey.route,
+      route: input.route,
       dataClassification: input.input.classification ?? 'workspace_internal',
       inputHash: hashText(prompt),
       traceId,
@@ -680,14 +758,15 @@ export class AIGatewayService {
         provider,
         model: localOwnerKey.model,
         prompt,
-        schemaId: 'lexframe.stage17_9.ai_gateway_route_test.v1',
+        schemaId:
+          input.outputSchema ?? 'lexframe.stage18.ai_gateway_route_test.v1',
         fallback: {
           status: 'ok',
           summary: 'Runtime AI Gateway fallback response.',
-          inputRefs: input.input.inputRefs ?? {},
+          inputRefs: input.inputRefs ?? [],
         },
         jsonSchema: {
-          name: 'stage17_ai_gateway_route_test',
+          name: 'stage18_ai_gateway_route_test',
           strict: true,
           schema: {
             type: 'object',
@@ -701,7 +780,9 @@ export class AIGatewayService {
         prompt_tokens: response.inputTokens,
         completion_tokens: response.outputTokens,
         total_tokens: response.inputTokens + response.outputTokens,
-        source: response.usedFallback ? 'gateway_estimated' : 'provider_reported',
+        source: response.usedFallback
+          ? 'gateway_estimated'
+          : 'provider_reported',
         token_usage_status: 'available',
       };
       const outputHash = hashText(JSON.stringify(response.output));
@@ -721,7 +802,7 @@ export class AIGatewayService {
         keyFingerprint: localOwnerKey.fingerprint,
         provider: localOwnerKey.provider,
         model: localOwnerKey.model,
-        route: localOwnerKey.route,
+        route: input.route,
         dataClassification: input.input.classification ?? 'workspace_internal',
         tokenUsage,
         inputHash: hashText(prompt),
@@ -744,7 +825,7 @@ export class AIGatewayService {
               fingerprint: localOwnerKey.fingerprint,
               provider: localOwnerKey.provider,
               model: localOwnerKey.model,
-              route: localOwnerKey.route,
+              route: input.route,
               token_usage: tokenUsage,
               output_hash: outputHash,
               used_fallback: response.usedFallback,
@@ -768,7 +849,7 @@ export class AIGatewayService {
           fingerprint: localOwnerKey.fingerprint,
           provider: localOwnerKey.provider,
           model: localOwnerKey.model,
-          route: localOwnerKey.route,
+          route: input.route,
           token_usage: tokenUsage,
         },
         redaction: {
@@ -795,7 +876,7 @@ export class AIGatewayService {
         keyFingerprint: localOwnerKey.fingerprint,
         provider: localOwnerKey.provider,
         model: localOwnerKey.model,
-        route: localOwnerKey.route,
+        route: input.route,
         dataClassification: input.input.classification ?? 'workspace_internal',
         inputHash: hashText(prompt),
         errorCode: 'AI_PROVIDER_ERROR',
@@ -3679,7 +3760,10 @@ export class AIGatewayService {
     policy: AiPolicyContext,
     taskType: AiRequestSummary['taskType'],
     hasDocuments: boolean,
+    routeCode?: AiRouteCode,
   ): ProviderDecision {
+    void policy;
+
     if (dataClass === 'D_AI_EXTERNAL_FORBIDDEN') {
       return {
         route: 'local_mock',
@@ -3698,6 +3782,9 @@ export class AIGatewayService {
       };
     }
 
+    const requestedRoute =
+      routeCode ?? this.stage18RouteForTask(taskType, hasDocuments);
+
     if (
       this.env.AI_PROVIDER_MODE === 'controlled-real' &&
       this.env.LEXFRAME_AI_TEST_FORCE_COMETAPI === '1'
@@ -3710,38 +3797,82 @@ export class AIGatewayService {
       };
     }
 
-    if (
-      dataClass === 'C_CONFIDENTIAL_CLIENT' ||
-      dataClass === 'C_LEGAL_SECRET'
-    ) {
+    if (requestedRoute === 'automation_planner_high') {
+      throw new AppHttpException(
+        'AI_ROUTE_NOT_ALLOWED',
+        403,
+        'automation_planner_high is reserved for Stage 20 automation planning.',
+      );
+    }
+
+    if (dataClass === 'C_LEGAL_SECRET') {
       return {
-        route: 'xai_zdr',
-        provider: 'xai',
-        model: 'grok-4-fast-reasoning',
-        routeReason: 'sensitive_workload_uses_zdr_route',
+        route: 'local_mock',
+        provider: 'local',
+        model: 'local-mock',
+        routeReason: 'stage18_legal_secret_external_provider_blocked',
       };
     }
 
     if (
-      !hasDocuments &&
-      taskType === 'field_extraction' &&
-      policy.cometapiPublicEnabled &&
-      (dataClass === 'A_PUBLIC' || dataClass === 'B_ANONYMIZED_LEGAL')
+      dataClass === 'C_CONFIDENTIAL_CLIENT' &&
+      requestedRoute !== 'rag_legal_summary'
     ) {
       return {
-        route: 'cometapi',
-        provider: 'cometapi',
-        model: 'comet-structured-v1',
-        routeReason: 'public_redaction_preview_allows_cometapi',
+        route: 'local_mock',
+        provider: 'local',
+        model: 'local-mock',
+        routeReason: 'stage18_confidential_requires_reference_or_summary_route',
       };
+    }
+
+    const route = this.aiModelRouteRegistryService.getRoute(requestedRoute);
+    if (!route.enabled) {
+      throw new AppHttpException(
+        'AI_ROUTE_NOT_ALLOWED',
+        403,
+        'Selected AI route is disabled.',
+        { route: requestedRoute },
+      );
+    }
+
+    if (route.providerCode !== 'cometapi') {
+      throw new AppHttpException(
+        'AI_PROVIDER_UNAVAILABLE',
+        503,
+        'Selected AI route does not have a Stage 18 provider adapter.',
+        {
+          route: route.routeCode,
+          provider: route.providerCode,
+        },
+      );
     }
 
     return {
-      route: 'xai',
-      provider: 'xai',
-      model: 'grok-4-fast-reasoning',
-      routeReason: 'default_structured_planner_route',
+      route: route.routeCode,
+      provider: 'cometapi',
+      model: route.model,
+      routeReason: `stage18_route_registry:${route.routeCode}`,
     };
+  }
+
+  private stage18RouteForTask(
+    taskType: AiRequestSummary['taskType'],
+    hasDocuments: boolean,
+  ): AiRouteCode {
+    if (taskType === 'document_analysis') {
+      return 'rag_legal_summary';
+    }
+
+    if (taskType === 'workflow_planning' || taskType === 'workflow_patch') {
+      return 'agent_general';
+    }
+
+    if (hasDocuments) {
+      return 'agent_general';
+    }
+
+    return 'default_chat';
   }
 
   private assertProviderResponseReady(

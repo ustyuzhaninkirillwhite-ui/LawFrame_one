@@ -1,0 +1,5 @@
+{
+  "status": "pass",
+  "command": "corepack pnpm --filter @lexframe/backend test -- ai-stream-protocol --runInBand",
+  "generated_at": "2026-05-06T18:53:40.280Z"
+}

@@ -24,6 +24,27 @@ export const serverEnvSchema = z.object({
   LEXFRAME_AI_SENSITIVE_DATA_POLICY: z
     .enum(["allow", "zdr_or_block", "private_only", "block"])
     .default("zdr_or_block"),
+  LEXFRAME_AI_GATEWAY_ENABLED: z.enum(["0", "1", "false", "true"]).default("true"),
+  LEXFRAME_AI_DEFAULT_PROVIDER: z
+    .enum(["cometapi", "openai_compatible", "openai", "mock"])
+    .default("cometapi"),
+  LEXFRAME_AI_DEFAULT_MODEL: z.string().min(1).default("deepseek-v4-flash"),
+  LEXFRAME_AI_DEFAULT_ROUTE: z.string().min(1).default("default_chat"),
+  LEXFRAME_AI_DEFAULT_REASONING_MODE: z.string().min(1).default("non_thinking"),
+  LEXFRAME_COMETAPI_BASE_URL: z
+    .string()
+    .url()
+    .default("https://api.cometapi.com/v1"),
+  LEXFRAME_COMETAPI_API_KEY_REF: z.string().min(1).default("owner_default_ai"),
+  LEXFRAME_AI_AGENT_ROUTE: z.string().min(1).default("agent_general"),
+  LEXFRAME_AI_RAG_SUMMARY_ROUTE: z.string().min(1).default("rag_legal_summary"),
+  LEXFRAME_AI_AUTOMATION_PLANNER_ROUTE: z
+    .string()
+    .min(1)
+    .default("automation_planner_high"),
+  LEXFRAME_AI_REQUEST_TIMEOUT_MS: z.coerce.number().int().positive().default(90000),
+  LEXFRAME_AI_RETRY_COUNT: z.coerce.number().int().min(0).default(1),
+  LEXFRAME_STAGE18_LIVE_PROVIDER_SMOKE: z.enum(["0", "1"]).default("0"),
   AI_PROVIDER_MODE: z.enum(["mock", "controlled-real"]).default("mock"),
   LEXFRAME_DELIVERY_TRANSPORT: z
     .enum(["disabled", "webhook"])

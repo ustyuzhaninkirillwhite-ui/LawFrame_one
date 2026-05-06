@@ -1,0 +1,10 @@
+{
+  "status": "pass",
+  "violations": [],
+  "allowlisted_files": [
+    "apps/backend/src/modules/ai-gateway/ai-provider.adapters.ts",
+    "packages/config/src/server-env.ts",
+    "scripts/stage18/gates.mjs"
+  ],
+  "generated_at": "2026-05-06T18:52:40.496Z"
+}

@@ -1,5 +1,4 @@
 import type {
-  AiChatSessionSummary,
   InstalledAutomationDetail,
   Stage15CreateProjectChatRequest,
   Stage15ProjectChatCreatedResponse,
@@ -14,11 +13,14 @@ import type {
   AuthenticatedActor,
   LexframeRequestState,
 } from '../../common/types/lexframe-request';
-import { randomUUID } from 'node:crypto';
 import { Injectable } from '@nestjs/common';
 import { AppHttpException } from '../../common/errors/app-http.exception';
 import { ActivepiecesCanvasProvisioningService } from '../activepieces/activepieces-canvas-provisioning.service';
 import { AutomationLibraryService } from '../automation-library/automation-library.service';
+import {
+  ChatThreadService,
+  mapStage15ProjectChat,
+} from '../chat/chat-thread.service';
 import { DashboardService } from '../dashboard/dashboard.service';
 import { DatabaseService } from '../database/database.service';
 
@@ -31,6 +33,7 @@ export class Stage15ProjectsService {
     private readonly activepiecesCanvasProvisioningService: ActivepiecesCanvasProvisioningService,
     private readonly dashboardService: DashboardService,
     private readonly databaseService: DatabaseService,
+    private readonly chatThreadService: ChatThreadService,
   ) {}
 
   async listProjects(
@@ -97,9 +100,12 @@ export class Stage15ProjectsService {
   ): Promise<readonly Stage15ProjectChatSummary[]> {
     const { access } = this.requireContext(context);
     this.assertProjectId(access, projectId);
+    const response = await this.chatThreadService.listProjectThreads(
+      context,
+      projectId,
+    );
 
-    await Promise.resolve();
-    return [];
+    return response.items.map(mapStage15ProjectChat);
   }
 
   async createProjectChat(
@@ -110,54 +116,14 @@ export class Stage15ProjectsService {
     const { access } = this.requireContext(context);
     this.assertProjectId(access, projectId);
 
-    await Promise.resolve();
-    const now = new Date().toISOString();
-    const chatId = randomUUID();
-    const title = normalizeTitle(input.title) ?? 'Новый чат проекта';
-    const selectedDocumentIds = input.selectedDocumentIds ?? [];
-    const selectedTemplateIds = input.selectedTemplateIds ?? [];
-    const source = input.source ?? 'project_chat';
-    const currentAutomationId = input.currentAutomationId ?? null;
-
-    const chat: Stage15ProjectChatSummary = {
-      id: chatId,
-      projectId: this.projectIdFor(access),
-      title,
-      status: 'active',
-      lastMessagePreview: 'Чат создан. История будет сохранена AI Gateway.',
-      selectedDocumentIds,
-      linkedAutomationId: currentAutomationId,
-      updatedAt: now,
-    };
-    const session: AiChatSessionSummary = {
-      id: chatId,
-      workspaceId: access.activeWorkspace!.id,
-      source,
-      mode: 'create_workflow',
-      status: 'active',
-      title,
-      currentAutomationId,
-      selectedDocumentIds,
-      selectedTemplateIds,
-      selectedProfileId: null,
-      contentStorageMode: 'metadata_only',
-      allowedModes: [
-        'create_workflow',
-        'modify_workflow',
-        'explain_workflow',
-        'extract_fields',
-      ],
-      aiPolicySummary: {
-        externalAiEnabled: false,
-        confidentialDataAllowed: false,
-        cometapiAllowedForPublicData: false,
+    return this.chatThreadService.createProjectChatForStage15(
+      context,
+      projectId,
+      {
+        title: input.title,
+        kind: 'project',
       },
-      lastMessageAt: null,
-      createdAt: now,
-      updatedAt: now,
-    };
-
-    return { chat, session };
+    );
   }
 
   async listProjectAutomations(
@@ -191,24 +157,30 @@ export class Stage15ProjectsService {
     access: AccessContext,
   ): Promise<Stage15ProjectSummary> {
     const workspace = this.requireWorkspace(access);
-    const [automations, snapshot, documentsCount] = await Promise.all([
+    const [automations, snapshot, documentsCount, chats] = await Promise.all([
       this.automationLibraryService.listInstalled(access),
       this.dashboardService.getSnapshot(actor, access),
       this.countDocuments(workspace.id),
+      this.chatThreadService
+        .listProjectThreads(
+          { actor, access },
+          this.projectIdFor(access),
+        )
+        .catch(() => ({ items: [] })),
     ]);
 
     return {
       id: this.projectIdFor(access),
       workspaceId: workspace.id,
       name: workspace.name,
-      description: `Рабочий проект ${workspace.name}: чаты, документы и автоматизации.`,
+      description: `Workspace project ${workspace.name}: chats, documents and automations.`,
       icon: workspace.name.trim().charAt(0).toUpperCase() || 'P',
       color: '#3B82F6',
       status: 'active',
       ownerUserId: actor.id,
       role: mapProjectRole(access),
       counters: {
-        chats: 0,
+        chats: chats.items.length,
         automations: automations.length,
         documents: documentsCount,
         activeRuns: snapshot.activeRuns.length,
@@ -288,11 +260,6 @@ export class Stage15ProjectsService {
     this.requireWorkspace(access);
     return DEFAULT_STAGE17_PROJECT_ID;
   }
-}
-
-function normalizeTitle(value: string | null | undefined) {
-  const title = value?.trim();
-  return title && title.length > 0 ? title : null;
 }
 
 function mapProjectRole(access: AccessContext): Stage15ProjectSummary['role'] {

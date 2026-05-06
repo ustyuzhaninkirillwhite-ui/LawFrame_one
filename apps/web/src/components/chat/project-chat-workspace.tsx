@@ -1,6 +1,6 @@
 "use client";
 
-import { AiChatWorkspace } from "@/components/ai/ai-chat-workspace";
+import { LexFrameChatShell } from "@/features/ai-chat/components/LexFrameChatShell";
 
 export function ProjectChatWorkspace({
   projectId,
@@ -9,7 +9,10 @@ export function ProjectChatWorkspace({
   readonly projectId: string;
   readonly chatId: string;
 }) {
-  void chatId;
-
-  return <AiChatWorkspace initialSource="project_chat" projectId={projectId} />;
+  return (
+    <LexFrameChatShell
+      projectId={projectId}
+      initialThreadId={chatId.trim().length > 0 ? chatId : null}
+    />
+  );
 }

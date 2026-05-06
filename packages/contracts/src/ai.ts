@@ -16,8 +16,119 @@ export type AiProviderRoute =
   | "xai"
   | "xai_zdr"
   | "cometapi"
+  | "default_chat"
+  | "agent_general"
+  | "rag_legal_summary"
+  | "automation_planner_high"
   | "local_mock"
   | "blocked";
+
+export type AiProviderCode =
+  | "cometapi"
+  | "openai_compatible"
+  | "openai"
+  | "mock";
+
+export type AiRouteCode =
+  | "default_chat"
+  | "agent_general"
+  | "rag_legal_summary"
+  | "automation_planner_high";
+
+export interface AiProviderConnection {
+  readonly id: string;
+  readonly workspaceId?: string | null;
+  readonly providerCode: AiProviderCode;
+  readonly displayName: string;
+  readonly baseUrl: string;
+  readonly apiKeyRef: string;
+  readonly enabled: boolean;
+  readonly modelDiscoveryMode: "manual_allowlist" | "models_endpoint";
+  readonly allowedModels: readonly string[];
+  readonly defaultModel: string;
+  readonly createdAt: string;
+  readonly updatedAt: string;
+}
+
+export interface AiModelRoute {
+  readonly routeCode: AiRouteCode;
+  readonly providerConnectionId: string;
+  readonly providerCode: AiProviderCode;
+  readonly model: string;
+  readonly supportsStreaming: boolean;
+  readonly supportsJson: boolean;
+  readonly supportsToolCalls: boolean;
+  readonly maxContextTokens?: number;
+  readonly visibleToUser: false;
+  readonly adminVisible: boolean;
+  readonly enabled: boolean;
+}
+
+export interface AiRouteValve {
+  readonly routeCode: AiRouteCode;
+  readonly key: string;
+  readonly type: "string" | "number" | "boolean" | "enum" | "secret_ref";
+  readonly defaultValue?: unknown;
+  readonly required: boolean;
+  readonly adminOnly: boolean;
+  readonly secret: boolean;
+  readonly description?: string;
+}
+
+export type AiGatewayErrorCode =
+  | "ai_route_not_allowed"
+  | "ai_provider_unavailable"
+  | "ai_policy_blocked"
+  | "ai_schema_validation_failed"
+  | "ai_secret_resolution_failed"
+  | "ai_timeout"
+  | "ai_usage_limit_exceeded";
+
+export type LexFrameAiStreamEventType =
+  | "message_start"
+  | "text_delta"
+  | "tool_call_start"
+  | "tool_call_delta"
+  | "tool_result"
+  | "usage"
+  | "route_snapshot"
+  | "evidence"
+  | "error"
+  | "message_done";
+
+export interface LexFrameAiStreamEvent {
+  readonly type: LexFrameAiStreamEventType;
+  readonly traceId: string;
+  readonly requestId?: string | null;
+  readonly payload: Record<string, unknown>;
+}
+
+export interface Stage18ReadinessCheck {
+  readonly status: "pass" | "degraded" | "fail" | "not_configured";
+  readonly message: string;
+}
+
+export interface Stage18ReadinessResponse {
+  readonly status: "ready" | "degraded" | "unavailable";
+  readonly defaultRoute: {
+    readonly route: "default_chat";
+    readonly provider: "cometapi";
+    readonly model: "deepseek-v4-flash";
+  };
+  readonly checks: {
+    readonly ai_gateway: Stage18ReadinessCheck;
+    readonly default_route: Stage18ReadinessCheck;
+    readonly cometapi_connection: Stage18ReadinessCheck;
+    readonly local_owner_key_vault: Stage18ReadinessCheck;
+    readonly route_registry: Stage18ReadinessCheck;
+    readonly direct_provider_call_scan: Stage18ReadinessCheck;
+    readonly browser_secret_scan: Stage18ReadinessCheck;
+    readonly piece_ai_gateway: Stage18ReadinessCheck;
+    readonly stream_protocol: Stage18ReadinessCheck;
+    readonly license_mit_only: Stage18ReadinessCheck;
+    readonly reference_repos_checked: Stage18ReadinessCheck;
+  };
+}
 
 export type AiTaskType =
   | "workflow_planning"

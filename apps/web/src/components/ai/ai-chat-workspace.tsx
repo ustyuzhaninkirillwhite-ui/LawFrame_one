@@ -11,7 +11,7 @@ import type {
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import * as React from "react";
-import { FileText, GitBranch, LockKeyhole, MessageSquare, Send, ShieldAlert, Sparkles, Waypoints } from "lucide-react";
+import { FileText, GitBranch, LockKeyhole, MessageSquare, Send, ShieldAlert, Waypoints } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -657,8 +657,6 @@ function ClarificationCard(props: {
 
 function RequestTimelineCard(props: {
   readonly request: {
-    readonly provider: string | null;
-    readonly model: string | null;
     readonly status: string;
     readonly routeReason: string;
     readonly dataClass: string;
@@ -689,11 +687,9 @@ function RequestTimelineCard(props: {
             <div className="grid gap-3 sm:grid-cols-2">
               <MetricCard label="Статус" value={props.request.status} icon={Waypoints} />
               <MetricCard label="Маршрут" value={props.request.routeReason} icon={GitBranch} />
-              <MetricCard label="Провайдер" value={props.request.provider ?? "n/a"} icon={Sparkles} />
               <MetricCard label="Класс данных" value={props.request.dataClass} icon={LockKeyhole} />
             </div>
             <div className="rounded-[22px] border border-[color:var(--line)] bg-white/4 p-4 text-sm text-[color:var(--muted)]">
-              {props.request.model ? `${props.request.model} • ` : ""}
               {props.request.latencyMs ? `${props.request.latencyMs} мс • ` : ""}
               {props.request.inputTokens + props.request.outputTokens} токенов • $
               {props.request.costUsd.toFixed(6)}

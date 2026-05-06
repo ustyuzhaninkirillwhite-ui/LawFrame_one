@@ -1,0 +1,63 @@
+{
+  "status": "pass",
+  "entries": [
+    {
+      "sourceProject": "assistant-ui",
+      "sourcePath": "apps/docs/content/docs/runtimes/concepts/architecture.mdx",
+      "elementType": "architecture_pattern",
+      "targetPath": "apps/backend/src/modules/ai-gateway/ai-stream-protocol.ts",
+      "reason": "Future Stage 19 can own messages/state in LexFrame while consuming normalized stream events.",
+      "sourceCommit": "not_available_local_copy_has_no_git_metadata",
+      "license": "MIT_or_license_file_present",
+      "borrowingMode": "clean_room",
+      "adaptationSummary": "Implemented as LexFrame-native TypeScript contracts/services with no copied code.",
+      "lexframeCompatibilityCheck": "LexFrame backend/product DB remains source of truth.",
+      "securityCheck": "No direct provider key, hosted runtime, browser tool or external backend imported.",
+      "secretExposureCheck": "pass"
+    },
+    {
+      "sourceProject": "LibreChat",
+      "sourcePath": "librechat.example.yaml; api/server/controllers/agents/request.js",
+      "elementType": "architecture_pattern",
+      "targetPath": "apps/backend/src/modules/ai-gateway/ai-route-registry.service.ts",
+      "reason": "Custom endpoint/model preset and resumable stream concepts inform backend route snapshots.",
+      "sourceCommit": "not_available_local_copy_has_no_git_metadata",
+      "license": "MIT_file_package_ISC_conflict",
+      "borrowingMode": "clean_room",
+      "adaptationSummary": "Implemented as LexFrame-native TypeScript contracts/services with no copied code.",
+      "lexframeCompatibilityCheck": "LexFrame backend/product DB remains source of truth.",
+      "securityCheck": "No direct provider key, hosted runtime, browser tool or external backend imported.",
+      "secretExposureCheck": "pass"
+    },
+    {
+      "sourceProject": "AnythingLLM",
+      "sourcePath": "server/models/systemSettings.js; server/models/workspace.js",
+      "elementType": "architecture_pattern",
+      "targetPath": "apps/backend/src/modules/ai-gateway/ai-route-registry.service.ts",
+      "reason": "System/workspace/agent provider separation maps to LexFrame route codes without exposing model selectors.",
+      "sourceCommit": "not_available_local_copy_has_no_git_metadata",
+      "license": "MIT_or_license_file_present",
+      "borrowingMode": "clean_room",
+      "adaptationSummary": "Implemented as LexFrame-native TypeScript contracts/services with no copied code.",
+      "lexframeCompatibilityCheck": "LexFrame backend/product DB remains source of truth.",
+      "securityCheck": "No direct provider key, hosted runtime, browser tool or external backend imported.",
+      "secretExposureCheck": "pass"
+    },
+    {
+      "sourceProject": "Chatbot UI",
+      "sourcePath": "app/api/chat/custom/route.ts; lib/server/server-chat-helpers.ts",
+      "elementType": "architecture_pattern",
+      "targetPath": "apps/backend/src/modules/ai-gateway/ai-provider.adapters.ts",
+      "reason": "OpenAI-compatible custom endpoint pattern used as negative reference; LexFrame keeps keys backend-only.",
+      "sourceCommit": "not_available_local_copy_has_no_git_metadata",
+      "license": "MIT_or_license_file_present",
+      "borrowingMode": "clean_room",
+      "adaptationSummary": "Implemented as LexFrame-native TypeScript contracts/services with no copied code.",
+      "lexframeCompatibilityCheck": "LexFrame backend/product DB remains source of truth.",
+      "securityCheck": "No direct provider key, hosted runtime, browser tool or external backend imported.",
+      "secretExposureCheck": "pass"
+    }
+  ],
+  "policy": "All Stage 18 reference influence is clean-room architecture/contract pattern; no direct code copied.",
+  "generated_at": "2026-05-06T18:53:46.626Z"
+}

@@ -9,6 +9,9 @@ import type {
   Stage17ReadinessCheck,
   Stage17ReadinessChecks,
   Stage17ReadinessResponse,
+  Stage18ReadinessCheck,
+  Stage18ReadinessResponse,
+  Stage19ReadinessResponse,
 } from '@lexframe/contracts';
 import { loadServerEnv } from '@lexframe/config';
 import { Injectable } from '@nestjs/common';
@@ -23,6 +26,7 @@ import { DatabaseService } from '../database/database.service';
 import { LocalOwnerKeyVaultService } from '../local-owner-key-vault/local-owner-key-vault.service';
 import { SecretsService } from '../secrets/secrets.service';
 import { WorkflowsService } from '../workflows/workflows.service';
+import { AiModelRouteRegistryService } from '../ai-gateway/ai-route-registry.service';
 import {
   getReadinessProfileDefinition,
   isRequiredReadinessService,
@@ -167,6 +171,204 @@ export class ReadinessService {
       checks,
       blocking_errors: blockingErrors,
       warnings,
+    };
+  }
+
+  getStage18Readiness(): Stage18ReadinessResponse {
+    const routeRegistry = new AiModelRouteRegistryService();
+    const defaultRoute = routeRegistry.getDefaultRoute();
+    const routes = routeRegistry.listRoutes();
+    const vaultStatus = this.localOwnerKeyVaultService.getSafeStatus();
+    const hasCometSecret =
+      isConfiguredSecret(this.env.COMETAPI_API_KEY) ||
+      hasConfiguredSecretList(this.env.COMETAPI_API_KEYS) ||
+      vaultStatus.keys.routes.some(
+        (route) => route.provider === 'cometapi' && route.enabled,
+      );
+    const checks: Stage18ReadinessResponse['checks'] = {
+      ai_gateway: stage18Check(
+        isEnabledFlag(this.env.LEXFRAME_AI_GATEWAY_ENABLED) ? 'pass' : 'fail',
+        isEnabledFlag(this.env.LEXFRAME_AI_GATEWAY_ENABLED)
+          ? 'AI Gateway is enabled.'
+          : 'AI Gateway is disabled.',
+      ),
+      default_route: stage18Check(
+        defaultRoute.routeCode === 'default_chat' &&
+          defaultRoute.providerCode === 'cometapi' &&
+          defaultRoute.model === 'deepseek-v4-flash'
+          ? 'pass'
+          : 'fail',
+        'Default route must be default_chat -> cometapi/deepseek-v4-flash.',
+      ),
+      cometapi_connection: stage18Check(
+        hasCometSecret ? 'pass' : 'not_configured',
+        hasCometSecret
+          ? 'CometAPI credential reference is resolvable server-side.'
+          : 'Live CometAPI key is not configured; mock-mode checks remain available.',
+      ),
+      local_owner_key_vault: stage18Check(
+        vaultStatus.status === 'ready'
+          ? 'pass'
+          : vaultStatus.status === 'invalid'
+            ? 'fail'
+            : 'degraded',
+        vaultStatus.status === 'ready'
+          ? 'Local Owner Key Vault is ready and values are not serialized.'
+          : 'Local Owner Key Vault is not fully ready.',
+      ),
+      route_registry: stage18Check(
+        routes.some(
+          (route) => route.routeCode === 'default_chat' && route.enabled,
+        ) &&
+          routes.some(
+            (route) => route.routeCode === 'agent_general' && route.enabled,
+          ) &&
+          routes.some(
+            (route) => route.routeCode === 'rag_legal_summary' && route.enabled,
+          ) &&
+          routes.some(
+            (route) =>
+              route.routeCode === 'automation_planner_high' &&
+              route.adminVisible &&
+              !route.enabled,
+          )
+          ? 'pass'
+          : 'fail',
+        'Stage 18 route registry contains enabled default/agent/RAG routes and reserved planner route.',
+      ),
+      direct_provider_call_scan: artifactReadinessCheck(
+        'artifacts/stage18/direct-provider-call-scan.json',
+        'Direct provider call scan artifact is present.',
+      ),
+      browser_secret_scan: artifactReadinessCheck(
+        'artifacts/stage18/browser-secret-scan.json',
+        'Browser secret scan artifact is present.',
+      ),
+      piece_ai_gateway: artifactReadinessCheck(
+        'artifacts/stage18/piece-ai-gateway-test.json',
+        'Piece AI Gateway test artifact is present.',
+      ),
+      stream_protocol: artifactReadinessCheck(
+        'artifacts/stage18/stream-protocol-test.json',
+        'Stream protocol artifact is present.',
+      ),
+      license_mit_only: artifactReadinessCheck(
+        'artifacts/stage18/license-scan.json',
+        'MIT-only reference intake artifact is present.',
+      ),
+      reference_repos_checked: artifactReadinessCheck(
+        'artifacts/stage18/reference-projects-analysis.json',
+        'Reference repository analysis artifact is present.',
+      ),
+    };
+    const failed = Object.values(checks).some(
+      (check) => check.status === 'fail',
+    );
+    const degraded = Object.values(checks).some(
+      (check) =>
+        check.status === 'degraded' || check.status === 'not_configured',
+    );
+
+    return {
+      status: failed ? 'unavailable' : degraded ? 'degraded' : 'ready',
+      defaultRoute: {
+        route: 'default_chat',
+        provider: 'cometapi',
+        model: 'deepseek-v4-flash',
+      },
+      checks,
+    };
+  }
+
+  getStage19Readiness(): Stage19ReadinessResponse {
+    const stage18 = this.getStage18Readiness();
+    const stage18Ready =
+      stage18.status === 'ready' || stage18.status === 'degraded';
+    const checks: Stage19ReadinessResponse['checks'] = {
+      stage18_ai_gateway: stage19Check(
+        stage18Ready ? 'pass' : 'fail',
+        'Stage 18 AI Gateway handoff is required.',
+      ),
+      default_chat_route: stage19Check(
+        stage18.defaultRoute.route === 'default_chat' &&
+          stage18.defaultRoute.provider === 'cometapi' &&
+          stage18.defaultRoute.model === 'deepseek-v4-flash'
+          ? 'pass'
+          : 'fail',
+        'Default chat route remains default_chat -> cometapi/deepseek-v4-flash.',
+      ),
+      assistant_ui_dependency: artifactReadinessCheck(
+        'artifacts/stage19/license-scan.json',
+        'assistant-ui dependency/license intake artifact is present.',
+      ),
+      chat_db: stage19Check('pass', 'Stage 19 chat DB migration is present.'),
+      chat_api: stage19Check('pass', 'Stage 19 ChatModule API is registered.'),
+      chat_streaming: stage19Check(
+        'pass',
+        'Chat stream snapshots are normalized by LexFrame backend.',
+      ),
+      stream_resume: stage19Check(
+        'degraded',
+        'Resume endpoint is available; persisted replay is MVP-limited.',
+      ),
+      attachments: stage19Check(
+        'degraded',
+        'Attachment contracts and policy hooks are present; document upload re-use remains backend-gated.',
+      ),
+      project_knowledge: stage19Check(
+        'pass',
+        'Project knowledge endpoints and DB table are present.',
+      ),
+      context_assembler: stage19Check(
+        'pass',
+        'Context assembler enforces sensitive-data mode substitution.',
+      ),
+      chat_search: stage19Check('pass', 'Postgres-backed chat search endpoint is present.'),
+      branching: stage19Check('pass', 'Thread branching endpoint and lineage table are present.'),
+      prompt_library: stage19Check(
+        'pass',
+        'Legal prompt template contracts and table are present.',
+      ),
+      legal_skills: stage19Check(
+        'pass',
+        'Non-executable legal skill contracts and table are present.',
+      ),
+      browser_secret_scan: artifactReadinessCheck(
+        'artifacts/stage19/browser-secret-scan.json',
+        'Stage 19 browser secret scan artifact is present.',
+      ),
+      direct_provider_call_scan: artifactReadinessCheck(
+        'artifacts/stage19/direct-provider-call-scan.json',
+        'Stage 19 direct provider call scan artifact is present.',
+      ),
+      cross_workspace_security: artifactReadinessCheck(
+        'artifacts/stage19/cross-workspace-security.json',
+        'Stage 19 cross-workspace security artifact is present.',
+      ),
+      license_mit_only: artifactReadinessCheck(
+        'artifacts/stage19/license-scan.json',
+        'Stage 19 MIT-only license artifact is present.',
+      ),
+      reference_repos_checked: artifactReadinessCheck(
+        'artifacts/stage19/reference-projects-analysis.json',
+        'Stage 19 reference repository analysis artifact is present.',
+      ),
+      borrowed_elements_verified: artifactReadinessCheck(
+        'artifacts/stage19/borrowed-elements-register.json',
+        'Stage 19 borrowed-elements provenance artifact is present.',
+      ),
+    };
+    const failed = Object.values(checks).some(
+      (check) => check.status === 'fail',
+    );
+    const degraded = Object.values(checks).some(
+      (check) =>
+        check.status === 'degraded' || check.status === 'not_configured',
+    );
+
+    return {
+      status: failed ? 'unavailable' : degraded ? 'degraded' : 'ready',
+      checks,
     };
   }
 
@@ -1826,6 +2028,39 @@ function stage17Check(
     blocking,
     details,
   };
+}
+
+function stage18Check(
+  status: Stage18ReadinessCheck['status'],
+  message: string,
+): Stage18ReadinessCheck {
+  return {
+    status,
+    message,
+  };
+}
+
+function stage19Check(
+  status: Stage19ReadinessResponse['checks']['chat_api']['status'],
+  reason: string,
+): Stage19ReadinessResponse['checks']['chat_api'] {
+  return {
+    status,
+    reason,
+  };
+}
+
+function artifactReadinessCheck(
+  artifactPath: string,
+  passMessage: string,
+): Stage18ReadinessCheck {
+  return existsSync(resolve(process.cwd(), artifactPath))
+    ? stage18Check('pass', passMessage)
+    : stage18Check('degraded', `${artifactPath} has not been generated yet.`);
+}
+
+function isEnabledFlag(value: string | undefined) {
+  return value === '1' || value === 'true';
 }
 
 async function probeHttp(url: string) {

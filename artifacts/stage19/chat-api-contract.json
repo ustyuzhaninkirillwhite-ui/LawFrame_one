@@ -1,0 +1,14 @@
+{
+  "status": "pass",
+  "required": [
+    "threads/:threadId",
+    "threads/:threadId/messages",
+    "threads/:threadId/messages:stream",
+    "threads/:threadId/streams/:streamId/resume",
+    "threads/:threadId/streams/:streamId/cancel",
+    "threads/:threadId/branch",
+    "search"
+  ],
+  "missing": [],
+  "generated_at": "2026-05-06T19:51:40.990Z"
+}

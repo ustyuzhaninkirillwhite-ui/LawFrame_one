@@ -1,0 +1,42 @@
+{
+  "status": "pass",
+  "entries": [
+    {
+      "sourceProject": "assistant-ui",
+      "sourcePath": "packages/react, packages/react-data-stream",
+      "elementType": "dependency",
+      "targetPath": "apps/web/src/features/ai-chat",
+      "borrowingMode": "direct_dependency",
+      "reason": "ExternalStoreRuntime and primitives render LexFrame-owned chat state.",
+      "securityCheck": "No Assistant Cloud import or hosted persistence usage in LexFrame code."
+    },
+    {
+      "sourceProject": "AnythingLLM",
+      "sourcePath": "server/models/workspace.js, workspaceParsedFiles.js, documents.js",
+      "elementType": "architecture_pattern",
+      "targetPath": "chat_context_items, project_knowledge_items",
+      "borrowingMode": "clean_room",
+      "reason": "Thread attachment vs project/workspace knowledge distinction.",
+      "securityCheck": "LexFrame backend policy owns all classification and context decisions."
+    },
+    {
+      "sourceProject": "LibreChat",
+      "sourcePath": "conversation/message/fork/search stream references",
+      "elementType": "architecture_pattern",
+      "targetPath": "chat_thread_branches, chat_search_index, chat_stream_jobs",
+      "borrowingMode": "clean_room",
+      "reason": "Fork/search/resume concepts only.",
+      "securityCheck": "Direct code import blocked by local license metadata discrepancy."
+    },
+    {
+      "sourceProject": "Chatbot UI",
+      "sourcePath": "components/chat/chat-ui.tsx, db/chats.ts, db/messages.ts",
+      "elementType": "ux_pattern",
+      "targetPath": "LexFrameChatShell",
+      "borrowingMode": "clean_room",
+      "reason": "Lightweight sidebar/composer shell pattern.",
+      "securityCheck": "Supabase schema/provider routes were not imported."
+    }
+  ],
+  "generated_at": "2026-05-06T19:51:26.672Z"
+}

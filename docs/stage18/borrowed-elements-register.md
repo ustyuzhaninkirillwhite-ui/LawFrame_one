@@ -1,0 +1,8 @@
+# Stage 18 Borrowed Elements Register
+
+| Source | Source path | Type | Target | Mode | Reason | Security result |
+|---|---|---|---|---|---|---|
+| assistant-ui | apps/docs/content/docs/runtimes/concepts/architecture.mdx | architecture_pattern | apps/backend/src/modules/ai-gateway/ai-stream-protocol.ts | clean_room | Future Stage 19 can own messages/state in LexFrame while consuming normalized stream events. | No direct provider key, hosted runtime, browser tool or external backend imported. |
+| LibreChat | librechat.example.yaml; api/server/controllers/agents/request.js | architecture_pattern | apps/backend/src/modules/ai-gateway/ai-route-registry.service.ts | clean_room | Custom endpoint/model preset and resumable stream concepts inform backend route snapshots. | No direct provider key, hosted runtime, browser tool or external backend imported. |
+| AnythingLLM | server/models/systemSettings.js; server/models/workspace.js | architecture_pattern | apps/backend/src/modules/ai-gateway/ai-route-registry.service.ts | clean_room | System/workspace/agent provider separation maps to LexFrame route codes without exposing model selectors. | No direct provider key, hosted runtime, browser tool or external backend imported. |
+| Chatbot UI | app/api/chat/custom/route.ts; lib/server/server-chat-helpers.ts | architecture_pattern | apps/backend/src/modules/ai-gateway/ai-provider.adapters.ts | clean_room | OpenAI-compatible custom endpoint pattern used as negative reference; LexFrame keeps keys backend-only. | No direct provider key, hosted runtime, browser tool or external backend imported. |

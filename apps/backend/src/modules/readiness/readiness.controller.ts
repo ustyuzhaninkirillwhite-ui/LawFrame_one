@@ -27,4 +27,22 @@ export class ReadinessController {
     reply.status(result.overall === 'NOT_READY' ? 503 : 200);
     return result;
   }
+
+  @Get('readiness/stage18')
+  getStage18Readiness(
+    @Res({ passthrough: true }) reply: { status: (code: number) => void },
+  ) {
+    const result = this.readinessService.getStage18Readiness();
+    reply.status(result.status === 'unavailable' ? 503 : 200);
+    return result;
+  }
+
+  @Get('readiness/stage19')
+  getStage19Readiness(
+    @Res({ passthrough: true }) reply: { status: (code: number) => void },
+  ) {
+    const result = this.readinessService.getStage19Readiness();
+    reply.status(result.status === 'unavailable' ? 503 : 200);
+    return result;
+  }
 }

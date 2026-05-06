@@ -1,4 +1,5 @@
 import { AppHttpException } from '../../common/errors/app-http.exception';
+import type { AiRouteCode } from '@lexframe/contracts';
 import { Body, Controller, Headers, HttpCode, Post } from '@nestjs/common';
 import {
   RuntimeScopedTokenService,
@@ -23,19 +24,24 @@ export interface ActivepiecesAiGatewayTestRequest {
   readonly apFlowId?: string;
   readonly apFlowVersionId?: string;
   readonly stepName: string;
-  readonly taskType: string;
-  readonly provider?: 'xai' | 'openai_compatible' | 'cometapi' | 'local';
-  readonly routeId?: string | null;
+  readonly task: string;
+  readonly route: Extract<AiRouteCode, 'agent_general' | 'rag_legal_summary'>;
+  readonly inputRefs?: readonly ActivepiecesAiGatewayInputRef[];
+  readonly outputSchema?: string | null;
   readonly input: {
     readonly mode?: string;
-    readonly testPrompt?: string | null;
     readonly classification?: string | null;
-    readonly inputRefs?: Record<string, unknown>;
   };
   readonly outputPolicy: {
     readonly returnRawProviderResponse: false;
     readonly createArtifact: boolean;
   };
+}
+
+export interface ActivepiecesAiGatewayInputRef {
+  readonly type: string;
+  readonly id: string;
+  readonly metadata?: Record<string, unknown>;
 }
 
 export interface ActivepiecesRuntimeCallbackRequest {
@@ -120,10 +126,7 @@ export class AiGatewayRuntimeController {
 
   private verifyScopedToken(
     authorization: string | undefined,
-    input: Omit<
-      Parameters<RuntimeScopedTokenService['verify']>[0],
-      'token'
-    >,
+    input: Omit<Parameters<RuntimeScopedTokenService['verify']>[0], 'token'>,
   ): ScopedRuntimeTokenClaims {
     const token = authorization?.replace(/^Bearer\s+/i, '').trim();
     if (!token) {
@@ -175,7 +178,9 @@ function parseActivepiecesAiGatewayTestRequest(
   body: unknown,
 ): ActivepiecesAiGatewayTestRequest {
   const value = asRecord(body);
+  assertNoForbiddenActivepiecesAiGatewayFields(value);
   const input = isRecord(value.input) ? value.input : {};
+  assertNoForbiddenActivepiecesAiGatewayFields(input);
   const outputPolicy = isRecord(value.output_policy ?? value.outputPolicy)
     ? ((value.output_policy ?? value.outputPolicy) as Record<string, unknown>)
     : {};
@@ -204,34 +209,26 @@ function parseActivepiecesAiGatewayTestRequest(
       value.step_name ?? value.stepName,
       'Runtime step name is required.',
     ),
-    taskType: expectString(
-      value.task_type ?? value.taskType,
+    task: expectString(
+      value.task ?? value.task_type ?? value.taskType,
       'Runtime task type is required.',
     ),
-    ...(isLocalOwnerProvider(value.provider)
-      ? { provider: value.provider }
+    route: expectActivepiecesAiRoute(value.route),
+    ...(Array.isArray(value.input_refs ?? value.inputRefs)
+      ? {
+          inputRefs: expectInputRefs(value.input_refs ?? value.inputRefs),
+        }
       : {}),
-    ...(typeof (value.route_id ?? value.routeId) === 'string'
-      ? { routeId: String(value.route_id ?? value.routeId).trim() || null }
+    ...(typeof (value.output_schema ?? value.outputSchema) === 'string'
+      ? {
+          outputSchema:
+            String(value.output_schema ?? value.outputSchema).trim() || null,
+        }
       : {}),
     input: {
       ...(typeof input.mode === 'string' ? { mode: input.mode.trim() } : {}),
-      ...(typeof (input.test_prompt ?? input.testPrompt) === 'string'
-        ? {
-            testPrompt:
-              String(input.test_prompt ?? input.testPrompt).trim() || null,
-          }
-        : {}),
       ...(typeof input.classification === 'string'
         ? { classification: input.classification.trim() || null }
-        : {}),
-      ...(isRecord(input.input_refs ?? input.inputRefs)
-        ? {
-            inputRefs: (input.input_refs ?? input.inputRefs) as Record<
-              string,
-              unknown
-            >,
-          }
         : {}),
     },
     outputPolicy: {
@@ -312,17 +309,6 @@ function isProvider(
   return value === 'xai' || value === 'cometapi' || value === 'local';
 }
 
-function isLocalOwnerProvider(
-  value: unknown,
-): value is ActivepiecesAiGatewayTestRequest['provider'] {
-  return (
-    value === 'xai' ||
-    value === 'openai_compatible' ||
-    value === 'cometapi' ||
-    value === 'local'
-  );
-}
-
 function isRecordOrUndefined(value: unknown) {
   return (
     value === undefined ||
@@ -336,4 +322,69 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function isRecordOrNull(value: unknown) {
   return value === null || isRecord(value);
+}
+
+function expectActivepiecesAiRoute(
+  value: unknown,
+): ActivepiecesAiGatewayTestRequest['route'] {
+  if (value === undefined || value === null || value === '') {
+    return 'agent_general';
+  }
+
+  if (value === 'agent_general' || value === 'rag_legal_summary') {
+    return value;
+  }
+
+  throw new AppHttpException(
+    'VALIDATION_ERROR',
+    400,
+    'Activepieces AI Gateway route must be agent_general or rag_legal_summary.',
+  );
+}
+
+function expectInputRefs(
+  value: unknown,
+): readonly ActivepiecesAiGatewayInputRef[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.map((item) => {
+    const ref = asRecord(item);
+    return {
+      type: expectString(ref.type, 'input_refs.type is required.'),
+      id: expectString(ref.id, 'input_refs.id is required.'),
+      ...(isRecord(ref.metadata)
+        ? { metadata: ref.metadata as Record<string, unknown> }
+        : {}),
+    };
+  });
+}
+
+function assertNoForbiddenActivepiecesAiGatewayFields(
+  value: Record<string, unknown>,
+) {
+  const forbidden = [
+    'apiKey',
+    'api_key',
+    'apikey',
+    'provider',
+    'model',
+    'baseUrl',
+    'base_url',
+    'providerBaseUrl',
+    'prompt',
+    'rawPrompt',
+    'raw_provider',
+  ];
+
+  for (const key of forbidden) {
+    if (Object.prototype.hasOwnProperty.call(value, key)) {
+      throw new AppHttpException(
+        'VALIDATION_ERROR',
+        400,
+        `Forbidden Stage 18 AI Gateway runtime field: ${key}`,
+      );
+    }
+  }
 }

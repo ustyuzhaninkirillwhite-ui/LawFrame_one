@@ -1,6 +1,7 @@
 export * from "./ai";
 export * from "./canvas";
 export * from "./canvas-ai";
+export * from "./chat";
 export * from "./domain";
 export * from "./legal";
 export * from "./stage7";

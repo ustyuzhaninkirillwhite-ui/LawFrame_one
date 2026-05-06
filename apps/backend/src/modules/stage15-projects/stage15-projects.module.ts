@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ActivepiecesModule } from '../activepieces/activepieces.module';
 import { AutomationLibraryModule } from '../automation-library/automation-library.module';
+import { ChatModule } from '../chat/chat.module';
 import { DashboardModule } from '../dashboard/dashboard.module';
 import { DatabaseModule } from '../database/database.module';
 import { IdentityModule } from '../identity/identity.module';
@@ -11,6 +12,7 @@ import { Stage15ProjectsService } from './stage15-projects.service';
   imports: [
     IdentityModule,
     DatabaseModule,
+    ChatModule,
     ActivepiecesModule,
     AutomationLibraryModule,
     DashboardModule,

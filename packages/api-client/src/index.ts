@@ -113,6 +113,15 @@ import type {
   CanvasValidateRequest,
   CanvasValidationIssueExplanation,
   CanvasValidationResult,
+  ChatMessagesResponse,
+  ChatSearchResponse,
+  ChatStreamSnapshot,
+  ChatThreadResponse,
+  CreateChatMessageRequest,
+  ProjectKnowledgeItem,
+  ProjectKnowledgeListResponse,
+  UpdateChatThreadRequest,
+  UpsertProjectKnowledgeItemRequest,
   NoCodeSuggestion,
   UpdateWorkflowDraftInputsRequest,
   WorkflowDraftDetail,
@@ -219,6 +228,7 @@ import type {
   RecheckDocumentValidationRequest,
   ReadinessGate,
   ReadinessSummaryResponse,
+  Stage18ReadinessResponse,
   ReauthChallenge,
   RecommendationAcceptRequest,
   RecommendationActionResult,
@@ -309,10 +319,12 @@ import {
   withJsonBody,
   type FetchOptions,
 } from "./core";
+import { createChatClient } from "./chat-client";
 import { createStage15Client } from "./stage15-client";
 
 export { ApiClientError } from "./core";
 export type { FetchOptions } from "./core";
+export type { ChatApi } from "./chat-client";
 export type { Stage15Api } from "./stage15-client";
 
 export interface CanvasBlockSchemaResponse {
@@ -957,6 +969,7 @@ export interface ApiClient {
   getReadiness(): Promise<readonly ReadinessGate[]>;
   getReadinessSummary(): Promise<ReadinessSummaryResponse>;
   getReadinessDetails(): Promise<ReadinessDetailsResponse>;
+  getStage18Readiness(): Promise<Stage18ReadinessResponse>;
   getAutomationRuntimeRequirements(
     id: string,
   ): Promise<AutomationRuntimeRequirements>;
@@ -1188,6 +1201,78 @@ export interface ApiClient {
     draftId: string,
     input: Stage15WorkflowDraftMaterializeRequest,
   ): Promise<Stage15WorkflowDraftMaterializeResponse>;
+  getChatThread(threadId: string): Promise<ChatThreadResponse>;
+  updateChatThread(
+    threadId: string,
+    input: UpdateChatThreadRequest,
+  ): Promise<ChatThreadResponse>;
+  archiveChatThread(threadId: string): Promise<ChatThreadResponse>;
+  deleteChatThread(threadId: string): Promise<ChatThreadResponse>;
+  branchChatThread(
+    threadId: string,
+    input: {
+      readonly sourceMessageId?: string | null;
+      readonly branchMode?: "project" | "document_review" | "automation_builder";
+    },
+  ): Promise<ChatThreadResponse>;
+  listChatMessages(threadId: string): Promise<ChatMessagesResponse>;
+  createChatMessage(
+    threadId: string,
+    input: CreateChatMessageRequest,
+  ): Promise<unknown>;
+  streamChatMessage(
+    threadId: string,
+    input: CreateChatMessageRequest,
+  ): Promise<ChatStreamSnapshot>;
+  resumeChatStream(
+    threadId: string,
+    streamId: string,
+  ): Promise<{
+    readonly streamId: string;
+    readonly threadId: string;
+    readonly status: "completed";
+    readonly events: readonly unknown[];
+  }>;
+  cancelChatStream(
+    threadId: string,
+    streamId: string,
+  ): Promise<{
+    readonly streamId: string;
+    readonly threadId: string;
+    readonly status: "cancelled";
+  }>;
+  regenerateChatMessage(
+    threadId: string,
+    messageId: string,
+  ): Promise<ChatStreamSnapshot>;
+  editChatMessage(
+    threadId: string,
+    messageId: string,
+    input: CreateChatMessageRequest,
+  ): Promise<ChatStreamSnapshot>;
+  searchChats(input: {
+    readonly q: string;
+    readonly projectId?: string | null;
+  }): Promise<ChatSearchResponse>;
+  exportChatThread(threadId: string): Promise<{
+    readonly threadId: string;
+    readonly format: string;
+    readonly status: string;
+  }>;
+  listProjectKnowledge(projectId: string): Promise<ProjectKnowledgeListResponse>;
+  createProjectKnowledge(
+    projectId: string,
+    input: UpsertProjectKnowledgeItemRequest,
+  ): Promise<ProjectKnowledgeItem>;
+  updateProjectKnowledge(
+    projectId: string,
+    itemId: string,
+    input: Partial<UpsertProjectKnowledgeItemRequest>,
+  ): Promise<ProjectKnowledgeItem>;
+  deleteProjectKnowledge(
+    projectId: string,
+    itemId: string,
+  ): Promise<{ readonly id: string; readonly status: "deleted" }>;
   createWorkflowPatch(
     input: CreateWorkflowPatchRequest,
   ): Promise<AiChatResponse>;
@@ -2235,6 +2320,7 @@ export function createApiClient(options: FetchOptions): ApiClient {
         ),
       ),
     ...createStage15Client(options),
+    ...createChatClient(options),
     listLegalSources: () => requestJson(options, "/legal-sources"),
     getLegalSource: (sourceId) =>
       requestJson(options, `/legal-sources/${sourceId}`),
@@ -2376,6 +2462,7 @@ export function createApiClient(options: FetchOptions): ApiClient {
     getReadinessSummary: () => requestJson(options, "/health/readiness"),
     getReadinessDetails: () =>
       requestJson(options, "/health/readiness/details"),
+    getStage18Readiness: () => requestJson(options, "/readiness/stage18"),
     getAutomationRuntimeRequirements: (id) =>
       requestJson(options, `/automations/${id}/runtime/requirements`),
     createActivepiecesSession: async (input) =>

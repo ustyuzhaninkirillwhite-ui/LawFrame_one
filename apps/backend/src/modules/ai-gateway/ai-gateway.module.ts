@@ -16,9 +16,19 @@ import { AiGatewayRuntimeController } from './ai-gateway-runtime.controller';
 import { AiWorkspacePolicyGuard } from './ai-workspace-policy.guard';
 import { AIGatewayController } from './ai-gateway.controller';
 import { AIGatewayService } from './ai-gateway.service';
+import {
+  AiModelRouteRegistryService,
+  AiProviderConnectionRegistryService,
+} from './ai-route-registry.service';
+import { AiRouteResolverService } from './ai-route-resolver.service';
 
 @Module({
-  imports: [IdentityModule, AuditModule, LocalOwnerKeyVaultModule, RuntimeModule],
+  imports: [
+    IdentityModule,
+    AuditModule,
+    LocalOwnerKeyVaultModule,
+    RuntimeModule,
+  ],
   controllers: [
     AIGatewayController,
     AiSecurityController,
@@ -33,7 +43,17 @@ import { AIGatewayService } from './ai-gateway.service';
     XAiAdapter,
     CometApiAdapter,
     AiProviderRegistry,
+    AiProviderConnectionRegistryService,
+    AiModelRouteRegistryService,
+    AiRouteResolverService,
   ],
-  exports: [AIGatewayService, AiPolicyService, AiProviderRegistry],
+  exports: [
+    AIGatewayService,
+    AiPolicyService,
+    AiProviderRegistry,
+    AiProviderConnectionRegistryService,
+    AiModelRouteRegistryService,
+    AiRouteResolverService,
+  ],
 })
 export class AIGatewayModule {}

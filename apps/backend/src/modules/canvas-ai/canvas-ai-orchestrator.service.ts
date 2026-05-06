@@ -596,6 +596,7 @@ export class CanvasAiOrchestrator {
           ? 'workflow_patch'
           : 'workflow_planning',
       hasDocuments: false,
+      route: 'agent_general',
       prompt,
       schemaId: 'canvas_ai_structured_output.v1',
       fallback,

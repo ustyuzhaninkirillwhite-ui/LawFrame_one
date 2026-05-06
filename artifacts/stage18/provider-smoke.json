@@ -1,0 +1,10 @@
+{
+  "status": "pass",
+  "command": "corepack pnpm --filter @lexframe/backend test -- ai-provider.adapters --runInBand",
+  "generated_at": "2026-05-06T18:53:38.729Z",
+  "provider": "cometapi",
+  "model": "deepseek-v4-flash",
+  "mode": "mock",
+  "live_provider_smoke": "not_configured",
+  "live_provider_reason": "No live key required for release gate; mock-mode provider adapter tests passed."
+}

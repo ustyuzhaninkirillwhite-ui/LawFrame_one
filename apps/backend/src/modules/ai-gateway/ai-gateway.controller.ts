@@ -1,6 +1,7 @@
 import type {
   AiDataClass,
   AiRedactionPreviewRequest,
+  AiRouteCode,
   CreateAiChatMessageRequest,
   CreateAiChatSessionRequest,
   CreateWorkflowDraftRequest,
@@ -18,6 +19,7 @@ import {
   Body,
   Controller,
   Get,
+  Header,
   HttpCode,
   Param,
   Patch,
@@ -122,6 +124,30 @@ export class AIGatewayController {
       parseCreateAiChatMessageRequest(body),
       requestMeta(request),
     );
+  }
+
+  @Post('stream')
+  @HttpCode(200)
+  @Header('content-type', 'text/event-stream')
+  @RequiredPermissions('ai.chat.use')
+  streamMessage(
+    @LexframeRequestContext() context: LexframeRequest['lexframe'],
+    @Body() body: unknown,
+    @Req() request: LexframeRequest,
+  ) {
+    if (!context?.actor || !context.access || !context.aiPolicy) {
+      throw new Error(
+        'РљРѕРЅС‚РµРєСЃС‚ РР-Р·Р°РїСЂРѕСЃР° РЅРµ Р±С‹Р» РїСЂРёРІСЏР·Р°РЅ.',
+      );
+    }
+
+    const value = asRecord(body);
+    return this.aiGatewayService.buildStage18StreamFoundation({
+      route: expectOptionalAiRouteCode(value.route),
+      message: typeof value.message === 'string' ? value.message : undefined,
+      requestId: requestMeta(request).requestId,
+      traceId: requestMeta(request).traceId,
+    });
   }
 
   @Get('workflow-drafts')
@@ -477,6 +503,27 @@ function expectAiDataClass(value: unknown): AiDataClass {
     'VALIDATION_ERROR',
     400,
     'Классификация ИИ некорректна.',
+  );
+}
+
+function expectOptionalAiRouteCode(value: unknown): AiRouteCode | undefined {
+  if (value === undefined || value === null || value === '') {
+    return undefined;
+  }
+
+  if (
+    value === 'default_chat' ||
+    value === 'agent_general' ||
+    value === 'rag_legal_summary' ||
+    value === 'automation_planner_high'
+  ) {
+    return value;
+  }
+
+  throw new AppHttpException(
+    'VALIDATION_ERROR',
+    400,
+    'AI route is not allowed.',
   );
 }
 

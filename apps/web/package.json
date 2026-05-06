@@ -16,14 +16,16 @@
     "storybook:build": "node ../../scripts/validate-canvas-storybook.mjs"
   },
   "dependencies": {
+    "@assistant-ui/react": "0.12.28",
+    "@assistant-ui/react-data-stream": "0.12.11",
     "@fontsource/ibm-plex-sans": "^5.2.8",
     "@fontsource/ibm-plex-serif": "^5.2.7",
     "@lexframe/api-client": "workspace:*",
     "@lexframe/config": "workspace:*",
     "@lexframe/contracts": "workspace:*",
     "@lexframe/design-system-activepieces-bridge": "workspace:*",
-    "@lexframe/workflow-dsl": "workspace:*",
     "@lexframe/workflow": "workspace:*",
+    "@lexframe/workflow-dsl": "workspace:*",
     "@radix-ui/react-separator": "^1.1.7",
     "@radix-ui/react-slot": "^1.2.3",
     "@supabase/supabase-js": "^2.49.8",
