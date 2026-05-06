@@ -1,7 +1,7 @@
 # 17.8 Acceptance Report
 
-Status: IMPLEMENTED / NOT FORMALLY PASSED
-Date: 2026-04-28
+Status: IMPLEMENTED / LIGHT DEFAULT UPDATED / NOT FORMALLY PASSED
+Date: 2026-05-06
 
 ## Completed
 
@@ -12,6 +12,8 @@ Date: 2026-04-28
 - Base UI wrappers consume bridge recipes.
 - AppShell, PageShell, navigation/sidebar surfaces, project home and
   Activepieces Canvas wrapper have AP-like token adoption.
+- LexFrame now defaults to the light bridge theme, keeps a persisted light/dark
+  toggle, and passes the selected mode into the Activepieces embed SDK.
 - Static gate script exists: `scripts/stage17-design-convergence-gate.mjs`.
 - Activepieces Canvas internals were not edited as part of 17.8.
 - No enterprise-only Activepieces code or assets were copied into the bridge.

@@ -1,7 +1,7 @@
 # 17.8 Design Token Mapping
 
-Status: IMPLEMENTED
-Date: 2026-04-28
+Status: IMPLEMENTED / LIGHT DEFAULT UPDATED
+Date: 2026-05-06
 
 ## Source
 
@@ -28,6 +28,9 @@ Public interfaces:
 - `@lexframe/design-system-activepieces-bridge/recipes`
 - `@lexframe/design-system-activepieces-bridge/tokens`
 
+Light mode is now the default bridge surface. Dark mode remains available via
+`.dark` / `[data-theme="dark"]`.
+
 ## Stable Mapping
 
 Required token groups are present:
@@ -40,6 +43,8 @@ Required token groups are present:
 - typography: sans stack, body, heading, metadata, diagnostics
 - component states: hover, active, selected, disabled, skeleton, error, empty
 - recipes: buttons, badges, cards, forms, navigation, panels, tables, overlays, tabs, skeletons
+- hybrid accents: AP primary for Canvas/navigation surfaces and LexFrame domain
+  primary for legal workflow actions
 
 The TypeScript map lives in
 `packages/design-system-activepieces-bridge/src/tokens/lexframe-to-activepieces.map.ts`.

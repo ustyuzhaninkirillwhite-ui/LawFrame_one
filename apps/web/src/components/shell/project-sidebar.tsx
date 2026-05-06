@@ -10,9 +10,11 @@ import {
   Home,
   LogOut,
   MessageSquare,
+  Moon,
   PanelLeftClose,
   Plus,
   Search,
+  Sun,
   Workflow,
   X,
 } from "lucide-react";
@@ -30,6 +32,7 @@ import { useNotifications } from "@/hooks/use-stage0-data";
 import { formatStatus } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { useSessionBridge } from "@/providers/session-provider";
+import { useTheme } from "@/providers/theme-provider";
 import { useStage15ShellStore } from "@/stores/stage15-shell-store";
 import { countSidebarNotifications } from "./sidebar-notifications";
 
@@ -43,6 +46,7 @@ export function ProjectSidebar({
   const pathname = usePathname();
   const router = useRouter();
   const { sessionContext, signOut } = useSessionBridge();
+  const { theme, toggleTheme } = useTheme();
   const [railPreviewOpen, setRailPreviewOpen] = React.useState(false);
   const projectsQuery = useStage15Projects();
   const projects = projectsQuery.data?.items ?? [];
@@ -80,6 +84,8 @@ export function ProjectSidebar({
     pathname.startsWith(activeProjectHref) &&
     !pathname.startsWith(`${activeProjectHref}/chats`) &&
     !pathname.startsWith(activeProjectAutomationsHref);
+  const themeToggleLabel =
+    theme === "dark" ? "Включить светлую тему" : "Включить тёмную тему";
 
   React.useEffect(() => {
     if (activeProjectId) {
@@ -171,6 +177,9 @@ export function ProjectSidebar({
               <RailButton label="Поиск">
                 <Search size={18} />
               </RailButton>
+              <RailButton label={themeToggleLabel} onClick={toggleTheme}>
+                <ThemeIcon theme={theme} />
+              </RailButton>
             </div>
 
             <nav className="grid content-start justify-items-center gap-3">
@@ -209,7 +218,7 @@ export function ProjectSidebar({
               </div>
               <button
                 type="button"
-                className="flex h-9 w-9 items-center justify-center rounded-full text-[color:var(--muted)] hover:bg-white/6 hover:text-[color:var(--foreground)]"
+                className="flex h-9 w-9 items-center justify-center rounded-full text-[color:var(--muted)] hover:bg-[color:var(--lf-state-hover)] hover:text-[color:var(--foreground)]"
                 onClick={() => setRailPreviewOpen(false)}
                 aria-label="Закрыть меню"
               >
@@ -245,7 +254,7 @@ export function ProjectSidebar({
               className="flex min-w-0 items-center gap-3 rounded-[var(--lf-radius-control)] border border-transparent px-2 py-2 hover:border-[color:var(--lf-border)]"
             aria-label="Pravacontour"
           >
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--lf-radius-control)] border border-[color:var(--lf-primary)]/40 bg-[color:var(--lf-state-active)] text-lg font-semibold text-[color:var(--lf-primary-hover)]">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--lf-radius-control)] border border-[color:var(--lf-ap-primary)]/40 bg-[color:var(--lf-state-active)] text-lg font-semibold text-[color:var(--lf-ap-primary-hover)]">
               P
             </div>
             <div className="min-w-0">
@@ -257,16 +266,29 @@ export function ProjectSidebar({
               </div>
             </div>
           </Link>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            aria-label="Свернуть меню"
-            onClick={() => setCollapsed(true)}
-            className="h-9 w-9 px-0"
-          >
-            <PanelLeftClose size={16} />
-          </Button>
+          <div className="flex shrink-0 items-center gap-1">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              aria-label={themeToggleLabel}
+              title={themeToggleLabel}
+              onClick={toggleTheme}
+              className="h-9 w-9 px-0"
+            >
+              <ThemeIcon theme={theme} />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              aria-label="Свернуть меню"
+              onClick={() => setCollapsed(true)}
+              className="h-9 w-9 px-0"
+            >
+              <PanelLeftClose size={16} />
+            </Button>
+          </div>
         </div>
 
         <div className="flex flex-col gap-2">
@@ -550,6 +572,10 @@ function CompactMuted({ text }: { readonly text: string }) {
       {text}
     </div>
   );
+}
+
+function ThemeIcon({ theme }: { readonly theme: "light" | "dark" }) {
+  return theme === "dark" ? <Sun size={16} /> : <Moon size={16} />;
 }
 
 function readProjectIdFromPath(pathname: string): string | null {

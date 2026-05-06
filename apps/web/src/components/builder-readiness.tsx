@@ -211,7 +211,7 @@ export function BuilderReadiness({
             {runtime.data.warnings.map((warning) => (
               <div
                 key={warning}
-                className="rounded-[20px] border border-[color:var(--line)] bg-black/20 p-4"
+                className="rounded-[var(--lf-radius-card)] border border-[color:var(--line)] bg-[color:var(--lf-bg-muted)] p-4"
               >
                 {warning}
               </div>
@@ -242,7 +242,7 @@ export function BuilderReadiness({
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4">
-          <div className="rounded-[22px] border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-100">
+          <div className="rounded-[var(--lf-radius-card)] border border-[color:var(--lf-destructive)]/35 bg-[color:var(--lf-state-error-surface)] p-4 text-sm text-[color:var(--lf-destructive)]">
             {token.error instanceof Error ? token.error.message : "Неизвестная ошибка токена."}
           </div>
           <Button
@@ -301,13 +301,13 @@ export function BuilderReadiness({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="relative rounded-[24px] border border-[color:var(--line)] bg-black/20 p-4">
+          <div className="relative rounded-[var(--lf-radius-panel)] border border-[color:var(--line)] bg-[color:var(--lf-bg-panel)] p-4">
             <div
               id={containerId}
-              className="min-h-[520px] rounded-[18px] border border-dashed border-[color:var(--line)] bg-black/25"
+              className="min-h-[520px] rounded-[var(--lf-radius-card)] border border-dashed border-[color:var(--line)] bg-[color:var(--lf-bg-card)]"
             />
             {sdkState !== "ready" ? (
-              <div className="pointer-events-none absolute inset-4 flex items-center justify-center rounded-[18px] border border-[color:var(--line)] bg-black/55 p-6 text-center text-sm text-[color:var(--muted-strong)]">
+              <div className="pointer-events-none absolute inset-4 flex items-center justify-center rounded-[var(--lf-radius-card)] border border-[color:var(--line)] bg-[color:var(--lf-bg-panel)]/90 p-6 text-center text-sm text-[color:var(--muted-strong)]">
                 {sdkState === "loading"
                   ? "Загружаем embed SDK и открываем runtime-процесс..."
                   : "Оболочка ожидает инициализацию SDK."}
@@ -315,7 +315,7 @@ export function BuilderReadiness({
             ) : null}
           </div>
           {sdkError ? (
-            <div className="mt-4 rounded-[22px] border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-100">
+            <div className="mt-4 rounded-[var(--lf-radius-card)] border border-[color:var(--lf-destructive)]/35 bg-[color:var(--lf-state-error-surface)] p-4 text-sm text-[color:var(--lf-destructive)]">
               {sdkError}
             </div>
           ) : null}
@@ -337,7 +337,7 @@ export function BuilderReadiness({
           <StateLine label="Runtime-процесс" value={token.data.runtimeFlowId ?? "—"} />
           <StateLine label="Роль" value={formatRole(token.data.role)} />
           <StateLine label="Истекает" value={formatDateTime(token.data.expiresAt)} />
-          <div className="rounded-[22px] border border-[color:var(--line)] bg-white/3 p-4">
+      <div className="rounded-[var(--lf-radius-card)] border border-[color:var(--line)] bg-[color:var(--lf-bg-muted)] p-4">
             <div className="text-[11px] uppercase tracking-[0.24em] text-[color:var(--muted)]">
               Теги компонентов
             </div>
@@ -371,7 +371,7 @@ function StateLine({
   readonly value: string;
 }) {
   return (
-    <div className="rounded-[22px] border border-[color:var(--line)] bg-white/3 p-4">
+      <div className="rounded-[var(--lf-radius-card)] border border-[color:var(--line)] bg-[color:var(--lf-bg-muted)] p-4">
       <div className="text-[11px] uppercase tracking-[0.24em] text-[color:var(--muted)]">
         {t(label)}
       </div>

@@ -43,7 +43,7 @@ export function AutomationTabs({
         <Button
           key={tab.id}
           type="button"
-          variant={selectedTab === tab.id ? "default" : "ghost"}
+          variant={selectedTab === tab.id ? "ap" : "ghost"}
           role="tab"
           aria-selected={selectedTab === tab.id}
           aria-controls={`automation-panel-${tab.id}`}

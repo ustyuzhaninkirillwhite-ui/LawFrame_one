@@ -7,6 +7,7 @@ export const buttonRecipe = {
   ].join(" "),
   variants: {
     default: "border-transparent bg-[color:var(--lf-primary)] text-[color:var(--lf-primary-fg)] hover:bg-[color:var(--lf-primary-hover)]",
+    ap: "border-transparent bg-[color:var(--lf-ap-primary)] text-[color:var(--lf-ap-primary-fg)] hover:bg-[color:var(--lf-ap-primary-hover)]",
     ghost: "border-transparent bg-transparent text-[color:var(--lf-text-secondary)] hover:bg-[color:var(--lf-state-hover)] hover:text-[color:var(--lf-text-primary)]",
     subtle: "border-[color:var(--lf-border)] bg-[color:var(--lf-bg-card)] text-[color:var(--lf-text-primary)] hover:bg-[color:var(--lf-bg-muted)]",
     outline: "border-[color:var(--lf-border-input)] bg-transparent text-[color:var(--lf-text-primary)] hover:bg-[color:var(--lf-state-hover)]",
@@ -24,7 +25,7 @@ export const buttonRecipe = {
 export const badgeRecipe = {
   base: "inline-flex w-fit shrink-0 items-center justify-center gap-1 overflow-hidden rounded-[var(--lf-radius-badge)] border px-2 py-0.5 text-xs font-medium leading-5 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--lf-ring)]",
   variants: {
-    accent: "border-[color:var(--lf-primary)]/40 bg-[color:var(--lf-primary)]/15 text-[color:var(--lf-primary-hover)]",
+    accent: "border-[color:var(--lf-ap-primary)]/40 bg-[color:var(--lf-ap-primary)]/15 text-[color:var(--lf-ap-primary-hover)]",
     muted: "border-[color:var(--lf-border)] bg-[color:var(--lf-bg-muted)] text-[color:var(--lf-text-muted)]",
     success: "border-[color:var(--lf-success)]/45 bg-[color:var(--lf-success)]/12 text-[color:var(--lf-success)]",
     danger: "border-[color:var(--lf-destructive)]/45 bg-[color:var(--lf-state-error-surface)] text-[color:var(--lf-destructive)]",
@@ -55,7 +56,7 @@ export const formRecipe = {
 export const navigationRecipe = {
   item: "relative flex min-h-9 items-center gap-2 rounded-[var(--lf-radius-control)] border px-3 py-2 text-sm transition-colors",
   inactive: "border-transparent text-[color:var(--lf-text-muted)] hover:border-[color:var(--lf-border)] hover:bg-[color:var(--lf-state-hover)] hover:text-[color:var(--lf-text-primary)]",
-  active: "border-[color:var(--lf-primary)]/40 bg-[color:var(--lf-state-active)] text-[color:var(--lf-text-primary)]",
+  active: "border-[color:var(--lf-ap-primary)]/40 bg-[color:var(--lf-state-active)] text-[color:var(--lf-text-primary)]",
   railItem: "flex size-10 items-center justify-center rounded-[var(--lf-radius-control)] border transition-colors",
   section: "rounded-[var(--lf-radius-card)] border border-[color:var(--lf-border)] bg-[color:var(--lf-bg-card)] p-4",
 } as const;

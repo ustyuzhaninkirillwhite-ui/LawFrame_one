@@ -28,7 +28,7 @@ export function SystemStatusBanner() {
   }
 
   return (
-    <div className="rounded-[26px] border border-[color:var(--line)] bg-[linear-gradient(135deg,rgba(221,184,120,0.14),rgba(255,255,255,0.03)_52%,rgba(0,0,0,0.18))] px-5 py-4">
+    <div className="rounded-[var(--lf-radius-panel)] border border-[color:var(--line)] bg-[color:var(--lf-warning)]/10 px-5 py-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="text-[11px] uppercase tracking-[0.24em] text-[color:var(--muted)]">

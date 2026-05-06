@@ -39,7 +39,7 @@ export function BuilderUnavailableState({
             "Внешняя форма входа не открывается. Система ожидает готовности backend-моста сессии."}
         </p>
         {response?.diagnostics?.traceId ? (
-          <div className="rounded-[8px] border border-[color:var(--line)] bg-black/20 p-3">
+          <div className="rounded-[var(--lf-radius-control)] border border-[color:var(--line)] bg-[color:var(--lf-bg-muted)] p-3">
             ID трассировки: {response.diagnostics.traceId}
           </div>
         ) : null}

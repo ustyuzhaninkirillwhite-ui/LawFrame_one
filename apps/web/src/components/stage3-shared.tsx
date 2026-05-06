@@ -55,7 +55,7 @@ export function RequirementPanel({
         {requirements.map((requirement) => (
           <div
             key={requirement.code}
-            className="rounded-[24px] border border-[color:var(--line)] bg-black/20 p-4"
+            className="rounded-[var(--lf-radius-card)] border border-[color:var(--line)] bg-[color:var(--lf-bg-muted)] p-4"
           >
             <div className="flex flex-wrap items-center gap-2">
               <Badge variant="muted">{requirement.kind}</Badge>
@@ -95,7 +95,7 @@ export function JsonPreview({
         <CardDescription>{description}</CardDescription>
       </CardHeader>
       <CardContent>
-        <pre className="overflow-x-auto rounded-[24px] border border-[color:var(--line)] bg-black/25 p-5 text-sm leading-6 text-[color:var(--muted-strong)]">
+        <pre className="overflow-x-auto rounded-[var(--lf-radius-card)] border border-[color:var(--line)] bg-[color:var(--lf-bg-muted)] p-5 text-sm leading-6 text-[color:var(--muted-strong)]">
           {JSON.stringify(value, null, 2)}
         </pre>
       </CardContent>

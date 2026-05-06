@@ -12,7 +12,7 @@ export function Sheet({
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/45">
+    <div className="fixed inset-0 z-50 bg-[color:var(--lf-bg-app)]/70 backdrop-blur-sm">
       <aside
         role="dialog"
         aria-modal="true"

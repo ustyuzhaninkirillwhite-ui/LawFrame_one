@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { getPublicEnv } from "@/lib/browser-auth";
+import { useTheme } from "@/providers/theme-provider";
 import type { SafeActivepiecesSession } from "./use-activepieces-session";
 
 type ActivepiecesEmbedSdk = {
@@ -16,6 +17,9 @@ type ActivepiecesEmbedConfigureInput = {
   readonly embedding: {
     readonly containerId: string;
     readonly locale: "ru";
+    readonly styling: {
+      readonly mode: "light" | "dark";
+    };
     readonly builder: {
       readonly disableNavigation: false;
       readonly hideFlowName: false;
@@ -68,6 +72,9 @@ export function ActivepiecesCanvasWrapper({
   >("idle");
   const [sdkError, setSdkError] = React.useState<string | null>(null);
   const containerId = session.sdkConfig.embedding.containerId;
+  const { theme } = useTheme();
+  const themeRef = React.useRef(theme);
+  themeRef.current = theme;
 
   React.useEffect(() => {
     const previousTitle = document.title;
@@ -116,6 +123,9 @@ export function ActivepiecesCanvasWrapper({
           embedding: {
             containerId,
             locale: "ru",
+            styling: {
+              mode: themeRef.current,
+            },
             builder: {
               disableNavigation:
                 session.sdkConfig.embedding.builder.disableNavigation,

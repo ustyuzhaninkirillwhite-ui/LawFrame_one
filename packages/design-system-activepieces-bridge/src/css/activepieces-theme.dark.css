@@ -13,4 +13,22 @@
   --lf-primary: hsl(210 90% 50%);
   --lf-primary-hover: hsl(210 90% 56%);
   --lf-primary-fg: #f8fafc;
+  --lf-ap-primary: hsl(257 74% 64%);
+  --lf-ap-primary-hover: hsl(257 74% 70%);
+  --lf-ap-primary-fg: #f8fafc;
+  --lf-domain-primary: hsl(210 90% 50%);
+  --lf-domain-primary-hover: hsl(210 90% 56%);
+  --lf-success: hsl(160 60% 52%);
+  --lf-warning: hsl(43 97% 56%);
+  --lf-destructive: hsl(351 95% 72%);
+  --lf-info: hsl(214 16% 70%);
+  --lf-shadow-card: 0 1px 2px rgba(0, 0, 0, 0.18);
+  --lf-shadow-panel: 0 14px 34px rgba(0, 0, 0, 0.28);
+  --lf-shadow-popover: 0 18px 48px rgba(0, 0, 0, 0.34);
+  --lf-state-hover: rgba(163, 163, 163, 0.1);
+  --lf-state-active: rgba(59, 130, 246, 0.14);
+  --lf-state-selected-border: #737373;
+  --lf-state-skeleton: rgba(115, 115, 115, 0.22);
+  --lf-state-error-surface: rgba(251, 113, 133, 0.12);
+  --lf-state-empty-surface: rgba(38, 38, 38, 0.72);
 }

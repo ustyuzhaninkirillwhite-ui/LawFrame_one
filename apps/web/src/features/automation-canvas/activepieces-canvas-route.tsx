@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { QueryState } from "@/components/stage3-shared";
+import { useTheme } from "@/providers/theme-provider";
 import { ActivepiecesCanvasWrapper } from "./activepieces-canvas-wrapper";
 import { BuilderUnavailableState } from "./builder-unavailable-state";
 import { useActivepiecesSession } from "./use-activepieces-session";
@@ -14,27 +15,41 @@ export function ActivepiecesCanvasRoute({
   readonly automationId: string;
 }) {
   const session = useActivepiecesSession({ projectId, automationId });
+  const { apiClient, clearToken, requestSession, state, tokenRef } = session;
+  const { theme } = useTheme();
+  const mountedThemeRef = React.useRef(theme);
   const safeSession =
-    session.state.phase === "available" ? session.state.session : null;
+    state.phase === "available" ? state.session : null;
 
   const handleAuthFailure = React.useCallback(() => {
-    session.clearToken();
-    void session.requestSession("refresh");
-  }, [session]);
+    clearToken();
+    void requestSession("refresh");
+  }, [clearToken, requestSession]);
 
   const handleMounted = React.useCallback(() => {
     if (!safeSession) {
       return;
     }
 
-    void session.apiClient
+    void apiClient
       .initializeActivepiecesSession({
         sessionId: safeSession.sessionId,
       })
       .then(() => {
-        session.clearToken();
+        clearToken();
       });
-  }, [safeSession, session]);
+  }, [apiClient, clearToken, safeSession]);
+
+  React.useEffect(() => {
+    if (mountedThemeRef.current === theme) {
+      return;
+    }
+
+    mountedThemeRef.current = theme;
+    if (state.phase === "available") {
+      void requestSession("refresh");
+    }
+  }, [requestSession, state.phase, theme]);
 
   return (
     <section
@@ -42,9 +57,9 @@ export function ActivepiecesCanvasRoute({
       className="h-screen min-h-0 overflow-hidden bg-[color:var(--lf-bg-app)]"
     >
       <CanvasPane
-        sessionState={session.state}
-        tokenRef={session.tokenRef}
-        onRetry={() => void session.requestSession("retry")}
+        sessionState={state}
+        tokenRef={tokenRef}
+        onRetry={() => void requestSession("retry")}
         onAuthFailure={handleAuthFailure}
         onMounted={handleMounted}
       />

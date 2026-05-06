@@ -22,23 +22,25 @@
     {
       "category": "color",
       "tokens": [
-        { "name": "background.page", "value": "#0a0a0a", "source": "derived", "note": "Derived from Activepieces .dark --background neutral.950." },
-        { "name": "background.card", "value": "#171717", "source": "derived", "note": "Derived from Activepieces .dark popover/secondary neutral.800." },
-        { "name": "background.panel", "value": "#1f1f1f", "source": "derived", "note": "Derived from Activepieces muted/accent dark surfaces." },
-        { "name": "background.muted", "value": "#262626", "source": "derived", "note": "Derived from Activepieces neutral dark muted surfaces." },
-        { "name": "foreground.primary", "value": "#fafafa", "source": "derived", "note": "Derived from Activepieces .dark --foreground neutral.50." },
-        { "name": "foreground.secondary", "value": "#e5e5e5", "source": "derived" },
-        { "name": "foreground.muted", "value": "#a3a3a3", "source": "derived", "note": "Derived from Activepieces .dark --muted-foreground neutral.400." },
-        { "name": "border.default", "value": "rgba(255, 255, 255, 0.08)", "source": "observed", "note": "Activepieces .dark --border." },
-        { "name": "border.input", "value": "rgba(255, 255, 255, 0.08)", "source": "observed", "note": "Activepieces .dark --input." },
-        { "name": "focus.ring", "value": "#737373", "source": "derived", "note": "Derived from Activepieces .dark --ring neutral.500." },
-        { "name": "primary", "value": "hsl(210 90% 50%)", "source": "observed", "note": "Activepieces .dark --primary." },
-        { "name": "primary.hover", "value": "hsl(210 90% 56%)", "source": "derived" },
-        { "name": "primary.foreground", "value": "#f8fafc", "source": "observed", "note": "Activepieces .dark --primary-foreground." },
+        { "name": "background.page", "value": "#ffffff", "source": "observed", "note": "Derived from Activepieces light --background white." },
+        { "name": "background.card", "value": "#ffffff", "source": "observed", "note": "Derived from Activepieces light card/background." },
+        { "name": "background.panel", "value": "#fafafa", "source": "observed", "note": "Derived from Activepieces light accent neutral.50." },
+        { "name": "background.muted", "value": "#f5f5f5", "source": "observed", "note": "Derived from Activepieces light muted neutral.100." },
+        { "name": "foreground.primary", "value": "#0a0a0a", "source": "observed", "note": "Derived from Activepieces light --foreground neutral.950." },
+        { "name": "foreground.secondary", "value": "#171717", "source": "derived" },
+        { "name": "foreground.muted", "value": "#737373", "source": "observed", "note": "Derived from Activepieces light --muted-foreground neutral.500." },
+        { "name": "border.default", "value": "#e5e5e5", "source": "observed", "note": "Activepieces light --border neutral.200." },
+        { "name": "border.input", "value": "#e5e5e5", "source": "observed", "note": "Activepieces light --input neutral.200." },
+        { "name": "focus.ring", "value": "#a3a3a3", "source": "observed", "note": "Derived from Activepieces light --ring neutral.400." },
+        { "name": "primary", "value": "hsl(257 74% 57%)", "source": "observed", "note": "Activepieces light --primary." },
+        { "name": "primary.hover", "value": "hsl(257 74% 48%)", "source": "derived" },
+        { "name": "primary.foreground", "value": "#f8fafc", "source": "observed", "note": "Activepieces primary foreground." },
+        { "name": "domain.primary", "value": "#1688fe", "source": "derived", "note": "LexFrame domain primary retained for legal workflow actions." },
+        { "name": "domain.primary.hover", "value": "#0f6fd7", "source": "derived" },
         { "name": "success", "value": "hsl(160 60% 52%)", "source": "observed", "note": "Activepieces success-400." },
         { "name": "warning", "value": "hsl(43 97% 56%)", "source": "observed", "note": "Activepieces warning-400." },
-        { "name": "destructive", "value": "hsl(351 95% 72%)", "source": "observed", "note": "Activepieces destructive-400." },
-        { "name": "info", "value": "hsl(214 16% 70%)", "source": "observed", "note": "Activepieces light-blue token." }
+        { "name": "destructive", "value": "hsl(350 89% 60%)", "source": "observed", "note": "Activepieces destructive-500." },
+        { "name": "info", "value": "#1890ff", "source": "observed", "note": "Activepieces blue-link token." }
       ]
     },
     {
@@ -53,18 +55,18 @@
     {
       "category": "border",
       "tokens": [
-        { "name": "default", "value": "rgba(255, 255, 255, 0.08)", "source": "observed", "note": "Activepieces .dark --border." },
-        { "name": "input", "value": "rgba(255, 255, 255, 0.08)", "source": "observed", "note": "Activepieces .dark --input." },
-        { "name": "focus", "value": "#737373", "source": "derived", "note": "Derived from Activepieces .dark --ring." },
-        { "name": "selected", "value": "#737373", "source": "observed", "note": "Activepieces selected card border style." }
+        { "name": "default", "value": "#e5e5e5", "source": "observed", "note": "Activepieces light --border." },
+        { "name": "input", "value": "#e5e5e5", "source": "observed", "note": "Activepieces light --input." },
+        { "name": "focus", "value": "#a3a3a3", "source": "observed", "note": "Derived from Activepieces light --ring." },
+        { "name": "selected", "value": "hsl(257 74% 57%)", "source": "observed", "note": "Activepieces selected state follows light AP primary." }
       ]
     },
     {
       "category": "shadow",
       "tokens": [
-        { "name": "card", "value": "0 1px 2px rgba(0, 0, 0, 0.18)", "source": "derived", "note": "AP cards are border-first with low shadow." },
-        { "name": "panel", "value": "0 14px 34px rgba(0, 0, 0, 0.28)", "source": "derived" },
-        { "name": "popover", "value": "0 18px 48px rgba(0, 0, 0, 0.34)", "source": "derived" }
+        { "name": "card", "value": "0 1px 2px rgba(15, 23, 42, 0.06)", "source": "derived", "note": "AP cards are border-first with low shadow." },
+        { "name": "panel", "value": "0 14px 34px rgba(15, 23, 42, 0.08)", "source": "derived" },
+        { "name": "popover", "value": "0 18px 48px rgba(15, 23, 42, 0.14)", "source": "derived" }
       ]
     },
     {
@@ -91,13 +93,13 @@
     {
       "category": "componentState",
       "tokens": [
-        { "name": "hover.surface", "value": "rgba(163, 163, 163, 0.1)", "source": "observed" },
-        { "name": "active.surface", "value": "rgba(59, 130, 246, 0.14)", "source": "derived" },
-        { "name": "selected.border", "value": "#737373", "source": "observed", "note": "Activepieces selected card uses gray border." },
+        { "name": "hover.surface", "value": "rgba(10, 10, 10, 0.04)", "source": "observed" },
+        { "name": "active.surface", "value": "rgba(124, 58, 237, 0.1)", "source": "derived" },
+        { "name": "selected.border", "value": "hsl(257 74% 57%)", "source": "observed", "note": "Activepieces selected card follows AP primary in light mode." },
         { "name": "disabled.opacity", "value": "0.5", "source": "observed" },
-        { "name": "skeleton.surface", "value": "rgba(115, 115, 115, 0.22)", "source": "derived" },
-        { "name": "error.surface", "value": "rgba(251, 113, 133, 0.12)", "source": "derived" },
-        { "name": "empty.surface", "value": "rgba(38, 38, 38, 0.72)", "source": "derived" }
+        { "name": "skeleton.surface", "value": "rgba(115, 115, 115, 0.16)", "source": "derived" },
+        { "name": "error.surface", "value": "rgba(244, 63, 94, 0.1)", "source": "derived" },
+        { "name": "empty.surface", "value": "rgba(245, 245, 245, 0.88)", "source": "derived" }
       ]
     },
     {

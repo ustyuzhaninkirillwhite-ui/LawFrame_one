@@ -5,6 +5,7 @@ import * as React from "react";
 import { getPublicEnv } from "@/lib/browser-auth";
 import { RealtimeProvider } from "./realtime-provider";
 import { SessionProvider } from "./session-provider";
+import { ThemeProvider } from "./theme-provider";
 
 declare global {
   interface Window {
@@ -62,13 +63,15 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <MswBootstrap>
-        <SessionProvider>
-          <RealtimeProvider>
-            {children}
-          </RealtimeProvider>
-        </SessionProvider>
-      </MswBootstrap>
+      <ThemeProvider>
+        <MswBootstrap>
+          <SessionProvider>
+            <RealtimeProvider>
+              {children}
+            </RealtimeProvider>
+          </SessionProvider>
+        </MswBootstrap>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }

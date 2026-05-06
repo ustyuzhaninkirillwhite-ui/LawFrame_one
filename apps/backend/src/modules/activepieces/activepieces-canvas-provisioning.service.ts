@@ -824,7 +824,7 @@ export class ActivepiecesCanvasProvisioningService implements OnModuleDestroy {
             $1,
             $2,
             $3,
-            '#1688fe',
+            $10,
             $4,
             $5,
             $6,
@@ -885,6 +885,7 @@ export class ActivepiecesCanvasProvisioningService implements OnModuleDestroy {
           platformPiecesPolicy.filteredPieceNames,
           platformPiecesPolicy.filteredPieceBehavior,
           [...STAGE17_PINNED_PIECE_NAMES],
+          STAGE17_AUTOMATION_BRAND.primaryColor,
         ],
       );
       } else {
@@ -1169,7 +1170,7 @@ export class ActivepiecesCanvasProvisioningService implements OnModuleDestroy {
           $1,
           $2,
           $3,
-          '#1688fe',
+          $10,
           $4,
           $5,
           $6,
@@ -1210,6 +1211,7 @@ export class ActivepiecesCanvasProvisioningService implements OnModuleDestroy {
         input.platformPiecesPolicy.filteredPieceNames,
         input.platformPiecesPolicy.filteredPieceBehavior,
         [...STAGE17_PINNED_PIECE_NAMES],
+        STAGE17_AUTOMATION_BRAND.primaryColor,
       ],
     );
   }

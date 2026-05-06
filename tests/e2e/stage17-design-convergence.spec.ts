@@ -16,6 +16,9 @@ test.describe("Stage 17.8 design convergence", () => {
   let canvasRoute: string;
 
   test.beforeEach(async ({ page, request }) => {
+    await page.addInitScript(() => {
+      window.localStorage.removeItem("lexframe-ui-theme");
+    });
     await signInAsDemo(page, {
       email: "stage16.owner@lexframe.test",
       fullName: "Stage 16 Owner",
@@ -39,6 +42,7 @@ test.describe("Stage 17.8 design convergence", () => {
         "font-family",
         /Inter|IBM Plex Sans|system-ui/,
       );
+      await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
       await expect(page).toHaveScreenshot(`stage17-17-8-${slug(route)}.png`, {
         fullPage: true,
         maxDiffPixels: 200,
@@ -55,10 +59,26 @@ test.describe("Stage 17.8 design convergence", () => {
       container.getByText("Загружаем конструктор автоматизаций."),
     ).toHaveCount(0, { timeout: 45_000 });
     await expect(container.locator("iframe")).toBeVisible({ timeout: 45_000 });
+    const builderFrame = page.frameLocator("iframe").first();
+    await expect(builderFrame.locator("html")).toHaveClass(/light/, {
+      timeout: 45_000,
+    });
     await expect(container).toHaveScreenshot(
       "stage17-17-8-activepieces-canvas-wrapper.png",
     );
     await expect(page.getByText(/login|sign in/i)).toHaveCount(0);
+  });
+
+  test("Theme toggle switches shell tokens without leaving light as default", async ({
+    page,
+  }) => {
+    await page.goto("/app");
+
+    await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+    await page.getByLabel("Включить тёмную тему").first().click();
+    await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+    await page.getByLabel("Включить светлую тему").first().click();
+    await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
   });
 
   test("Keyboard focus remains visible on migrated shell controls", async ({

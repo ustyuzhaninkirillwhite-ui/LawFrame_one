@@ -18,8 +18,8 @@ export function WorkspaceSwitcher() {
       <div className="text-[11px] uppercase tracking-[0.24em] text-[color:var(--muted)]">
         Контекст пространства
       </div>
-      <div className="rounded-[26px] border border-[color:var(--line)] bg-white/4 p-2">
-        <div className="flex items-center justify-between rounded-[20px] bg-black/25 px-4 py-3">
+      <div className="rounded-[var(--lf-radius-panel)] border border-[color:var(--line)] bg-[color:var(--lf-bg-panel)] p-2">
+        <div className="flex items-center justify-between rounded-[var(--lf-radius-card)] bg-[color:var(--lf-bg-muted)] px-4 py-3">
           <div>
             <div className="font-medium text-[color:var(--foreground)]">
               {activeWorkspace.name}

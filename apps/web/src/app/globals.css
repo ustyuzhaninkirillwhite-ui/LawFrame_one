@@ -84,9 +84,17 @@ input {
   pointer-events: none;
   content: "";
   background-image:
+    linear-gradient(transparent 0%, rgba(10, 10, 10, 0.015) 100%),
+    radial-gradient(circle at 2px 2px, rgba(10, 10, 10, 0.05) 1px, transparent 0);
+  background-size: auto, 16px 16px;
+  mix-blend-mode: multiply;
+  opacity: 0.28;
+}
+
+[data-theme="dark"] .noise-overlay::before {
+  background-image:
     linear-gradient(transparent 0%, rgba(255, 255, 255, 0.015) 100%),
     radial-gradient(circle at 2px 2px, rgba(255, 255, 255, 0.05) 1px, transparent 0);
-  background-size: auto, 16px 16px;
   mix-blend-mode: screen;
   opacity: 0.18;
 }

@@ -71,6 +71,7 @@ export const STAGE17_DIRECT_AI_PROVIDER_PIECES = [
 export const STAGE17_AUTOMATION_BRAND = {
   websiteName: 'Автоматизация',
   platformName: 'Рабочее пространство автоматизаций',
+  primaryColor: '#6e40e3',
   logoIconUrl: '/lexframe-automation-icon.svg',
   fullLogoUrl: '/lexframe-automation-logo.svg',
   favIconUrl: '/lexframe-automation-icon.svg',
