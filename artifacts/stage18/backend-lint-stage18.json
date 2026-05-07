@@ -2,5 +2,5 @@
   "status": "pass",
   "scope": "Stage 18 backend files only",
   "note": "Full backend lint currently includes pre-existing Stage 17/Activepieces formatting debt outside this Stage 18 change set.",
-  "generated_at": "2026-05-07T06:45:34.544Z"
+  "generated_at": "2026-05-07T12:02:10.161Z"
 }

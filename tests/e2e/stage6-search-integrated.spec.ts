@@ -46,8 +46,9 @@ test.describe("Stage 6 search/RAG integrated smoke", () => {
         },
       },
     );
-    expect(publicSearchResponse.ok()).toBeTruthy();
-    const publicSearch = (await publicSearchResponse.json()) as {
+    const publicSearchText = await publicSearchResponse.text();
+    expect(publicSearchResponse.ok(), publicSearchText).toBeTruthy();
+    const publicSearch = JSON.parse(publicSearchText) as {
       readonly total: number;
       readonly results: Array<{
         readonly source: { readonly id: string; readonly title: string };

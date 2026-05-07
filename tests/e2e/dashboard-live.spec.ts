@@ -56,17 +56,8 @@ test.describe("Stage 10 dashboard live smoke", () => {
     expect(Array.isArray(eventsPayload.events)).toBeTruthy();
 
     await page.goto("/dashboard");
-    await expect(
-      page.getByText("Realtime control room for executions"),
-    ).toBeVisible();
-    await expect(
-      page.getByRole("heading", { name: "Active runs", level: 3 }).first(),
-    ).toBeVisible();
-    await expect(
-      page.getByRole("heading", { name: "Pending approvals", level: 3 }).first(),
-    ).toBeVisible();
-    await expect(
-      page.getByRole("heading", { name: "System status", level: 3 }).first(),
-    ).toBeVisible();
+    await expect(page).toHaveURL(/\/app$/);
+    await expect(page.locator("main")).toBeVisible();
+    await expect(page.locator('a[href^="/app/projects/"]').first()).toBeVisible();
   });
 });

@@ -346,6 +346,129 @@ describe('ActivepiecesService', () => {
     expect(databaseService.one).toHaveBeenCalledTimes(2);
   });
 
+  it('creates Stage 17-compatible project bindings with provisioned status', async () => {
+    const { service, databaseService } = createService();
+
+    databaseService.one
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({
+        id: 'binding_stage17',
+        external_project_id: 'proj_stage17',
+      });
+
+    jest
+      .spyOn(service as any, 'ensureRemoteProject')
+      .mockResolvedValue('proj_stage17');
+
+    const result = await (service as any).ensureProjectBinding(
+      access.activeWorkspace!.id,
+      actor,
+      {
+        title: 'Stage 17 automation',
+      },
+    );
+
+    expect(result).toEqual({
+      id: 'binding_stage17',
+      external_project_id: 'proj_stage17',
+    });
+
+    const insertSql = String(databaseService.one.mock.calls[2]?.[0] ?? '');
+    expect(insertSql).toContain("values ($1, $2, $3, $4, 'provisioned'");
+    expect(insertSql).toContain("status = 'provisioned'");
+    expect(insertSql).not.toContain("'active'");
+  });
+
+  it('persists Stage 17.5 embed sessions with a non-null session_id', async () => {
+    const { service, databaseService, auditService } = createService();
+    const client = {
+      query: jest.fn(),
+    };
+
+    databaseService.transaction.mockImplementation(
+      async (callback: (clientArg: unknown) => Promise<void>) =>
+        callback(client),
+    );
+
+    jest.spyOn(service, 'getWorkspaceSecurityOverview').mockResolvedValue({
+      workspaceId: access.activeWorkspace!.id,
+      builderAdminAllowed: true,
+      sandboxRequired: true,
+      eventStreamingEnabled: true,
+      signingKeyConfigured: true,
+      tokenTtlSeconds: 300,
+      piecesFilterType: 'allowlist',
+      piecesTags: ['lexframe-core'],
+      incidentLockActive: false,
+      runtimeConnections: [],
+    });
+    jest.spyOn(service as any, 'getInstalledAutomation').mockResolvedValue({
+      id: 'aut_stage17_embed',
+      workspace_id: access.activeWorkspace!.id,
+      title: 'Stage 17 embed automation',
+      workflow: {
+        steps: [],
+      },
+      active_canvas_version_id: '16000000-0000-4000-8000-000000000001',
+      runtime_flow_id: 'flow_stage17_embed',
+    });
+    jest.spyOn(service, 'getAutomationRuntimeRequirements').mockResolvedValue({
+      automationId: 'aut_stage17_embed',
+      canOpenBuilder: true,
+      canRun: true,
+      builderState: 'ready',
+      syncState: 'synced',
+      runtimeProjectId: 'proj_stage17_embed',
+      runtimeFlowId: 'flow_stage17_embed',
+      missingConnections: [],
+      availableConnections: [],
+      requiredPieces: [],
+      warnings: [],
+    });
+    jest.spyOn(service as any, 'ensureProjectBinding').mockResolvedValue({
+      external_project_id: 'proj_stage17_embed',
+    });
+    jest.spyOn(service as any, 'ensureUserBinding').mockResolvedValue({
+      external_user_id: 'user_stage17_embed',
+    });
+    jest
+      .spyOn(service as any, 'issueEmbedToken')
+      .mockResolvedValue('stage17-embed-token');
+
+    await service.createEmbedToken(
+      actor,
+      {
+        ...access,
+        permissions: [...access.permissions, 'canvas.open_advanced_builder'],
+      },
+      {
+        installedAutomationId: 'aut_stage17_embed',
+        purpose: 'builder',
+      },
+      {
+        requestId: 'req_stage17_embed',
+        traceId: 'trace_stage17_embed',
+      },
+    );
+
+    const insertCall = client.query.mock.calls.find((call) =>
+      String(call[0]).includes('insert into app.activepieces_embed_sessions'),
+    );
+    expect(insertCall).toBeTruthy();
+    const insertSql = String(insertCall?.[0] ?? '');
+    const insertParams = insertCall?.[1] as readonly unknown[];
+
+    expect(insertSql).toContain('session_id');
+    expect(insertParams[0]).toEqual(insertParams[1]);
+    expect(insertParams).toHaveLength(22);
+    expect(auditService.record).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'activepieces.embed_token.created',
+      }),
+    );
+  });
+
   it('returns activepieces-api dispatch metadata when simulation is disabled', async () => {
     const { service, databaseService, auditService } = createService();
     const client = {

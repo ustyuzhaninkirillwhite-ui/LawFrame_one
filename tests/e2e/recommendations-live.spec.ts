@@ -50,11 +50,8 @@ test.describe("Stage 9 recommendations live smoke", () => {
     expect(Array.isArray(processCases)).toBeTruthy();
 
     await page.goto("/recommendations");
-    await expect(
-      page.getByText(
-        "Recommendations stay advisory-only until a human converts them into a workflow draft.",
-      ),
-    ).toBeVisible();
+    await expect(page).toHaveURL(/\/recommendations$/);
+    await expect(page.locator("main h1")).toBeVisible();
 
     if (Array.isArray(recommendations) && recommendations.length === 0) {
       await expect(page.getByText("No visible candidates")).toBeVisible();

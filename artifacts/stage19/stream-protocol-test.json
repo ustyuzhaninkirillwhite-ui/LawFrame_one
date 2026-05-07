@@ -1,6 +1,6 @@
 {
   "status": "pass",
   "command": "corepack pnpm --filter @lexframe/backend test -- chat-stream --runInBand",
-  "duration_ms": 2312,
-  "generated_at": "2026-05-07T05:40:53.991Z"
+  "duration_ms": 1986,
+  "generated_at": "2026-05-07T12:04:06.046Z"
 }

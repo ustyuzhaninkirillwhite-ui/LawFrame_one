@@ -97,14 +97,13 @@ export async function installAndSyncFirstAutomation(
     `${session.apiBaseUrl}/automations/${installed.id}/runtime/sync`,
     {
       headers: jsonHeaders,
-      data: {
-        dryRun: true,
-      },
+      data: {},
     },
   );
-  expect(syncResponse.ok()).toBeTruthy();
+  const syncText = await syncResponse.text();
+  expect(syncResponse.ok(), syncText).toBeTruthy();
   const syncPayload =
-    (await syncResponse.json()) as SyncAutomationRuntimeResponse;
+    JSON.parse(syncText) as SyncAutomationRuntimeResponse;
   expect(syncPayload.status).toBe("synced");
 
   return installed.id;

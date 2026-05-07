@@ -3,6 +3,7 @@ import type {
   RuntimeConnectionRequirement,
   WorkflowNode,
 } from '@lexframe/contracts';
+import { loadServerEnv } from '@lexframe/config';
 import { Injectable } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
 
@@ -16,6 +17,8 @@ interface RuntimeConnectionRow {
 
 @Injectable()
 export class ConnectionRequirementResolver {
+  private readonly env = loadServerEnv();
+
   constructor(private readonly databaseService: DatabaseService) {}
 
   async resolve(
@@ -36,6 +39,10 @@ export class ConnectionRequirementResolver {
     for (const node of workflow.nodes) {
       for (const requirement of collectNodeRequirements(node)) {
         const row = byCode.get(requirement.connectionType);
+        const localIntegratedConnection =
+          row === undefined
+            ? this.resolveLocalIntegratedConnection(requirement.connectionType)
+            : null;
         const status =
           row?.status === 'connected'
             ? 'available'
@@ -43,7 +50,7 @@ export class ConnectionRequirementResolver {
               ? 'expired'
               : row?.status === 'error'
                 ? 'forbidden'
-                : 'missing';
+                : (localIntegratedConnection?.status ?? 'missing');
         const key = `${node.id}:${requirement.connectionType}`;
         requirements.set(key, {
           requirement_id: key,
@@ -51,7 +58,10 @@ export class ConnectionRequirementResolver {
           connection_type: requirement.connectionType,
           required: requirement.required,
           status,
-          connection_external_id: row?.external_connection_name ?? null,
+          connection_external_id:
+            row?.external_connection_name ??
+            localIntegratedConnection?.externalConnectionName ??
+            null,
           setup_url: null,
         });
       }
@@ -60,6 +70,28 @@ export class ConnectionRequirementResolver {
     return [...requirements.values()].sort((left, right) =>
       left.requirement_id.localeCompare(right.requirement_id),
     );
+  }
+
+  private resolveLocalIntegratedConnection(
+    connectionType: RuntimeConnectionRequirement['connection_type'],
+  ): {
+    readonly status: RuntimeConnectionRequirement['status'];
+    readonly externalConnectionName: string;
+  } | null {
+    if (
+      connectionType !== 'email_provider' ||
+      this.env.LEXFRAME_READINESS_PROFILE !== 'local-integrated' ||
+      this.env.LEXFRAME_DELIVERY_TRANSPORT !== 'webhook' ||
+      this.env.LEXFRAME_DELIVERY_WEBHOOK_URL.trim().length === 0 ||
+      this.env.LEXFRAME_DELIVERY_FROM_EMAIL.trim().length === 0
+    ) {
+      return null;
+    }
+
+    return {
+      status: 'available',
+      externalConnectionName: 'local-integrated-delivery-webhook',
+    };
   }
 }
 

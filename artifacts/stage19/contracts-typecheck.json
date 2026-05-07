@@ -1,6 +1,6 @@
 {
   "status": "pass",
   "command": "corepack pnpm --filter @lexframe/contracts typecheck",
-  "duration_ms": 2767,
-  "generated_at": "2026-05-07T05:39:44.200Z"
+  "duration_ms": 1777,
+  "generated_at": "2026-05-07T12:02:54.209Z"
 }

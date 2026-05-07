@@ -1,5 +1,10 @@
 import { spawnSync } from "node:child_process";
 import { resolveDockerCli } from "./stage16-compose-utils.mjs";
+import {
+  buildControlledRuntimeStopArgs,
+  describeSystemStatus,
+  evaluateSystemStatusReadiness,
+} from "./stage16-runtime-status.mjs";
 
 const docker = resolveDockerCli();
 const shell = process.platform === "win32";
@@ -40,7 +45,11 @@ const fullRuntimeServices = [
   "web",
 ];
 
+const servicesRestartedBeforeBootstrap = ["backend", "web", "mining-worker"];
+
 async function main() {
+  assertLiveProviderEnvIfRequired();
+  run(docker, buildControlledRuntimeStopArgs(composeProfiles, servicesRestartedBeforeBootstrap));
   run(docker, [...composeProfiles, "up", "-d", ...fullRuntimeServices]);
   run("corepack", ["pnpm", "stage16:db:apply-local"]);
   await waitForMiningWorkerReady();
@@ -98,26 +107,50 @@ async function waitForHealthySystemStatus() {
     "backend /system/status",
     url,
     (payload) =>
-      payload.overall === "healthy" &&
-      Array.isArray(payload.components) &&
-      payload.components.every(
-        (component) =>
-          typeof component === "object" &&
-          component !== null &&
-          component.status === "healthy",
-      ),
+      evaluateSystemStatusReadiness(
+        payload,
+        fullRuntimeEnv.LEXFRAME_READINESS_PROFILE,
+      ).ready,
     (payload) => {
-      const components = Array.isArray(payload.components)
-        ? payload.components
-            .map((component) =>
-              typeof component === "object" && component !== null
-                ? `${String(component.code)}=${String(component.status)}`
-                : "invalid-component",
-            )
-            .join(", ")
-        : "no-components";
-      return `overall=${String(payload.overall ?? "missing")} ${components}`;
+      const readiness = evaluateSystemStatusReadiness(
+        payload,
+        fullRuntimeEnv.LEXFRAME_READINESS_PROFILE,
+      );
+      const blocker = readiness.blockerCode ? ` blocker=${readiness.blockerCode}` : "";
+      return `${describeSystemStatus(payload)}${blocker}`;
     },
+  );
+}
+
+function assertLiveProviderEnvIfRequired() {
+  if (process.env.LEXFRAME_STAGE18_LIVE_PROVIDER_SMOKE !== "1") {
+    return;
+  }
+
+  const missing = [];
+  if (fullRuntimeEnv.AI_PROVIDER_MODE !== "controlled-real") {
+    missing.push("AI_PROVIDER_MODE=controlled-real");
+  }
+  if (
+    !hasConfiguredValue(fullRuntimeEnv.XAI_API_KEY) &&
+    !hasConfiguredValue(fullRuntimeEnv.COMETAPI_API_KEY) &&
+    !hasConfiguredValue(fullRuntimeEnv.COMETAPI_API_KEYS)
+  ) {
+    missing.push("one of XAI_API_KEY, COMETAPI_API_KEY, COMETAPI_API_KEYS");
+  }
+
+  if (missing.length > 0) {
+    throw new Error(`LIVE_PROVIDER_ENV_REQUIRED: ${missing.join("; ")}`);
+  }
+}
+
+function hasConfiguredValue(value) {
+  return (
+    typeof value === "string" &&
+    value.trim().length > 0 &&
+    !/^(stage0_|replace_with_|demo_|placeholder|example|change_me|PASTE_|YOUR_|<)/i.test(
+      value.trim(),
+    )
   );
 }
 

@@ -7,7 +7,7 @@ test("builder readiness exposes governance and token controls", async ({ page })
     fullName: "Builder Owner",
   });
 
-  await page.getByRole("link", { name: "Admin / Security" }).click();
+  await page.goto("/admin/security");
   await page.getByRole("link", { name: "activepieces" }).click();
   await expect(page.getByText("Activepieces governance")).toBeVisible();
   await expect(page.getByText("token TTL", { exact: true })).toBeVisible();

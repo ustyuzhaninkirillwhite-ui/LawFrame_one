@@ -47,6 +47,12 @@ export interface ActivepiecesProjectRef {
   readonly externalId?: string | null;
 }
 
+export interface ActivepiecesEnsureProjectInput {
+  readonly displayName: string;
+  readonly externalId?: string | null;
+  readonly metadata?: Record<string, unknown>;
+}
+
 export interface ActivepiecesFlowRef {
   readonly id: string;
   readonly projectId: string;
@@ -66,7 +72,32 @@ export class ActivepiecesRuntimeClient {
     await this.fetchRaw('/', { method: 'GET' }, false);
   }
 
-  async ensureProject(displayName: string): Promise<ActivepiecesProjectRef> {
+  async ensureProject(
+    input: string | ActivepiecesEnsureProjectInput,
+  ): Promise<ActivepiecesProjectRef> {
+    const target = typeof input === 'string' ? { displayName: input } : input;
+    if (target.externalId) {
+      try {
+        const existing = await this.findProjectByExternalId(target.externalId);
+        if (existing) {
+          return existing;
+        }
+        return this.createProject(target);
+      } catch (error) {
+        if (!isProjectManagementRouteMissing(error)) {
+          throw error;
+        }
+        const project = await this.ensureSessionProject(target.displayName);
+        return { ...project, externalId: target.externalId };
+      }
+    }
+
+    return this.ensureSessionProject(target.displayName);
+  }
+
+  private async ensureSessionProject(
+    displayName: string,
+  ): Promise<ActivepiecesProjectRef> {
     const session = await this.getSession();
     const project = await this.request<ActivepiecesProjectResponse>(
       `/users/projects/${encodeURIComponent(session.projectId)}`,
@@ -93,6 +124,41 @@ export class ActivepiecesRuntimeClient {
       displayName: project.displayName,
       externalId: project.externalId ?? null,
     };
+  }
+
+  private async findProjectByExternalId(
+    externalId: string,
+  ): Promise<ActivepiecesProjectRef | null> {
+    const page = await this.request<
+      ActivepiecesListResponse<ActivepiecesProjectResponse>
+    >(
+      '/projects',
+      { method: 'GET' },
+      {
+        includeProjectId: false,
+        searchParams: { limit: '1', externalId },
+      },
+    );
+    const project = page.data?.[0] ?? null;
+    return project ? toProjectRef(project) : null;
+  }
+
+  private async createProject(
+    input: ActivepiecesEnsureProjectInput,
+  ): Promise<ActivepiecesProjectRef> {
+    const created = await this.request<ActivepiecesProjectResponse>(
+      '/projects',
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          displayName: input.displayName,
+          externalId: input.externalId ?? undefined,
+          metadata: input.metadata,
+        }),
+      },
+      { includeProjectId: false },
+    );
+    return toProjectRef(created);
   }
 
   async getProject(projectId: string): Promise<ActivepiecesProjectRef> {
@@ -376,6 +442,24 @@ export class ActivepiecesRuntimeClient {
       );
     }
   }
+}
+
+function isProjectManagementRouteMissing(error: unknown) {
+  return (
+    error instanceof ActivepiecesRuntimeError &&
+    error.status === 404 &&
+    /route not found/i.test(error.message)
+  );
+}
+
+function toProjectRef(
+  project: ActivepiecesProjectResponse,
+): ActivepiecesProjectRef {
+  return {
+    id: project.id,
+    displayName: project.displayName,
+    externalId: project.externalId ?? null,
+  };
 }
 
 function readLexFrameMetadata(

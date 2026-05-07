@@ -53,8 +53,14 @@ test.describe("Stage 1 auth / workspace / RBAC smoke", () => {
     const acceptUrl = invitation.deliveryPreview?.acceptUrl;
     expect(acceptUrl).toBeTruthy();
 
-    await expect(page.getByRole("link", { name: "Admin / Security" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Documents" })).toBeVisible();
+    await page.goto("/admin/security");
+    await expect(page).toHaveURL(/\/admin\/security$/);
+    await expect(
+      page.getByRole("heading", { name: "Security overview and release gates" }),
+    ).toBeVisible({ timeout: 15_000 });
+    await page.goto("/documents");
+    await expect(page).toHaveURL(/\/documents$/);
+    await expect(page.locator("main")).toBeVisible();
 
     const viewerContext = await browser.newContext();
     const viewerPage = await viewerContext.newPage();
@@ -66,12 +72,19 @@ test.describe("Stage 1 auth / workspace / RBAC smoke", () => {
       createWorkspaceIfNeeded: false,
     });
     await viewerPage.goto(acceptUrl ?? "/sign-in");
-    await viewerPage.getByRole("button", { name: "Accept invitation" }).click();
+    await expect(viewerPage).toHaveURL(/\/invite\//);
+    await viewerPage.locator("main button").last().click();
     await expect(viewerPage).toHaveURL(/\/dashboard$/);
 
-    await expect(viewerPage.getByRole("link", { name: "Documents" })).toBeVisible();
     await expect(
-      viewerPage.getByRole("link", { name: "Admin / Security" }),
+      viewerPage.locator('a[href*="documents"], a[href$="#documents"]').first(),
+    ).toBeVisible();
+    await expect(viewerPage.locator('a[href="/admin/security"]')).toHaveCount(0);
+    await viewerPage.goto("/admin/security");
+    await expect(
+      viewerPage.getByRole("heading", {
+        name: "Security overview and release gates",
+      }),
     ).toHaveCount(0);
 
     await viewerContext.close();

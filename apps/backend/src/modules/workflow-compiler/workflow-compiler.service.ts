@@ -50,6 +50,7 @@ import { RuntimeBindingService } from './runtime-binding.service';
 import { RuntimeDiffService } from './runtime-diff.service';
 import { RuntimeIRBuilder } from './runtime-ir-builder.service';
 import { RuntimeSnapshotService } from './runtime-snapshot.service';
+import { normalizeCompileSourceWorkflowV2 } from './workflow-source-normalizer';
 import { WorkflowGraphValidator } from './workflow-graph-validator.service';
 import { WorkflowNormalizerService } from './workflow-normalizer.service';
 import { WorkflowPolicyValidator } from './workflow-policy-validator.service';
@@ -273,8 +274,10 @@ export class WorkflowCompilerService {
         actor,
         displayName: `${automation.title} runtime`,
       });
+      const activepiecesProjectId =
+        project.activepieces_project_id ?? project.external_project_id;
       const flow = await this.syncService.ensureFlow({
-        projectId: project.external_project_id,
+        projectId: activepiecesProjectId,
         workspaceId,
         automationId,
         displayName: automation.title,
@@ -326,7 +329,7 @@ export class WorkflowCompilerService {
       }
 
       const operationResult = await this.syncService.applyOperations({
-        projectId: project.external_project_id,
+        projectId: activepiecesProjectId,
         flowId: flow.flowId,
         operations:
           report.generated_operations as readonly ActivepiecesOperation[],
@@ -334,7 +337,7 @@ export class WorkflowCompilerService {
       });
       const afterSnapshot =
         await this.snapshotService.pullActivepiecesFlowSnapshot({
-          projectId: project.external_project_id,
+          projectId: activepiecesProjectId,
           flowId: flow.flowId,
         });
       const flowVersionId =
@@ -362,7 +365,7 @@ export class WorkflowCompilerService {
         sourceTemplateVersionId: draft.source_template_version_id,
         automationVersionId: report.automation_version_id ?? null,
         runtimeProjectionId,
-        projectId: project.external_project_id,
+        projectId: activepiecesProjectId,
         flowId: flow.flowId,
         flowVersionId,
         sourceWorkflowHash: sourceHash,
@@ -388,7 +391,7 @@ export class WorkflowCompilerService {
           reportId: report.id,
           sourceWorkflowHash: sourceHash,
           runtimeHash: afterSnapshot.snapshotHash,
-          runtimeProjectId: project.external_project_id,
+          runtimeProjectId: activepiecesProjectId,
           runtimeFlowId: flow.flowId,
           runtimeFlowVersionId: flowVersionId,
         },
@@ -398,7 +401,7 @@ export class WorkflowCompilerService {
         status: 'runtime_synced',
         runtimeHash: afterSnapshot.snapshotHash,
         binding,
-        projectId: project.external_project_id,
+        projectId: activepiecesProjectId,
         flowId: flow.flowId,
         flowVersionId,
       });
@@ -870,7 +873,15 @@ export class WorkflowCompilerService {
         'Runtime import candidate requires owner/admin review.',
       );
     }
-    const workflow = asWorkflowV2(candidate.candidate_workflow);
+    const workflow = normalizeCompileSourceWorkflowV2(
+      candidate.candidate_workflow,
+      {
+        workspaceId,
+        automationId,
+        draftId: candidate.id,
+        title: 'Runtime import candidate',
+      },
+    );
     const draft = await this.createRuntimeImportDraft({
       workspaceId,
       automationId,
@@ -1308,7 +1319,15 @@ export class WorkflowCompilerService {
         revision_counter: 0,
         status: 'installed',
       } satisfies CanvasDraftCompilerRow);
-    const workflow = asWorkflowV2(sourceDraft.workflow);
+    const workflow = normalizeCompileSourceWorkflowV2(sourceDraft.workflow, {
+      workspaceId,
+      automationId,
+      draftId:
+        sourceDraft.id ??
+        automation.source_template_version_id ??
+        `installed:${automationId}`,
+      title: automation.title,
+    });
     const normalized = this.normalizer.normalize({
       ...workflow,
       workspace_id: workspaceId,
@@ -2420,22 +2439,6 @@ function requireRuntimeProjectId(binding: RuntimeBindingRow) {
 
 function isActivepiecesRuntimeId(value: string) {
   return /^[0-9a-zA-Z]{21}$/.test(value);
-}
-
-function asWorkflowV2(value: unknown): LexFrameWorkflowV2 {
-  if (
-    isRecord(value) &&
-    value.schema_version === '2.0' &&
-    Array.isArray(value.nodes) &&
-    Array.isArray(value.edges)
-  ) {
-    return value as unknown as LexFrameWorkflowV2;
-  }
-  throw new AppHttpException(
-    'WORKFLOW_COMPILER_BLOCKED',
-    422,
-    'Workflow compiler requires canonical LexFrameWorkflowV2.',
-  );
 }
 
 function hashFromReport(report: CompileReport) {

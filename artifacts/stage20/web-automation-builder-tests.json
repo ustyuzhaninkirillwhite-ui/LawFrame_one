@@ -1,6 +1,6 @@
 {
   "status": "pass",
   "command": "corepack pnpm --filter @lexframe/web test src/features/automation-builder/tests/automationBuilderMappers.test.ts",
-  "duration_ms": 23682,
-  "generated_at": "2026-05-07T05:41:49.670Z"
+  "duration_ms": 25987,
+  "generated_at": "2026-05-07T12:06:31.208Z"
 }

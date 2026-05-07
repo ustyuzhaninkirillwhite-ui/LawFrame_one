@@ -1,7 +1,7 @@
 {
   "status": "pass",
   "command": "corepack pnpm --filter @lexframe/backend test -- ai-provider.adapters --runInBand",
-  "generated_at": "2026-05-07T06:45:48.656Z",
+  "generated_at": "2026-05-07T12:02:34.716Z",
   "provider": "cometapi",
   "model": "deepseek-v4-flash",
   "mode": "mock",

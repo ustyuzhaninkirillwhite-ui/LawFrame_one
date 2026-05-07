@@ -5,12 +5,13 @@ date: 2026-05-07
 auditor: Codex
 branch: main
 commit_before_audit: b4bf2fc80c17b3cdc9a76d5fa4ea6fac3fc9f0dc
-commit_after_fixes: b4bf2fc80c17b3cdc9a76d5fa4ea6fac3fc9f0dc
+commit_before_remediation: 72ab40ad5fe947b46256b358029c5cf70e1809f6
+commit_after_fixes: 72ab40ad5fe947b46256b358029c5cf70e1809f6
 OS: Windows_NT 10.0.26200 x64
 Node: v22.16.0
 pnpm: 10.11.1
 Docker: Docker version 29.3.1, build c2be9cc
-runtime profile: live env not configured
+runtime profile: local-integrated infrastructure PASS; live provider smoke not required for this gate unless explicitly enabled
 
 ## 2. Scope
 Stage 18: AI Gateway governance, route registry, CometAPI/default model, security and evidence.
@@ -25,13 +26,13 @@ Stage 20: AI Automation Builder, AutomationIntent/Blueprint, planner route, vali
 - backend: PASS
 - frontend: PASS
 - db: PASS
-- runtime: BLOCKED
+- runtime: PASS
 - playwright_live: PASS
 - security: PASS
 - stage18: PASS
 - stage19: PASS
 - stage20: PASS
-- full_check: BLOCKED
+- full_check: PASS
 
 ## 4. Commands executed
 | Command | Result | Log path | Duration |
@@ -144,11 +145,34 @@ status: PASS
 status: PASS
 
 ## 12. Defects fixed
-10 Stage 18-20 audit defects were fixed in this pass. 2 blocker records remain open. See audit-fixes.md.
+10 Stage 18-20 audit defects were fixed in the original audit pass. 13 additional blocker remediation defects were fixed in this pass. No P0/P1 blockers remain open. See audit-fixes.md and `docs/stage18-20/remediation/fixes.md`.
 
 ## 13. Remaining blockers
-- P1: Live AI/AP/MCP provider environment was not configured; acceptance requires live runtime proof.
-- P0: Full regression/e2e gate is not passing.
+None.
 
 ## 14. Final decision
-REJECT
+ACCEPT
+
+## 15. Remediation addendum
+
+OPEN-1 and OPEN-2 were remediated after the initial audit REJECT.
+
+| Gate | Result | Evidence |
+|---|---|---|
+| runtime | PASS | `artifacts/stage18-20/remediation/command-logs/2026-05-07T11-57-36-635Z-runtime-stage16-up-full-final.log` |
+| check:e2e | PASS | `artifacts/stage18-20/remediation/command-logs/2026-05-07T11-49-57-520Z-check-e2e-full-after-remediation-fixes.log` |
+| full_check | PASS | `artifacts/stage18-20/remediation/command-logs/2026-05-07T12-43-28-355Z-full-regression-check-final.log` |
+| stage18 | PASS | `artifacts/stage18-20/remediation/command-logs/2026-05-07T12-00-49-325Z-stage18-release-gate.log` |
+| stage19 | PASS | `artifacts/stage18-20/remediation/command-logs/2026-05-07T12-02-44-559Z-stage19-release-gate.log` |
+| stage20 | PASS | `artifacts/stage18-20/remediation/command-logs/2026-05-07T12-04-06-756Z-stage20-release-gate.log` |
+| security | PASS | `artifacts/stage18-20/remediation/command-logs/2026-05-07T13-15-19-847Z-final-post-redaction-check-security.log` |
+| remediation evidence scan | PASS | `artifacts/stage18-20/remediation/command-logs/2026-05-07T13-16-27-766Z-final-remediation-evidence-secret-like-scan.log` |
+
+Remediation reports:
+
+- `docs/stage18-20/remediation/open-blockers-root-cause.md`
+- `docs/stage18-20/remediation/runtime-blocker-analysis.md`
+- `docs/stage18-20/remediation/full-e2e-blocker-analysis.md`
+- `docs/stage18-20/remediation/fixes.md`
+- `docs/stage18-20/remediation/final-acceptance.md`
+- `artifacts/stage18-20/remediation/machine-report.json`

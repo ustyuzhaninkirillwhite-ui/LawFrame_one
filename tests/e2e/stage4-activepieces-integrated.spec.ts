@@ -85,14 +85,13 @@ test.describe("Stage 4 Activepieces integrated smoke", () => {
       `${session.apiBaseUrl}/automations/${installed.id}/runtime/sync`,
       {
         headers: jsonHeaders,
-        data: {
-          dryRun: true,
-        },
+        data: {},
       },
     );
-    expect(syncResponse.ok()).toBeTruthy();
+    const syncText = await syncResponse.text();
+    expect(syncResponse.ok(), syncText).toBeTruthy();
     const syncPayload =
-      (await syncResponse.json()) as SyncAutomationRuntimeResponse;
+      JSON.parse(syncText) as SyncAutomationRuntimeResponse;
     expect(syncPayload.status).toBe("synced");
     expect(syncPayload.runtimeProjectId).toBeTruthy();
     expect(syncPayload.runtimeFlowId).toBeTruthy();
@@ -128,9 +127,15 @@ test.describe("Stage 4 Activepieces integrated smoke", () => {
     expect(tokenPayload.runtimeFlowId).toBeTruthy();
 
     await page.goto(`/automations/${installed.id}/builder`);
-    await expect(page.getByText("Builder session")).toBeVisible();
+    await expect(
+      page.getByRole("region", { name: "Конструктор автоматизаций" }),
+    ).toBeVisible();
+    await expect(
+      page.getByTestId("activepieces-canvas-container"),
+    ).toBeVisible();
+    await expect(page.getByTestId("builder-unavailable-state")).toHaveCount(0);
     await expect(page).toHaveURL(
-      new RegExp(`/automations/${installed.id}/builder$`),
+      new RegExp(`/app/projects/[^/]+/automations/${installed.id}/automation$`),
     );
 
     const smokeResponse = await request.post(

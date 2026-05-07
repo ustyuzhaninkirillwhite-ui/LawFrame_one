@@ -361,6 +361,8 @@ export class ActivepiecesService {
     );
     const expiresAt = new Date(Date.now() + tokenTtlSeconds * 1000);
     const jti = randomUUID();
+    const embedSessionId = randomUUID();
+    const activepiecesRole = role === 'builder' ? 'EDITOR' : 'VIEWER';
     const token = await this.issueEmbedToken({
       actor,
       workspaceId: access.activeWorkspace!.id,
@@ -378,6 +380,7 @@ export class ActivepiecesService {
         `
           insert into app.activepieces_embed_sessions (
             id,
+            session_id,
             workspace_id,
             installed_automation_id,
             auth_user_id,
@@ -388,14 +391,26 @@ export class ActivepiecesService {
             external_user_id,
             jti_hash,
             canvas_role,
+            role,
+            pieces_filter_type,
+            pieces_tags,
+            ttl_seconds,
+            issued_at,
+            project_id,
+            trace_id,
             issued_for_automation_id,
             issued_for_version_id,
             issued_reason
           )
-          values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+          values (
+            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
+            $11, $12, $13, $14, $15, $16, $17, $18, $19,
+            $20, $21, $22
+          )
         `,
         [
-          randomUUID(),
+          embedSessionId,
+          embedSessionId,
           access.activeWorkspace!.id,
           automation.id,
           actor.id,
@@ -406,6 +421,13 @@ export class ActivepiecesService {
           userBinding.external_user_id,
           this.hashValue(jti),
           role,
+          activepiecesRole,
+          'ALLOWED',
+          piecesTags,
+          tokenTtlSeconds,
+          new Date(issuedAt * 1000).toISOString(),
+          projectBinding.external_project_id,
+          meta.traceId,
           automation.id,
           automation.active_canvas_version_id,
           'canvas_advanced_builder',
@@ -2008,7 +2030,9 @@ export class ActivepiecesService {
       readonly external_project_id: string;
     }>(
       `
-        select id, external_project_id
+        select
+          id,
+          coalesce(ap_project_id, project_id, external_project_id) as external_project_id
         from app.activepieces_project_bindings
         where workspace_id = $1
         limit 1
@@ -2031,9 +2055,13 @@ export class ActivepiecesService {
       readonly external_project_id: string;
     }>(
       `
-        select id, external_project_id
+        select
+          id,
+          coalesce(ap_project_id, project_id, external_project_id) as external_project_id
         from app.activepieces_project_bindings
         where external_project_id = $1
+           or project_id = $1
+           or ap_project_id = $1
         limit 1
       `,
       [remoteProjectId],
@@ -2063,12 +2091,12 @@ export class ActivepiecesService {
             created_by_user_id,
             last_synced_at
           )
-          values ($1, $2, $3, $4, 'active', $5, timezone('utc', now()))
+          values ($1, $2, $3, $4, 'provisioned', $5, timezone('utc', now()))
           on conflict (workspace_id) do update
           set
             external_project_id = excluded.external_project_id,
             display_name = excluded.display_name,
-            status = 'active',
+            status = 'provisioned',
             updated_at = timezone('utc', now())
           returning id, external_project_id
         `,
@@ -2092,9 +2120,13 @@ export class ActivepiecesService {
           readonly external_project_id: string;
         }>(
           `
-            select id, external_project_id
+            select
+              id,
+              coalesce(ap_project_id, project_id, external_project_id) as external_project_id
             from app.activepieces_project_bindings
             where external_project_id = $1
+               or project_id = $1
+               or ap_project_id = $1
             limit 1
           `,
           [remoteProjectId],

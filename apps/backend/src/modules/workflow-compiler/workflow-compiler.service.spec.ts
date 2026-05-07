@@ -7,6 +7,8 @@ import { RuntimeIRBuilder } from './runtime-ir-builder.service';
 import { WorkflowNormalizerService } from './workflow-normalizer.service';
 import { WorkflowPolicyValidator } from './workflow-policy-validator.service';
 import { WorkflowSemanticDiffService } from './workflow-semantic-diff.service';
+import { ConnectionRequirementResolver } from './connection-requirement-resolver.service';
+import { normalizeCompileSourceWorkflowV2 } from './workflow-source-normalizer';
 
 describe('WorkflowCompiler stage 16.10 building blocks', () => {
   const normalizer = new WorkflowNormalizerService();
@@ -191,6 +193,209 @@ describe('WorkflowCompiler stage 16.10 building blocks', () => {
     expect(first.requiredPieces.map((piece) => piece.piece_name)).toContain(
       '@lexframe/piece-legal-module',
     );
+  });
+
+  it('canonicalizes Stage 3 template workflows before runtime compilation', () => {
+    const workflow = normalizeCompileSourceWorkflowV2(
+      {
+        id: 'pretrial-claim-flow',
+        version: 'v1',
+        steps: [
+          {
+            id: 'case-search',
+            moduleCode: 'legal.case-search',
+            dependencies: [],
+          },
+          {
+            id: 'materials-analysis',
+            moduleCode: 'legal.material-analysis',
+            dependencies: [],
+          },
+          {
+            id: 'claim-draft',
+            moduleCode: 'document.pretrial-draft',
+            dependencies: ['case-search', 'materials-analysis'],
+          },
+          {
+            id: 'delivery-draft',
+            moduleCode: 'delivery.email-draft',
+            dependencies: ['claim-draft'],
+            requiresApproval: true,
+          },
+        ],
+      },
+      {
+        workspaceId: 'workspace_test',
+        automationId: 'automation_test',
+        draftId: 'draft_test',
+        title: 'Pre-trial claim package',
+      },
+    );
+
+    expect(workflow.schema_version).toBe('2.0');
+    expect(workflow.workspace_id).toBe('workspace_test');
+    expect(workflow.automation_id).toBe('automation_test');
+    expect(workflow.nodes.map((node) => node.id)).toEqual([
+      'trigger_manual_start',
+      'case-search',
+      'materials-analysis',
+      'claim-draft',
+      'approval_before_delivery-draft',
+      'delivery-draft',
+      'end_success',
+    ]);
+    expect(
+      workflow.nodes.map((node) => [
+        node.id,
+        node.type,
+        node.block_code,
+        node.runtime_mapping.provider,
+        node.runtime_mapping.internal_route,
+        node.runtime_mapping.activepieces_action,
+      ]),
+    ).toEqual([
+      [
+        'trigger_manual_start',
+        'trigger',
+        'manual_start',
+        'activepieces',
+        null,
+        'manual_start',
+      ],
+      [
+        'case-search',
+        'legalAction',
+        'case_law_search',
+        'internal_worker',
+        'legal_search.query',
+        'case_law_search',
+      ],
+      [
+        'materials-analysis',
+        'legalAction',
+        'case_material_analysis',
+        'ai_gateway',
+        'ai_gateway.case_material_analysis',
+        null,
+      ],
+      [
+        'claim-draft',
+        'legalAction',
+        'pretrial_claim_draft',
+        'internal_worker',
+        'document_generation.pretrial_claim',
+        'pretrial_claim_draft',
+      ],
+      [
+        'approval_before_delivery-draft',
+        'approval',
+        'human_approval',
+        'manual',
+        'approvals.create_task',
+        null,
+      ],
+      [
+        'delivery-draft',
+        'delivery',
+        'email_delivery',
+        'internal_worker',
+        'delivery.email',
+        null,
+      ],
+      ['end_success', 'end', 'end_success', 'none', null, null],
+    ]);
+    expect(
+      workflow.edges.map((edge) => [
+        edge.source_node_id,
+        edge.source_handle,
+        edge.target_node_id,
+        edge.type,
+      ]),
+    ).toEqual([
+      ['trigger_manual_start', 'main_output', 'case-search', 'control'],
+      ['case-search', 'main_output', 'materials-analysis', 'control'],
+      ['materials-analysis', 'main_output', 'claim-draft', 'control'],
+      [
+        'claim-draft',
+        'main_output',
+        'approval_before_delivery-draft',
+        'control',
+      ],
+      [
+        'approval_before_delivery-draft',
+        'approved',
+        'delivery-draft',
+        'approval',
+      ],
+      ['delivery-draft', 'sent', 'end_success', 'control'],
+    ]);
+    expect(
+      workflow.nodes.find(
+        (node) => node.id === 'approval_before_delivery-draft',
+      )?.config,
+    ).toEqual(
+      expect.objectContaining({
+        reason: 'External delivery approval required by legacy template.',
+      }),
+    );
+    expect(
+      workflow.nodes.find((node) => node.id === 'delivery-draft')?.config,
+    ).toEqual(
+      expect.objectContaining({
+        channel: 'email',
+        preview_required: true,
+        connection_type: 'email_provider',
+        connection_id: 'local-integrated-delivery-webhook',
+      }),
+    );
+  });
+
+  it('uses local-integrated delivery webhook as a non-secret email provider connection', async () => {
+    const previousEnv = {
+      LEXFRAME_READINESS_PROFILE: process.env.LEXFRAME_READINESS_PROFILE,
+      LEXFRAME_DELIVERY_TRANSPORT: process.env.LEXFRAME_DELIVERY_TRANSPORT,
+      LEXFRAME_DELIVERY_WEBHOOK_URL: process.env.LEXFRAME_DELIVERY_WEBHOOK_URL,
+      LEXFRAME_DELIVERY_FROM_EMAIL: process.env.LEXFRAME_DELIVERY_FROM_EMAIL,
+    };
+    process.env.LEXFRAME_READINESS_PROFILE = 'local-integrated';
+    process.env.LEXFRAME_DELIVERY_TRANSPORT = 'webhook';
+    process.env.LEXFRAME_DELIVERY_WEBHOOK_URL =
+      'http://127.0.0.1:8091/hooks/delivery';
+    process.env.LEXFRAME_DELIVERY_FROM_EMAIL = 'noreply@lexframe.local';
+    try {
+      const delivery = createWorkflowNode({
+        id: 'delivery',
+        type: 'delivery',
+        blockCode: 'email_delivery',
+        displayName: 'Send',
+        moduleCode: 'delivery.email-draft',
+        x: 160,
+        y: 200,
+      });
+      const databaseService = {
+        query: jest.fn().mockResolvedValue({ rows: [] }),
+      };
+      const resolver = new ConnectionRequirementResolver(
+        databaseService as never,
+      );
+
+      const requirements = await resolver.resolve(
+        'workspace_test',
+        workflowWithNode(delivery),
+      );
+
+      expect(requirements).toEqual([
+        expect.objectContaining({
+          source_node_id: 'delivery',
+          connection_type: 'email_provider',
+          required: true,
+          status: 'available',
+          connection_external_id: 'local-integrated-delivery-webhook',
+        }),
+      ]);
+    } finally {
+      restoreEnv(previousEnv);
+    }
   });
 
   it('parses Activepieces runtime into a sanitized runtime graph', () => {
@@ -406,6 +611,16 @@ function workflowWithNodes(
       }),
     ),
   };
+}
+
+function restoreEnv(values: Record<string, string | undefined>) {
+  for (const [key, value] of Object.entries(values)) {
+    if (value === undefined) {
+      delete process.env[key];
+    } else {
+      process.env[key] = value;
+    }
+  }
 }
 
 function runtimeSnapshot() {

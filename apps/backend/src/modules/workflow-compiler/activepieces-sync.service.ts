@@ -1,4 +1,5 @@
 import type { AuthenticatedActor } from '../../common/types/lexframe-request';
+import { loadServerEnv } from '@lexframe/config';
 import { Injectable } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { DatabaseService } from '../database/database.service';
@@ -14,6 +15,8 @@ import {
 
 @Injectable()
 export class ActivepiecesSyncService {
+  private readonly env = loadServerEnv();
+
   constructor(
     private readonly databaseService: DatabaseService,
     private readonly activepieces: ActivepiecesRuntimeClient,
@@ -23,13 +26,21 @@ export class ActivepiecesSyncService {
     readonly workspaceId: string;
     readonly actor: AuthenticatedActor;
     readonly displayName: string;
-  }): Promise<{ readonly id: string; readonly external_project_id: string }> {
+  }): Promise<{
+    readonly id: string;
+    readonly external_project_id: string;
+    readonly activepieces_project_id: string;
+  }> {
     const existing = await this.databaseService.one<{
       readonly id: string;
       readonly external_project_id: string;
+      readonly activepieces_project_id: string;
     }>(
       `
-        select id, external_project_id
+        select
+          id,
+          external_project_id,
+          coalesce(ap_project_id, project_id, external_project_id) as activepieces_project_id
         from app.activepieces_project_bindings
         where workspace_id = $1
         limit 1
@@ -37,47 +48,75 @@ export class ActivepiecesSyncService {
       [input.workspaceId],
     );
     if (existing) {
-      await this.activepieces.getProject(existing.external_project_id);
+      await this.activepieces.getProject(existing.activepieces_project_id);
       return existing;
     }
 
-    const remoteProject = await this.activepieces.ensureProject(
-      input.displayName,
+    const deterministicExternalProjectId = lexFrameProjectExternalId(
+      this.env.ACTIVEPIECES_PROJECT_PREFIX,
+      input.workspaceId,
     );
+    const remoteProject = await this.activepieces.ensureProject({
+      displayName: input.displayName,
+      externalId: deterministicExternalProjectId,
+      metadata: {
+        managedBy: 'lexframe',
+        workspaceId: input.workspaceId,
+      },
+    });
     const id = randomUUID();
     const row = await this.databaseService.one<{
       readonly id: string;
       readonly external_project_id: string;
+      readonly activepieces_project_id: string;
     }>(
       `
         insert into app.activepieces_project_bindings (
           id,
           workspace_id,
           external_project_id,
+          project_id,
+          ap_project_id,
           display_name,
+          project_display_name,
           status,
           created_by_user_id,
+          deterministic_external_project_id,
           last_synced_at
         )
-        values ($1, $2, $3, $4, 'active', $5, timezone('utc', now()))
+        values ($1, $2, $3, $4, $4, $5, $5, 'provisioned', $6, $3, timezone('utc', now()))
         on conflict (workspace_id) do update
         set
           external_project_id = excluded.external_project_id,
+          project_id = excluded.project_id,
+          ap_project_id = excluded.ap_project_id,
           display_name = excluded.display_name,
-          status = 'active',
+          project_display_name = excluded.project_display_name,
+          status = 'provisioned',
+          deterministic_external_project_id = excluded.deterministic_external_project_id,
           updated_at = timezone('utc', now())
-        returning id, external_project_id
+        returning
+          id,
+          external_project_id,
+          coalesce(ap_project_id, project_id, external_project_id) as activepieces_project_id
       `,
       [
         id,
         input.workspaceId,
+        deterministicExternalProjectId,
         remoteProject.id,
         input.displayName,
         input.actor.id,
       ],
     );
 
-    return row ?? { id, external_project_id: remoteProject.id };
+    return (
+      row ?? {
+        id,
+        external_project_id: deterministicExternalProjectId,
+        activepieces_project_id: remoteProject.id,
+      }
+    );
   }
 
   async ensureFlow(input: {
@@ -199,6 +238,10 @@ export class ActivepiecesSyncService {
 
 function lexFrameFlowExternalId(workspaceId: string, automationId: string) {
   return `lexframe:${workspaceId}:${automationId}`;
+}
+
+function lexFrameProjectExternalId(prefix: string, workspaceId: string) {
+  return `${prefix}-${workspaceId}`;
 }
 
 function isActivepiecesId(value: string) {

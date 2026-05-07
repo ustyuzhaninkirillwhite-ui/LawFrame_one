@@ -1,6 +1,7 @@
 import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
+import { assertStage17HostPortsAvailable } from "./stage17-port-preflight.mjs";
 
 const root = process.cwd();
 const docker = process.env.DOCKER_CLI_PATH ?? (process.platform === "win32" ? "docker.exe" : "docker");
@@ -12,6 +13,15 @@ const extraArgs = process.argv.slice(3);
 if (!existsSync(path.join(root, envFile)) && command !== "config:example") {
   console.error("[stage17:compose] .env.stage17.local is missing. Run pnpm stage17:init-local-secrets first.");
   process.exit(1);
+}
+
+if (command === "up") {
+  try {
+    await assertStage17HostPortsAvailable({ docker, root });
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : String(error));
+    process.exit(1);
+  }
 }
 
 const commandArgs = resolveCommand(command, extraArgs);

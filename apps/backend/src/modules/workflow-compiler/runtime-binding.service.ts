@@ -543,10 +543,10 @@ export class RuntimeBindingService {
         update app.activepieces_flow_snapshots s
         set
           flow_binding_id = fb.id,
-          snapshot_kind = coalesce(snapshot_kind, 'after_update'),
-          runtime_hash = coalesce(runtime_hash, snapshot_hash),
-          redaction_report = coalesce(redaction_report, '{}'::jsonb),
-          trace_id = coalesce(trace_id, $4)
+          snapshot_kind = coalesce(s.snapshot_kind, 'after_update'),
+          runtime_hash = coalesce(s.runtime_hash, s.snapshot_hash),
+          redaction_report = coalesce(s.redaction_report, '{}'::jsonb),
+          trace_id = coalesce(s.trace_id, $4)
         from app.activepieces_flow_bindings fb
         where s.id = $1
           and fb.workspace_id = $2
