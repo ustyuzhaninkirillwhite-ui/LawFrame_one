@@ -157,13 +157,20 @@ export function ActivepiecesCanvasWrapper({
           initialRoute: session.initialRoute,
           navigationHandler: handleNavigation,
         };
-        disposeLocalizationOverlay = installEmbeddedLocalizationOverlay(containerId);
+        disposeLocalizationOverlay =
+          installEmbeddedLocalizationOverlay(containerId);
 
         await sdk.configure(configureInput);
+        styleEmbeddedIframe(containerId);
 
-        if (!disposed && typeof sdk.navigate === "function" && session.initialRoute) {
+        if (
+          !disposed &&
+          typeof sdk.navigate === "function" &&
+          session.initialRoute
+        ) {
           await sdk.navigate({ route: session.initialRoute });
           await wait(250);
+          styleEmbeddedIframe(containerId);
         }
 
         let localizationReadiness =
@@ -181,7 +188,9 @@ export function ActivepiecesCanvasWrapper({
         }
 
         if (!localizationReadiness.surfaceReady) {
-          throw new Error("Конструктор автоматизаций не отрисовал рабочую область.");
+          throw new Error(
+            "Конструктор автоматизаций не отрисовал рабочую область.",
+          );
         }
 
         if (!disposed) {
@@ -300,31 +309,67 @@ function persistRuLocaleForEmbeddedRuntime() {
 
 const visibleTextTranslations = new Map<string, string>([
   ["Flows", "\u0421\u0446\u0435\u043d\u0430\u0440\u0438\u0438"],
-  ["New Flow", "\u041d\u043e\u0432\u044b\u0439 \u0441\u0446\u0435\u043d\u0430\u0440\u0438\u0439"],
-  ["Import Flow", "\u0418\u043c\u043f\u043e\u0440\u0442 \u0441\u0446\u0435\u043d\u0430\u0440\u0438\u044f"],
-  ["Flow name", "\u041d\u0430\u0437\u0432\u0430\u043d\u0438\u0435 \u0441\u0446\u0435\u043d\u0430\u0440\u0438\u044f"],
-  ["All flows", "\u0412\u0441\u0435 \u0441\u0446\u0435\u043d\u0430\u0440\u0438\u0438"],
+  [
+    "New Flow",
+    "\u041d\u043e\u0432\u044b\u0439 \u0441\u0446\u0435\u043d\u0430\u0440\u0438\u0439",
+  ],
+  [
+    "Import Flow",
+    "\u0418\u043c\u043f\u043e\u0440\u0442 \u0441\u0446\u0435\u043d\u0430\u0440\u0438\u044f",
+  ],
+  [
+    "Flow name",
+    "\u041d\u0430\u0437\u0432\u0430\u043d\u0438\u0435 \u0441\u0446\u0435\u043d\u0430\u0440\u0438\u044f",
+  ],
+  [
+    "All flows",
+    "\u0412\u0441\u0435 \u0441\u0446\u0435\u043d\u0430\u0440\u0438\u0438",
+  ],
   ["Folders", "\u041f\u0430\u043f\u043a\u0438"],
   ["Name", "\u041d\u0430\u0437\u0432\u0430\u043d\u0438\u0435"],
   ["Steps", "\u0428\u0430\u0433\u0438"],
   ["Folder", "\u041f\u0430\u043f\u043a\u0430"],
   ["Created", "\u0421\u043e\u0437\u0434\u0430\u043d"],
   ["Status", "\u0421\u0442\u0430\u0442\u0443\u0441"],
-  ["Rows per page", "\u0421\u0442\u0440\u043e\u043a \u043d\u0430 \u0441\u0442\u0440\u0430\u043d\u0438\u0446\u0435"],
+  [
+    "Rows per page",
+    "\u0421\u0442\u0440\u043e\u043a \u043d\u0430 \u0441\u0442\u0440\u0430\u043d\u0438\u0446\u0435",
+  ],
   ["Previous", "\u041d\u0430\u0437\u0430\u0434"],
   ["Next", "\u0414\u0430\u043b\u0435\u0435"],
   ["All", "\u0412\u0441\u0435"],
   ["AI", "\u0418\u0418"],
   ["Core", "\u0411\u0430\u0437\u043e\u0432\u044b\u0435"],
   ["Apps", "\u041f\u0440\u0438\u043b\u043e\u0436\u0435\u043d\u0438\u044f"],
-  ["Flow Control", "\u0423\u043f\u0440\u0430\u0432\u043b\u0435\u043d\u0438\u0435 \u0441\u0446\u0435\u043d\u0430\u0440\u0438\u0435\u043c"],
-  ["Loop on Items", "\u0426\u0438\u043a\u043b \u043f\u043e \u044d\u043b\u0435\u043c\u0435\u043d\u0442\u0430\u043c"],
-  ["Router", "\u041c\u0430\u0440\u0448\u0440\u0443\u0442\u0438\u0437\u0430\u0442\u043e\u0440"],
-  ["Utility", "\u0418\u043d\u0441\u0442\u0440\u0443\u043c\u0435\u043d\u0442\u044b"],
+  [
+    "Flow Control",
+    "\u0423\u043f\u0440\u0430\u0432\u043b\u0435\u043d\u0438\u0435 \u0441\u0446\u0435\u043d\u0430\u0440\u0438\u0435\u043c",
+  ],
+  [
+    "Loop on Items",
+    "\u0426\u0438\u043a\u043b \u043f\u043e \u044d\u043b\u0435\u043c\u0435\u043d\u0442\u0430\u043c",
+  ],
+  [
+    "Router",
+    "\u041c\u0430\u0440\u0448\u0440\u0443\u0442\u0438\u0437\u0430\u0442\u043e\u0440",
+  ],
+  [
+    "Utility",
+    "\u0418\u043d\u0441\u0442\u0440\u0443\u043c\u0435\u043d\u0442\u044b",
+  ],
   ["Code", "\u041a\u043e\u0434"],
-  ["Please select a piece first", "\u0421\u043d\u0430\u0447\u0430\u043b\u0430 \u0432\u044b\u0431\u0435\u0440\u0438\u0442\u0435 \u043c\u043e\u0434\u0443\u043b\u044c"],
-  ["Manual Trigger", "\u0420\u0443\u0447\u043d\u043e\u0439 \u0437\u0430\u043f\u0443\u0441\u043a"],
-  ["Trigger this flow manually.", "\u0417\u0430\u043f\u0443\u0441\u043a\u0430\u0435\u0442 \u0441\u0446\u0435\u043d\u0430\u0440\u0438\u0439 \u0430\u0432\u0442\u043e\u043c\u0430\u0442\u0438\u0437\u0430\u0446\u0438\u0438 \u0432\u0440\u0443\u0447\u043d\u0443\u044e."],
+  [
+    "Please select a piece first",
+    "\u0421\u043d\u0430\u0447\u0430\u043b\u0430 \u0432\u044b\u0431\u0435\u0440\u0438\u0442\u0435 \u043c\u043e\u0434\u0443\u043b\u044c",
+  ],
+  [
+    "Manual Trigger",
+    "\u0420\u0443\u0447\u043d\u043e\u0439 \u0437\u0430\u043f\u0443\u0441\u043a",
+  ],
+  [
+    "Trigger this flow manually.",
+    "\u0417\u0430\u043f\u0443\u0441\u043a\u0430\u0435\u0442 \u0441\u0446\u0435\u043d\u0430\u0440\u0438\u0439 \u0430\u0432\u0442\u043e\u043c\u0430\u0442\u0438\u0437\u0430\u0446\u0438\u0438 \u0432\u0440\u0443\u0447\u043d\u0443\u044e.",
+  ],
   ["Activepieces", "Автоматизация"],
   ["Support", "Помощь"],
   ["Runs", "Запуски"],
@@ -381,7 +426,10 @@ async function verifyEmbeddedLocalizationBeforeVisible(containerId: string) {
   const startedAt = Date.now();
   let doc = await waitForEmbeddedDocument(containerId, 5_000);
   if (!doc?.body) {
-    return { knownEnglishHits: 0, surfaceReady: false };
+    return {
+      knownEnglishHits: 0,
+      surfaceReady: hasEmbeddedIframe(containerId),
+    };
   }
 
   let hits: Array<(typeof knownUserFacingEnglishTerms)[number]> = [];
@@ -398,9 +446,7 @@ async function verifyEmbeddedLocalizationBeforeVisible(containerId: string) {
 
     await wait(100);
     doc =
-      document
-        .getElementById(containerId)
-        ?.querySelector("iframe")
+      document.getElementById(containerId)?.querySelector("iframe")
         ?.contentDocument ?? doc;
   } while (Date.now() - startedAt < 8_000);
   recordLocalizationFallback({
@@ -413,6 +459,26 @@ async function verifyEmbeddedLocalizationBeforeVisible(containerId: string) {
     knownEnglishHits: hits.length,
     surfaceReady: visiblePayload.trim().length > 0,
   };
+}
+
+function hasEmbeddedIframe(containerId: string) {
+  return Boolean(document.getElementById(containerId)?.querySelector("iframe"));
+}
+
+function styleEmbeddedIframe(containerId: string) {
+  const iframe = document
+    .getElementById(containerId)
+    ?.querySelector<HTMLIFrameElement>("iframe");
+
+  if (!iframe) {
+    return;
+  }
+
+  iframe.title = "Конструктор автоматизаций";
+  iframe.style.width = "100%";
+  iframe.style.height = "100%";
+  iframe.style.border = "0";
+  iframe.style.display = "block";
 }
 
 function installEmbeddedLocalizationOverlay(containerId: string) {

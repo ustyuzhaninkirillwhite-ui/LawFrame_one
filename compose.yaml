@@ -145,7 +145,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "node -e \"require('http').get('http://127.0.0.1:54321/health', r => process.exit(r.statusCode < 500 ? 0 : 1)).on('error', () => process.exit(1))\"",
+          'node -e "require(''http'').get(''http://127.0.0.1:54321/health'', r => process.exit(r.statusCode < 500 ? 0 : 1)).on(''error'', () => process.exit(1))"',
         ]
       interval: 5s
       timeout: 5s
@@ -165,7 +165,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "node -e \"require('http').get('http://127.0.0.1:8091/health', r => process.exit(r.statusCode < 500 ? 0 : 1)).on('error', () => process.exit(1))\"",
+          'node -e "require(''http'').get(''http://127.0.0.1:8091/health'', r => process.exit(r.statusCode < 500 ? 0 : 1)).on(''error'', () => process.exit(1))"',
         ]
       interval: 5s
       timeout: 5s
@@ -259,13 +259,22 @@ services:
       SUPABASE_SECRET_KEY: stage14_supabase_secret_key
       SUPABASE_DB_URL: postgresql://postgres:postgres@postgres:5432/stage16_runtime
       ACTIVEPIECES_BASE_URL: http://activepieces-app:80
+      ACTIVEPIECES_PUBLIC_URL: http://127.0.0.1:3100
       ACTIVEPIECES_API_KEY: local_activepieces_access_token
       ACTIVEPIECES_SERVICE_EMAIL: lexframe-stage16@lexframe.test
       ACTIVEPIECES_SERVICE_PASSWORD: Stage16Activepieces!123
-      ACTIVEPIECES_SIGNING_PRIVATE_KEY: local_stage16_signing_private_key
-      ACTIVEPIECES_SIGNING_KEY_ID: lexframe-stage4
+      ACTIVEPIECES_SIGNING_PRIVATE_KEY: stage0_signing_private_key
+      ACTIVEPIECES_SIGNING_PRIVATE_KEY_FILE: /run/lexframe-stage17-secrets/activepieces_signing_private_key.pem
+      ACTIVEPIECES_SIGNING_PRIVATE_KEY_SECRET_REF: stage17/activepieces/signing-private-key
+      ACTIVEPIECES_SIGNING_KEY_ID: stage17-local-signing-key
+      AP_JWT_SECRET: ${AP_JWT_SECRET:-00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff}
       ACTIVEPIECES_PROJECT_PREFIX: lf
       ACTIVEPIECES_SIMULATE_RUNS: "0"
+      ACTIVEPIECES_POSTGRES_HOST: activepieces-postgres
+      ACTIVEPIECES_POSTGRES_PORT: 5432
+      ACTIVEPIECES_POSTGRES_DATABASE: activepieces
+      ACTIVEPIECES_POSTGRES_USERNAME: postgres
+      ACTIVEPIECES_POSTGRES_PASSWORD: postgres
       LEXFRAME_RUNTIME_MASTER_SECRET: local_stage16_runtime_master_secret
       OPENSEARCH_URL: http://opensearch:9200
       OPENSEARCH_INDEX_ALIAS: legal_chunks_current
@@ -282,12 +291,18 @@ services:
         source: ${LEXFRAME_LOCAL_KEYS_HOST_DIR:-${USERPROFILE}/.lexframe/secrets}
         target: /run/lexframe-secrets
         read_only: true
+      - type: bind
+        source: ${LEXFRAME_STAGE17_SECRETS_HOST_DIR:-./.local/secrets/stage17}
+        target: /run/lexframe-stage17-secrets
+        read_only: true
     depends_on:
       stage16-activepieces-catalog-sync:
         condition: service_completed_successfully
       storage-sandbox:
         condition: service_healthy
       delivery-sandbox:
+        condition: service_healthy
+      activepieces-postgres:
         condition: service_healthy
       activepieces-app:
         condition: service_healthy
@@ -299,7 +314,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "node -e \"require('http').get('http://127.0.0.1:3100/health/live', r => process.exit(r.statusCode < 500 ? 0 : 1)).on('error', () => process.exit(1))\"",
+          'node -e "require(''http'').get(''http://127.0.0.1:3100/health/live'', r => process.exit(r.statusCode < 500 ? 0 : 1)).on(''error'', () => process.exit(1))"',
         ]
       interval: 10s
       timeout: 5s
@@ -331,7 +346,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "node -e \"require('http').get('http://127.0.0.1:3000', r => process.exit(r.statusCode < 500 ? 0 : 1)).on('error', () => process.exit(1))\"",
+          'node -e "require(''http'').get(''http://127.0.0.1:3000'', r => process.exit(r.statusCode < 500 ? 0 : 1)).on(''error'', () => process.exit(1))"',
         ]
       interval: 10s
       timeout: 5s
@@ -367,7 +382,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "node -e \"require('http').get('http://127.0.0.1:80', r => process.exit(r.statusCode < 500 ? 0 : 1)).on('error', () => process.exit(1))\"",
+          'node -e "require(''http'').get(''http://127.0.0.1:80'', r => process.exit(r.statusCode < 500 ? 0 : 1)).on(''error'', () => process.exit(1))"',
         ]
       interval: 10s
       timeout: 5s
@@ -427,7 +442,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8090/health/live', timeout=3)\"",
+          'python -c "import urllib.request; urllib.request.urlopen(''http://127.0.0.1:8090/health/live'', timeout=3)"',
         ]
       interval: 10s
       timeout: 5s

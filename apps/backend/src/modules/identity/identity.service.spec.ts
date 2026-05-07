@@ -148,6 +148,32 @@ describe('IdentityService', () => {
     expect(result.actor?.onboardingStatus).toBe('new');
   });
 
+  it('creates the profile before writing session rows during access resolution', async () => {
+    const { service, databaseService, authorizationService } = createService();
+    authorizationService.listWorkspacesForUser.mockResolvedValue([workspace]);
+    authorizationService.getWorkspaceAccess.mockResolvedValue(accessContext);
+
+    await service.resolveAccessContext(baseActor, workspace.id);
+
+    const profileInsertCallIndex = databaseService.query.mock.calls.findIndex(
+      ([sql]) => sql.includes('insert into app.profiles'),
+    );
+    const sessionInsertCallIndex = databaseService.one.mock.calls.findIndex(
+      ([sql]) => sql.includes('insert into app.user_sessions'),
+    );
+
+    expect(profileInsertCallIndex).toBeGreaterThanOrEqual(0);
+    expect(sessionInsertCallIndex).toBeGreaterThanOrEqual(0);
+    const profileInsertCallOrder =
+      databaseService.query.mock.invocationCallOrder[profileInsertCallIndex] ??
+      Number.POSITIVE_INFINITY;
+    const sessionInsertCallOrder =
+      databaseService.one.mock.invocationCallOrder[sessionInsertCallIndex] ??
+      Number.NEGATIVE_INFINITY;
+
+    expect(profileInsertCallOrder).toBeLessThan(sessionInsertCallOrder);
+  });
+
   it('returns needs_mfa for privileged actors when MFA is required', async () => {
     process.env.LEXFRAME_REQUIRE_MFA_FOR_ADMIN_ACTIONS = '1';
 

@@ -13,6 +13,9 @@ import type {
 } from '@lexframe/contracts';
 import type { LexframeRequest } from '../../common/types/lexframe-request';
 import { dataClassification } from '@lexframe/contracts';
+import { loadServerEnv } from '@lexframe/config';
+import { readFile } from 'node:fs/promises';
+import { resolve } from 'node:path';
 import { LexframeRequestContext } from '../../common/decorators/lexframe-request.decorator';
 import { RequiredPermissions } from '../../common/decorators/required-permissions.decorator';
 import { AppHttpException } from '../../common/errors/app-http.exception';
@@ -28,6 +31,7 @@ import {
   requestMeta,
 } from '../../common/http/request-parsing';
 import {
+  All,
   Body,
   Controller,
   Get,
@@ -37,12 +41,15 @@ import {
   Param,
   Post,
   Req,
+  Res,
   UseGuards,
 } from '@nestjs/common';
 import { ActivepiecesService } from './activepieces.service';
 
 @Controller()
 export class ActivepiecesController {
+  private readonly env = loadServerEnv();
+
   constructor(private readonly activepiecesService: ActivepiecesService) {}
 
   @Post('activepieces/embed-token')
@@ -101,6 +108,22 @@ export class ActivepiecesController {
     );
   }
 
+  @Post('automation-runtime/api/v1/managed-authn/external-token')
+  @HttpCode(200)
+  @Header('Cache-Control', 'no-store, no-cache, private')
+  @Header('Referrer-Policy', 'no-referrer')
+  createRuntimeManagedAuthnExternalToken(@Body() body: unknown) {
+    return this.createManagedAuthnExternalToken(body);
+  }
+
+  @Post('api/v1/managed-authn/external-token')
+  @HttpCode(200)
+  @Header('Cache-Control', 'no-store, no-cache, private')
+  @Header('Referrer-Policy', 'no-referrer')
+  createRootManagedAuthnExternalToken(@Body() body: unknown) {
+    return this.createManagedAuthnExternalToken(body);
+  }
+
   @Post('activepieces/session/:sessionId/initialized')
   @HttpCode(200)
   @Header('Cache-Control', 'no-store, no-cache, private')
@@ -121,6 +144,20 @@ export class ActivepiecesController {
       sessionId,
       requestMeta(request),
     );
+  }
+
+  @Get('lexframe-automation-icon.svg')
+  @Header('Content-Type', 'image/svg+xml; charset=utf-8')
+  @Header('Cache-Control', 'public, max-age=3600')
+  getLexframeAutomationIcon() {
+    return readWebPublicAsset('lexframe-automation-icon.svg');
+  }
+
+  @Get('lexframe-automation-logo.svg')
+  @Header('Content-Type', 'image/svg+xml; charset=utf-8')
+  @Header('Cache-Control', 'public, max-age=3600')
+  getLexframeAutomationLogo() {
+    return readWebPublicAsset('lexframe-automation-logo.svg');
   }
 
   @Get('admin/security/activepieces')
@@ -385,6 +422,261 @@ export class ActivepiecesController {
     return this.activepiecesService.handleDeliveryGate(
       parseDeliveryGateCallback(body),
       authorization,
+    );
+  }
+
+  @All('automation-runtime')
+  proxyActivepiecesRuntimeRoot(
+    @Req() request: LexframeRequest,
+    @Res() reply: ProxyReply,
+  ) {
+    return this.proxyActivepiecesRequest(request, reply, '/automation-runtime');
+  }
+
+  @All('automation-runtime/*')
+  proxyActivepiecesRuntime(
+    @Req() request: LexframeRequest,
+    @Res() reply: ProxyReply,
+  ) {
+    return this.proxyActivepiecesRequest(request, reply, '/automation-runtime');
+  }
+
+  @All('embed')
+  proxyActivepiecesEmbedRoot(
+    @Req() request: LexframeRequest,
+    @Res() reply: ProxyReply,
+  ) {
+    return this.proxyActivepiecesRequest(request, reply, '');
+  }
+
+  @All('embed/*')
+  proxyActivepiecesEmbed(
+    @Req() request: LexframeRequest,
+    @Res() reply: ProxyReply,
+  ) {
+    return this.proxyActivepiecesRequest(request, reply, '');
+  }
+
+  @All('api/v1/*')
+  proxyActivepiecesApi(
+    @Req() request: LexframeRequest,
+    @Res() reply: ProxyReply,
+  ) {
+    return this.proxyActivepiecesRequest(request, reply, '');
+  }
+
+  @All('assets/*')
+  proxyActivepiecesAssets(
+    @Req() request: LexframeRequest,
+    @Res() reply: ProxyReply,
+  ) {
+    return this.proxyActivepiecesRequest(request, reply, '');
+  }
+
+  @All('locales/*')
+  proxyActivepiecesLocales(
+    @Req() request: LexframeRequest,
+    @Res() reply: ProxyReply,
+  ) {
+    return this.proxyActivepiecesRequest(request, reply, '');
+  }
+
+  @All('socket.io/*')
+  proxyActivepiecesSocketIoPolling(
+    @Req() request: LexframeRequest,
+    @Res() reply: ProxyReply,
+  ) {
+    return this.proxyActivepiecesRequest(request, reply, '');
+  }
+
+  private async proxyActivepiecesRequest(
+    request: LexframeRequest,
+    reply: ProxyReply,
+    stripPrefix: string,
+  ) {
+    const upstreamUrl = this.buildActivepiecesProxyUrl(request, stripPrefix);
+    const headers = buildProxyHeaders(request.headers);
+    const body = buildProxyBody(request.body, request.method);
+
+    if (body !== undefined && !hasHeader(headers, 'content-type')) {
+      headers['content-type'] = 'application/json';
+    }
+
+    let upstreamResponse: Response;
+    try {
+      upstreamResponse = await fetch(upstreamUrl, {
+        method: request.method,
+        headers,
+        body,
+        redirect: 'manual',
+      });
+    } catch (error) {
+      throw new AppHttpException(
+        'ACTIVEPIECES_UNAVAILABLE',
+        503,
+        'ActivePieces runtime proxy is unavailable.',
+        {
+          upstreamUrl,
+          cause: error instanceof Error ? error.message : String(error),
+        },
+      );
+    }
+
+    reply.code(upstreamResponse.status);
+    upstreamResponse.headers.forEach((value, key) => {
+      if (isHopByHopHeader(key)) {
+        return;
+      }
+      if (key.toLowerCase() === 'location') {
+        reply.header(key, rewriteProxyLocation(value, this.env));
+        return;
+      }
+      if (key.toLowerCase() !== 'content-length') {
+        reply.header(key, value);
+      }
+    });
+
+    const contentType = upstreamResponse.headers.get('content-type') ?? '';
+    const payload = Buffer.from(await upstreamResponse.arrayBuffer());
+    if (contentType.includes('text/html')) {
+      reply.type(contentType);
+      return reply.send(rewriteActivepiecesHtml(payload.toString('utf8')));
+    }
+
+    return reply.send(payload);
+  }
+
+  private buildActivepiecesProxyUrl(
+    request: LexframeRequest,
+    stripPrefix: string,
+  ) {
+    const rawUrl = request.url || '/';
+    const upstreamPath =
+      stripPrefix && rawUrl.startsWith(stripPrefix)
+        ? rawUrl.slice(stripPrefix.length) || '/'
+        : rawUrl;
+
+    const normalizedPath = upstreamPath.startsWith('/')
+      ? upstreamPath
+      : `/${upstreamPath}`;
+
+    return `${this.env.ACTIVEPIECES_BASE_URL.replace(/\/$/, '')}${normalizedPath}`;
+  }
+}
+
+interface ProxyReply {
+  code(statusCode: number): ProxyReply;
+  header(name: string, value: string): ProxyReply;
+  type(contentType: string): ProxyReply;
+  send(payload: string | Buffer): unknown;
+}
+
+type ProxyHeaders = Record<string, string>;
+
+const HOP_BY_HOP_HEADERS = new Set([
+  'connection',
+  'keep-alive',
+  'proxy-authenticate',
+  'proxy-authorization',
+  'te',
+  'trailer',
+  'transfer-encoding',
+  'upgrade',
+  'host',
+  'content-length',
+  'accept-encoding',
+]);
+
+function buildProxyHeaders(headers: LexframeRequest['headers']): ProxyHeaders {
+  return Object.entries(headers).reduce<ProxyHeaders>(
+    (result, [key, value]) => {
+      if (!value || isHopByHopHeader(key)) {
+        return result;
+      }
+      result[key] = value;
+      return result;
+    },
+    {},
+  );
+}
+
+function buildProxyBody(body: unknown, method: string): BodyInit | undefined {
+  if (method === 'GET' || method === 'HEAD' || body === undefined) {
+    return undefined;
+  }
+
+  if (typeof body === 'string') {
+    return body;
+  }
+
+  if (Buffer.isBuffer(body)) {
+    return body as unknown as BodyInit;
+  }
+
+  return JSON.stringify(body);
+}
+
+function hasHeader(headers: ProxyHeaders, headerName: string) {
+  const normalizedHeaderName = headerName.toLowerCase();
+  return Object.keys(headers).some(
+    (key) => key.toLowerCase() === normalizedHeaderName,
+  );
+}
+
+function isHopByHopHeader(headerName: string) {
+  return HOP_BY_HOP_HEADERS.has(headerName.toLowerCase());
+}
+
+function rewriteActivepiecesHtml(html: string) {
+  return html
+    .replace(
+      /<base\s+href="\/"\s*\/?>/i,
+      '<base href="/automation-runtime/" />',
+    )
+    .replaceAll('src="/assets/', 'src="/automation-runtime/assets/')
+    .replaceAll("src='/assets/", "src='/automation-runtime/assets/")
+    .replaceAll('href="/assets/', 'href="/automation-runtime/assets/')
+    .replaceAll("href='/assets/", "href='/automation-runtime/assets/");
+}
+
+function rewriteProxyLocation(
+  location: string,
+  env: ReturnType<typeof loadServerEnv>,
+) {
+  const activepiecesBaseUrl = env.ACTIVEPIECES_BASE_URL.replace(/\/$/, '');
+  const publicRuntimeUrl = env.ACTIVEPIECES_PUBLIC_URL.replace(/\/$/, '');
+  const publicRuntimePath = new URL(publicRuntimeUrl).pathname.replace(
+    /\/$/,
+    '',
+  );
+
+  if (location.startsWith(activepiecesBaseUrl)) {
+    const upstreamPath = location.slice(activepiecesBaseUrl.length) || '/';
+    return `${publicRuntimePath}${upstreamPath}`;
+  }
+
+  if (location.startsWith('/')) {
+    return `${publicRuntimePath}${location}`;
+  }
+
+  return location;
+}
+
+async function readWebPublicAsset(filename: string) {
+  try {
+    return await readFile(
+      resolve(process.cwd(), 'apps/web/public', filename),
+      'utf8',
+    );
+  } catch (error) {
+    throw new AppHttpException(
+      'READINESS_GATE_BLOCKED',
+      404,
+      'LexFrame ActivePieces asset is unavailable.',
+      {
+        filename,
+        cause: error instanceof Error ? error.message : String(error),
+      },
     );
   }
 }

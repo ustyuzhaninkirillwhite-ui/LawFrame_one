@@ -109,8 +109,8 @@ export class IdentityService {
     requestId: string,
     preferredWorkspaceId?: string,
   ): Promise<SessionContext> {
-    const existingSession = await this.ensureSessionAvailable(actor);
     const profile = await this.upsertProfile(actor);
+    const existingSession = await this.ensureSessionAvailable(actor);
     const actorSummary = {
       id: profile.id,
       email: profile.email,
@@ -232,8 +232,8 @@ export class IdentityService {
     actor: AuthenticatedActor,
     preferredWorkspaceId?: string,
   ): Promise<AccessContext | null> {
-    await this.ensureSessionAvailable(actor);
     const profile = await this.upsertProfile(actor);
+    await this.ensureSessionAvailable(actor);
     const workspaces = await this.authorizationService.listWorkspacesForUser(
       actor.id,
     );

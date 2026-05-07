@@ -32,6 +32,16 @@ export function ProjectAutomationsLanding({
   const ensureRequestedRef = React.useRef(false);
   const [ensureTimedOut, setEnsureTimedOut] = React.useState(false);
   const items = React.useMemo(() => automations.data ?? [], [automations.data]);
+  const automationToOpen = React.useMemo(() => {
+    const activepiecesReady = items.find(
+      (item) =>
+        item.canOpenBuilder &&
+        Boolean(item.runtimeProjectId) &&
+        Boolean(item.runtimeFlowId),
+    );
+
+    return activepiecesReady ?? (items.length === 1 ? items[0]! : null);
+  }, [items]);
 
   React.useEffect(() => {
     if (!ensureCanvas.isPending) {
@@ -46,9 +56,9 @@ export function ProjectAutomationsLanding({
   }, [ensureCanvas.isPending]);
 
   React.useEffect(() => {
-    if (items.length === 1) {
+    if (automationToOpen) {
       router.replace(
-        `/app/projects/${projectId}/automations/${items[0]!.id}/automation`,
+        `/app/projects/${projectId}/automations/${automationToOpen.id}/automation`,
       );
       return;
     }
@@ -71,7 +81,7 @@ export function ProjectAutomationsLanding({
         },
       });
     }
-  }, [automations, ensureCanvas, items, projectId, router]);
+  }, [automationToOpen, automations, ensureCanvas, items, projectId, router]);
 
   if (automations.isLoading || (ensureCanvas.isPending && !ensureTimedOut)) {
     return (
@@ -89,8 +99,8 @@ export function ProjectAutomationsLanding({
           <Badge variant="danger">недоступно</Badge>
           <CardTitle>Не удалось открыть конструктор автоматизаций</CardTitle>
           <CardDescription>
-            Старый canvas не используется как запасной режим. Проверьте runtime автоматизаций
-            и повторите подготовку сценария Stage 17.
+            Старый canvas не используется как запасной режим. Проверьте runtime
+            автоматизаций и повторите подготовку сценария Stage 17.
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-wrap gap-3">
@@ -123,7 +133,7 @@ export function ProjectAutomationsLanding({
     );
   }
 
-  if (items.length === 1) {
+  if (automationToOpen) {
     return (
       <QueryState
         title="Открываем конструктор автоматизаций"
