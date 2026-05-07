@@ -1,5 +1,5 @@
 {
   "status": "pass",
   "command": "corepack pnpm --filter @lexframe/backend test -- ai-route-registry --runInBand",
-  "generated_at": "2026-05-06T18:53:36.900Z"
+  "generated_at": "2026-05-07T06:45:46.712Z"
 }

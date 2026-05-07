@@ -26,5 +26,5 @@
     ".agents/features/audit-logs.md"
   ],
   "decision": "runtime reference only; AP DB is not LexFrame product DB; EE/commercial paths excluded",
-  "generated_at": "2026-05-06T21:01:20.958Z"
+  "generated_at": "2026-05-07T05:39:41.171Z"
 }

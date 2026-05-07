@@ -4,82 +4,82 @@
     {
       "name": "stage18-handoff",
       "status": "pass",
-      "duration_ms": 130
+      "duration_ms": 156
     },
     {
       "name": "reference-analyze",
       "status": "pass",
-      "duration_ms": 27
+      "duration_ms": 28
     },
     {
       "name": "license-mit-only",
       "status": "pass",
-      "duration_ms": 26
+      "duration_ms": 27
     },
     {
       "name": "borrowed-elements-verify",
       "status": "pass",
-      "duration_ms": 24
+      "duration_ms": 26
     },
     {
       "name": "inventory",
       "status": "pass",
-      "duration_ms": 1332
+      "duration_ms": 8888
     },
     {
       "name": "direct-provider-call-scan",
       "status": "pass",
-      "duration_ms": 143
+      "duration_ms": 163
     },
     {
       "name": "browser-secret-scan",
       "status": "pass",
-      "duration_ms": 50
+      "duration_ms": 41
     },
     {
       "name": "contracts-typecheck",
       "status": "pass",
-      "duration_ms": 1382
+      "duration_ms": 2781
     },
     {
       "name": "api-client-typecheck",
       "status": "pass",
-      "duration_ms": 1623
+      "duration_ms": 2271
     },
     {
       "name": "backend-typecheck",
       "status": "pass",
-      "duration_ms": 2601
+      "duration_ms": 24043
     },
     {
       "name": "web-typecheck",
       "status": "pass",
-      "duration_ms": 3679
+      "duration_ms": 29723
     },
     {
       "name": "context-assembler-test",
       "status": "pass",
-      "duration_ms": 1749
+      "duration_ms": 11428
     },
     {
       "name": "stream-protocol-test",
       "status": "pass",
-      "duration_ms": 1720
+      "duration_ms": 2327
     },
     {
       "name": "chat-db-test",
       "status": "pass",
-      "duration_ms": 15
+      "duration_ms": 17
     },
     {
       "name": "chat-api-contract",
       "status": "pass",
-      "duration_ms": 12
+      "duration_ms": 4
     },
     {
       "name": "assistant-ui-e2e",
       "status": "pass",
-      "duration_ms": 16
+      "duration_ms": 5
     },
     {
       "name": "attachments-test",
@@ -89,27 +89,27 @@
     {
       "name": "project-knowledge-e2e",
       "status": "pass",
-      "duration_ms": 15
+      "duration_ms": 3
     },
     {
       "name": "branching-test",
       "status": "pass",
-      "duration_ms": 14
+      "duration_ms": 15
     },
     {
       "name": "search-test",
       "status": "pass",
-      "duration_ms": 26
+      "duration_ms": 14
     },
     {
       "name": "prompt-library-test",
       "status": "pass",
-      "duration_ms": 14
+      "duration_ms": 13
     },
     {
       "name": "legal-skills-test",
       "status": "pass",
-      "duration_ms": 14
+      "duration_ms": 3
     },
     {
       "name": "cross-workspace-security",
@@ -119,20 +119,20 @@
     {
       "name": "readiness-test",
       "status": "pass",
-      "duration_ms": 15
+      "duration_ms": 14
     },
     {
       "name": "docs",
       "status": "pass",
-      "duration_ms": 417
+      "duration_ms": 244
     },
     {
       "name": "artifacts-verify",
       "status": "pass",
-      "duration_ms": 18
+      "duration_ms": 5
     }
   ],
   "live_ai_smoke": "degraded/not_configured",
   "live_ai_reason": "Live provider smoke requires an external key; mock/backend route tests are mandatory and passed.",
-  "generated_at": "2026-05-06T19:51:41.588Z"
+  "generated_at": "2026-05-07T05:40:54.381Z"
 }

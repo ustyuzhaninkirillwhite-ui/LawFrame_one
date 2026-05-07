@@ -1,11 +1,11 @@
 {
   "stage": "17.10",
   "status": "PASS",
-  "generated_at": "2026-05-05T07:17:22.254Z",
+  "generated_at": "2026-05-07T05:39:16.972Z",
   "source": "scripts/stage17/collect-runtime-evidence.mjs",
   "workspace_id": "16000000-0000-4000-8000-00000000100a",
   "automation_id": "16000000-0000-4000-8000-000000008001",
-  "trace_id": "755c6c1509fbcb6c5656698671d2a550",
+  "trace_id": "stage17-provision-canvas",
   "project": {
     "lexframe_workspace_id": "16000000-0000-4000-8000-00000000100a",
     "external_project_id": "lex_ws_16000000-0000-4000-8000-00000000100a",
@@ -16,7 +16,7 @@
     "lexframe_user_id": "16000000-0000-4000-8000-000000000001",
     "external_user_id": "lex_user_16000000-0000-4000-8000-000000000001",
     "ap_user_id": "lfstg17user000001",
-    "ap_role": "ADMIN",
+    "ap_role": null,
     "read_back": true
   },
   "flow": {

@@ -1,6 +1,6 @@
 {
   "status": "pass",
   "command": "corepack pnpm --filter @lexframe/backend typecheck",
-  "duration_ms": 4002,
-  "generated_at": "2026-05-06T21:01:28.643Z"
+  "duration_ms": 23900,
+  "generated_at": "2026-05-07T05:40:10.495Z"
 }

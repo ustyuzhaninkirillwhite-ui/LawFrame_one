@@ -162,10 +162,7 @@ export class Stage15ProjectsService {
       this.dashboardService.getSnapshot(actor, access),
       this.countDocuments(workspace.id),
       this.chatThreadService
-        .listProjectThreads(
-          { actor, access },
-          this.projectIdFor(access),
-        )
+        .listProjectThreads({ actor, access }, this.projectIdFor(access))
         .catch(() => ({ items: [] })),
     ]);
 

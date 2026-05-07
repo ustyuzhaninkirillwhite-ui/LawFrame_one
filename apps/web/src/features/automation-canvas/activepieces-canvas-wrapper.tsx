@@ -74,7 +74,10 @@ export function ActivepiecesCanvasWrapper({
   const containerId = session.sdkConfig.embedding.containerId;
   const { theme } = useTheme();
   const themeRef = React.useRef(theme);
-  themeRef.current = theme;
+
+  React.useEffect(() => {
+    themeRef.current = theme;
+  }, [theme]);
 
   React.useEffect(() => {
     const previousTitle = document.title;

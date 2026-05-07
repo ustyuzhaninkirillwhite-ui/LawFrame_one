@@ -192,7 +192,7 @@ export const aiGatewayPiece: RuntimePieceDefinition<AiGatewayPieceInput> = {
   displayName: "LexFrame AI Gateway",
   description:
     "Calls LexFrame backend AI Gateway with a scoped runtime token; provider keys remain backend-only.",
-  endpoint: "/api/runtime/activepieces/ai-gateway/actions/test",
+  endpoint: "/workflow-runtime/ai-gateway/actions/analyze",
   requiredPermission: "ai.chat.use",
   runtimeAuth: "workspace_token",
   writesArtifactType: "ai_gateway_result",

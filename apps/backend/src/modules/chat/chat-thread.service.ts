@@ -3,7 +3,6 @@ import type {
   ChatMessageDto,
   ChatMessagePartDto,
   ChatMessagesResponse,
-  ChatRouteSnapshot,
   ChatSearchResponse,
   ChatStreamSnapshot,
   ChatThreadKind,
@@ -433,7 +432,7 @@ export class ChatThreadService {
     input: CreateChatMessageRequest,
     meta: RequestMeta,
   ): Promise<ChatStreamSnapshot> {
-    const { actor, access } = this.requireContext(context);
+    const { actor } = this.requireContext(context);
     const userMessage = await this.createUserMessage(
       context,
       threadId,
@@ -892,7 +891,8 @@ export function mapStage15ProjectChat(
     title: thread.title,
     status: thread.status === 'active' ? 'active' : 'archived',
     lastMessagePreview:
-      thread.lastMessagePreview ?? 'Чат создан. История хранится в LexFrame DB.',
+      thread.lastMessagePreview ??
+      'Чат создан. История хранится в LexFrame DB.',
     selectedDocumentIds: [],
     linkedAutomationId: null,
     updatedAt: thread.updatedAt,

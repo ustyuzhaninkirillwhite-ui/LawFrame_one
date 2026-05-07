@@ -72,7 +72,10 @@ function redactRouteSnapshot(snapshot: ChatRouteSnapshot) {
   const keyFingerprintPrefix =
     snapshot.keyFingerprintPrefix ??
     (snapshot.keyFingerprint
-      ? snapshot.keyFingerprint.slice(0, Math.min(snapshot.keyFingerprint.length, 15))
+      ? snapshot.keyFingerprint.slice(
+          0,
+          Math.min(snapshot.keyFingerprint.length, 15),
+        )
       : null);
 
   return {

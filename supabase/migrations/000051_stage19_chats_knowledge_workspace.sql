@@ -1,27 +1,27 @@
 -- Stage 19: Chats, Projects & Legal Knowledge Workspace
 -- LexFrame product DB is the source of truth for chat state, context, policy and audit.
 
-insert into app.permissions (code, label, description, category, elevated)
+insert into app.permissions (code, label, description, scope, high_risk)
 values
-  ('chat.view', 'View chats', 'View workspace and project chat threads.', 'chat', false),
-  ('chat.create', 'Create chats', 'Create chat threads and messages.', 'chat', false),
-  ('chat.edit', 'Edit chats', 'Edit chat threads, messages and stream state.', 'chat', false),
-  ('chat.delete', 'Delete chats', 'Delete or redact chat threads.', 'chat', true),
-  ('chat.export', 'Export chats', 'Export chat thread content.', 'chat', true),
-  ('chat.search', 'Search chats', 'Search chat threads and safe snippets.', 'chat', false),
-  ('chat.manage_project_context', 'Manage project chat context', 'Manage project knowledge and chat context items.', 'chat', true),
-  ('chat.attach_document', 'Attach documents to chat', 'Attach permitted document versions and legal sources to chat.', 'chat', false),
-  ('chat.view_route_snapshot', 'View chat route snapshot', 'View AI route diagnostics without secrets.', 'chat', true),
-  ('chat.view_raw_data', 'View raw chat data', 'View raw classified chat content when policy allows.', 'chat', true),
-  ('chat.use_legal_secret_context', 'Use legal secret chat context', 'Use legal-secret references through approved context policy.', 'chat', true),
-  ('prompt_template.manage', 'Manage prompt templates', 'Manage legal prompt templates.', 'chat', true),
-  ('legal_skill.manage', 'Manage legal skills', 'Manage non-executable legal SOP skills.', 'chat', true)
+  ('chat.view', 'View chats', 'View workspace and project chat threads.', 'workspace', false),
+  ('chat.create', 'Create chats', 'Create chat threads and messages.', 'workspace', false),
+  ('chat.edit', 'Edit chats', 'Edit chat threads, messages and stream state.', 'workspace', false),
+  ('chat.delete', 'Delete chats', 'Delete or redact chat threads.', 'workspace', true),
+  ('chat.export', 'Export chats', 'Export chat thread content.', 'workspace', true),
+  ('chat.search', 'Search chats', 'Search chat threads and safe snippets.', 'workspace', false),
+  ('chat.manage_project_context', 'Manage project chat context', 'Manage project knowledge and chat context items.', 'workspace', true),
+  ('chat.attach_document', 'Attach documents to chat', 'Attach permitted document versions and legal sources to chat.', 'workspace', false),
+  ('chat.view_route_snapshot', 'View chat route snapshot', 'View AI route diagnostics without secrets.', 'workspace', true),
+  ('chat.view_raw_data', 'View raw chat data', 'View raw classified chat content when policy allows.', 'workspace', true),
+  ('chat.use_legal_secret_context', 'Use legal secret chat context', 'Use legal-secret references through approved context policy.', 'workspace', true),
+  ('prompt_template.manage', 'Manage prompt templates', 'Manage legal prompt templates.', 'workspace', true),
+  ('legal_skill.manage', 'Manage legal skills', 'Manage non-executable legal SOP skills.', 'workspace', true)
 on conflict (code) do update
 set
   label = excluded.label,
   description = excluded.description,
-  category = excluded.category,
-  elevated = excluded.elevated;
+  scope = excluded.scope,
+  high_risk = excluded.high_risk;
 
 insert into app.role_permissions (role_code, permission_code)
 select role_code::workspace_role, permission_code

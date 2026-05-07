@@ -1,6 +1,6 @@
 # Stage 18 AI Entrypoint Inventory
 
-Generated: 2026-05-06T18:52:40.288Z
+Generated: 2026-05-07T06:45:10.509Z
 
 | File | Line | Provider path | Gateway | Direct provider risk | Frontend leak risk | Stage 18 change |
 |---|---:|---|---:|---:|---:|---|
@@ -76,32 +76,14 @@ Generated: 2026-05-06T18:52:40.288Z
 | apps/web/src/providers/theme-provider.tsx | 17 | metadata_or_reference | no | no | no | Inventory evidence; no direct Stage 18 code import from reference repos. |
 | apps/web/src/providers/theme-provider.tsx | 54 | metadata_or_reference | no | no | no | Inventory evidence; no direct Stage 18 code import from reference repos. |
 | apps/web/src/providers/theme-provider.tsx | 61 | metadata_or_reference | no | no | no | Inventory evidence; no direct Stage 18 code import from reference repos. |
-| apps/web/src/components/automations/automation-workbench-model.test.ts | 21 | metadata_or_reference | no | no | no | Inventory evidence; no direct Stage 18 code import from reference repos. |
-| apps/web/src/components/automations/automation-workbench-model.test.ts | 23 | metadata_or_reference | no | no | no | Inventory evidence; no direct Stage 18 code import from reference repos. |
-| apps/web/src/components/automations/automation-workbench.tsx | 50 | metadata_or_reference | no | no | no | Inventory evidence; no direct Stage 18 code import from reference repos. |
-| apps/web/src/components/automations/automation-workbench.tsx | 76 | metadata_or_reference | no | no | no | Inventory evidence; no direct Stage 18 code import from reference repos. |
-| apps/web/src/components/ai/ai-chat-workspace.tsx | 875 | metadata_or_reference | no | no | no | Inventory evidence; no direct Stage 18 code import from reference repos. |
-| apps/web/src/components/builder/workflow-builder-v1.tsx | 299 | metadata_or_reference | no | no | no | Inventory evidence; no direct Stage 18 code import from reference repos. |
-| apps/web/src/components/legal/legal-source-detail-view.tsx | 71 | metadata_or_reference | no | no | no | Inventory evidence; no direct Stage 18 code import from reference repos. |
-| apps/web/src/components/legal/legal-sources-workspace.tsx | 45 | metadata_or_reference | no | no | no | Inventory evidence; no direct Stage 18 code import from reference repos. |
-| apps/web/src/components/legal/legal-sources-workspace.tsx | 269 | metadata_or_reference | no | no | no | Inventory evidence; no direct Stage 18 code import from reference repos. |
-| apps/web/src/components/shell/project-sidebar.tsx | 34 | metadata_or_reference | no | no | no | Inventory evidence; no direct Stage 18 code import from reference repos. |
-| apps/web/src/components/shell/project-sidebar.tsx | 35 | metadata_or_reference | no | no | no | Inventory evidence; no direct Stage 18 code import from reference repos. |
-| apps/web/src/components/status/permission-gate.test.tsx | 9 | metadata_or_reference | no | no | no | Inventory evidence; no direct Stage 18 code import from reference repos. |
-| apps/web/src/components/status/permission-gate.tsx | 6 | metadata_or_reference | no | no | no | Inventory evidence; no direct Stage 18 code import from reference repos. |
-| apps/web/src/components/ui/tabs.tsx | 39 | metadata_or_reference | no | no | no | Inventory evidence; no direct Stage 18 code import from reference repos. |
-| apps/web/src/components/ui/tabs.tsx | 41 | metadata_or_reference | no | no | no | Inventory evidence; no direct Stage 18 code import from reference repos. |
-| apps/web/src/features/automation-canvas/activepieces-canvas-route.tsx | 5 | metadata_or_reference | no | no | no | Inventory evidence; no direct Stage 18 code import from reference repos. |
-| apps/web/src/features/automation-canvas/activepieces-canvas-wrapper.tsx | 5 | metadata_or_reference | no | no | no | Inventory evidence; no direct Stage 18 code import from reference repos. |
-| apps/web/src/features/automation-canvas/use-activepieces-session.ts | 13 | metadata_or_reference | no | no | no | Inventory evidence; no direct Stage 18 code import from reference repos. |
 | apps/backend/src/common/types/lexframe-request.ts | 27 | metadata_or_reference | no | no | no | Inventory evidence; no direct Stage 18 code import from reference repos. |
 | apps/backend/src/modules/activepieces/activepieces-canvas-provisioning.service.ts | 120 | metadata_or_reference | no | no | no | Inventory evidence; no direct Stage 18 code import from reference repos. |
 | apps/backend/src/modules/activepieces/activepieces-canvas-provisioning.service.ts | 307 | metadata_or_reference | no | no | no | Inventory evidence; no direct Stage 18 code import from reference repos. |
 | apps/backend/src/modules/activepieces/activepieces-canvas-provisioning.service.ts | 741 | metadata_or_reference | no | no | no | Inventory evidence; no direct Stage 18 code import from reference repos. |
-| apps/backend/src/modules/activepieces/activepieces-canvas-provisioning.service.ts | 804 | metadata_or_reference | no | no | no | Inventory evidence; no direct Stage 18 code import from reference repos. |
-| apps/backend/src/modules/activepieces/activepieces-canvas-provisioning.service.ts | 859 | metadata_or_reference | no | no | no | Inventory evidence; no direct Stage 18 code import from reference repos. |
-| apps/backend/src/modules/activepieces/activepieces-canvas-provisioning.service.ts | 1166 | metadata_or_reference | no | no | no | Inventory evidence; no direct Stage 18 code import from reference repos. |
-| apps/backend/src/modules/activepieces/activepieces-canvas-provisioning.service.ts | 1200 | metadata_or_reference | no | no | no | Inventory evidence; no direct Stage 18 code import from reference repos. |
+| apps/backend/src/modules/activepieces/activepieces-canvas-provisioning.service.ts | 806 | metadata_or_reference | no | no | no | Inventory evidence; no direct Stage 18 code import from reference repos. |
+| apps/backend/src/modules/activepieces/activepieces-canvas-provisioning.service.ts | 861 | metadata_or_reference | no | no | no | Inventory evidence; no direct Stage 18 code import from reference repos. |
+| apps/backend/src/modules/activepieces/activepieces-canvas-provisioning.service.ts | 1168 | metadata_or_reference | no | no | no | Inventory evidence; no direct Stage 18 code import from reference repos. |
+| apps/backend/src/modules/activepieces/activepieces-canvas-provisioning.service.ts | 1202 | metadata_or_reference | no | no | no | Inventory evidence; no direct Stage 18 code import from reference repos. |
 | apps/backend/src/modules/activepieces/activepieces-piece-catalog.ts | 44 | metadata_or_reference | no | no | no | Inventory evidence; no direct Stage 18 code import from reference repos. |
 | apps/backend/src/modules/activepieces/activepieces-piece-catalog.ts | 49 | metadata_or_reference | no | no | no | Inventory evidence; no direct Stage 18 code import from reference repos. |
 | apps/backend/src/modules/activepieces/activepieces-piece-catalog.ts | 56 | metadata_or_reference | no | no | no | Inventory evidence; no direct Stage 18 code import from reference repos. |
@@ -113,7 +95,7 @@ Generated: 2026-05-06T18:52:40.288Z
 | apps/backend/src/modules/activepieces/activepieces-piece-catalog.ts | 65 | metadata_or_reference | no | no | no | Inventory evidence; no direct Stage 18 code import from reference repos. |
 | apps/backend/src/modules/activepieces/activepieces-pieces-policy.service.spec.ts | 66 | metadata_or_reference | no | no | no | Inventory evidence; no direct Stage 18 code import from reference repos. |
 | apps/backend/src/modules/activepieces/activepieces-pieces-policy.service.spec.ts | 153 | metadata_or_reference | no | no | no | Inventory evidence; no direct Stage 18 code import from reference repos. |
-| apps/backend/src/modules/activepieces/activepieces-pieces-policy.service.spec.ts | 197 | metadata_or_reference | no | no | no | Inventory evidence; no direct Stage 18 code import from reference repos. |
+| apps/backend/src/modules/activepieces/activepieces-pieces-policy.service.spec.ts | 196 | metadata_or_reference | no | no | no | Inventory evidence; no direct Stage 18 code import from reference repos. |
 | apps/backend/src/modules/activepieces/activepieces-pieces-policy.service.ts | 10 | metadata_or_reference | no | no | no | Inventory evidence; no direct Stage 18 code import from reference repos. |
 | apps/backend/src/modules/activepieces/activepieces-pieces-policy.service.ts | 12 | metadata_or_reference | no | no | no | Inventory evidence; no direct Stage 18 code import from reference repos. |
 | apps/backend/src/modules/activepieces/activepieces-pieces-policy.service.ts | 113 | metadata_or_reference | no | no | no | Inventory evidence; no direct Stage 18 code import from reference repos. |
@@ -124,18 +106,18 @@ Generated: 2026-05-06T18:52:40.288Z
 | apps/backend/src/modules/activepieces/activepieces.controller.ts | 667 | metadata_or_reference | no | no | no | Inventory evidence; no direct Stage 18 code import from reference repos. |
 | apps/backend/src/modules/activepieces/activepieces.module.ts | 39 | metadata_or_reference | no | no | no | Inventory evidence; no direct Stage 18 code import from reference repos. |
 | apps/backend/src/modules/activepieces/activepieces.service.ts | 114 | metadata_or_reference | no | no | no | Inventory evidence; no direct Stage 18 code import from reference repos. |
-| apps/backend/src/modules/activepieces/activepieces.service.ts | 1073 | metadata_or_reference | no | no | no | Inventory evidence; no direct Stage 18 code import from reference repos. |
-| apps/backend/src/modules/activepieces/activepieces.service.ts | 1089 | metadata_or_reference | no | no | no | Inventory evidence; no direct Stage 18 code import from reference repos. |
-| apps/backend/src/modules/activepieces/activepieces.service.ts | 1107 | metadata_or_reference | no | no | no | Inventory evidence; no direct Stage 18 code import from reference repos. |
-| apps/backend/src/modules/activepieces/activepieces.service.ts | 1115 | metadata_or_reference | no | no | no | Inventory evidence; no direct Stage 18 code import from reference repos. |
-| apps/backend/src/modules/activepieces/activepieces.service.ts | 1126 | metadata_or_reference | no | no | no | Inventory evidence; no direct Stage 18 code import from reference repos. |
-| apps/backend/src/modules/activepieces/activepieces.service.ts | 1135 | metadata_or_reference | no | no | no | Inventory evidence; no direct Stage 18 code import from reference repos. |
-| apps/backend/src/modules/activepieces/activepieces.service.ts | 1146 | metadata_or_reference | no | no | no | Inventory evidence; no direct Stage 18 code import from reference repos. |
-| apps/backend/src/modules/activepieces/activepieces.service.ts | 1173 | metadata_or_reference | no | no | no | Inventory evidence; no direct Stage 18 code import from reference repos. |
-| apps/backend/src/modules/activepieces/activepieces.service.ts | 1180 | metadata_or_reference | no | no | no | Inventory evidence; no direct Stage 18 code import from reference repos. |
-| apps/backend/src/modules/activepieces/activepieces.service.ts | 1882 | metadata_or_reference | no | no | no | Inventory evidence; no direct Stage 18 code import from reference repos. |
-| apps/backend/src/modules/activepieces/activepieces.service.ts | 1903 | metadata_or_reference | no | no | no | Inventory evidence; no direct Stage 18 code import from reference repos. |
-| apps/backend/src/modules/activepieces/activepieces.service.ts | 1917 | metadata_or_reference | no | no | no | Inventory evidence; no direct Stage 18 code import from reference repos. |
+| apps/backend/src/modules/activepieces/activepieces.service.ts | 1072 | metadata_or_reference | no | no | no | Inventory evidence; no direct Stage 18 code import from reference repos. |
+| apps/backend/src/modules/activepieces/activepieces.service.ts | 1088 | metadata_or_reference | no | no | no | Inventory evidence; no direct Stage 18 code import from reference repos. |
+| apps/backend/src/modules/activepieces/activepieces.service.ts | 1106 | metadata_or_reference | no | no | no | Inventory evidence; no direct Stage 18 code import from reference repos. |
+| apps/backend/src/modules/activepieces/activepieces.service.ts | 1114 | metadata_or_reference | no | no | no | Inventory evidence; no direct Stage 18 code import from reference repos. |
+| apps/backend/src/modules/activepieces/activepieces.service.ts | 1125 | metadata_or_reference | no | no | no | Inventory evidence; no direct Stage 18 code import from reference repos. |
+| apps/backend/src/modules/activepieces/activepieces.service.ts | 1134 | metadata_or_reference | no | no | no | Inventory evidence; no direct Stage 18 code import from reference repos. |
+| apps/backend/src/modules/activepieces/activepieces.service.ts | 1145 | metadata_or_reference | no | no | no | Inventory evidence; no direct Stage 18 code import from reference repos. |
+| apps/backend/src/modules/activepieces/activepieces.service.ts | 1172 | metadata_or_reference | no | no | no | Inventory evidence; no direct Stage 18 code import from reference repos. |
+| apps/backend/src/modules/activepieces/activepieces.service.ts | 1179 | metadata_or_reference | no | no | no | Inventory evidence; no direct Stage 18 code import from reference repos. |
+| apps/backend/src/modules/activepieces/activepieces.service.ts | 1881 | metadata_or_reference | no | no | no | Inventory evidence; no direct Stage 18 code import from reference repos. |
+| apps/backend/src/modules/activepieces/activepieces.service.ts | 1902 | metadata_or_reference | no | no | no | Inventory evidence; no direct Stage 18 code import from reference repos. |
+| apps/backend/src/modules/activepieces/activepieces.service.ts | 1916 | metadata_or_reference | no | no | no | Inventory evidence; no direct Stage 18 code import from reference repos. |
 | apps/backend/src/modules/admin-console/admin-console.module.ts | 11 | metadata_or_reference | no | no | no | Inventory evidence; no direct Stage 18 code import from reference repos. |
 | apps/backend/src/modules/ai-gateway/ai-gateway-runtime.controller.ts | 8 | lexframe_ai_gateway | yes | no | no | Backend AI Gateway owns provider/model resolution and audit evidence. |
 | apps/backend/src/modules/ai-gateway/ai-gateway-runtime.controller.ts | 14 | lexframe_ai_gateway | yes | no | no | Backend AI Gateway owns provider/model resolution and audit evidence. |
@@ -504,5 +486,23 @@ Generated: 2026-05-06T18:52:40.288Z
 | apps/backend/src/modules/ai-gateway/ai-policy.service.ts | 115 | lexframe_ai_gateway | yes | no | no | Backend AI Gateway owns provider/model resolution and audit evidence. |
 | apps/backend/src/modules/ai-gateway/ai-provider.adapters.spec.ts | 2 | lexframe_ai_gateway | yes | no | no | Backend AI Gateway owns provider/model resolution and audit evidence. |
 | apps/backend/src/modules/ai-gateway/ai-provider.adapters.spec.ts | 4 | lexframe_ai_gateway | yes | no | no | Backend AI Gateway owns provider/model resolution and audit evidence. |
+| apps/backend/src/modules/ai-gateway/ai-provider.adapters.spec.ts | 6 | lexframe_ai_gateway | yes | no | no | Backend AI Gateway owns provider/model resolution and audit evidence. |
+| apps/backend/src/modules/ai-gateway/ai-provider.adapters.spec.ts | 8 | lexframe_ai_gateway | yes | no | no | Backend AI Gateway owns provider/model resolution and audit evidence. |
+| apps/backend/src/modules/ai-gateway/ai-provider.adapters.spec.ts | 9 | lexframe_ai_gateway | yes | no | no | Backend AI Gateway owns provider/model resolution and audit evidence. |
+| apps/backend/src/modules/ai-gateway/ai-provider.adapters.spec.ts | 10 | lexframe_ai_gateway | yes | no | no | Backend AI Gateway owns provider/model resolution and audit evidence. |
+| apps/backend/src/modules/ai-gateway/ai-provider.adapters.spec.ts | 11 | lexframe_ai_gateway | yes | no | no | Backend AI Gateway owns provider/model resolution and audit evidence. |
+| apps/backend/src/modules/ai-gateway/ai-provider.adapters.spec.ts | 15 | lexframe_ai_gateway | yes | no | no | Backend AI Gateway owns provider/model resolution and audit evidence. |
+| apps/backend/src/modules/ai-gateway/ai-provider.adapters.spec.ts | 16 | lexframe_ai_gateway | yes | no | no | Backend AI Gateway owns provider/model resolution and audit evidence. |
+| apps/backend/src/modules/ai-gateway/ai-provider.adapters.spec.ts | 24 | lexframe_ai_gateway | yes | no | no | Backend AI Gateway owns provider/model resolution and audit evidence. |
+| apps/backend/src/modules/ai-gateway/ai-provider.adapters.spec.ts | 25 | lexframe_ai_gateway | yes | no | no | Backend AI Gateway owns provider/model resolution and audit evidence. |
+| apps/backend/src/modules/ai-gateway/ai-provider.adapters.spec.ts | 27 | lexframe_ai_gateway | yes | no | no | Backend AI Gateway owns provider/model resolution and audit evidence. |
+| apps/backend/src/modules/ai-gateway/ai-provider.adapters.spec.ts | 28 | lexframe_ai_gateway | yes | no | no | Backend AI Gateway owns provider/model resolution and audit evidence. |
+| apps/backend/src/modules/ai-gateway/ai-provider.adapters.spec.ts | 31 | lexframe_ai_gateway | yes | no | no | Backend AI Gateway owns provider/model resolution and audit evidence. |
+| apps/backend/src/modules/ai-gateway/ai-provider.adapters.spec.ts | 32 | lexframe_ai_gateway | yes | no | no | Backend AI Gateway owns provider/model resolution and audit evidence. |
+| apps/backend/src/modules/ai-gateway/ai-provider.adapters.spec.ts | 36 | lexframe_ai_gateway | yes | no | no | Backend AI Gateway owns provider/model resolution and audit evidence. |
+| apps/backend/src/modules/ai-gateway/ai-provider.adapters.spec.ts | 37 | lexframe_ai_gateway | yes | no | no | Backend AI Gateway owns provider/model resolution and audit evidence. |
+| apps/backend/src/modules/ai-gateway/ai-provider.adapters.spec.ts | 38 | lexframe_ai_gateway | yes | no | no | Backend AI Gateway owns provider/model resolution and audit evidence. |
+| apps/backend/src/modules/ai-gateway/ai-provider.adapters.spec.ts | 39 | lexframe_ai_gateway | yes | no | no | Backend AI Gateway owns provider/model resolution and audit evidence. |
+| apps/backend/src/modules/ai-gateway/ai-provider.adapters.spec.ts | 40 | lexframe_ai_gateway | yes | no | no | Backend AI Gateway owns provider/model resolution and audit evidence. |
 
-Markdown truncated to 500 rows; JSON contains 2098 rows.
+Markdown truncated to 500 rows; JSON contains 2307 rows.

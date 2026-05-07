@@ -51,7 +51,12 @@ export class ProjectKnowledgeController {
     @Param('itemId') itemId: string,
     @Body() body: Partial<UpsertProjectKnowledgeItemRequest>,
   ) {
-    return this.projectKnowledgeService.update(context, projectId, itemId, body);
+    return this.projectKnowledgeService.update(
+      context,
+      projectId,
+      itemId,
+      body,
+    );
   }
 
   @Delete(':projectId/knowledge/:itemId')

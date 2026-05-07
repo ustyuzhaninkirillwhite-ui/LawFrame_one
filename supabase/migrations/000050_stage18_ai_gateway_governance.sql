@@ -99,6 +99,29 @@ create table if not exists app.ai_stream_events (
   created_at timestamptz not null default timezone('utc', now())
 );
 
+insert into app.role_permissions (role_code, permission_code)
+values
+  ('owner', 'ai.chat.use'),
+  ('owner', 'ai.workflow.create'),
+  ('owner', 'ai.workflow.patch'),
+  ('owner', 'ai.use_confidential'),
+  ('owner', 'ai.use_legal_secret'),
+  ('owner', 'ai.admin.playground'),
+  ('admin', 'ai.chat.use'),
+  ('admin', 'ai.workflow.create'),
+  ('admin', 'ai.workflow.patch'),
+  ('admin', 'ai.use_confidential'),
+  ('admin', 'ai.use_legal_secret'),
+  ('admin', 'ai.admin.playground'),
+  ('lawyer', 'ai.chat.use'),
+  ('lawyer', 'ai.workflow.create'),
+  ('lawyer', 'ai.workflow.patch'),
+  ('lawyer', 'ai.use_confidential'),
+  ('assistant', 'ai.chat.use'),
+  ('assistant', 'ai.workflow.create'),
+  ('viewer', 'ai.chat.use')
+on conflict (role_code, permission_code) do nothing;
+
 insert into app.ai_provider_connections (
   id,
   workspace_id,

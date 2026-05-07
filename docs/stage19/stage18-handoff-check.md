@@ -1,7 +1,7 @@
 # Stage 18 Handoff Check
 
 Branch: main
-HEAD: 3b6e77bc6ffd789e3fa094ca5000d77c7565a97f
+HEAD: b4bf2fc80c17b3cdc9a76d5fa4ea6fac3fc9f0dc
 Stage 18 release gate artifact: present
 
 Default route remains `default_chat` -> `cometapi` / `deepseek-v4-flash`.

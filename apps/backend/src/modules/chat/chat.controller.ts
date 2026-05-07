@@ -87,7 +87,10 @@ export class ChatController {
     @Body()
     body: {
       readonly sourceMessageId?: string | null;
-      readonly branchMode?: 'project' | 'document_review' | 'automation_builder';
+      readonly branchMode?:
+        | 'project'
+        | 'document_review'
+        | 'automation_builder';
     },
     @Req() request: LexframeRequest,
   ) {

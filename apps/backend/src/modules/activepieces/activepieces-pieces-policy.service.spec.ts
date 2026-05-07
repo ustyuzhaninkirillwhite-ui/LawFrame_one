@@ -193,9 +193,7 @@ describe('ActivepiecesPiecesPolicyService', () => {
     });
 
     expect(policy.piecesTags).not.toContain('activepieces-max-catalog');
-    expect(policy.denylistedPieces).toContain(
-      '@activepieces/piece-cometapi',
-    );
+    expect(policy.denylistedPieces).toContain('@activepieces/piece-cometapi');
   });
 });
 

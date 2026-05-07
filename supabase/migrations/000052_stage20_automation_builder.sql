@@ -2,28 +2,28 @@
 -- LexFrame product DB remains the source of truth for intents, blueprints,
 -- planner evidence, Canvas draft lineage and runtime draft attempts.
 
-insert into app.permissions (code, label, description, category, elevated)
+insert into app.permissions (code, label, description, scope, high_risk)
 values
-  ('automation_builder.view', 'View automation builder', 'View automation builder sessions, intents and blueprints.', 'automation_builder', false),
-  ('automation_builder.create_intent', 'Create automation intent', 'Create AutomationIntent records from chat or builder page.', 'automation_builder', false),
-  ('automation_builder.plan', 'Plan automation blueprint', 'Invoke backend-owned automation planner route.', 'automation_builder', true),
-  ('automation_builder.answer_clarification', 'Answer automation clarification', 'Answer persisted planner clarification questions.', 'automation_builder', false),
-  ('automation_builder.validate', 'Validate automation blueprint', 'Run backend validation and safety gates for AutomationBlueprint.', 'automation_builder', false),
-  ('automation_builder.approve_blueprint', 'Approve automation blueprint', 'Human approval for blueprint conversion.', 'automation_builder', true),
-  ('automation_builder.reject_blueprint', 'Reject automation blueprint', 'Reject a generated AutomationBlueprint.', 'automation_builder', false),
-  ('automation_builder.convert_to_canvas_draft', 'Convert blueprint to Canvas draft', 'Create LexFrame Workflow DSL/Canvas draft from an approved blueprint.', 'automation_builder', true),
-  ('automation_builder.create_runtime_draft', 'Create runtime draft', 'Create backend-controlled runtime draft projection.', 'automation_builder', true),
-  ('automation_builder.view_route_snapshot', 'View planner route snapshot', 'View safe route/provider/model diagnostics.', 'automation_builder', true),
-  ('automation_builder.view_raw_diagnostics', 'View raw planner diagnostics', 'View redacted advanced planner diagnostics.', 'automation_builder', true),
-  ('automation_builder.export', 'Export automation blueprint', 'Export redacted AutomationBlueprint.', 'automation_builder', true),
-  ('automation_builder.manage_prompt_templates', 'Manage planner prompt templates', 'Manage backend-approved planner prompt templates.', 'automation_builder', true),
-  ('automation_builder.use_legal_secret_context', 'Use legal-secret planner context', 'Use legal-secret references only through approved planner policy.', 'automation_builder', true)
+  ('automation_builder.view', 'View automation builder', 'View automation builder sessions, intents and blueprints.', 'automation', false),
+  ('automation_builder.create_intent', 'Create automation intent', 'Create AutomationIntent records from chat or builder page.', 'automation', false),
+  ('automation_builder.plan', 'Plan automation blueprint', 'Invoke backend-owned automation planner route.', 'automation', true),
+  ('automation_builder.answer_clarification', 'Answer automation clarification', 'Answer persisted planner clarification questions.', 'automation', false),
+  ('automation_builder.validate', 'Validate automation blueprint', 'Run backend validation and safety gates for AutomationBlueprint.', 'automation', false),
+  ('automation_builder.approve_blueprint', 'Approve automation blueprint', 'Human approval for blueprint conversion.', 'automation', true),
+  ('automation_builder.reject_blueprint', 'Reject automation blueprint', 'Reject a generated AutomationBlueprint.', 'automation', false),
+  ('automation_builder.convert_to_canvas_draft', 'Convert blueprint to Canvas draft', 'Create LexFrame Workflow DSL/Canvas draft from an approved blueprint.', 'automation', true),
+  ('automation_builder.create_runtime_draft', 'Create runtime draft', 'Create backend-controlled runtime draft projection.', 'automation', true),
+  ('automation_builder.view_route_snapshot', 'View planner route snapshot', 'View safe route/provider/model diagnostics.', 'automation', true),
+  ('automation_builder.view_raw_diagnostics', 'View raw planner diagnostics', 'View redacted advanced planner diagnostics.', 'automation', true),
+  ('automation_builder.export', 'Export automation blueprint', 'Export redacted AutomationBlueprint.', 'automation', true),
+  ('automation_builder.manage_prompt_templates', 'Manage planner prompt templates', 'Manage backend-approved planner prompt templates.', 'automation', true),
+  ('automation_builder.use_legal_secret_context', 'Use legal-secret planner context', 'Use legal-secret references only through approved planner policy.', 'automation', true)
 on conflict (code) do update
 set
   label = excluded.label,
   description = excluded.description,
-  category = excluded.category,
-  elevated = excluded.elevated;
+  scope = excluded.scope,
+  high_risk = excluded.high_risk;
 
 insert into app.role_permissions (role_code, permission_code)
 select role_code::workspace_role, permission_code

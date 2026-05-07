@@ -699,8 +699,7 @@ export class ActivepiecesService {
     );
     const piecesPolicyReady =
       normalizePiecesFilterType(workspaceSecurity.piecesFilterType) ===
-        'ALLOWED' &&
-      effectivePiecesTags.length > 0;
+        'ALLOWED' && effectivePiecesTags.length > 0;
     const apiKeyConfigured = apiKeyStatus.configured;
     const signingKeyConfigured = signingKeyStatus.configured;
     const dependencies: ActivepiecesIntegrationStatus['dependencies'] = [
@@ -3582,17 +3581,6 @@ function normalizeNumberRecord(
     result[key] = toNumber(raw);
   }
   return result;
-}
-
-function buildActivepiecesBuilderUrl(
-  instanceUrl: string,
-  runtimeFlowId: string | null,
-) {
-  if (!runtimeFlowId) {
-    return instanceUrl;
-  }
-
-  return `${instanceUrl}/flows/${encodeURIComponent(runtimeFlowId)}`;
 }
 
 function validInputBindings(step: Record<string, unknown>) {

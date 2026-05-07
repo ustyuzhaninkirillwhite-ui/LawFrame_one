@@ -1,6 +1,10 @@
 import { defineConfig } from "@playwright/test";
 
 const isStage17LiveRun = process.env.LEXFRAME_STAGE17_17_10_LIVE === "1";
+const isStage1820AuditRun =
+  process.env.LEXFRAME_STAGE18_20_AUDIT === "1" ||
+  process.argv.some((arg) => /stage18|stage19|stage20|stage18-20/i.test(arg));
+const auditPlaywrightDir = "../../artifacts/stage18-20/audit/playwright";
 const port = Number(
   process.env.LEXFRAME_E2E_PORT ?? (isStage17LiveRun ? "3100" : "3000"),
 );
@@ -45,7 +49,6 @@ export default defineConfig({
   workers: 1,
   timeout: 60_000,
   retries: process.env.CI ? 1 : 0,
-  outputDir: "test-results",
   projects: [
     {
       name: "default",
@@ -58,8 +61,23 @@ export default defineConfig({
   ],
   reporter: [
     ["list"],
-    ["html", { outputFolder: "playwright-report", open: "never" }],
-    ["json", { outputFile: "playwright-report/results.json" }],
+    [
+      "html",
+      {
+        outputFolder: isStage1820AuditRun
+          ? `${auditPlaywrightDir}/html-report`
+          : "playwright-report",
+        open: "never",
+      },
+    ],
+    [
+      "json",
+      {
+        outputFile: isStage1820AuditRun
+          ? `${auditPlaywrightDir}/results.json`
+          : "playwright-report/results.json",
+      },
+    ],
   ],
   use: {
     baseURL,
@@ -67,6 +85,9 @@ export default defineConfig({
     video: "retain-on-failure",
     screenshot: "only-on-failure",
   },
+  outputDir: isStage1820AuditRun
+    ? `${auditPlaywrightDir}/test-results`
+    : "test-results",
   webServer: [
     {
       command: `corepack pnpm --dir ../.. stage16:build:backend-runtime && corepack pnpm --dir ../../apps/backend start:prod`,

@@ -1,0 +1,35 @@
+{
+  "stage_scope": [
+    "18",
+    "19",
+    "20"
+  ],
+  "generated_at": "2026-05-07T06:53:02.815Z",
+  "branch": "main",
+  "commit_before": "b4bf2fc80c17b3cdc9a76d5fa4ea6fac3fc9f0dc",
+  "commit_after": "b4bf2fc80c17b3cdc9a76d5fa4ea6fac3fc9f0dc",
+  "gates": {
+    "preflight": "PASS",
+    "requirements_traceability": "PASS",
+    "reference_provenance": "PASS",
+    "contracts": "PASS",
+    "backend": "PASS",
+    "frontend": "PASS",
+    "db": "PASS",
+    "runtime": "BLOCKED",
+    "playwright_live": "PASS",
+    "security": "PASS",
+    "stage18": "PASS",
+    "stage19": "PASS",
+    "stage20": "PASS",
+    "full_check": "BLOCKED"
+  },
+  "defects": {
+    "found": 27,
+    "fixed": 10,
+    "open_p0": 1,
+    "open_p1": 1,
+    "open_p2": 0
+  },
+  "acceptance": "REJECT"
+}

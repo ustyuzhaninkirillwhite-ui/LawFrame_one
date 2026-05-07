@@ -11,7 +11,10 @@ export function useLexFrameExternalStoreRuntime(input: {
   readonly isRunning: boolean;
   readonly onSend: (text: string) => Promise<void>;
 }) {
-  const convertMessage = React.useCallback(toAssistantMessage, []);
+  const convertMessage = React.useCallback(
+    (message: ChatMessageDto) => toAssistantMessage(message),
+    [],
+  );
   const onNew = React.useCallback(
     async (message: AppendMessage) => {
       const text = message.content

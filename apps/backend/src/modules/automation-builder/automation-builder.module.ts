@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { AIGatewayModule } from '../ai-gateway/ai-gateway.module';
 import { AuditModule } from '../audit/audit.module';
 import { DatabaseModule } from '../database/database.module';
+import { IdentityModule } from '../identity/identity.module';
 import { AutomationBlueprintCanvasConverterService } from './automation-blueprint-canvas-converter.service';
 import { AutomationBlueprintValidatorService } from './automation-blueprint-validator.service';
 import { AutomationBuilderController } from './automation-builder.controller';
@@ -10,7 +11,7 @@ import { AutomationContextAssemblerService } from './automation-context-assemble
 import { AutomationRuntimeDraftService } from './automation-runtime-draft.service';
 
 @Module({
-  imports: [DatabaseModule, AuditModule, AIGatewayModule],
+  imports: [DatabaseModule, AuditModule, AIGatewayModule, IdentityModule],
   controllers: [AutomationBuilderController],
   providers: [
     AutomationBuilderService,

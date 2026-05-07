@@ -1,6 +1,8 @@
+import { createRequire } from "node:module";
 import { expect, test } from "@playwright/test";
 
-const { invalidFixtures, runtimeSnapshots } = require(
+const loadCjsModule = createRequire(__filename);
+const { invalidFixtures, runtimeSnapshots } = loadCjsModule(
   "../../../packages/canvas-test-fixtures/index.cjs",
 ) as {
   invalidFixtures: readonly {

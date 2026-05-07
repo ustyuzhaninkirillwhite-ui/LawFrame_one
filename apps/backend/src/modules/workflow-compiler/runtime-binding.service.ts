@@ -198,7 +198,12 @@ export class RuntimeBindingService {
     return this.databaseService.transaction(async (client) => {
       const binding = await this.upsertBinding(client, input);
       const snapshotId = await this.insertSnapshot(client, binding.id, input);
-      await this.upsertStage17FlowBinding(client, binding.id, snapshotId, input);
+      await this.upsertStage17FlowBinding(
+        client,
+        binding.id,
+        snapshotId,
+        input,
+      );
       await this.markSyncedSnapshot(client, binding.id, snapshotId, input);
       await this.replaceStepMappings(client, binding.id, input);
       await this.updateInstalledAutomation(client, input);
@@ -547,7 +552,12 @@ export class RuntimeBindingService {
           and fb.workspace_id = $2
           and fb.automation_id = $3
       `,
-      [snapshotId, input.workspaceId, input.automationId, input.traceId ?? randomUUID()],
+      [
+        snapshotId,
+        input.workspaceId,
+        input.automationId,
+        input.traceId ?? randomUUID(),
+      ],
     );
   }
 

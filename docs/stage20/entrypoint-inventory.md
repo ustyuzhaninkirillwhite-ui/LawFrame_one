@@ -169,13 +169,12 @@
 | apps/web/src/mocks/stage15-handlers.ts | 91 | LexFrame existing module | existing module persistence | no | no | no | inventoried |
 | apps/web/src/mocks/stage15-handlers.ts | 92 | LexFrame existing module | existing module persistence | no | no | no | inventoried |
 | apps/web/src/mocks/stage15-handlers.ts | 96 | LexFrame existing module | existing module persistence | no | no | no | inventoried |
-| apps/backend/src/modules/activepieces/activepieces-audit-writer.ts | 6 | Stage 17 Activepieces boundary | runtime binding/evidence tables | no | yes/backend-gated | no | inventoried |
-| apps/backend/src/modules/activepieces/activepieces-audit-writer.ts | 9 | Stage 17 Activepieces boundary | runtime binding/evidence tables | no | yes/backend-gated | no | inventoried |
-| apps/backend/src/modules/activepieces/activepieces-audit-writer.ts | 20 | Stage 17 Activepieces boundary | runtime binding/evidence tables | no | yes/backend-gated | no | inventoried |
-| apps/backend/src/modules/activepieces/activepieces-audit-writer.ts | 23 | Stage 17 Activepieces boundary | runtime binding/evidence tables | no | yes/backend-gated | no | inventoried |
-| apps/backend/src/modules/activepieces/activepieces-audit-writer.ts | 36 | Stage 17 Activepieces boundary | runtime binding/evidence tables | no | yes/backend-gated | no | inventoried |
-| apps/backend/src/modules/activepieces/activepieces-audit-writer.ts | 45 | Stage 17 Activepieces boundary | runtime binding/evidence tables | no | yes/backend-gated | no | inventoried |
-| apps/backend/src/modules/activepieces/activepieces-audit-writer.ts | 46 | Stage 17 Activepieces boundary | runtime binding/evidence tables | no | yes/backend-gated | no | inventoried |
+| apps/backend/src/modules/activepieces/activepieces-audit-writer.ts | 4 | Stage 17 Activepieces boundary | runtime binding/evidence tables | no | yes/backend-gated | no | inventoried |
+| apps/backend/src/modules/activepieces/activepieces-audit-writer.ts | 7 | Stage 17 Activepieces boundary | runtime binding/evidence tables | no | yes/backend-gated | no | inventoried |
+| apps/backend/src/modules/activepieces/activepieces-audit-writer.ts | 18 | Stage 17 Activepieces boundary | runtime binding/evidence tables | no | yes/backend-gated | no | inventoried |
+| apps/backend/src/modules/activepieces/activepieces-audit-writer.ts | 21 | Stage 17 Activepieces boundary | runtime binding/evidence tables | no | yes/backend-gated | no | inventoried |
+| apps/backend/src/modules/activepieces/activepieces-audit-writer.ts | 34 | Stage 17 Activepieces boundary | runtime binding/evidence tables | no | yes/backend-gated | no | inventoried |
+| apps/backend/src/modules/activepieces/activepieces-audit-writer.ts | 43 | Stage 17 Activepieces boundary | runtime binding/evidence tables | no | yes/backend-gated | no | inventoried |
 | apps/backend/src/modules/activepieces/activepieces-canvas-provisioning.service.ts | 17 | Stage 16 Canvas | workflow/canvas draft tables | no | yes/backend-gated | no | inventoried |
 | apps/backend/src/modules/activepieces/activepieces-canvas-provisioning.service.ts | 19 | Stage 16 Canvas | workflow/canvas draft tables | no | yes/backend-gated | no | inventoried |
 | apps/backend/src/modules/activepieces/activepieces-canvas-provisioning.service.ts | 28 | Stage 16 Canvas | workflow/canvas draft tables | no | yes/backend-gated | no | inventoried |
@@ -202,3 +201,4 @@
 | apps/backend/src/modules/activepieces/activepieces-canvas-provisioning.service.ts | 567 | Stage 16 Canvas | workflow/canvas draft tables | no | yes/backend-gated | no | inventoried |
 | apps/backend/src/modules/activepieces/activepieces-canvas-provisioning.service.ts | 609 | Stage 16 Canvas | workflow/canvas draft tables | no | yes/backend-gated | no | inventoried |
 | apps/backend/src/modules/activepieces/activepieces-canvas-provisioning.service.ts | 617 | Stage 16 Canvas | workflow/canvas draft tables | no | yes/backend-gated | no | inventoried |
+| apps/backend/src/modules/activepieces/activepieces-canvas-provisioning.service.ts | 647 | Stage 16 Canvas | workflow/canvas draft tables | no | yes/backend-gated | no | inventoried |

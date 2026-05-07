@@ -241,7 +241,9 @@ export class ProjectKnowledgeService {
   }
 }
 
-function mapProjectKnowledgeRow(row: ProjectKnowledgeRow): ProjectKnowledgeItem {
+function mapProjectKnowledgeRow(
+  row: ProjectKnowledgeRow,
+): ProjectKnowledgeItem {
   return {
     id: row.id,
     workspaceId: row.workspace_id,

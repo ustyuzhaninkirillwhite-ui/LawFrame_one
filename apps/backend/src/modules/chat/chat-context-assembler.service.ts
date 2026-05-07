@@ -115,7 +115,12 @@ export class ChatContextAssemblerService {
     }
 
     if (item.mode === 'full_context' && !policy.ragAvailable) {
-      return this.withDecision(item, 'reference_only', false, 'rag_unavailable');
+      return this.withDecision(
+        item,
+        'reference_only',
+        false,
+        'rag_unavailable',
+      );
     }
 
     return this.withDecision(item, item.mode, false, null);

@@ -304,11 +304,11 @@ describe('ActivepiecesService', () => {
         {
           workspaceId: 'ws_other',
           projectId: 'project_claim_001',
-        automationId: 'aut_stage17',
-        purpose: 'automation_canvas',
-        clientRoute:
-          '/app/projects/project_claim_001/automations/aut_stage17/automation',
-      },
+          automationId: 'aut_stage17',
+          purpose: 'automation_canvas',
+          clientRoute:
+            '/app/projects/project_claim_001/automations/aut_stage17/automation',
+        },
         {
           requestId: 'req_stage17',
           traceId: 'trace_stage17',

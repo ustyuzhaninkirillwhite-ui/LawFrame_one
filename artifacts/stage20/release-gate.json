@@ -4,27 +4,27 @@
     {
       "name": "inventory",
       "status": "pass",
-      "duration_ms": 1241
+      "duration_ms": 9047
     },
     {
       "name": "reference-analyze",
       "status": "pass",
-      "duration_ms": 52
+      "duration_ms": 75
     },
     {
       "name": "license-mit-only",
       "status": "pass",
-      "duration_ms": 26
+      "duration_ms": 25
     },
     {
       "name": "borrowed-elements-verify",
       "status": "pass",
-      "duration_ms": 25
+      "duration_ms": 14
     },
     {
       "name": "stage16-19-handoff",
       "status": "pass",
-      "duration_ms": 45
+      "duration_ms": 25
     },
     {
       "name": "blueprint-contracts",
@@ -34,27 +34,27 @@
     {
       "name": "builder-api-contract",
       "status": "pass",
-      "duration_ms": 14
+      "duration_ms": 23
     },
     {
       "name": "planner-orchestration-test",
       "status": "pass",
-      "duration_ms": 15
+      "duration_ms": 13
     },
     {
       "name": "clarification-test",
       "status": "pass",
-      "duration_ms": 13
+      "duration_ms": 24
     },
     {
       "name": "context-assembler-test",
       "status": "pass",
-      "duration_ms": 14
+      "duration_ms": 13
     },
     {
       "name": "module-resolver-test",
       "status": "pass",
-      "duration_ms": 13
+      "duration_ms": 24
     },
     {
       "name": "blueprint-validation-test",
@@ -64,22 +64,22 @@
     {
       "name": "blueprint-to-canvas-test",
       "status": "pass",
-      "duration_ms": 14
+      "duration_ms": 2
     },
     {
       "name": "runtime-draft-test",
       "status": "pass",
-      "duration_ms": 14
+      "duration_ms": 3
     },
     {
       "name": "mcp-adapter-test",
       "status": "pass",
-      "duration_ms": 13
+      "duration_ms": 3
     },
     {
       "name": "frontend-e2e",
       "status": "pass",
-      "duration_ms": 14
+      "duration_ms": 4
     },
     {
       "name": "tool-cards-test",
@@ -89,17 +89,17 @@
     {
       "name": "prompt-library-test",
       "status": "pass",
-      "duration_ms": 14
+      "duration_ms": 16
     },
     {
       "name": "cross-workspace-security",
       "status": "pass",
-      "duration_ms": 12
+      "duration_ms": 13
     },
     {
       "name": "browser-secret-scan",
       "status": "pass",
-      "duration_ms": 55
+      "duration_ms": 62
     },
     {
       "name": "direct-provider-call-scan",
@@ -109,66 +109,66 @@
     {
       "name": "direct-runtime-call-scan",
       "status": "pass",
-      "duration_ms": 46
+      "duration_ms": 42
     },
     {
       "name": "readiness-test",
       "status": "pass",
-      "duration_ms": 25
+      "duration_ms": 15
     },
     {
       "name": "contracts-typecheck",
       "status": "pass",
-      "duration_ms": 1467
+      "duration_ms": 2782
     },
     {
       "name": "api-client-typecheck",
       "status": "pass",
-      "duration_ms": 1619
+      "duration_ms": 2097
     },
     {
       "name": "backend-typecheck",
       "status": "pass",
-      "duration_ms": 4016
+      "duration_ms": 23910
     },
     {
       "name": "web-typecheck",
       "status": "pass",
-      "duration_ms": 4183
+      "duration_ms": 29776
     },
     {
       "name": "backend-lint",
       "status": "pass",
-      "duration_ms": 6743
+      "duration_ms": 7812
     },
     {
       "name": "web-lint",
       "status": "pass",
-      "duration_ms": 4100
+      "duration_ms": 35393
     },
     {
       "name": "backend-automation-builder-tests",
       "status": "pass",
-      "duration_ms": 12192
+      "duration_ms": 2502
     },
     {
       "name": "web-automation-builder-tests",
       "status": "pass",
-      "duration_ms": 16210
+      "duration_ms": 23696
     },
     {
       "name": "docs",
       "status": "pass",
-      "duration_ms": 520
+      "duration_ms": 40
     },
     {
       "name": "artifacts-verify",
       "status": "pass",
-      "duration_ms": 15
+      "duration_ms": 14
     }
   ],
   "live_ai_smoke": "degraded/not_configured",
   "live_activepieces_mcp_smoke": "degraded/not_configured",
   "live_smoke_reason": "Live AI/AP/MCP smoke requires external keys/runtime; mock and degraded tests are mandatory and passed.",
-  "generated_at": "2026-05-06T21:02:12.620Z"
+  "generated_at": "2026-05-07T05:41:49.738Z"
 }

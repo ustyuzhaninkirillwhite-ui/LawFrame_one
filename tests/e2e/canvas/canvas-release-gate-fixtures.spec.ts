@@ -1,11 +1,13 @@
+import { createRequire } from "node:module";
 import { expect, test } from "@playwright/test";
 
+const loadCjsModule = createRequire(__filename);
 const {
   invalidFixtures,
   mswFixtures,
   releaseGateMatrix,
   validFixtures,
-} = require("../../../packages/canvas-test-fixtures/index.cjs") as {
+} = loadCjsModule("../../../packages/canvas-test-fixtures/index.cjs") as {
   validFixtures: readonly { name: string; workflow: { nodes: readonly unknown[] } }[];
   invalidFixtures: readonly {
     name: string;

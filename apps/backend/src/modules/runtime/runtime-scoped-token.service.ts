@@ -1,7 +1,12 @@
 import { loadServerEnv } from '@lexframe/config';
 import { AppHttpException } from '../../common/errors/app-http.exception';
 import { Injectable } from '@nestjs/common';
-import { createHash, createHmac, randomUUID, timingSafeEqual } from 'node:crypto';
+import {
+  createHash,
+  createHmac,
+  randomUUID,
+  timingSafeEqual,
+} from 'node:crypto';
 
 export type RuntimeScope =
   | 'runtime.ai.invoke'
@@ -85,7 +90,9 @@ export class RuntimeScopedTokenService {
       run_id: input.runId,
       ap_project_id: input.apProjectId,
       ap_flow_id: input.apFlowId,
-      ...(input.apFlowVersionId ? { ap_flow_version_id: input.apFlowVersionId } : {}),
+      ...(input.apFlowVersionId
+        ? { ap_flow_version_id: input.apFlowVersionId }
+        : {}),
       step_name: input.stepName,
       purpose: input.purpose,
       scope: Array.from(new Set(input.scope)).sort(),
@@ -123,10 +130,7 @@ export class RuntimeScopedTokenService {
     if (input.purpose && claims.purpose !== input.purpose) {
       throw invalidScopedToken('Scoped runtime token purpose is invalid.');
     }
-    if (
-      input.requiredScope &&
-      !claims.scope.includes(input.requiredScope)
-    ) {
+    if (input.requiredScope && !claims.scope.includes(input.requiredScope)) {
       throw invalidScopedToken('Scoped runtime token scope is invalid.');
     }
     if (
@@ -155,13 +159,14 @@ export class RuntimeScopedTokenService {
       );
     }
     if (input.expectedFlowId && claims.ap_flow_id !== input.expectedFlowId) {
-      throw invalidScopedToken('Scoped runtime token flow boundary is invalid.');
+      throw invalidScopedToken(
+        'Scoped runtime token flow boundary is invalid.',
+      );
     }
-    if (
-      input.expectedStepName &&
-      claims.step_name !== input.expectedStepName
-    ) {
-      throw invalidScopedToken('Scoped runtime token step boundary is invalid.');
+    if (input.expectedStepName && claims.step_name !== input.expectedStepName) {
+      throw invalidScopedToken(
+        'Scoped runtime token step boundary is invalid.',
+      );
     }
 
     return claims;
@@ -187,14 +192,19 @@ function sign(claims: ScopedRuntimeTokenClaims, secret: string) {
   return `${header}.${payload}.${signature}`;
 }
 
-function verifySignedToken(token: string, secret: string): ScopedRuntimeTokenClaims {
+function verifySignedToken(
+  token: string,
+  secret: string,
+): ScopedRuntimeTokenClaims {
   const [header, payload, signature, extra] = token.split('.');
   if (!header || !payload || !signature || extra !== undefined) {
     throw invalidScopedToken('Runtime authorization token is malformed.');
   }
   const expected = hmac(`${header}.${payload}`, secret);
   if (!safeEqual(signature, expected)) {
-    throw invalidScopedToken('Runtime authorization token signature is invalid.');
+    throw invalidScopedToken(
+      'Runtime authorization token signature is invalid.',
+    );
   }
 
   const decodedHeader = parseBase64UrlJson(header) as Record<string, unknown>;
@@ -226,7 +236,9 @@ function validateClaims(value: unknown): ScopedRuntimeTokenClaims {
   ];
   for (const key of requiredStrings) {
     if (typeof claims[key] !== 'string' || String(claims[key]).length === 0) {
-      throw invalidScopedToken('Runtime authorization token payload is invalid.');
+      throw invalidScopedToken(
+        'Runtime authorization token payload is invalid.',
+      );
     }
   }
   if (claims.iss !== 'lexframe-runtime') {
@@ -289,7 +301,9 @@ function base64UrlJson(value: unknown) {
 
 function parseBase64UrlJson(value: string): unknown {
   try {
-    return JSON.parse(Buffer.from(value, 'base64url').toString('utf8')) as unknown;
+    return JSON.parse(
+      Buffer.from(value, 'base64url').toString('utf8'),
+    ) as unknown;
   } catch {
     throw invalidScopedToken('Runtime authorization token payload is invalid.');
   }
@@ -305,7 +319,10 @@ function safeEqual(left: string, right: string) {
 }
 
 function clampTtl(value: number) {
-  return Math.min(MAX_TTL_SECONDS, Math.max(MIN_TTL_SECONDS, Math.floor(value)));
+  return Math.min(
+    MAX_TTL_SECONDS,
+    Math.max(MIN_TTL_SECONDS, Math.floor(value)),
+  );
 }
 
 function invalidScopedToken(message: string) {

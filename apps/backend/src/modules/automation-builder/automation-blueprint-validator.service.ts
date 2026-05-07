@@ -109,6 +109,14 @@ export class AutomationBlueprintValidatorService {
       });
     }
 
+    for (const block of blueprint.riskReport.blocks) {
+      policyBlocks.push({
+        code: 'planner_policy_block',
+        message: block,
+        severity: 'policy_block',
+      });
+    }
+
     for (const step of blueprint.steps) {
       const runtime = step.runtimeMapping;
       if (runtime?.provider === 'activepieces') {

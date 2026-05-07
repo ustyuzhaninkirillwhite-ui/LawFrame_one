@@ -55,6 +55,7 @@ interface BlueprintRow {
   readonly id: string;
   readonly workspace_id: string;
   readonly current_version_id: string | null;
+  readonly status: AutomationBlueprintStatus;
   readonly blueprint: AutomationBlueprint | null;
 }
 
@@ -402,20 +403,18 @@ export class AutomationBuilderService {
             workspace_id,
             project_id,
             intent_id,
-            current_version_id,
             title,
             summary,
             status,
             created_by
           )
-          values ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+          values ($1, $2, $3, $4, $5, $6, $7, $8)
         `,
         [
           blueprintId,
           workspaceId,
           intent.projectId ?? null,
           intentId,
-          versionId,
           validatedBlueprint.title,
           validatedBlueprint.summary,
           validatedBlueprint.status,
@@ -452,6 +451,16 @@ export class AutomationBuilderService {
           JSON.stringify(validationSummary),
           actor.id,
         ],
+      );
+      await client.query(
+        `
+          update app.automation_blueprints
+          set current_version_id = $3,
+              updated_at = timezone('utc', now())
+          where id = $1
+            and workspace_id = $2
+        `,
+        [blueprintId, workspaceId, versionId],
       );
 
       for (const step of validatedBlueprint.steps) {
@@ -1154,6 +1163,7 @@ export class AutomationBuilderService {
           ab.id,
           ab.workspace_id,
           ab.current_version_id,
+          ab.status,
           abv.blueprint
         from app.automation_blueprints ab
         inner join app.automation_blueprint_versions abv
@@ -1171,7 +1181,10 @@ export class AutomationBuilderService {
         'Automation blueprint was not found.',
       );
     }
-    return row.blueprint;
+    return {
+      ...row.blueprint,
+      status: row.status,
+    };
   }
 
   private async updateBlueprintStatus(
@@ -1242,6 +1255,7 @@ function buildBlueprintFromIntent(input: {
   const needsDelivery = /send|email|telegram|webhook|deliver|отправ/i.test(
     input.intent.userGoal,
   );
+  const unsafePromptRequest = isUnsafePlannerRequest(input.intent.userGoal);
   const steps: AutomationBlueprint['steps'] = [
     {
       id: 'trigger',
@@ -1441,7 +1455,7 @@ function buildBlueprintFromIntent(input: {
       target: 'canvas_draft',
       activepieces: {
         required: true,
-        createDraftAllowed: !needsDelivery,
+        createDraftAllowed: !needsDelivery && !unsafePromptRequest,
         requiredPieces: ['@lexframe/piece-legal'],
         requiredConnections: [],
       },
@@ -1456,13 +1470,22 @@ function buildBlueprintFromIntent(input: {
       ],
     },
     riskReport: {
-      riskLevel: needsDelivery ? 'high' : 'medium',
-      warnings: needsDelivery
+      riskLevel: unsafePromptRequest
+        ? 'critical'
+        : needsDelivery
+          ? 'high'
+          : 'medium',
+      warnings:
+        needsDelivery && !unsafePromptRequest
+          ? [
+              'External delivery is represented only as a draft with approval gate.',
+            ]
+          : [],
+      blocks: unsafePromptRequest
         ? [
-            'External delivery is represented only as a draft with approval gate.',
+            'Planner request attempted to bypass approval, use direct secrets, create uncontrolled HTTP/external calls, or publish/run autonomously.',
           ]
         : [],
-      blocks: [],
     },
     clarificationState: {
       status:
@@ -1501,6 +1524,12 @@ function buildBlueprintFromIntent(input: {
     createdAt: now,
     updatedAt: now,
   };
+}
+
+function isUnsafePlannerRequest(userGoal: string) {
+  return /bypass|api[_ -]?key|secret|token|http call|external domain|publish|run production|autonomous|without approval|РѕР±Рѕ|РѕРїСѓР±|Р·Р°РїСѓСЃС‚/i.test(
+    userGoal,
+  );
 }
 
 function requireWorkspace(access: AccessContext) {

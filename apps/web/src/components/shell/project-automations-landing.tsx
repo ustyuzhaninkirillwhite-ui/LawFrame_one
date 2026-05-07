@@ -35,7 +35,6 @@ export function ProjectAutomationsLanding({
 
   React.useEffect(() => {
     if (!ensureCanvas.isPending) {
-      setEnsureTimedOut(false);
       return;
     }
 

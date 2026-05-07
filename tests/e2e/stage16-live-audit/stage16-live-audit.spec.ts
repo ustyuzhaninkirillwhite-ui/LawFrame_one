@@ -5,7 +5,6 @@ import {
   expect,
   test,
   type APIRequestContext,
-  type Browser,
   type Locator,
   type Page,
   type TestInfo,

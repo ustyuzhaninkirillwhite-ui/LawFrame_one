@@ -1,6 +1,8 @@
+import { createRequire } from "node:module";
 import { expect, test } from "@playwright/test";
 
-const { largeFixtures, performanceBudgets } = require(
+const loadCjsModule = createRequire(__filename);
+const { largeFixtures, performanceBudgets } = loadCjsModule(
   "../../../packages/canvas-test-fixtures/index.cjs",
 ) as {
   largeFixtures: readonly {

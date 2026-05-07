@@ -4,12 +4,12 @@
     {
       "name": "license",
       "status": "pass",
-      "duration_ms": 73
+      "duration_ms": 70
     },
     {
       "name": "reference-analyze",
       "status": "pass",
-      "duration_ms": 24
+      "duration_ms": 26
     },
     {
       "name": "borrowed-elements-verify",
@@ -19,65 +19,65 @@
     {
       "name": "inventory",
       "status": "pass",
-      "duration_ms": 5945
+      "duration_ms": 232
     },
     {
       "name": "direct-provider-call-scan",
       "status": "pass",
-      "duration_ms": 149
+      "duration_ms": 159
     },
     {
       "name": "browser-secret-scan",
       "status": "pass",
-      "duration_ms": 41
+      "duration_ms": 61
     },
     {
       "name": "contracts-typecheck",
       "status": "pass",
-      "duration_ms": 2719
+      "duration_ms": 1780
     },
     {
       "name": "backend-typecheck",
       "status": "pass",
-      "duration_ms": 16311
+      "duration_ms": 12344
     },
     {
       "name": "backend-lint-stage18",
       "status": "pass",
-      "duration_ms": 23118
+      "duration_ms": 9658
     },
     {
       "name": "route-registry-test",
       "status": "pass",
-      "duration_ms": 14215
+      "duration_ms": 12169
     },
     {
       "name": "provider-openai-compatible-test",
       "status": "pass",
-      "duration_ms": 1844
+      "duration_ms": 1959
     },
     {
       "name": "stream-protocol-test",
       "status": "pass",
-      "duration_ms": 1535
+      "duration_ms": 1633
     },
     {
       "name": "piece-gateway-test",
       "status": "pass",
-      "duration_ms": 1214
+      "duration_ms": 1360
     },
     {
       "name": "readiness-test",
       "status": "pass",
-      "duration_ms": 4704
+      "duration_ms": 3976
     },
     {
       "name": "docs",
       "status": "pass",
-      "duration_ms": 231
+      "duration_ms": 179
     }
   ],
   "live_provider_smoke": "not_configured",
   "live_provider_reason": "Live CometAPI smoke is optional; mock-mode adapter and route tests are mandatory.",
-  "generated_at": "2026-05-06T18:53:46.441Z"
+  "generated_at": "2026-05-07T06:45:55.833Z"
 }

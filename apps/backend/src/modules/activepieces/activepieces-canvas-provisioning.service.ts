@@ -779,9 +779,11 @@ export class ActivepiecesCanvasProvisioningService implements OnModuleDestroy {
         [ids.userId, `lex_user_${input.actor.id}`, ids.identityId],
       );
 
-      if (await this.hasActivepiecesColumn(client, 'platform', 'showPoweredBy')) {
+      if (
+        await this.hasActivepiecesColumn(client, 'platform', 'showPoweredBy')
+      ) {
         await client.query(
-        `
+          `
           insert into platform (
             id,
             "ownerId",
@@ -875,19 +877,19 @@ export class ActivepiecesCanvasProvisioningService implements OnModuleDestroy {
             "copilotSettings" = excluded."copilotSettings",
             updated = now()
         `,
-        [
-          STAGE17_PLATFORM_ID,
-          ids.userId,
-          STAGE17_AUTOMATION_BRAND.platformName,
-          STAGE17_AUTOMATION_BRAND.logoIconUrl,
-          STAGE17_AUTOMATION_BRAND.fullLogoUrl,
-          STAGE17_AUTOMATION_BRAND.favIconUrl,
-          platformPiecesPolicy.filteredPieceNames,
-          platformPiecesPolicy.filteredPieceBehavior,
-          [...STAGE17_PINNED_PIECE_NAMES],
-          STAGE17_AUTOMATION_BRAND.primaryColor,
-        ],
-      );
+          [
+            STAGE17_PLATFORM_ID,
+            ids.userId,
+            STAGE17_AUTOMATION_BRAND.platformName,
+            STAGE17_AUTOMATION_BRAND.logoIconUrl,
+            STAGE17_AUTOMATION_BRAND.fullLogoUrl,
+            STAGE17_AUTOMATION_BRAND.favIconUrl,
+            platformPiecesPolicy.filteredPieceNames,
+            platformPiecesPolicy.filteredPieceBehavior,
+            [...STAGE17_PINNED_PIECE_NAMES],
+            STAGE17_AUTOMATION_BRAND.primaryColor,
+          ],
+        );
       } else {
         await this.upsertModernPlatform(client, {
           ownerId: ids.userId,
@@ -909,7 +911,7 @@ export class ActivepiecesCanvasProvisioningService implements OnModuleDestroy {
 
       if (await this.hasActivepiecesColumn(client, 'project', 'notifyStatus')) {
         await client.query(
-        `
+          `
           insert into project (
             id,
             "ownerId",
@@ -929,14 +931,14 @@ export class ActivepiecesCanvasProvisioningService implements OnModuleDestroy {
             "externalId" = excluded."externalId",
             updated = now()
         `,
-        [
-          ids.projectId,
-          ids.userId,
-          `${input.workspaceName} - автоматизации`,
-          STAGE17_PLATFORM_ID,
-          `lex_ws_${input.workspaceId}`,
-        ],
-      );
+          [
+            ids.projectId,
+            ids.userId,
+            `${input.workspaceName} - автоматизации`,
+            STAGE17_PLATFORM_ID,
+            `lex_ws_${input.workspaceId}`,
+          ],
+        );
       } else {
         await this.upsertModernProject(client, {
           projectId: ids.projectId,
@@ -954,7 +956,7 @@ export class ActivepiecesCanvasProvisioningService implements OnModuleDestroy {
         )
       ) {
         await client.query(
-        `
+          `
           insert into project_plan (
             id,
             "projectId",
@@ -974,20 +976,20 @@ export class ActivepiecesCanvasProvisioningService implements OnModuleDestroy {
             tasks = excluded.tasks,
             updated = now()
         `,
-        [
-          ids.planId,
-          ids.projectId,
-          `lexframe_customer_${ids.planId}`,
-          `lexframe_subscription_${ids.planId}`,
-        ],
-      );
+          [
+            ids.planId,
+            ids.projectId,
+            `lexframe_customer_${ids.planId}`,
+            `lexframe_subscription_${ids.planId}`,
+          ],
+        );
       } else {
         await this.upsertModernProjectPlan(client, ids);
       }
 
       if (await this.hasActivepiecesColumn(client, 'flow', 'schedule')) {
         await client.query(
-        `
+          `
           insert into flow (
             id,
             "projectId",
@@ -1005,8 +1007,8 @@ export class ActivepiecesCanvasProvisioningService implements OnModuleDestroy {
             "externalId" = excluded."externalId",
             updated = now()
         `,
-        [ids.flowId, ids.projectId, input.automationId],
-      );
+          [ids.flowId, ids.projectId, input.automationId],
+        );
       } else {
         await this.upsertModernFlow(client, {
           flowId: ids.flowId,
@@ -1030,7 +1032,7 @@ export class ActivepiecesCanvasProvisioningService implements OnModuleDestroy {
         });
       } else {
         await client.query(
-        `
+          `
           insert into flow_version (
             id,
             "flowId",
@@ -1076,14 +1078,14 @@ export class ActivepiecesCanvasProvisioningService implements OnModuleDestroy {
             "schemaVersion" = excluded."schemaVersion",
             updated = now()
         `,
-        [
-          ids.flowVersionId,
-          ids.flowId,
-          ids.userId,
-          STAGE17_FLOW_DISPLAY_NAME,
-          STAGE17_MANUAL_TRIGGER_DISPLAY_NAME,
-        ],
-      );
+          [
+            ids.flowVersionId,
+            ids.flowId,
+            ids.userId,
+            STAGE17_FLOW_DISPLAY_NAME,
+            STAGE17_MANUAL_TRIGGER_DISPLAY_NAME,
+          ],
+        );
       }
 
       await client.query('commit');

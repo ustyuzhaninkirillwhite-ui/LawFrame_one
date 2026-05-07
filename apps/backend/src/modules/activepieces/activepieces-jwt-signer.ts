@@ -21,7 +21,9 @@ export class ActivepiecesJwtSigner {
     private readonly secretsService?: SecretsService,
   ) {}
 
-  async issue(input: ActivepiecesJwtIssueInput): Promise<ActivepiecesJwtIssueResult> {
+  async issue(
+    input: ActivepiecesJwtIssueInput,
+  ): Promise<ActivepiecesJwtIssueResult> {
     const signingKey = this.resolveSigningPrivateKey();
 
     if (!signingKey.includes('BEGIN PRIVATE KEY')) {
@@ -145,9 +147,9 @@ function isUsableSecret(value: string | undefined) {
   const trimmed = value?.trim();
   return Boolean(
     trimmed &&
-      trimmed !== 'stage0_signing_private_key' &&
-      !/^(stage0_|replace_with_|demo_|placeholder|example|change_me|PASTE_|YOUR_|<)/i.test(
-        trimmed,
-      ),
+    trimmed !== 'stage0_signing_private_key' &&
+    !/^(stage0_|replace_with_|demo_|placeholder|example|change_me|PASTE_|YOUR_|<)/i.test(
+      trimmed,
+    ),
   );
 }

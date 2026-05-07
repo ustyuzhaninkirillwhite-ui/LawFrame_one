@@ -2,7 +2,6 @@ import type {
   ChatMessagesResponse,
   ChatSearchResponse,
   ChatStreamSnapshot,
-  ChatThreadListResponse,
   ChatThreadResponse,
   CreateChatMessageRequest,
   ProjectKnowledgeItem,

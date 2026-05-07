@@ -1,6 +1,4 @@
-import type {
-  AuthenticatedActor,
-} from '../../common/types/lexframe-request';
+import type { AuthenticatedActor } from '../../common/types/lexframe-request';
 import { Injectable } from '@nestjs/common';
 import { AuditService } from '../audit/audit.service';
 import type { ActivepiecesSessionRequestMeta } from './activepieces-session.types';
@@ -42,16 +40,16 @@ export class ActivepiecesAuditWriter {
         secretsStored: false,
       },
       metadata: redactMetadata({
-        ...(activepiecesEmbedSessionId
-          ? { activepiecesEmbedSessionId }
-          : {}),
+        ...(activepiecesEmbedSessionId ? { activepiecesEmbedSessionId } : {}),
         ...(input.metadata ?? {}),
       }),
     });
   }
 }
 
-function redactMetadata(value: Record<string, unknown>): Record<string, unknown> {
+function redactMetadata(
+  value: Record<string, unknown>,
+): Record<string, unknown> {
   const redacted: Record<string, unknown> = {};
 
   for (const [key, nested] of Object.entries(value)) {
@@ -61,11 +59,7 @@ function redactMetadata(value: Record<string, unknown>): Record<string, unknown>
     }
 
     if (Array.isArray(nested)) {
-      redacted[key] = nested.map((entry) =>
-        typeof entry === 'object' && entry !== null
-          ? redactMetadata(entry as Record<string, unknown>)
-          : entry,
-      );
+      redacted[key] = nested.map((entry) => redactMetadataValue(entry));
       continue;
     }
 
@@ -78,6 +72,14 @@ function redactMetadata(value: Record<string, unknown>): Record<string, unknown>
   }
 
   return redacted;
+}
+
+function redactMetadataValue(value: unknown): unknown {
+  if (typeof value === 'object' && value !== null) {
+    return redactMetadata(value as Record<string, unknown>);
+  }
+
+  return value;
 }
 
 function isSensitiveKey(key: string) {

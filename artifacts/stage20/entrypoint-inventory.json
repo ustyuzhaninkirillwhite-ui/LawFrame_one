@@ -2007,7 +2007,7 @@
     },
     {
       "file": "apps/backend/src/modules/activepieces/activepieces-audit-writer.ts",
-      "line": 6,
+      "line": 4,
       "current_owner": "Stage 17 Activepieces boundary",
       "current_persistence_path": "runtime binding/evidence tables",
       "uses_ai_gateway": false,
@@ -2019,7 +2019,7 @@
     },
     {
       "file": "apps/backend/src/modules/activepieces/activepieces-audit-writer.ts",
-      "line": 9,
+      "line": 7,
       "current_owner": "Stage 17 Activepieces boundary",
       "current_persistence_path": "runtime binding/evidence tables",
       "uses_ai_gateway": false,
@@ -2031,7 +2031,7 @@
     },
     {
       "file": "apps/backend/src/modules/activepieces/activepieces-audit-writer.ts",
-      "line": 20,
+      "line": 18,
       "current_owner": "Stage 17 Activepieces boundary",
       "current_persistence_path": "runtime binding/evidence tables",
       "uses_ai_gateway": false,
@@ -2043,7 +2043,7 @@
     },
     {
       "file": "apps/backend/src/modules/activepieces/activepieces-audit-writer.ts",
-      "line": 23,
+      "line": 21,
       "current_owner": "Stage 17 Activepieces boundary",
       "current_persistence_path": "runtime binding/evidence tables",
       "uses_ai_gateway": false,
@@ -2055,7 +2055,7 @@
     },
     {
       "file": "apps/backend/src/modules/activepieces/activepieces-audit-writer.ts",
-      "line": 36,
+      "line": 34,
       "current_owner": "Stage 17 Activepieces boundary",
       "current_persistence_path": "runtime binding/evidence tables",
       "uses_ai_gateway": false,
@@ -2067,19 +2067,7 @@
     },
     {
       "file": "apps/backend/src/modules/activepieces/activepieces-audit-writer.ts",
-      "line": 45,
-      "current_owner": "Stage 17 Activepieces boundary",
-      "current_persistence_path": "runtime binding/evidence tables",
-      "uses_ai_gateway": false,
-      "can_create_workflow_canvas_activepieces_flow": true,
-      "can_publish_run_deliver": false,
-      "frontend_can_influence_provider_model_runtime_directly": false,
-      "cross_workspace_project_data_risk": "not_applicable",
-      "stage20_changes_applied": "inventoried"
-    },
-    {
-      "file": "apps/backend/src/modules/activepieces/activepieces-audit-writer.ts",
-      "line": 46,
+      "line": 43,
       "current_owner": "Stage 17 Activepieces boundary",
       "current_persistence_path": "runtime binding/evidence tables",
       "uses_ai_gateway": false,
@@ -2499,7 +2487,7 @@
     },
     {
       "file": "apps/backend/src/modules/activepieces/activepieces-canvas-provisioning.service.ts",
-      "line": 782,
+      "line": 783,
       "current_owner": "Stage 16 Canvas",
       "current_persistence_path": "workflow/canvas draft tables",
       "uses_ai_gateway": false,
@@ -2511,7 +2499,7 @@
     },
     {
       "file": "apps/backend/src/modules/activepieces/activepieces-canvas-provisioning.service.ts",
-      "line": 910,
+      "line": 912,
       "current_owner": "Stage 16 Canvas",
       "current_persistence_path": "workflow/canvas draft tables",
       "uses_ai_gateway": false,
@@ -2523,7 +2511,7 @@
     },
     {
       "file": "apps/backend/src/modules/activepieces/activepieces-canvas-provisioning.service.ts",
-      "line": 950,
+      "line": 952,
       "current_owner": "Stage 16 Canvas",
       "current_persistence_path": "workflow/canvas draft tables",
       "uses_ai_gateway": false,
@@ -2535,7 +2523,7 @@
     },
     {
       "file": "apps/backend/src/modules/activepieces/activepieces-canvas-provisioning.service.ts",
-      "line": 988,
+      "line": 990,
       "current_owner": "Stage 16 Canvas",
       "current_persistence_path": "workflow/canvas draft tables",
       "uses_ai_gateway": false,
@@ -2547,7 +2535,7 @@
     },
     {
       "file": "apps/backend/src/modules/activepieces/activepieces-canvas-provisioning.service.ts",
-      "line": 1019,
+      "line": 1021,
       "current_owner": "Stage 16 Canvas",
       "current_persistence_path": "workflow/canvas draft tables",
       "uses_ai_gateway": false,
@@ -2559,7 +2547,7 @@
     },
     {
       "file": "apps/backend/src/modules/activepieces/activepieces-canvas-provisioning.service.ts",
-      "line": 1054,
+      "line": 1056,
       "current_owner": "Stage 16 Canvas",
       "current_persistence_path": "workflow/canvas draft tables",
       "uses_ai_gateway": false,
@@ -2571,7 +2559,7 @@
     },
     {
       "file": "apps/backend/src/modules/activepieces/activepieces-canvas-provisioning.service.ts",
-      "line": 1094,
+      "line": 1096,
       "current_owner": "Stage 16 Canvas",
       "current_persistence_path": "workflow/canvas draft tables",
       "uses_ai_gateway": false,
@@ -2583,7 +2571,7 @@
     },
     {
       "file": "apps/backend/src/modules/activepieces/activepieces-canvas-provisioning.service.ts",
-      "line": 1106,
+      "line": 1108,
       "current_owner": "Stage 16 Canvas",
       "current_persistence_path": "workflow/canvas draft tables",
       "uses_ai_gateway": false,
@@ -2595,7 +2583,7 @@
     },
     {
       "file": "apps/backend/src/modules/activepieces/activepieces-canvas-provisioning.service.ts",
-      "line": 1107,
+      "line": 1109,
       "current_owner": "Stage 16 Canvas",
       "current_persistence_path": "workflow/canvas draft tables",
       "uses_ai_gateway": false,
@@ -2607,7 +2595,7 @@
     },
     {
       "file": "apps/backend/src/modules/activepieces/activepieces-canvas-provisioning.service.ts",
-      "line": 1122,
+      "line": 1124,
       "current_owner": "Stage 16 Canvas",
       "current_persistence_path": "workflow/canvas draft tables",
       "uses_ai_gateway": false,
@@ -2619,7 +2607,7 @@
     },
     {
       "file": "apps/backend/src/modules/activepieces/activepieces-canvas-provisioning.service.ts",
-      "line": 1147,
+      "line": 1149,
       "current_owner": "Stage 16 Canvas",
       "current_persistence_path": "workflow/canvas draft tables",
       "uses_ai_gateway": false,
@@ -2631,7 +2619,7 @@
     },
     {
       "file": "apps/backend/src/modules/activepieces/activepieces-canvas-provisioning.service.ts",
-      "line": 1264,
+      "line": 1266,
       "current_owner": "Stage 16 Canvas",
       "current_persistence_path": "workflow/canvas draft tables",
       "uses_ai_gateway": false,
@@ -2643,7 +2631,7 @@
     },
     {
       "file": "apps/backend/src/modules/activepieces/activepieces-canvas-provisioning.service.ts",
-      "line": 1357,
+      "line": 1359,
       "current_owner": "Stage 16 Canvas",
       "current_persistence_path": "workflow/canvas draft tables",
       "uses_ai_gateway": false,
@@ -2655,19 +2643,7 @@
     },
     {
       "file": "apps/backend/src/modules/activepieces/activepieces-canvas-provisioning.service.ts",
-      "line": 1398,
-      "current_owner": "Stage 16 Canvas",
-      "current_persistence_path": "workflow/canvas draft tables",
-      "uses_ai_gateway": false,
-      "can_create_workflow_canvas_activepieces_flow": true,
-      "can_publish_run_deliver": false,
-      "frontend_can_influence_provider_model_runtime_directly": false,
-      "cross_workspace_project_data_risk": "not_applicable",
-      "stage20_changes_applied": "inventoried"
-    },
-    {
-      "file": "apps/backend/src/modules/activepieces/activepieces-canvas-provisioning.service.ts",
-      "line": 1404,
+      "line": 1400,
       "current_owner": "Stage 16 Canvas",
       "current_persistence_path": "workflow/canvas draft tables",
       "uses_ai_gateway": false,
@@ -2691,7 +2667,7 @@
     },
     {
       "file": "apps/backend/src/modules/activepieces/activepieces-canvas-provisioning.service.ts",
-      "line": 1500,
+      "line": 1408,
       "current_owner": "Stage 16 Canvas",
       "current_persistence_path": "workflow/canvas draft tables",
       "uses_ai_gateway": false,
@@ -2703,7 +2679,7 @@
     },
     {
       "file": "apps/backend/src/modules/activepieces/activepieces-canvas-provisioning.service.ts",
-      "line": 1541,
+      "line": 1502,
       "current_owner": "Stage 16 Canvas",
       "current_persistence_path": "workflow/canvas draft tables",
       "uses_ai_gateway": false,
@@ -2715,19 +2691,7 @@
     },
     {
       "file": "apps/backend/src/modules/activepieces/activepieces-canvas-provisioning.service.ts",
-      "line": 1547,
-      "current_owner": "Stage 16 Canvas",
-      "current_persistence_path": "workflow/canvas draft tables",
-      "uses_ai_gateway": false,
-      "can_create_workflow_canvas_activepieces_flow": true,
-      "can_publish_run_deliver": false,
-      "frontend_can_influence_provider_model_runtime_directly": false,
-      "cross_workspace_project_data_risk": "not_applicable",
-      "stage20_changes_applied": "inventoried"
-    },
-    {
-      "file": "apps/backend/src/modules/activepieces/activepieces-canvas-provisioning.service.ts",
-      "line": 1548,
+      "line": 1543,
       "current_owner": "Stage 16 Canvas",
       "current_persistence_path": "workflow/canvas draft tables",
       "uses_ai_gateway": false,
@@ -2763,6 +2727,18 @@
     },
     {
       "file": "apps/backend/src/modules/activepieces/activepieces-canvas-provisioning.service.ts",
+      "line": 1551,
+      "current_owner": "Stage 16 Canvas",
+      "current_persistence_path": "workflow/canvas draft tables",
+      "uses_ai_gateway": false,
+      "can_create_workflow_canvas_activepieces_flow": true,
+      "can_publish_run_deliver": false,
+      "frontend_can_influence_provider_model_runtime_directly": false,
+      "cross_workspace_project_data_risk": "not_applicable",
+      "stage20_changes_applied": "inventoried"
+    },
+    {
+      "file": "apps/backend/src/modules/activepieces/activepieces-canvas-provisioning.service.ts",
       "line": 1552,
       "current_owner": "Stage 16 Canvas",
       "current_persistence_path": "workflow/canvas draft tables",
@@ -2775,7 +2751,7 @@
     },
     {
       "file": "apps/backend/src/modules/activepieces/activepieces-canvas-provisioning.service.ts",
-      "line": 1553,
+      "line": 1554,
       "current_owner": "Stage 16 Canvas",
       "current_persistence_path": "workflow/canvas draft tables",
       "uses_ai_gateway": false,
@@ -2787,7 +2763,7 @@
     },
     {
       "file": "apps/backend/src/modules/activepieces/activepieces-canvas-provisioning.service.ts",
-      "line": 1564,
+      "line": 1555,
       "current_owner": "Stage 16 Canvas",
       "current_persistence_path": "workflow/canvas draft tables",
       "uses_ai_gateway": false,
@@ -2799,7 +2775,7 @@
     },
     {
       "file": "apps/backend/src/modules/activepieces/activepieces-canvas-provisioning.service.ts",
-      "line": 1573,
+      "line": 1566,
       "current_owner": "Stage 16 Canvas",
       "current_persistence_path": "workflow/canvas draft tables",
       "uses_ai_gateway": false,
@@ -2811,7 +2787,7 @@
     },
     {
       "file": "apps/backend/src/modules/activepieces/activepieces-canvas-provisioning.service.ts",
-      "line": 1577,
+      "line": 1575,
       "current_owner": "Stage 16 Canvas",
       "current_persistence_path": "workflow/canvas draft tables",
       "uses_ai_gateway": false,
@@ -2823,7 +2799,19 @@
     },
     {
       "file": "apps/backend/src/modules/activepieces/activepieces-canvas-provisioning.service.ts",
-      "line": 1608,
+      "line": 1579,
+      "current_owner": "Stage 16 Canvas",
+      "current_persistence_path": "workflow/canvas draft tables",
+      "uses_ai_gateway": false,
+      "can_create_workflow_canvas_activepieces_flow": true,
+      "can_publish_run_deliver": false,
+      "frontend_can_influence_provider_model_runtime_directly": false,
+      "cross_workspace_project_data_risk": "not_applicable",
+      "stage20_changes_applied": "inventoried"
+    },
+    {
+      "file": "apps/backend/src/modules/activepieces/activepieces-canvas-provisioning.service.ts",
+      "line": 1610,
       "current_owner": "Stage 16 Canvas",
       "current_persistence_path": "workflow/canvas draft tables",
       "uses_ai_gateway": false,
@@ -3447,7 +3435,7 @@
     },
     {
       "file": "apps/backend/src/modules/activepieces/activepieces-jwt-signer.ts",
-      "line": 24,
+      "line": 25,
       "current_owner": "Stage 17 Activepieces boundary",
       "current_persistence_path": "runtime binding/evidence tables",
       "uses_ai_gateway": false,
@@ -3459,7 +3447,7 @@
     },
     {
       "file": "apps/backend/src/modules/activepieces/activepieces-jwt-signer.ts",
-      "line": 31,
+      "line": 26,
       "current_owner": "Stage 17 Activepieces boundary",
       "current_persistence_path": "runtime binding/evidence tables",
       "uses_ai_gateway": false,
@@ -3483,7 +3471,7 @@
     },
     {
       "file": "apps/backend/src/modules/activepieces/activepieces-jwt-signer.ts",
-      "line": 57,
+      "line": 35,
       "current_owner": "Stage 17 Activepieces boundary",
       "current_persistence_path": "runtime binding/evidence tables",
       "uses_ai_gateway": false,
@@ -3495,7 +3483,7 @@
     },
     {
       "file": "apps/backend/src/modules/activepieces/activepieces-jwt-signer.ts",
-      "line": 73,
+      "line": 59,
       "current_owner": "Stage 17 Activepieces boundary",
       "current_persistence_path": "runtime binding/evidence tables",
       "uses_ai_gateway": false,
@@ -3519,19 +3507,7 @@
     },
     {
       "file": "apps/backend/src/modules/activepieces/activepieces-jwt-signer.ts",
-      "line": 91,
-      "current_owner": "Stage 17 Activepieces boundary",
-      "current_persistence_path": "runtime binding/evidence tables",
-      "uses_ai_gateway": false,
-      "can_create_workflow_canvas_activepieces_flow": true,
-      "can_publish_run_deliver": false,
-      "frontend_can_influence_provider_model_runtime_directly": false,
-      "cross_workspace_project_data_risk": "not_applicable",
-      "stage20_changes_applied": "inventoried"
-    },
-    {
-      "file": "apps/backend/src/modules/activepieces/activepieces-jwt-signer.ts",
-      "line": 92,
+      "line": 77,
       "current_owner": "Stage 17 Activepieces boundary",
       "current_persistence_path": "runtime binding/evidence tables",
       "uses_ai_gateway": false,
@@ -3567,6 +3543,18 @@
     },
     {
       "file": "apps/backend/src/modules/activepieces/activepieces-jwt-signer.ts",
+      "line": 95,
+      "current_owner": "Stage 17 Activepieces boundary",
+      "current_persistence_path": "runtime binding/evidence tables",
+      "uses_ai_gateway": false,
+      "can_create_workflow_canvas_activepieces_flow": true,
+      "can_publish_run_deliver": false,
+      "frontend_can_influence_provider_model_runtime_directly": false,
+      "cross_workspace_project_data_risk": "not_applicable",
+      "stage20_changes_applied": "inventoried"
+    },
+    {
+      "file": "apps/backend/src/modules/activepieces/activepieces-jwt-signer.ts",
       "line": 96,
       "current_owner": "Stage 17 Activepieces boundary",
       "current_persistence_path": "runtime binding/evidence tables",
@@ -3579,7 +3567,7 @@
     },
     {
       "file": "apps/backend/src/modules/activepieces/activepieces-jwt-signer.ts",
-      "line": 97,
+      "line": 98,
       "current_owner": "Stage 17 Activepieces boundary",
       "current_persistence_path": "runtime binding/evidence tables",
       "uses_ai_gateway": false,
@@ -3591,7 +3579,7 @@
     },
     {
       "file": "apps/backend/src/modules/activepieces/activepieces-jwt-signer.ts",
-      "line": 101,
+      "line": 99,
       "current_owner": "Stage 17 Activepieces boundary",
       "current_persistence_path": "runtime binding/evidence tables",
       "uses_ai_gateway": false,
@@ -3615,18 +3603,6 @@
     },
     {
       "file": "apps/backend/src/modules/activepieces/activepieces-jwt-signer.ts",
-      "line": 104,
-      "current_owner": "Stage 17 Activepieces boundary",
-      "current_persistence_path": "runtime binding/evidence tables",
-      "uses_ai_gateway": false,
-      "can_create_workflow_canvas_activepieces_flow": true,
-      "can_publish_run_deliver": false,
-      "frontend_can_influence_provider_model_runtime_directly": false,
-      "cross_workspace_project_data_risk": "not_applicable",
-      "stage20_changes_applied": "inventoried"
-    },
-    {
-      "file": "apps/backend/src/modules/activepieces/activepieces-jwt-signer.ts",
       "line": 105,
       "current_owner": "Stage 17 Activepieces boundary",
       "current_persistence_path": "runtime binding/evidence tables",
@@ -3639,7 +3615,19 @@
     },
     {
       "file": "apps/backend/src/modules/activepieces/activepieces-jwt-signer.ts",
-      "line": 114,
+      "line": 106,
+      "current_owner": "Stage 17 Activepieces boundary",
+      "current_persistence_path": "runtime binding/evidence tables",
+      "uses_ai_gateway": false,
+      "can_create_workflow_canvas_activepieces_flow": true,
+      "can_publish_run_deliver": false,
+      "frontend_can_influence_provider_model_runtime_directly": false,
+      "cross_workspace_project_data_risk": "not_applicable",
+      "stage20_changes_applied": "inventoried"
+    },
+    {
+      "file": "apps/backend/src/modules/activepieces/activepieces-jwt-signer.ts",
+      "line": 107,
       "current_owner": "Stage 17 Activepieces boundary",
       "current_persistence_path": "runtime binding/evidence tables",
       "uses_ai_gateway": false,
@@ -3652,6 +3640,18 @@
     {
       "file": "apps/backend/src/modules/activepieces/activepieces-jwt-signer.ts",
       "line": 116,
+      "current_owner": "Stage 17 Activepieces boundary",
+      "current_persistence_path": "runtime binding/evidence tables",
+      "uses_ai_gateway": false,
+      "can_create_workflow_canvas_activepieces_flow": true,
+      "can_publish_run_deliver": false,
+      "frontend_can_influence_provider_model_runtime_directly": false,
+      "cross_workspace_project_data_risk": "not_applicable",
+      "stage20_changes_applied": "inventoried"
+    },
+    {
+      "file": "apps/backend/src/modules/activepieces/activepieces-jwt-signer.ts",
+      "line": 118,
       "current_owner": "Stage 17 Activepieces boundary",
       "current_persistence_path": "runtime binding/evidence tables",
       "uses_ai_gateway": false,
@@ -4779,7 +4779,7 @@
     },
     {
       "file": "apps/backend/src/modules/activepieces/activepieces-pieces-policy.service.spec.ts",
-      "line": 197,
+      "line": 196,
       "current_owner": "Stage 17 Activepieces boundary",
       "current_persistence_path": "runtime binding/evidence tables",
       "uses_ai_gateway": false,
@@ -6002,5 +6002,5 @@
       "stage20_changes_applied": "inventoried"
     }
   ],
-  "generated_at": "2026-05-06T21:01:19.898Z"
+  "generated_at": "2026-05-07T05:39:39.907Z"
 }

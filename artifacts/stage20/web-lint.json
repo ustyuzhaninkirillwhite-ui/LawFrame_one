@@ -1,6 +1,6 @@
 {
   "status": "pass",
   "command": "corepack pnpm --filter @lexframe/web exec eslint src/features/automation-builder src/features/ai-chat/components/LexFrameMessageActions.tsx src/features/ai-chat/components/LexFrameMessage.tsx src/features/ai-chat/components/LexFrameThread.tsx src/features/ai-chat/components/LexFrameChatShell.tsx src/features/ai-chat/components/LexFrameToolCard.tsx",
-  "duration_ms": 4075,
-  "generated_at": "2026-05-06T21:01:43.659Z"
+  "duration_ms": 35368,
+  "generated_at": "2026-05-07T05:41:23.461Z"
 }

@@ -124,15 +124,11 @@ export class RuntimeHealthService {
 
     return {
       overall,
-      summary: buildSystemStatusSummary(
-        overall,
-        hasOptionalDegradedComponents,
-      ),
+      summary: buildSystemStatusSummary(overall, hasOptionalDegradedComponents),
       checkedAt,
       incidentsOpen: 0,
       components,
     };
-
   }
 
   async renderMetrics(): Promise<string> {
