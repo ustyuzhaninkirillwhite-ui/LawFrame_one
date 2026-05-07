@@ -1,0 +1,7 @@
+{
+  "status": "pass",
+  "route": "automation_planner_high",
+  "direct_provider_call": false,
+  "repair_behavior": "mock/degraded; invalid output fails schema without fake provider success",
+  "generated_at": "2026-05-06T21:01:21.120Z"
+}

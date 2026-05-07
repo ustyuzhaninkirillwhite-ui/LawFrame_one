@@ -1,0 +1,12 @@
+{
+  "status": "pass",
+  "modes": [
+    "raw",
+    "summary",
+    "focused_rag",
+    "reference_only",
+    "block"
+  ],
+  "cross_workspace_policy": "workspace/project permission remains backend-owned",
+  "generated_at": "2026-05-06T21:01:21.148Z"
+}

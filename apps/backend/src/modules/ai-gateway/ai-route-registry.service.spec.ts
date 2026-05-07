@@ -31,7 +31,7 @@ describe('AiModelRouteRegistryService Stage 18 defaults', () => {
     });
   });
 
-  it('keeps automation_planner_high reserved and out of defaults', () => {
+  it('keeps automation_planner_high backend-owned and out of defaults', () => {
     const registry = new AiModelRouteRegistryService();
 
     expect(registry.getDefaultRoute().routeCode).toBe('default_chat');
@@ -39,11 +39,11 @@ describe('AiModelRouteRegistryService Stage 18 defaults', () => {
       routeCode: 'automation_planner_high',
       adminVisible: true,
       visibleToUser: false,
-      enabled: false,
+      enabled: true,
     });
-    expect(
-      registry.listEnabledRoutes().map((route) => route.routeCode),
-    ).not.toContain('automation_planner_high');
+    expect(registry.getDefaultRoute().routeCode).not.toBe(
+      'automation_planner_high',
+    );
   });
 
   it('declares required route valves without raw secret values', () => {

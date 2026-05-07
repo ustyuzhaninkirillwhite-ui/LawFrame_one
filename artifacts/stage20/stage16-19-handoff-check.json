@@ -1,0 +1,17 @@
+{
+  "status": "degraded",
+  "checks": {
+    "stage16_canvas_contracts": true,
+    "stage16_validation_engine": true,
+    "stage16_compile_preview": true,
+    "stage17_activepieces_runtime": true,
+    "stage17_runtime_evidence": false,
+    "stage18_ai_gateway": true,
+    "automation_planner_high_route": true,
+    "stage19_project_chat": true,
+    "stage19_project_knowledge": true,
+    "frontend_no_provider_runtime_secret": true,
+    "ap_runtime_unavailable_safe_fallback": true
+  },
+  "generated_at": "2026-05-06T21:01:21.048Z"
+}

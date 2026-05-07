@@ -17,6 +17,7 @@ export function LexFrameThread({
   onCancel,
   onRegenerate,
   onBranch,
+  onCreateAutomation,
 }: {
   readonly messages: readonly ChatMessageDto[];
   readonly isRunning: boolean;
@@ -25,6 +26,7 @@ export function LexFrameThread({
   readonly onCancel: () => void;
   readonly onRegenerate: (messageId: string) => void;
   readonly onBranch: (messageId: string) => void;
+  readonly onCreateAutomation?: (messageId: string) => void;
 }) {
   const runtime = useLexFrameExternalStoreRuntime({
     messages,
@@ -63,6 +65,7 @@ export function LexFrameThread({
                 message={message}
                 onRegenerate={onRegenerate}
                 onBranch={onBranch}
+                onCreateAutomation={onCreateAutomation}
               />
             ))
           )}

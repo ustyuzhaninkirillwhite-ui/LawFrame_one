@@ -9,10 +9,12 @@ export function LexFrameMessage({
   message,
   onRegenerate,
   onBranch,
+  onCreateAutomation,
 }: {
   readonly message: ChatMessageDto;
   readonly onRegenerate: (messageId: string) => void;
   readonly onBranch: (messageId: string) => void;
+  readonly onCreateAutomation?: (messageId: string) => void;
 }) {
   return (
     <article className="border-b border-slate-100 px-5 py-4">
@@ -35,6 +37,7 @@ export function LexFrameMessage({
         message={message}
         onRegenerate={onRegenerate}
         onBranch={onBranch}
+        onCreateAutomation={onCreateAutomation}
       />
     </article>
   );

@@ -229,6 +229,23 @@ import type {
   ReadinessGate,
   ReadinessSummaryResponse,
   Stage18ReadinessResponse,
+  Stage20ReadinessResponse,
+  AutomationBlueprint,
+  AutomationBlueprintValidationSummary,
+  AutomationBuilderSessionResponse,
+  AutomationCanvasDraftResponse,
+  AutomationClarificationAnswerRequest,
+  AutomationClarificationAnswerResponse,
+  AutomationCompilePreviewResponse,
+  AutomationContextPreviewResponse,
+  AutomationIntentResponse,
+  AutomationModuleCatalogResponse,
+  AutomationModuleResolveResponse,
+  AutomationPlanResponse,
+  AutomationRuntimeDraftResponse,
+  AutomationSecurityPreflightResponse,
+  CreateAutomationIntentRequest,
+  UpdateAutomationIntentRequest,
   ReauthChallenge,
   RecommendationAcceptRequest,
   RecommendationActionResult,
@@ -970,6 +987,60 @@ export interface ApiClient {
   getReadinessSummary(): Promise<ReadinessSummaryResponse>;
   getReadinessDetails(): Promise<ReadinessDetailsResponse>;
   getStage18Readiness(): Promise<Stage18ReadinessResponse>;
+  getStage20Readiness(): Promise<Stage20ReadinessResponse>;
+  createAutomationIntent(
+    projectId: string,
+    input: CreateAutomationIntentRequest,
+  ): Promise<AutomationIntentResponse>;
+  getAutomationIntent(intentId: string): Promise<AutomationIntentResponse>;
+  updateAutomationIntent(
+    intentId: string,
+    input: UpdateAutomationIntentRequest,
+  ): Promise<AutomationIntentResponse>;
+  cancelAutomationIntent(intentId: string): Promise<{ readonly status: string }>;
+  planAutomationIntent(intentId: string): Promise<AutomationPlanResponse>;
+  answerAutomationClarification(
+    intentId: string,
+    clarificationId: string,
+    input: AutomationClarificationAnswerRequest,
+  ): Promise<AutomationClarificationAnswerResponse>;
+  getAutomationBlueprint(blueprintId: string): Promise<AutomationBlueprint>;
+  validateAutomationBlueprint(
+    blueprintId: string,
+  ): Promise<AutomationBlueprintValidationSummary>;
+  compileAutomationBlueprintPreview(
+    blueprintId: string,
+  ): Promise<AutomationCompilePreviewResponse>;
+  approveAutomationBlueprint(blueprintId: string): Promise<AutomationBlueprint>;
+  rejectAutomationBlueprint(
+    blueprintId: string,
+  ): Promise<{ readonly status: string }>;
+  convertAutomationBlueprintToCanvasDraft(
+    blueprintId: string,
+  ): Promise<AutomationCanvasDraftResponse>;
+  createAutomationRuntimeDraft(
+    blueprintId: string,
+  ): Promise<AutomationRuntimeDraftResponse>;
+  exportAutomationBlueprint(blueprintId: string): Promise<AutomationBlueprint>;
+  createAutomationBuilderSession(input: {
+    readonly projectId?: string | null;
+    readonly title?: string | null;
+  }): Promise<AutomationBuilderSessionResponse>;
+  archiveAutomationBuilderSession(
+    sessionId: string,
+  ): Promise<AutomationBuilderSessionResponse>;
+  getAutomationModuleCatalog(): Promise<AutomationModuleCatalogResponse>;
+  resolveAutomationModuleCatalog(input: {
+    readonly steps?: readonly {
+      readonly kind?: string;
+      readonly moduleCode?: string | null;
+    }[];
+  }): Promise<AutomationModuleResolveResponse>;
+  previewAutomationBuilderContext(input: {
+    readonly projectId?: string | null;
+    readonly intentId?: string | null;
+  }): Promise<AutomationContextPreviewResponse>;
+  preflightAutomationBuilderSecurity(): Promise<AutomationSecurityPreflightResponse>;
   getAutomationRuntimeRequirements(
     id: string,
   ): Promise<AutomationRuntimeRequirements>;
@@ -2463,6 +2534,121 @@ export function createApiClient(options: FetchOptions): ApiClient {
     getReadinessDetails: () =>
       requestJson(options, "/health/readiness/details"),
     getStage18Readiness: () => requestJson(options, "/readiness/stage18"),
+    getStage20Readiness: () => requestJson(options, "/readiness/stage20"),
+    createAutomationIntent: (projectId, input) =>
+      requestJson(
+        options,
+        `/projects/${encodeURIComponent(projectId)}/automation-intents`,
+        withJsonBody(input, { method: "POST" }),
+      ),
+    getAutomationIntent: (intentId) =>
+      requestJson(
+        options,
+        `/automation-intents/${encodeURIComponent(intentId)}`,
+      ),
+    updateAutomationIntent: (intentId, input) =>
+      requestJson(
+        options,
+        `/automation-intents/${encodeURIComponent(intentId)}`,
+        withJsonBody(input, { method: "PATCH" }),
+      ),
+    cancelAutomationIntent: (intentId) =>
+      requestJson(
+        options,
+        `/automation-intents/${encodeURIComponent(intentId)}/cancel`,
+        { method: "POST" },
+      ),
+    planAutomationIntent: (intentId) =>
+      requestJson(
+        options,
+        `/automation-intents/${encodeURIComponent(intentId)}/plan`,
+        { method: "POST" },
+      ),
+    answerAutomationClarification: (intentId, clarificationId, input) =>
+      requestJson(
+        options,
+        `/automation-intents/${encodeURIComponent(intentId)}/clarifications/${encodeURIComponent(clarificationId)}/answer`,
+        withJsonBody(input, { method: "POST" }),
+      ),
+    getAutomationBlueprint: (blueprintId) =>
+      requestJson(
+        options,
+        `/automation-blueprints/${encodeURIComponent(blueprintId)}`,
+      ),
+    validateAutomationBlueprint: (blueprintId) =>
+      requestJson(
+        options,
+        `/automation-blueprints/${encodeURIComponent(blueprintId)}/validate`,
+        { method: "POST" },
+      ),
+    compileAutomationBlueprintPreview: (blueprintId) =>
+      requestJson(
+        options,
+        `/automation-blueprints/${encodeURIComponent(blueprintId)}/compile-preview`,
+        { method: "POST" },
+      ),
+    approveAutomationBlueprint: (blueprintId) =>
+      requestJson(
+        options,
+        `/automation-blueprints/${encodeURIComponent(blueprintId)}/approve`,
+        { method: "POST" },
+      ),
+    rejectAutomationBlueprint: (blueprintId) =>
+      requestJson(
+        options,
+        `/automation-blueprints/${encodeURIComponent(blueprintId)}/reject`,
+        { method: "POST" },
+      ),
+    convertAutomationBlueprintToCanvasDraft: (blueprintId) =>
+      requestJson(
+        options,
+        `/automation-blueprints/${encodeURIComponent(blueprintId)}/convert-to-canvas-draft`,
+        { method: "POST" },
+      ),
+    createAutomationRuntimeDraft: (blueprintId) =>
+      requestJson(
+        options,
+        `/automation-blueprints/${encodeURIComponent(blueprintId)}/create-runtime-draft`,
+        { method: "POST" },
+      ),
+    exportAutomationBlueprint: (blueprintId) =>
+      requestJson(
+        options,
+        `/automation-blueprints/${encodeURIComponent(blueprintId)}/export`,
+        { method: "POST" },
+      ),
+    createAutomationBuilderSession: (input) =>
+      requestJson(
+        options,
+        "/automation-builder/sessions",
+        withJsonBody(input, { method: "POST" }),
+      ),
+    archiveAutomationBuilderSession: (sessionId) =>
+      requestJson(
+        options,
+        `/automation-builder/sessions/${encodeURIComponent(sessionId)}/archive`,
+        { method: "POST" },
+      ),
+    getAutomationModuleCatalog: () =>
+      requestJson(options, "/automation-builder/module-catalog"),
+    resolveAutomationModuleCatalog: (input) =>
+      requestJson(
+        options,
+        "/automation-builder/module-catalog/resolve",
+        withJsonBody(input, { method: "POST" }),
+      ),
+    previewAutomationBuilderContext: (input) =>
+      requestJson(
+        options,
+        "/automation-builder/context/preview",
+        withJsonBody(input, { method: "POST" }),
+      ),
+    preflightAutomationBuilderSecurity: () =>
+      requestJson(
+        options,
+        "/automation-builder/security/preflight",
+        { method: "POST" },
+      ),
     getAutomationRuntimeRequirements: (id) =>
       requestJson(options, `/automations/${id}/runtime/requirements`),
     createActivepiecesSession: async (input) =>

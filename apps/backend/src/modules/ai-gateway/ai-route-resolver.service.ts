@@ -18,11 +18,13 @@ export class AiRouteResolverService {
       | 'rag'
       | 'canvas'
       | 'activepieces'
+      | 'automation_builder'
       | 'admin';
   }) {
     if (
       input.routeCode === 'automation_planner_high' &&
-      input.caller !== 'admin'
+      input.caller !== 'admin' &&
+      input.caller !== 'automation_builder'
     ) {
       throw new AppHttpException(
         'AI_ROUTE_NOT_ALLOWED',

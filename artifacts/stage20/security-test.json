@@ -1,0 +1,13 @@
+{
+  "status": "pass",
+  "provider_keys_in_frontend": "pass",
+  "ap_mcp_secrets_in_frontend": "pass",
+  "direct_provider_calls_outside_gateway": "pass",
+  "direct_ap_mcp_calls_from_browser": "pass",
+  "cross_workspace_project_planner_access": "pass",
+  "legal_secret_client_material_policy": "pass",
+  "audit_telemetry_raw_prompt_leakage": "pass",
+  "ai_cannot_approve_publish_run_deliver": "pass",
+  "borrowed_code_provenance": "pass",
+  "generated_at": "2026-05-06T21:02:12.347Z"
+}

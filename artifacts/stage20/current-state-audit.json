@@ -1,0 +1,10 @@
+{
+  "status": "pass",
+  "branch": "main",
+  "head": "edea20db5de23c7e3f41d0a75a268da5e77d757c",
+  "node": "v22.16.0",
+  "pnpm": "10.11.1",
+  "stage20_files_present": true,
+  "rg_unavailable_in_codex_windowsapps": true,
+  "generated_at": "2026-05-06T21:01:20.418Z"
+}

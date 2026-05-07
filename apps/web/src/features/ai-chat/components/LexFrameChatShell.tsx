@@ -5,9 +5,11 @@ import type {
   ChatThreadSummary,
   ProjectKnowledgeItem,
 } from "@lexframe/contracts";
+import { useRouter } from "next/navigation";
 import * as React from "react";
 import { useSessionBridge } from "@/providers/session-provider";
 import { createLexFrameChatApi } from "../api/chatApi";
+import { getChatMessageText } from "../domain/chatMappers";
 import { LegalDataWarning } from "./LegalDataWarning";
 import { LexFrameThread } from "./LexFrameThread";
 import { LexFrameThreadList } from "./LexFrameThreadList";
@@ -20,6 +22,7 @@ export function LexFrameChatShell({
   readonly projectId: string;
   readonly initialThreadId: string | null;
 }) {
+  const router = useRouter();
   const { apiClient, sessionContext } = useSessionBridge();
   const chatApi = React.useMemo(() => createLexFrameChatApi(apiClient), [apiClient]);
   const [threads, setThreads] = React.useState<ChatThreadSummary[]>([]);
@@ -31,6 +34,9 @@ export function LexFrameChatShell({
   const [isRunning, setIsRunning] = React.useState(false);
   const [activeStreamId, setActiveStreamId] = React.useState<string | null>(null);
   const canSend = sessionContext.permissions.includes("chat.create");
+  const canCreateAutomation = sessionContext.permissions.includes(
+    "automation_builder.create_intent",
+  );
 
   const loadThreads = React.useCallback(async () => {
     const response = await chatApi.listProjectThreads(projectId);
@@ -50,10 +56,12 @@ export function LexFrameChatShell({
   );
 
   React.useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void loadThreads();
   }, [loadThreads]);
 
   React.useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void loadMessages(activeThreadId);
   }, [activeThreadId, loadMessages]);
 
@@ -136,6 +144,33 @@ export function LexFrameChatShell({
     [activeThreadId, chatApi, loadMessages],
   );
 
+  const createAutomationFromMessage = React.useCallback(
+    async (messageId: string) => {
+      if (!activeThreadId) {
+        return;
+      }
+
+      const message = messages.find((item) => item.id === messageId);
+      if (!message) {
+        return;
+      }
+
+      const text = getChatMessageText(message).trim();
+      const response = await apiClient.createAutomationIntent(projectId, {
+        source: "project_chat_action",
+        sourceThreadId: activeThreadId,
+        sourceMessageId: message.id,
+        title: text.slice(0, 80) || "Automation intent from project chat",
+        userGoal: text || "/создать_автоматизацию",
+        classification: "workspace_internal",
+      });
+      router.push(
+        `/app/projects/${projectId}/automation-builder/${response.intent.id}`,
+      );
+    },
+    [activeThreadId, apiClient, messages, projectId, router],
+  );
+
   return (
     <div className="flex h-[calc(100vh-5rem)] flex-col overflow-hidden border border-slate-200 bg-white md:flex-row">
       <LexFrameThreadList
@@ -154,6 +189,11 @@ export function LexFrameChatShell({
           onCancel={cancelStream}
           onRegenerate={(messageId) => void regenerate(messageId)}
           onBranch={(messageId) => void branch(messageId)}
+          onCreateAutomation={
+            canCreateAutomation
+              ? (messageId) => void createAutomationFromMessage(messageId)
+              : undefined
+          }
         />
       </main>
       <ProjectContextDrawer items={knowledge} />

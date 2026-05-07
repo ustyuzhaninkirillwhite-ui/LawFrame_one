@@ -110,7 +110,7 @@ export class AiModelRouteRegistryService {
         supportsToolCalls: true,
         visibleToUser: false,
         adminVisible: true,
-        enabled: false,
+        enabled: true,
       },
     ];
   }

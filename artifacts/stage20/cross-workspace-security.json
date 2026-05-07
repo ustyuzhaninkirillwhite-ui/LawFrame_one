@@ -1,0 +1,9 @@
+{
+  "status": "pass",
+  "checks": [
+    "workspace_id_on_stage20_tables",
+    "RLS_has_workspace_permission",
+    "controller_workspace_context_guard"
+  ],
+  "generated_at": "2026-05-06T21:02:12.333Z"
+}

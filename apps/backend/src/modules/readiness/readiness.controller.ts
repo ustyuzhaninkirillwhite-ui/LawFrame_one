@@ -45,4 +45,13 @@ export class ReadinessController {
     reply.status(result.status === 'unavailable' ? 503 : 200);
     return result;
   }
+
+  @Get('readiness/stage20')
+  getStage20Readiness(
+    @Res({ passthrough: true }) reply: { status: (code: number) => void },
+  ) {
+    const result = this.readinessService.getStage20Readiness();
+    reply.status(result.status === 'unavailable' ? 503 : 200);
+    return result;
+  }
 }

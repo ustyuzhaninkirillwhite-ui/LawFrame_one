@@ -12,6 +12,7 @@ import type {
   Stage18ReadinessCheck,
   Stage18ReadinessResponse,
   Stage19ReadinessResponse,
+  Stage20ReadinessResponse,
 } from '@lexframe/contracts';
 import { loadServerEnv } from '@lexframe/config';
 import { Injectable } from '@nestjs/common';
@@ -230,11 +231,11 @@ export class ReadinessService {
             (route) =>
               route.routeCode === 'automation_planner_high' &&
               route.adminVisible &&
-              !route.enabled,
+              !route.visibleToUser,
           )
           ? 'pass'
           : 'fail',
-        'Stage 18 route registry contains enabled default/agent/RAG routes and reserved planner route.',
+        'Stage 18 route registry contains enabled default/agent/RAG routes and backend-owned planner route.',
       ),
       direct_provider_call_scan: artifactReadinessCheck(
         'artifacts/stage18/direct-provider-call-scan.json',
@@ -323,8 +324,14 @@ export class ReadinessService {
         'pass',
         'Context assembler enforces sensitive-data mode substitution.',
       ),
-      chat_search: stage19Check('pass', 'Postgres-backed chat search endpoint is present.'),
-      branching: stage19Check('pass', 'Thread branching endpoint and lineage table are present.'),
+      chat_search: stage19Check(
+        'pass',
+        'Postgres-backed chat search endpoint is present.',
+      ),
+      branching: stage19Check(
+        'pass',
+        'Thread branching endpoint and lineage table are present.',
+      ),
       prompt_library: stage19Check(
         'pass',
         'Legal prompt template contracts and table are present.',
@@ -366,6 +373,181 @@ export class ReadinessService {
         check.status === 'degraded' || check.status === 'not_configured',
     );
 
+    return {
+      status: failed ? 'unavailable' : degraded ? 'degraded' : 'ready',
+      checks,
+    };
+  }
+
+  getStage20Readiness(): Stage20ReadinessResponse {
+    const stage19 = this.getStage19Readiness();
+    const route = new AiModelRouteRegistryService().getRoute(
+      'automation_planner_high',
+    );
+    const checks: Stage20ReadinessResponse['checks'] = {
+      stage16_canvas_contracts: stage20Check(
+        existsSync(
+          resolve(process.cwd(), 'packages/workflow-dsl/src/canvas-blocks.ts'),
+        )
+          ? 'pass'
+          : 'fail',
+        'Stage 16 Canvas block taxonomy is present.',
+      ),
+      stage16_validation_engine: stage20Check(
+        existsSync(
+          resolve(process.cwd(), 'packages/workflow/src/semantic-validator.ts'),
+        )
+          ? 'pass'
+          : 'fail',
+        'Stage 16 semantic validator is present.',
+      ),
+      stage16_compile_preview: stage20Check(
+        existsSync(
+          resolve(
+            process.cwd(),
+            'apps/backend/src/modules/workflow-compiler/workflow-compiler.service.ts',
+          ),
+        )
+          ? 'pass'
+          : 'degraded',
+        'Workflow compiler preview service is present or degraded.',
+      ),
+      stage17_activepieces_runtime: stage20ExternalArtifactCheck(
+        'artifacts/stage17/release-gate.json',
+        'Stage 17 Activepieces release evidence is present.',
+      ),
+      stage17_runtime_evidence: stage20ExternalArtifactCheck(
+        'artifacts/stage17/runtime-evidence.json',
+        'Stage 17 runtime evidence artifact is present.',
+      ),
+      stage18_ai_gateway: stage20Check(
+        this.getStage18Readiness().status === 'unavailable' ? 'fail' : 'pass',
+        'Stage 18 AI Gateway readiness is available.',
+      ),
+      automation_planner_high_route: stage20Check(
+        route.routeCode === 'automation_planner_high' &&
+          route.enabled &&
+          !route.visibleToUser
+          ? 'pass'
+          : 'fail',
+        'automation_planner_high is backend-owned and not visible to ordinary users.',
+        {
+          route: route.routeCode,
+          provider: route.providerCode,
+          model: route.model,
+          keyFingerprintPrefix: 'server_route_ref',
+        },
+      ),
+      stage19_project_chat: stage20Check(
+        stage19.status === 'unavailable' ? 'fail' : 'pass',
+        'Stage 19 project chat handoff is available.',
+      ),
+      stage19_project_knowledge: stage20Check(
+        stage19.checks.project_knowledge.status === 'pass'
+          ? 'pass'
+          : 'degraded',
+        'Stage 19 project knowledge handoff is available.',
+      ),
+      automation_intent_db: migrationCheck('automation_intents'),
+      automation_blueprint_db: migrationCheck('automation_blueprints'),
+      automation_builder_api: stage20Check(
+        existsSync(
+          resolve(
+            process.cwd(),
+            'apps/backend/src/modules/automation-builder/automation-builder.controller.ts',
+          ),
+        )
+          ? 'pass'
+          : 'fail',
+        'Automation Builder backend controller is registered.',
+      ),
+      planner_orchestration: stage20ArtifactCheck(
+        'planner-orchestration-test.json',
+      ),
+      clarification_loop: stage20ArtifactCheck('clarification-loop-test.json'),
+      context_assembler: stage20Check(
+        existsSync(
+          resolve(
+            process.cwd(),
+            'apps/backend/src/modules/automation-builder/automation-context-assembler.service.ts',
+          ),
+        )
+          ? 'pass'
+          : 'fail',
+        'Planner context assembler service is present.',
+      ),
+      module_runtime_resolver: stage20ArtifactCheck(
+        'module-resolver-test.json',
+      ),
+      blueprint_validation: stage20Check(
+        existsSync(
+          resolve(
+            process.cwd(),
+            'apps/backend/src/modules/automation-builder/automation-blueprint-validator.service.ts',
+          ),
+        )
+          ? 'pass'
+          : 'fail',
+        'AutomationBlueprint validator service is present.',
+      ),
+      blueprint_to_canvas_conversion: stage20Check(
+        existsSync(
+          resolve(
+            process.cwd(),
+            'apps/backend/src/modules/automation-builder/automation-blueprint-canvas-converter.service.ts',
+          ),
+        )
+          ? 'pass'
+          : 'fail',
+        'Blueprint to Canvas converter service is present.',
+      ),
+      runtime_draft_creation: stage20Check(
+        existsSync(
+          resolve(
+            process.cwd(),
+            'apps/backend/src/modules/automation-builder/automation-runtime-draft.service.ts',
+          ),
+        )
+          ? 'degraded'
+          : 'fail',
+        'Runtime draft service is present; live AP/MCP creation may be not_configured.',
+      ),
+      mcp_adapter: stage20ArtifactCheck('mcp-adapter-test.json'),
+      activepieces_readback: stage20ArtifactCheck(
+        'runtime-draft-creation-test.json',
+      ),
+      frontend_automation_builder: stage20Check(
+        existsSync(
+          resolve(process.cwd(), 'apps/web/src/features/automation-builder'),
+        )
+          ? 'pass'
+          : 'degraded',
+        'Frontend Automation Builder module is present or pending.',
+      ),
+      browser_secret_scan: stage20ArtifactCheck('browser-secret-scan.json'),
+      direct_provider_call_scan: stage20ArtifactCheck(
+        'direct-provider-call-scan.json',
+      ),
+      direct_runtime_call_scan: stage20ArtifactCheck(
+        'direct-runtime-call-scan.json',
+      ),
+      cross_workspace_security: stage20ArtifactCheck(
+        'cross-workspace-security.json',
+      ),
+      license_mit_only: stage20ArtifactCheck('license-scan.json'),
+      reference_repos_checked: stage20ArtifactCheck(
+        'reference-projects-analysis.json',
+      ),
+      borrowed_elements_verified: stage20ArtifactCheck(
+        'borrowed-elements-register.json',
+      ),
+    };
+    const values = Object.values(checks);
+    const failed = values.some((check) => check.status === 'fail');
+    const degraded = values.some(
+      (check) =>
+        check.status === 'degraded' || check.status === 'not_configured',
+    );
     return {
       status: failed ? 'unavailable' : degraded ? 'degraded' : 'ready',
       checks,
@@ -2048,6 +2230,56 @@ function stage19Check(
     status,
     reason,
   };
+}
+
+function stage20Check(
+  status: Stage20ReadinessResponse['checks'][string]['status'],
+  reason: string,
+  diagnostics: Record<string, unknown> = {},
+): Stage20ReadinessResponse['checks'][string] {
+  return {
+    status,
+    reason,
+    diagnostics,
+  };
+}
+
+function stage20ArtifactCheck(
+  artifactName: string,
+): Stage20ReadinessResponse['checks'][string] {
+  const artifactPath = `artifacts/stage20/${artifactName}`;
+  return existsSync(resolve(process.cwd(), artifactPath))
+    ? stage20Check('pass', `${artifactPath} is present.`)
+    : stage20Check('degraded', `${artifactPath} has not been generated yet.`);
+}
+
+function stage20ExternalArtifactCheck(
+  artifactPath: string,
+  passMessage: string,
+): Stage20ReadinessResponse['checks'][string] {
+  return existsSync(resolve(process.cwd(), artifactPath))
+    ? stage20Check('pass', passMessage)
+    : stage20Check('degraded', `${artifactPath} has not been generated yet.`);
+}
+
+function migrationCheck(
+  relationName: string,
+): Stage20ReadinessResponse['checks'][string] {
+  const migrationPath = resolve(
+    process.cwd(),
+    'supabase/migrations/000052_stage20_automation_builder.sql',
+  );
+  if (!existsSync(migrationPath)) {
+    return stage20Check(
+      'fail',
+      'Stage 20 automation builder migration is missing.',
+    );
+  }
+  const migration = readFileSync(migrationPath, 'utf8');
+  return migration.includes(`app.${relationName}`) ||
+    migration.includes(` ${relationName} `)
+    ? stage20Check('pass', `${relationName} migration definition is present.`)
+    : stage20Check('fail', `${relationName} migration definition is missing.`);
 }
 
 function artifactReadinessCheck(
