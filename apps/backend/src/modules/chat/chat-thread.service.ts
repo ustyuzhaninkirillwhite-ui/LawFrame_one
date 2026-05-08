@@ -3,6 +3,7 @@ import type {
   ChatMessageDto,
   ChatMessagePartDto,
   ChatMessagesResponse,
+  ChatRouteSnapshot,
   ChatSearchResponse,
   ChatStreamSnapshot,
   ChatThreadKind,
@@ -24,6 +25,7 @@ import { randomUUID } from 'node:crypto';
 import { Injectable } from '@nestjs/common';
 import { AppHttpException } from '../../common/errors/app-http.exception';
 import { AIGatewayService } from '../ai-gateway/ai-gateway.service';
+import { AiRouteGroupResolverService } from '../ai-gateway/ai-route-group-resolver.service';
 import { AuditService } from '../audit/audit.service';
 import { DatabaseService } from '../database/database.service';
 import { ChatStreamService } from './chat-stream.service';
@@ -82,6 +84,7 @@ export class ChatThreadService {
     private readonly databaseService: DatabaseService,
     private readonly auditService: AuditService,
     private readonly aiGatewayService: AIGatewayService,
+    private readonly routeGroupResolver: AiRouteGroupResolverService,
     private readonly chatStreamService: ChatStreamService,
   ) {}
 
@@ -432,15 +435,22 @@ export class ChatThreadService {
     input: CreateChatMessageRequest,
     meta: RequestMeta,
   ): Promise<ChatStreamSnapshot> {
-    const { actor } = this.requireContext(context);
+    const { actor, access } = this.requireContext(context);
     const userMessage = await this.createUserMessage(
       context,
       threadId,
       input,
       meta,
     );
+    const effectivePolicy = await this.routeGroupResolver.resolveEffectivePolicy({
+      workspaceId: userMessage.workspaceId,
+      actorUserId: actor.id,
+      routeGroup: 'chat_ai',
+      permissions: access.permissions,
+      traceId: meta.traceId,
+    });
     const routeSse = this.aiGatewayService.buildStage18StreamFoundation({
-      route: 'default_chat',
+      route: effectivePolicy.routeCode,
       message: input.text,
       requestId: meta.requestId,
       traceId: meta.traceId,
@@ -455,7 +465,7 @@ export class ChatThreadService {
       actorId: actor.id,
       requestId: meta.requestId,
       traceId: meta.traceId,
-      text: 'LexFrame AI Gateway обработал запрос через default_chat. Ответ сохранён в project chat.',
+      text: `LexFrame AI Gateway processed the request through ${effectivePolicy.routeGroup}/${effectivePolicy.routeCode}. The response was saved in project chat.`,
       partType: 'markdown',
     });
     const snapshot = this.chatStreamService.createStreamSnapshot({
@@ -464,11 +474,11 @@ export class ChatThreadService {
       messageId: assistantMessage.id,
       text: assistantMessage.parts[0]?.text ?? '',
       routeSnapshot: {
-        route: 'default_chat',
-        provider: 'cometapi',
-        model: 'deepseek-v4-flash',
-        policyDecisionId: 'stage19-default-chat',
-        keyFingerprint: null,
+        route: effectivePolicy.routeCode as ChatRouteSnapshot['route'],
+        provider: effectivePolicy.providerCode,
+        model: effectivePolicy.modelId,
+        policyDecisionId: effectivePolicy.policyDecisionId,
+        keyFingerprint: effectivePolicy.fingerprint,
         traceId: meta.traceId ?? randomUUID(),
       },
     });
@@ -483,9 +493,11 @@ export class ChatThreadService {
       meta,
       metadata: {
         thread_id: threadId,
-        route: 'default_chat',
-        provider: 'cometapi',
-        model: 'deepseek-v4-flash',
+        route: effectivePolicy.routeCode,
+        route_group: effectivePolicy.routeGroup,
+        provider: effectivePolicy.providerCode,
+        model: effectivePolicy.modelId,
+        policy_decision_id: effectivePolicy.policyDecisionId,
       },
     });
 

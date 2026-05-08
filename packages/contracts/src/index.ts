@@ -3,6 +3,7 @@ export * from "./automation-builder";
 export * from "./canvas";
 export * from "./canvas-ai";
 export * from "./chat";
+export * from "./settings";
 export * from "./domain";
 export * from "./legal";
 export * from "./stage7";

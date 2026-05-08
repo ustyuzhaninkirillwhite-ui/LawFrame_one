@@ -1,0 +1,7 @@
+{
+  "generatedAt": "2026-05-07T17:41:15.048Z",
+  "routeGroup": "automation_ai",
+  "routeCode": "automation_planner_high",
+  "structuredJsonSchemaRequired": true,
+  "capabilityBlockedWhenMissing": true
+}

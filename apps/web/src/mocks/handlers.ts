@@ -26,6 +26,13 @@ import type {
   RunLiveSnapshot,
   RunArtifact,
   SessionContext,
+  SettingsBootstrapResponse,
+  AiProviderConnectionDto,
+  AiSettingsResponse,
+  AiRouteGroupPreferenceDto,
+  CreateAiProviderConnectionRequest,
+  UpdateAiProviderConnectionRequest,
+  UpdateAiRouteGroupPreferenceRequest,
   SystemStatusSummary,
   UpdateWorkspaceMemberRoleRequest,
   WorkspaceInvitation,
@@ -275,6 +282,29 @@ function buildSessionContext(request: Request): SessionContext {
     roleDefinitionsFixture.find((definition) => definition.code === "viewer")
       ?.permissions ?? [];
   const role = isViewer ? "viewer" : "owner";
+  const ownerSettingsPermissions = [
+    "settings.view",
+    "settings.profile.update_self",
+    "settings.organization.view",
+    "settings.organization.update",
+    "settings.ai.view",
+    "settings.ai.manage_self",
+    "settings.ai.manage_workspace",
+    "settings.ai.secret.create_self",
+    "settings.ai.secret.rotate_self",
+    "settings.ai.secret.create_workspace",
+    "settings.ai.secret.rotate_workspace",
+    "settings.ai.connection.test",
+    "settings.ai.diagnostics.view",
+    "settings.ai.effective_policy.view",
+  ] as const;
+  const viewerSettingsPermissions = [
+    "settings.view",
+    "settings.profile.update_self",
+    "settings.organization.view",
+    "settings.ai.view",
+    "settings.ai.manage_self",
+  ] as const;
 
   return {
     ...clone(sessionContextFixture),
@@ -299,8 +329,8 @@ function buildSessionContext(request: Request): SessionContext {
     ],
     roles: isViewer ? ["viewer"] : ["owner", "security_admin"],
     permissions: isViewer
-      ? [...viewerPermissions]
-      : [...sessionContextFixture.permissions],
+      ? [...new Set([...viewerPermissions, ...viewerSettingsPermissions])]
+      : [...new Set([...sessionContextFixture.permissions, ...ownerSettingsPermissions])],
   };
 }
 
@@ -310,6 +340,146 @@ function activeWorkspaceId() {
 
 function activeActorId() {
   return state.sessionContext.actor?.id ?? "usr_demo";
+}
+
+let settingsProfile = {
+  firstName: "Stage",
+  lastName: "Owner",
+  displayName: "Stage Owner",
+  locale: "ru",
+  timezone: "Europe/Berlin",
+};
+
+let settingsOrganization = {
+  organizationDisplayName: "Pravocontour Demo",
+  organizationLegalName: "Pravocontour Legal Demo LLC",
+};
+
+let aiProviderConnections: AiProviderConnectionDto[] = [
+  {
+    id: "pc_stage21_chat",
+    workspaceId: activeWorkspaceId(),
+    ownerScope: "workspace",
+    ownerUserId: null,
+    providerCode: "openai_compatible",
+    uiLabel: "Workspace chat model",
+    baseUrl: "https://api.example.com/v1",
+    modelId: "stage21-chat-model",
+    enabled: true,
+    secret: {
+      hasSecret: true,
+      secretStatus: "active",
+      fingerprint: "sha256:stage21chat",
+      lastUpdatedAt: "2026-05-07T10:00:00.000Z",
+      backend: "dev_mock",
+    },
+    capabilities: {
+      streaming: true,
+      jsonMode: true,
+      structuredJsonSchema: true,
+      toolCalls: true,
+    },
+    lastTestStatus: "success",
+    lastTestedAt: "2026-05-07T10:02:00.000Z",
+    lastUsedAt: null,
+    createdAt: "2026-05-07T10:00:00.000Z",
+    updatedAt: "2026-05-07T10:00:00.000Z",
+  },
+];
+
+let aiRouteGroupPreferences: AiRouteGroupPreferenceDto[] = [
+  {
+    routeGroup: "chat_ai",
+    scopeType: "workspace",
+    workspaceId: activeWorkspaceId(),
+    userId: null,
+    providerConnectionId: "pc_stage21_chat",
+    providerCode: "openai_compatible",
+    modelId: "stage21-chat-model",
+    enabled: true,
+    capabilitiesConfirmed: {
+      streaming: true,
+      jsonMode: true,
+      structuredJsonSchema: true,
+      toolCalls: true,
+    },
+    updatedAt: "2026-05-07T10:00:00.000Z",
+  },
+];
+
+function buildSettingsBootstrap(): SettingsBootstrapResponse {
+  const workspace = state.sessionContext.activeWorkspace;
+  return {
+    profile: {
+      userId: activeActorId(),
+      email: state.sessionContext.actor?.email ?? "owner@lexframe.local",
+      firstName: settingsProfile.firstName,
+      lastName: settingsProfile.lastName,
+      displayName: settingsProfile.displayName,
+      fullName: settingsProfile.displayName,
+      locale: settingsProfile.locale,
+      timezone: settingsProfile.timezone,
+    },
+    organization: workspace
+      ? {
+          workspaceId: workspace.id,
+          workspaceSlug: workspace.slug,
+          workspaceName: workspace.name,
+          organizationDisplayName: settingsOrganization.organizationDisplayName,
+          organizationLegalName: settingsOrganization.organizationLegalName,
+          status: workspace.status,
+          role: workspace.role,
+          canEditDisplayFields: state.sessionContext.permissions.includes(
+            "settings.organization.update",
+          ),
+        }
+      : null,
+    permissions: state.sessionContext.permissions,
+    tabs: ["profile", "organization", "ai", "diagnostics"],
+  };
+}
+
+function buildAiSettings(): AiSettingsResponse {
+  return {
+    providerConnections: aiProviderConnections,
+    routeGroups: aiRouteGroupPreferences,
+    effectivePolicies: [
+      {
+        routeGroup: "chat_ai",
+        routeCode: "default_chat",
+        source: "workspace_preference",
+        providerConnectionId: "pc_stage21_chat",
+        providerCode: "openai_compatible",
+        modelId: "stage21-chat-model",
+        baseUrl: "https://api.example.com/v1",
+        hasSecret: true,
+        secretStatus: "active",
+        fingerprint: "sha256:stage21chat",
+        supportsStreaming: true,
+        supportsJson: true,
+        supportsToolCalls: true,
+        policyDecisionId: "stage21-chat-policy",
+        resolvedAt: "2026-05-07T10:03:00.000Z",
+      },
+      {
+        routeGroup: "automation_ai",
+        routeCode: "automation_planner_high",
+        source: "stage18_default_route",
+        providerConnectionId: "stage20_reserved_owner_route",
+        providerCode: "openai",
+        modelId: "gpt-5.5",
+        baseUrl: null,
+        hasSecret: false,
+        secretStatus: "missing",
+        fingerprint: null,
+        supportsStreaming: true,
+        supportsJson: true,
+        supportsToolCalls: true,
+        policyDecisionId: "stage21-automation-policy",
+        resolvedAt: "2026-05-07T10:03:00.000Z",
+      },
+    ],
+  };
 }
 
 function buildSystemStatus(): SystemStatusSummary {
@@ -977,6 +1147,184 @@ export const handlers = [
 
   http.get("*/session/context", ({ request }) =>
     HttpResponse.json(buildSessionContext(request)),
+  ),
+
+  http.get("*/settings/bootstrap", () =>
+    HttpResponse.json(buildSettingsBootstrap()),
+  ),
+
+  http.patch("*/settings/profile", async ({ request }) => {
+    const payload = (await request.json()) as Partial<typeof settingsProfile>;
+    settingsProfile = {
+      ...settingsProfile,
+      ...(typeof payload.firstName === "string"
+        ? { firstName: payload.firstName }
+        : {}),
+      ...(typeof payload.lastName === "string"
+        ? { lastName: payload.lastName }
+        : {}),
+      ...(typeof payload.displayName === "string"
+        ? { displayName: payload.displayName }
+        : {}),
+      ...(typeof payload.locale === "string" ? { locale: payload.locale } : {}),
+      ...(typeof payload.timezone === "string"
+        ? { timezone: payload.timezone }
+        : {}),
+    };
+    return HttpResponse.json(buildSettingsBootstrap().profile);
+  }),
+
+  http.patch("*/settings/organization", async ({ request }) => {
+    const payload = (await request.json()) as Partial<
+      typeof settingsOrganization
+    >;
+    settingsOrganization = {
+      ...settingsOrganization,
+      ...(typeof payload.organizationDisplayName === "string"
+        ? { organizationDisplayName: payload.organizationDisplayName }
+        : {}),
+      ...(typeof payload.organizationLegalName === "string"
+        ? { organizationLegalName: payload.organizationLegalName }
+        : {}),
+    };
+    return HttpResponse.json(buildSettingsBootstrap().organization);
+  }),
+
+  http.get("*/settings/ai", () => HttpResponse.json(buildAiSettings())),
+
+  http.post("*/settings/ai/provider-connections", async ({ request }) => {
+    const payload = (await request.json()) as CreateAiProviderConnectionRequest;
+    const connection: AiProviderConnectionDto = {
+      id: `pc_stage21_${Date.now()}`,
+      workspaceId: activeWorkspaceId(),
+      ownerScope: payload.ownerScope ?? "user",
+      ownerUserId: payload.ownerScope === "workspace" ? null : activeActorId(),
+      providerCode: payload.providerCode,
+      uiLabel: payload.uiLabel ?? `${payload.providerCode} ${payload.modelId}`,
+      baseUrl: payload.baseUrl,
+      modelId: payload.modelId,
+      enabled: true,
+      secret: {
+        hasSecret: Boolean(payload.apiKey),
+        secretStatus: payload.apiKey ? "active" : "missing",
+        fingerprint: payload.apiKey ? "sha256:mockfingerprint" : null,
+        lastUpdatedAt: payload.apiKey ? new Date().toISOString() : null,
+        backend: payload.apiKey ? "dev_mock" : null,
+      },
+      capabilities: payload.capabilities ?? {},
+      lastTestStatus: "not_tested",
+      lastTestedAt: null,
+      lastUsedAt: null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    aiProviderConnections = [connection, ...aiProviderConnections];
+    return HttpResponse.json(connection, { status: 201 });
+  }),
+
+  http.patch("*/settings/ai/provider-connections/:id", async ({
+    params,
+    request,
+  }) => {
+    const id = String(params.id);
+    const payload = (await request.json()) as UpdateAiProviderConnectionRequest;
+    aiProviderConnections = aiProviderConnections.map((connection) =>
+      connection.id === id
+        ? {
+            ...connection,
+            providerCode: payload.providerCode ?? connection.providerCode,
+            uiLabel: payload.uiLabel ?? connection.uiLabel,
+            baseUrl: payload.baseUrl ?? connection.baseUrl,
+            modelId: payload.modelId ?? connection.modelId,
+            enabled: payload.enabled ?? connection.enabled,
+            capabilities: payload.capabilities ?? connection.capabilities,
+            updatedAt: new Date().toISOString(),
+          }
+        : connection,
+    );
+    return HttpResponse.json(
+      aiProviderConnections.find((connection) => connection.id === id),
+    );
+  }),
+
+  http.post("*/settings/ai/provider-connections/:id/secret", ({ params }) => {
+    const id = String(params.id);
+    aiProviderConnections = aiProviderConnections.map((connection) =>
+      connection.id === id
+        ? {
+            ...connection,
+            secret: {
+              hasSecret: true,
+              secretStatus: "active",
+              fingerprint: "sha256:rotatedmock",
+              lastUpdatedAt: new Date().toISOString(),
+              backend: "dev_mock",
+            },
+          }
+        : connection,
+    );
+    return HttpResponse.json(
+      aiProviderConnections.find((connection) => connection.id === id),
+    );
+  }),
+
+  http.post("*/settings/ai/provider-connections/:id/test", ({ params }) => {
+    const id = String(params.id);
+    const result = {
+      providerConnectionId: id,
+      status: "success",
+      latencyMs: 12,
+      testedAt: new Date().toISOString(),
+      errorCode: null,
+      message: "Backend health check completed without sending user prompts.",
+      redacted: true,
+    } as const;
+    aiProviderConnections = aiProviderConnections.map((connection) =>
+      connection.id === id
+        ? {
+            ...connection,
+            lastTestStatus: "success",
+            lastTestedAt: result.testedAt,
+          }
+        : connection,
+    );
+    return HttpResponse.json(result);
+  }),
+
+  http.patch("*/settings/ai/route-groups/:routeGroup", async ({
+    params,
+    request,
+  }) => {
+    const routeGroup = String(params.routeGroup) as AiRouteGroupPreferenceDto["routeGroup"];
+    const payload = (await request.json()) as UpdateAiRouteGroupPreferenceRequest;
+    const connection = aiProviderConnections.find(
+      (item) => item.id === payload.providerConnectionId,
+    );
+    const preference: AiRouteGroupPreferenceDto = {
+      routeGroup,
+      scopeType: payload.scopeType,
+      workspaceId: activeWorkspaceId(),
+      userId: payload.scopeType === "user" ? activeActorId() : null,
+      providerConnectionId: payload.providerConnectionId,
+      providerCode: connection?.providerCode ?? null,
+      modelId: payload.modelId ?? connection?.modelId ?? null,
+      enabled: payload.enabled ?? true,
+      capabilitiesConfirmed: payload.capabilitiesConfirmed ?? {},
+      updatedAt: new Date().toISOString(),
+    };
+    aiRouteGroupPreferences = [
+      preference,
+      ...aiRouteGroupPreferences.filter(
+        (item) =>
+          item.routeGroup !== preference.routeGroup ||
+          item.scopeType !== preference.scopeType,
+      ),
+    ];
+    return HttpResponse.json(preference);
+  }),
+
+  http.get("*/settings/ai/effective-policy", () =>
+    HttpResponse.json({ policies: buildAiSettings().effectivePolicies }),
   ),
 
   ...stage15Handlers,

@@ -3,6 +3,7 @@ import type { AiPolicyContext } from '../../common/types/lexframe-request';
 import { AppHttpException } from '../../common/errors/app-http.exception';
 import { Injectable } from '@nestjs/common';
 import { AiModelRouteRegistryService } from './ai-route-registry.service';
+import { AiRouteGroupResolverService } from './ai-route-group-resolver.service';
 
 @Injectable()
 export class AiRouteResolverService {
@@ -21,21 +22,25 @@ export class AiRouteResolverService {
       | 'automation_builder'
       | 'admin';
   }) {
+    const routeGroup = AiRouteGroupResolverService.routeGroupForRoute(
+      input.routeCode,
+    );
+
     if (
-      input.routeCode === 'automation_planner_high' &&
+      routeGroup === 'automation_ai' &&
       input.caller !== 'admin' &&
       input.caller !== 'automation_builder'
     ) {
       throw new AppHttpException(
         'AI_ROUTE_NOT_ALLOWED',
         403,
-        'automation_planner_high is reserved for Stage 20 automation planning.',
+        'Automation AI routes are reserved for backend automation planning.',
       );
     }
 
     if (
       input.dataClass === 'C_LEGAL_SECRET' &&
-      input.routeCode !== 'automation_planner_high'
+      routeGroup !== 'automation_ai'
     ) {
       throw new AppHttpException(
         'AI_POLICY_BLOCKED',

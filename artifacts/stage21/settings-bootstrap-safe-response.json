@@ -1,0 +1,17 @@
+{
+  "generatedAt": "2026-05-07T17:41:15.048Z",
+  "profile": {
+    "email": "user@example.test",
+    "firstName": "Stage",
+    "lastName": "User",
+    "displayName": "Stage User",
+    "locale": "ru",
+    "timezone": "Europe/Berlin"
+  },
+  "organization": {
+    "workspaceId": "00000000-0000-0000-0000-000000000021",
+    "role": "owner",
+    "canEditDisplayFields": true
+  },
+  "secretFieldsReturned": false
+}

@@ -21,6 +21,7 @@ import {
   AiProviderConnectionRegistryService,
 } from './ai-route-registry.service';
 import { AiRouteResolverService } from './ai-route-resolver.service';
+import { AiRouteGroupResolverService } from './ai-route-group-resolver.service';
 
 @Module({
   imports: [
@@ -46,6 +47,7 @@ import { AiRouteResolverService } from './ai-route-resolver.service';
     AiProviderConnectionRegistryService,
     AiModelRouteRegistryService,
     AiRouteResolverService,
+    AiRouteGroupResolverService,
   ],
   exports: [
     AIGatewayService,
@@ -54,6 +56,7 @@ import { AiRouteResolverService } from './ai-route-resolver.service';
     AiProviderConnectionRegistryService,
     AiModelRouteRegistryService,
     AiRouteResolverService,
+    AiRouteGroupResolverService,
   ],
 })
 export class AIGatewayModule {}

@@ -19,7 +19,13 @@ export type AiProviderRoute =
   | "default_chat"
   | "agent_general"
   | "rag_legal_summary"
+  | "document_generation_assist"
+  | "chat_title_generation"
   | "automation_planner_high"
+  | "automation_blueprint"
+  | "canvas_ai_assist"
+  | "workflow_patch_generation"
+  | "automation_tool_reasoning"
   | "local_mock"
   | "blocked";
 
@@ -33,7 +39,13 @@ export type AiRouteCode =
   | "default_chat"
   | "agent_general"
   | "rag_legal_summary"
-  | "automation_planner_high";
+  | "document_generation_assist"
+  | "chat_title_generation"
+  | "automation_planner_high"
+  | "automation_blueprint"
+  | "canvas_ai_assist"
+  | "workflow_patch_generation"
+  | "automation_tool_reasoning";
 
 export interface AiProviderConnection {
   readonly id: string;
@@ -41,7 +53,15 @@ export interface AiProviderConnection {
   readonly providerCode: AiProviderCode;
   readonly displayName: string;
   readonly baseUrl: string;
-  readonly apiKeyRef: string;
+  readonly apiKeyRef?: string | null;
+  readonly ownerScope?: "user" | "workspace" | "system";
+  readonly ownerUserId?: string | null;
+  readonly secretRefId?: string | null;
+  readonly uiLabel?: string | null;
+  readonly providerMetadataRedacted?: Record<string, unknown>;
+  readonly lastTestStatus?: string | null;
+  readonly lastTestedAt?: string | null;
+  readonly lastUsedAt?: string | null;
   readonly enabled: boolean;
   readonly modelDiscoveryMode: "manual_allowlist" | "models_endpoint";
   readonly allowedModels: readonly string[];

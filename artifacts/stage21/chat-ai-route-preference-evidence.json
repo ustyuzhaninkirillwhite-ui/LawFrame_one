@@ -1,0 +1,10 @@
+{
+  "generatedAt": "2026-05-07T17:41:15.048Z",
+  "routeGroup": "chat_ai",
+  "routeCode": "default_chat",
+  "source": "workspace_preference",
+  "providerCode": "openai_compatible",
+  "modelId": "stage21-chat-model",
+  "hasSecret": true,
+  "fingerprint": "sha256:examplechat"
+}

@@ -1,0 +1,36 @@
+import { redactSecrets } from './settings-redactor';
+
+describe('Stage 21 settings redactor', () => {
+  it('redacts API keys, bearer tokens, Authorization headers and JWT-like strings', () => {
+    const value = {
+      apiKey: 'sk-stage21-secret-value-1234567890',
+      headers: {
+        Authorization: 'Bearer secret-bearer-token-1234567890',
+      },
+      nested: [
+        'token eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjMifQ.signature1234567890',
+      ],
+    };
+
+    expect(redactSecrets(value)).toEqual({
+      apiKey: '[REDACTED]',
+      headers: {
+        Authorization: '[REDACTED]',
+      },
+      nested: ['token [REDACTED]'],
+    });
+  });
+
+  it('does not mutate the original object while redacting nested data', () => {
+    const value = {
+      message: 'provider failed with key sk-stage21-secret-value-1234567890',
+    };
+
+    const redacted = redactSecrets(value);
+
+    expect(value.message).toContain('sk-stage21-secret-value');
+    expect(redacted).toEqual({
+      message: 'provider failed with key [REDACTED]',
+    });
+  });
+});

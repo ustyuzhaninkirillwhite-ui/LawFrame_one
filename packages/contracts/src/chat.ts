@@ -75,7 +75,12 @@ export type ChatStreamEventType =
   | "message_done";
 
 export interface ChatRouteSnapshot {
-  readonly route: "default_chat" | "agent_general" | "rag_legal_summary";
+  readonly route:
+    | "default_chat"
+    | "agent_general"
+    | "rag_legal_summary"
+    | "document_generation_assist"
+    | "chat_title_generation";
   readonly provider: string;
   readonly model: string;
   readonly policyDecisionId: string;

@@ -34,6 +34,7 @@ import { cn } from "@/lib/utils";
 import { useSessionBridge } from "@/providers/session-provider";
 import { useTheme } from "@/providers/theme-provider";
 import { useStage15ShellStore } from "@/stores/stage15-shell-store";
+import { SettingsButton } from "@/features/settings";
 import { countSidebarNotifications } from "./sidebar-notifications";
 
 const fallbackProjectId = "project_claim_001";
@@ -196,14 +197,17 @@ export function ProjectSidebar({
               ))}
             </nav>
 
-            <RailButton
-              label="Выйти"
-              onClick={() => {
-                void signOut();
-              }}
-            >
-              <LogOut size={18} />
-            </RailButton>
+            <div className="grid justify-items-center gap-3">
+              <SettingsButton collapsed />
+              <RailButton
+                label="Выйти"
+                onClick={() => {
+                  void signOut();
+                }}
+              >
+                <LogOut size={18} />
+              </RailButton>
+            </div>
           </div>
         </aside>
 
@@ -237,6 +241,7 @@ export function ProjectSidebar({
                   badge={item.badge}
                 />
               ))}
+              <SettingsButton />
             </div>
           </div>
         ) : null}
@@ -369,6 +374,7 @@ export function ProjectSidebar({
               </div>
             </div>
           ) : null}
+          <SettingsButton />
           <Button
             type="button"
             variant="ghost"

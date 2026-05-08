@@ -337,11 +337,13 @@ import {
   type FetchOptions,
 } from "./core";
 import { createChatClient } from "./chat-client";
+import { createSettingsClient, type SettingsApi } from "./settings-client";
 import { createStage15Client } from "./stage15-client";
 
 export { ApiClientError } from "./core";
 export type { FetchOptions } from "./core";
 export type { ChatApi } from "./chat-client";
+export type { SettingsApi } from "./settings-client";
 export type { Stage15Api } from "./stage15-client";
 
 export interface CanvasBlockSchemaResponse {
@@ -371,7 +373,7 @@ export interface ValidateCanvasConnectionRequest {
   readonly hasApprovalPath?: boolean;
 }
 
-export interface ApiClient {
+export interface ApiClient extends SettingsApi {
   bootstrapAuth(): Promise<{ readonly status: "ok" }>;
   getSessionContext(): Promise<SessionContext>;
   createWorkspace(input: CreateWorkspaceRequest): Promise<WorkspaceSummary>;
@@ -2392,6 +2394,7 @@ export function createApiClient(options: FetchOptions): ApiClient {
       ),
     ...createStage15Client(options),
     ...createChatClient(options),
+    ...createSettingsClient(options),
     listLegalSources: () => requestJson(options, "/legal-sources"),
     getLegalSource: (sourceId) =>
       requestJson(options, `/legal-sources/${sourceId}`),

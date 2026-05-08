@@ -21,7 +21,7 @@ import { AppHttpException } from '../../common/errors/app-http.exception';
 import { Injectable } from '@nestjs/common';
 import { createHash, randomUUID } from 'node:crypto';
 import { getCanvasBlockDefinitions } from '@lexframe/workflow-dsl';
-import { AiModelRouteRegistryService } from '../ai-gateway/ai-route-registry.service';
+import { AiRouteGroupResolverService } from '../ai-gateway/ai-route-group-resolver.service';
 import { AuditService } from '../audit/audit.service';
 import { DatabaseService } from '../database/database.service';
 import { AutomationBlueprintCanvasConverterService } from './automation-blueprint-canvas-converter.service';
@@ -64,7 +64,7 @@ export class AutomationBuilderService {
   constructor(
     private readonly databaseService: DatabaseService,
     private readonly auditService: AuditService,
-    private readonly routeRegistry: AiModelRouteRegistryService,
+    private readonly routeGroupResolver: AiRouteGroupResolverService,
     private readonly contextAssembler: AutomationContextAssemblerService,
     private readonly validator: AutomationBlueprintValidatorService,
     private readonly canvasConverter: AutomationBlueprintCanvasConverterService,
@@ -263,13 +263,19 @@ export class AutomationBuilderService {
     const workspaceId = requireWorkspace(access);
     const intent = mapIntent(await this.loadIntentRow(access, intentId));
     const plannerRunId = randomUUID();
-    const route = this.routeRegistry.getRoute('automation_planner_high');
+    const effectivePolicy = await this.routeGroupResolver.resolveEffectivePolicy({
+      workspaceId,
+      actorUserId: actor.id,
+      routeGroup: 'automation_ai',
+      permissions: access.permissions,
+      traceId: meta.traceId,
+    });
     const routeSnapshot = {
-      route: route.routeCode,
-      provider: route.providerCode,
-      model: route.model,
-      keyFingerprint: 'server_route_ref',
-      policyDecision: route.enabled ? 'backend_owned' : 'not_configured',
+      route: effectivePolicy.routeCode,
+      provider: effectivePolicy.providerCode,
+      model: effectivePolicy.modelId,
+      keyFingerprint: effectivePolicy.fingerprint,
+      policyDecision: effectivePolicy.policyDecisionId,
     };
     const context = this.contextAssembler.assemble({
       workspaceId,
@@ -550,7 +556,9 @@ export class AutomationBuilderService {
         metadata: {
           intentId,
           blueprintId,
-          route: 'automation_planner_high',
+          route: effectivePolicy.routeCode,
+          routeGroup: effectivePolicy.routeGroup,
+          policyDecisionId: effectivePolicy.policyDecisionId,
           validationStatus: validationSummary.status,
         },
       },
