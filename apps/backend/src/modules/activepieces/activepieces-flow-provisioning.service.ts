@@ -15,6 +15,14 @@ interface RuntimeBindingRow {
   readonly status: string;
 }
 
+interface Stage17FlowBindingRow {
+  readonly ap_project_id: string;
+  readonly ap_flow_id: string | null;
+  readonly ap_flow_version_id: string | null;
+  readonly last_synced_hash: string | null;
+  readonly sync_status: string;
+}
+
 @Injectable()
 export class ActivepiecesFlowProvisioningService {
   constructor(private readonly databaseService: DatabaseService) {}
@@ -43,8 +51,27 @@ export class ActivepiecesFlowProvisioningService {
       [input.workspaceId, input.automation.id],
     );
 
+    const stage17FlowBinding =
+      await this.databaseService.one<Stage17FlowBindingRow>(
+        `
+          select
+            ap_project_id,
+            ap_flow_id,
+            ap_flow_version_id,
+            last_synced_hash,
+            sync_status
+          from app.activepieces_flow_bindings
+          where workspace_id = $1
+            and automation_id = $2
+          limit 1
+        `,
+        [input.workspaceId, input.automation.id],
+      );
+
     const activepiecesFlowId =
-      runtimeBinding?.external_flow_id ?? input.automation.runtime_flow_id;
+      stage17FlowBinding?.ap_flow_id ??
+      runtimeBinding?.external_flow_id ??
+      input.automation.runtime_flow_id;
     if (!activepiecesFlowId) {
       throw new AppHttpException(
         'FLOW_BINDING_CONFLICT',
@@ -65,6 +92,7 @@ export class ActivepiecesFlowProvisioningService {
       ].filter((value): value is string => typeof value === 'string'),
     );
     const runtimeProjectId =
+      stage17FlowBinding?.ap_project_id ??
       runtimeBinding?.external_project_id ??
       input.automation.runtime_project_id ??
       null;
@@ -85,6 +113,41 @@ export class ActivepiecesFlowProvisioningService {
       );
     }
 
+    if (
+      stage17FlowBinding?.ap_project_id &&
+      input.projectBinding.activepiecesProjectId &&
+      stage17FlowBinding.ap_project_id !==
+        input.projectBinding.activepiecesProjectId
+    ) {
+      throw new AppHttpException(
+        'FLOW_BINDING_CONFLICT',
+        409,
+        'Activepieces flow binding is not owned by the current project binding.',
+        {
+          automationId: input.automation.id,
+          flowProjectId: stage17FlowBinding.ap_project_id,
+          projectBindingId: input.projectBinding.activepiecesProjectId,
+        },
+      );
+    }
+
+    if (
+      stage17FlowBinding?.ap_flow_id &&
+      runtimeBinding?.external_flow_id &&
+      stage17FlowBinding.ap_flow_id !== runtimeBinding.external_flow_id
+    ) {
+      throw new AppHttpException(
+        'FLOW_BINDING_CONFLICT',
+        409,
+        'Activepieces flow binding and runtime binding point to different flows.',
+        {
+          automationId: input.automation.id,
+          flowBindingId: stage17FlowBinding.ap_flow_id,
+          runtimeFlowId: runtimeBinding.external_flow_id,
+        },
+      );
+    }
+
     await this.databaseService.query(
       `
         update app.automation_runtime_bindings
@@ -98,23 +161,42 @@ export class ActivepiecesFlowProvisioningService {
       [input.workspaceId, input.automation.id, input.traceId],
     );
 
+    await this.databaseService.query(
+      `
+        update app.activepieces_flow_bindings
+        set
+          last_read_back_at = timezone('utc', now()),
+          updated_at = timezone('utc', now())
+        where workspace_id = $1
+          and automation_id = $2
+      `,
+      [input.workspaceId, input.automation.id],
+    );
+
     return {
       automationId: input.automation.id,
       activepiecesProjectId:
-        input.projectBinding.activepiecesProjectId ??
         runtimeProjectId ??
+        input.projectBinding.activepiecesProjectId ??
         input.projectBinding.externalProjectId,
       activepiecesFlowId,
       activepiecesFlowVersionId:
-        runtimeBinding?.activepieces_flow_version_id ?? null,
+        stage17FlowBinding?.ap_flow_version_id ??
+        runtimeBinding?.activepieces_flow_version_id ??
+        null,
       syncStatus:
+        stage17FlowBinding?.sync_status === 'runtime_modified' ||
         runtimeBinding?.status === 'runtime_modified'
           ? 'runtime_modified'
-          : runtimeBinding?.status === 'synced' ||
+          : stage17FlowBinding?.sync_status === 'synced' ||
+              runtimeBinding?.status === 'synced' ||
               input.automation.sync_state === 'synced'
             ? 'synced'
             : 'pending_sync',
-      syncHash: runtimeBinding?.sync_hash ?? input.automation.sync_hash,
+      syncHash:
+        stage17FlowBinding?.last_synced_hash ??
+        runtimeBinding?.sync_hash ??
+        input.automation.sync_hash,
     };
   }
 }

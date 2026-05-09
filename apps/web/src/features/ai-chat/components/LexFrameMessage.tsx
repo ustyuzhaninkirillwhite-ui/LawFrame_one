@@ -1,9 +1,9 @@
 import type { ChatMessageDto } from "@lexframe/contracts";
+import { cn } from "@/lib/utils";
 import { getChatMessageText } from "../domain/chatMappers";
 import { EvidencePanel } from "./EvidencePanel";
 import { LexFrameAttachmentTile } from "./LexFrameAttachmentTile";
 import { LexFrameMessageActions } from "./LexFrameMessageActions";
-import { RouteSnapshotBadge } from "./RouteSnapshotBadge";
 
 export function LexFrameMessage({
   message,
@@ -16,29 +16,52 @@ export function LexFrameMessage({
   readonly onBranch: (messageId: string) => void;
   readonly onCreateAutomation?: (messageId: string) => void;
 }) {
+  const isUser = message.role === "user";
+  const isAssistant = message.role === "assistant";
+
+  if (!isUser && !isAssistant) {
+    return null;
+  }
+
   return (
-    <article className="border-b border-slate-100 px-5 py-4">
-      <div className="mb-1 flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-slate-500">
-        {message.role}
-        <RouteSnapshotBadge message={message} />
-      </div>
-      <div className="whitespace-pre-wrap text-sm leading-6 text-slate-900">
-        {getChatMessageText(message)}
-      </div>
-      {message.attachments.length > 0 ? (
-        <div className="mt-2 flex flex-wrap gap-2">
-          {message.attachments.map((attachment) => (
-            <LexFrameAttachmentTile key={attachment.id} attachment={attachment} />
-          ))}
+    <article
+      data-message-role={message.role}
+      className={cn("flex w-full", isUser ? "justify-end" : "justify-start")}
+    >
+      <div
+        className={cn(
+          "max-w-[84%] rounded-[var(--lf-radius-card)] px-4 py-3 text-sm leading-6 shadow-sm md:max-w-[76%]",
+          isUser
+            ? "bg-[color:var(--lf-primary)] text-[color:var(--lf-primary-fg)]"
+            : "border border-[color:var(--lf-border)] bg-[color:var(--lf-bg-muted)] text-[color:var(--lf-text-primary)]",
+        )}
+      >
+        <div
+          className={cn(
+            "mb-1 text-[11px] font-semibold uppercase tracking-[0.18em]",
+            isUser ? "text-white/70" : "text-[color:var(--lf-text-muted)]",
+          )}
+        >
+          {isUser ? "Вы" : "LexFrame"}
         </div>
-      ) : null}
-      <EvidencePanel message={message} />
-      <LexFrameMessageActions
-        message={message}
-        onRegenerate={onRegenerate}
-        onBranch={onBranch}
-        onCreateAutomation={onCreateAutomation}
-      />
+        <div className="whitespace-pre-wrap">{getChatMessageText(message)}</div>
+        {message.attachments.length > 0 ? (
+          <div className="mt-2 flex flex-wrap gap-2">
+            {message.attachments.map((attachment) => (
+              <LexFrameAttachmentTile key={attachment.id} attachment={attachment} />
+            ))}
+          </div>
+        ) : null}
+        <EvidencePanel message={message} />
+        {isAssistant ? (
+          <LexFrameMessageActions
+            message={message}
+            onRegenerate={onRegenerate}
+            onBranch={onBranch}
+            onCreateAutomation={onCreateAutomation}
+          />
+        ) : null}
+      </div>
     </article>
   );
 }

@@ -9,3 +9,7 @@ export function isAutomationCanvasRoute(pathname: string | null | undefined) {
 export function isProjectWorkspaceRoute(pathname: string | null | undefined) {
   return Boolean(pathname?.match(/^\/app\/projects\/[^/]+\/?$/));
 }
+
+export function isProjectChatRoute(pathname: string | null | undefined) {
+  return Boolean(pathname?.match(/^\/app\/projects\/[^/]+\/chats(?:\/[^/]+)?\/?$/));
+}

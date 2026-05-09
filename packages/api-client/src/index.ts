@@ -1,6 +1,8 @@
 import type {
   AccessReviewCampaign,
   ActivepiecesAiTestPolicyWire,
+  ActivepiecesCanvasReadinessResponse,
+  ActivepiecesCanvasReadinessWireResponse,
   ActivepiecesIntegrationStatus,
   ActivepiecesRunSmokeRequest,
   ActivepiecesRunSmokeResponse,
@@ -149,6 +151,10 @@ import type {
   InitializeActivepiecesSessionResponse,
   InitializeActivepiecesSessionWireResponse,
   InitializeActivepiecesSessionWireRequest,
+  RecordActivepiecesIframeHealthRequest,
+  RecordActivepiecesIframeHealthResponse,
+  RecordActivepiecesIframeHealthWireRequest,
+  RecordActivepiecesIframeHealthWireResponse,
   CreateAutomationTemplateRequest,
   CreateAutomationTemplateVersionRequest,
   CreateClauseLibraryItemRequest,
@@ -284,7 +290,9 @@ import type {
   SignedUrlRequest,
   SignedUrlResponse,
   StartAutomationRunRequest,
+  Stage15CreateProjectRequest,
   Stage15CreateProjectChatRequest,
+  Stage15ProjectCreatedResponse,
   Stage15ProjectChatCreatedResponse,
   Stage15ProjectChatSummary,
   Stage15ProjectDetail,
@@ -892,6 +900,9 @@ export interface ApiClient extends SettingsApi {
     readonly connectionType?: string | null;
   }): Promise<CanvasConnectionRequestResponse>;
   listProjects(): Promise<Stage15ProjectListResponse>;
+  createProject(
+    input: Stage15CreateProjectRequest,
+  ): Promise<Stage15ProjectCreatedResponse>;
   getProject(projectId: string): Promise<Stage15ProjectDetail>;
   getProjectDashboardSnapshot(
     projectId: string,
@@ -1049,9 +1060,16 @@ export interface ApiClient extends SettingsApi {
   createActivepiecesSession(
     input: CreateActivepiecesSessionRequest,
   ): Promise<ActivepiecesSessionResponse>;
+  getActivepiecesCanvasReadiness(input: {
+    readonly projectId: string;
+    readonly automationId: string;
+  }): Promise<ActivepiecesCanvasReadinessResponse>;
   initializeActivepiecesSession(
     input: InitializeActivepiecesSessionRequest,
   ): Promise<InitializeActivepiecesSessionResponse>;
+  recordActivepiecesIframeHealth(
+    input: RecordActivepiecesIframeHealthRequest,
+  ): Promise<RecordActivepiecesIframeHealthResponse>;
   syncAutomationRuntime(
     id: string,
     input: SyncAutomationRuntimeRequest,
@@ -1389,6 +1407,18 @@ function toInitializeActivepiecesSessionWireRequest(
   };
 }
 
+function toRecordActivepiecesIframeHealthWireRequest(
+  input: RecordActivepiecesIframeHealthRequest,
+): RecordActivepiecesIframeHealthWireRequest {
+  return {
+    event: input.event,
+    ...(input.details !== undefined ? { details: input.details } : {}),
+    ...(input.clientTraceId !== undefined
+      ? { client_trace_id: input.clientTraceId }
+      : {}),
+  };
+}
+
 function mapActivepiecesSessionResponse(
   response: ActivepiecesSessionWireResponse,
 ): ActivepiecesSessionResponse {
@@ -1421,6 +1451,9 @@ function mapActivepiecesSessionResponse(
             ),
           }
         : {}),
+      ...(response.open_check
+        ? { openCheck: mapActivepiecesOpenCheck(response.open_check) }
+        : {}),
     } as const;
 
     if (response.status === "blocked") {
@@ -1445,6 +1478,8 @@ function mapActivepiecesSessionResponse(
     instanceUrl: response.instance_url,
     builderUrl: response.builder_url,
     initialRoute: response.initial_route,
+    expectedRoute: response.expected_route ?? response.initial_route,
+    refreshPolicy: mapActivepiecesRefreshPolicy(response.refresh_policy),
     jwtToken: response.jwt_token,
     expiresAt: response.expires_at,
     ttlSeconds: response.ttl_seconds,
@@ -1516,6 +1551,9 @@ function mapActivepiecesSessionResponse(
       apDb: response.runtime_status.ap_db,
       redis: response.runtime_status.redis,
     },
+    ...(response.open_check
+      ? { openCheck: mapActivepiecesOpenCheck(response.open_check) }
+      : {}),
     ...(response.warnings
       ? { warnings: response.warnings.map(mapActivepiecesSessionWarning) }
       : {}),
@@ -1525,6 +1563,55 @@ function mapActivepiecesSessionResponse(
     ...(response.diagnostics
       ? { diagnostics: mapActivepiecesSessionDiagnostics(response.diagnostics) }
       : {}),
+  };
+}
+
+function mapActivepiecesOpenCheck(
+  openCheck: NonNullable<ActivepiecesSessionWireResponse["open_check"]>,
+) {
+  return {
+    status: openCheck.status,
+    reasonCode: openCheck.reason_code,
+    readinessCode: openCheck.readiness_code ?? openCheck.reason_code,
+    activepiecesProjectId: openCheck.activepieces_project_id,
+    activepiecesFlowId: openCheck.activepieces_flow_id,
+    activepiecesFlowVersionId:
+      openCheck.activepieces_flow_version_id ?? null,
+    readinessVersion: openCheck.readiness_version ?? null,
+    activepiecesVersion: openCheck.activepieces_version ?? null,
+    embedSdkVersion: openCheck.embed_sdk_version ?? null,
+    expectedRoute: openCheck.expected_route ?? null,
+    ...(openCheck.refresh_policy
+      ? { refreshPolicy: mapActivepiecesRefreshPolicy(openCheck.refresh_policy) }
+      : {}),
+    repairAttempted: openCheck.repair_attempted,
+    checkedAt: openCheck.checked_at,
+    checks: openCheck.checks ?? [],
+    canonicalReplacementRoute:
+      openCheck.canonical_replacement_route ?? null,
+    message: openCheck.message ?? null,
+  };
+}
+
+function mapActivepiecesRefreshPolicy(
+  policy: NonNullable<
+    NonNullable<ActivepiecesSessionWireResponse["open_check"]>["refresh_policy"]
+  >,
+) {
+  return {
+    strategy: policy.strategy,
+    recoverOn: policy.recover_on,
+  };
+}
+
+function mapActivepiecesCanvasReadinessResponse(
+  response: ActivepiecesCanvasReadinessWireResponse,
+): ActivepiecesCanvasReadinessResponse {
+  const mapped = mapActivepiecesOpenCheck(response);
+  return {
+    ...mapped,
+    status: response.status,
+    readinessCode: response.readiness_code,
   };
 }
 
@@ -1575,6 +1662,17 @@ function mapInitializeActivepiecesSessionResponse(
     status: response.status,
     sessionId: response.session_id,
     initializedAt: response.initialized_at,
+  };
+}
+
+function mapRecordActivepiecesIframeHealthResponse(
+  response: RecordActivepiecesIframeHealthWireResponse,
+): RecordActivepiecesIframeHealthResponse {
+  return {
+    status: response.status,
+    sessionId: response.session_id,
+    event: response.event,
+    recordedAt: response.recorded_at,
   };
 }
 
@@ -2667,12 +2765,31 @@ export function createApiClient(options: FetchOptions): ApiClient {
           }),
         ),
       ),
+    getActivepiecesCanvasReadiness: async (input) =>
+      mapActivepiecesCanvasReadinessResponse(
+        await requestJson<ActivepiecesCanvasReadinessWireResponse>(
+          options,
+          `/projects/${encodeURIComponent(input.projectId)}/automations/${encodeURIComponent(
+            input.automationId,
+          )}/canvas-readiness`,
+        ),
+      ),
     initializeActivepiecesSession: async (input) =>
       mapInitializeActivepiecesSessionResponse(
         await requestJson<InitializeActivepiecesSessionWireResponse>(
           options,
           `/activepieces/session/${encodeURIComponent(input.sessionId)}/initialized`,
           withJsonBody(toInitializeActivepiecesSessionWireRequest(input), {
+            method: "POST",
+          }),
+        ),
+      ),
+    recordActivepiecesIframeHealth: async (input) =>
+      mapRecordActivepiecesIframeHealthResponse(
+        await requestJson<RecordActivepiecesIframeHealthWireResponse>(
+          options,
+          `/activepieces/session/${encodeURIComponent(input.sessionId)}/iframe-health`,
+          withJsonBody(toRecordActivepiecesIframeHealthWireRequest(input), {
             method: "POST",
           }),
         ),

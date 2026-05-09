@@ -1,11 +1,13 @@
 "use client";
 
 import * as React from "react";
+import { useRouter } from "next/navigation";
 import { QueryState } from "@/components/stage3-shared";
-import { useTheme } from "@/providers/theme-provider";
 import { ActivepiecesCanvasWrapper } from "./activepieces-canvas-wrapper";
 import { BuilderUnavailableState } from "./builder-unavailable-state";
 import { useActivepiecesSession } from "./use-activepieces-session";
+
+type CanvasRecoveryReason = "auth" | "invalid_access" | "stuck_loading";
 
 export function ActivepiecesCanvasRoute({
   projectId,
@@ -14,42 +16,70 @@ export function ActivepiecesCanvasRoute({
   readonly projectId: string;
   readonly automationId: string;
 }) {
-  const session = useActivepiecesSession({ projectId, automationId });
+  const router = useRouter();
+  const session = useActivepiecesSession({
+    projectId,
+    automationId,
+    enabled: true,
+  });
   const { apiClient, clearToken, requestSession, state, tokenRef } = session;
-  const { theme } = useTheme();
-  const mountedThemeRef = React.useRef(theme);
+  const recoveryRetriesRef = React.useRef(0);
+  const [canvasFailure, setCanvasFailure] =
+    React.useState<ReturnType<typeof buildCanvasFailure> | null>(null);
   const safeSession =
     state.phase === "available" ? state.session : null;
+  const canonicalReplacementRoute =
+    state.phase === "available"
+      ? state.session.openCheck?.canonicalReplacementRoute
+      : state.response?.openCheck?.canonicalReplacementRoute;
 
-  const handleAuthFailure = React.useCallback(() => {
+  const handleAuthFailure = React.useCallback((reason: CanvasRecoveryReason) => {
+    if (safeSession && reason !== "auth") {
+      void apiClient.recordActivepiecesIframeHealth({
+        sessionId: safeSession.sessionId,
+        event: reason,
+      });
+    }
     clearToken();
-    void requestSession("refresh");
-  }, [clearToken, requestSession]);
+    if (recoveryRetriesRef.current >= 1) {
+      setCanvasFailure(buildCanvasFailure("AP_IFRAME_NAVIGATION_FAILED"));
+      return;
+    }
+
+    recoveryRetriesRef.current += 1;
+    void requestSession(reason === "invalid_access" ? "invalid_access" : "recover");
+  }, [apiClient, clearToken, requestSession, safeSession]);
 
   const handleMounted = React.useCallback(() => {
     if (!safeSession) {
       return;
     }
 
+    const healthEvent =
+      recoveryRetriesRef.current > 0 ? "recovered" : "ready";
+    recoveryRetriesRef.current = 0;
+    setCanvasFailure(null);
     void apiClient
       .initializeActivepiecesSession({
         sessionId: safeSession.sessionId,
-      })
-      .then(() => {
-        clearToken();
       });
-  }, [apiClient, clearToken, safeSession]);
+    void apiClient.recordActivepiecesIframeHealth({
+      sessionId: safeSession.sessionId,
+      event: healthEvent,
+    });
+  }, [apiClient, safeSession]);
+
+  const handleRetry = React.useCallback(() => {
+    recoveryRetriesRef.current = 0;
+    setCanvasFailure(null);
+    void requestSession("retry");
+  }, [requestSession]);
 
   React.useEffect(() => {
-    if (mountedThemeRef.current === theme) {
-      return;
+    if (canonicalReplacementRoute) {
+      router.replace(canonicalReplacementRoute);
     }
-
-    mountedThemeRef.current = theme;
-    if (state.phase === "available") {
-      void requestSession("refresh");
-    }
-  }, [requestSession, state.phase, theme]);
+  }, [canonicalReplacementRoute, router]);
 
   return (
     <section
@@ -58,8 +88,9 @@ export function ActivepiecesCanvasRoute({
     >
       <CanvasPane
         sessionState={state}
+        canvasFailure={canvasFailure}
         tokenRef={tokenRef}
-        onRetry={() => void requestSession("retry")}
+        onRetry={handleRetry}
         onAuthFailure={handleAuthFailure}
         onMounted={handleMounted}
       />
@@ -72,17 +103,31 @@ export function ActivepiecesCanvasRoute({
 
 function CanvasPane({
   sessionState,
+  canvasFailure,
   tokenRef,
   onRetry,
   onAuthFailure,
   onMounted,
 }: {
   readonly sessionState: ReturnType<typeof useActivepiecesSession>["state"];
+  readonly canvasFailure: ReturnType<typeof buildCanvasFailure> | null;
   readonly tokenRef: React.MutableRefObject<string | null>;
   readonly onRetry: () => void;
-  readonly onAuthFailure: () => void;
+  readonly onAuthFailure: (reason: CanvasRecoveryReason) => void;
   readonly onMounted: () => void;
 }) {
+  if (canvasFailure) {
+    return (
+      <div className="flex h-full items-center justify-center p-6">
+        <BuilderUnavailableState
+          response={canvasFailure}
+          message={canvasFailure.message}
+          onRetry={onRetry}
+        />
+      </div>
+    );
+  }
+
   if (
     sessionState.phase === "auth_loading" ||
     sessionState.phase === "idle" ||
@@ -115,11 +160,38 @@ function CanvasPane({
 
   return (
     <ActivepiecesCanvasWrapper
-      key={sessionState.session.sessionId}
+      key={`${sessionState.session.flowBinding.automationId ?? "automation"}:${
+        sessionState.session.flowBinding.activepiecesFlowId ?? "flow"
+      }`}
       session={sessionState.session}
       tokenRef={tokenRef}
       onMounted={onMounted}
       onAuthFailure={onAuthFailure}
     />
   );
+}
+
+function buildCanvasFailure(
+  readinessCode: "FLOW_BINDING_MISSING" | "AP_IFRAME_NAVIGATION_FAILED",
+) {
+  return {
+    status: "unavailable" as const,
+    readinessCode,
+    jwtToken: null,
+    expiresAt: null,
+    role: null,
+    message:
+      "Automation Canvas could not confirm access to the ActivePieces project. LexFrame stopped the raw embed error and prepared a controlled retry path.",
+    fallback: {
+      showBuilderUnavailableState: true,
+      allowLexframeCanvasReserve: false,
+      allowRunsTab: true,
+      allowSettingsTab: true,
+      allowDiagnosticsTab: true,
+    },
+    diagnostics: {
+      traceId: null,
+      safeToShow: true,
+    },
+  };
 }

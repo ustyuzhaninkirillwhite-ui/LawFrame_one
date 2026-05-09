@@ -5,6 +5,7 @@ import { ProjectAutomationsLanding } from "./project-automations-landing";
 const replace = vi.fn();
 const refetch = vi.fn();
 const mutate = vi.fn();
+const getActivepiecesCanvasReadiness = vi.fn();
 let automationsState: Record<string, unknown>;
 let ensureState: Record<string, unknown>;
 
@@ -19,6 +20,14 @@ vi.mock("@/hooks/domain/stage15", () => ({
   useEnsureStage17CanvasAutomation: () => ensureState,
 }));
 
+vi.mock("@/providers/session-provider", () => ({
+  useSessionBridge: () => ({
+    apiClient: {
+      getActivepiecesCanvasReadiness,
+    },
+  }),
+}));
+
 vi.mock("./project-automations", () => ({
   ProjectAutomations: () => <div>automation list</div>,
 }));
@@ -28,6 +37,23 @@ describe("ProjectAutomationsLanding", () => {
     replace.mockReset();
     refetch.mockReset();
     mutate.mockReset();
+    getActivepiecesCanvasReadiness.mockReset();
+    getActivepiecesCanvasReadiness.mockResolvedValue({
+      status: "ready",
+      reasonCode: "READY",
+      readinessCode: "READY",
+      activepiecesProjectId: "ap-project",
+      activepiecesFlowId: "ap-flow",
+      activepiecesFlowVersionId: null,
+      readinessVersion: "readiness_1",
+      activepiecesVersion: "0.82.0",
+      embedSdkVersion: "0.9.0",
+      repairAttempted: false,
+      checkedAt: "2026-05-08T10:00:00.000Z",
+      checks: [],
+      canonicalReplacementRoute: null,
+      message: null,
+    });
     automationsState = {
       data: [],
       isLoading: false,
@@ -69,5 +95,26 @@ describe("ProjectAutomationsLanding", () => {
         "/app/projects/project_claim_001/automations/activepieces-canvas/automation",
       );
     });
+  });
+
+  it("repairs a single automation before opening it when runtime binding is missing", async () => {
+    automationsState = {
+      ...automationsState,
+      data: [
+        {
+          id: "single-not-ready",
+          canOpenBuilder: false,
+          runtimeProjectId: null,
+          runtimeFlowId: null,
+        },
+      ],
+    };
+
+    render(<ProjectAutomationsLanding projectId="project_claim_001" />);
+
+    await waitFor(() => {
+      expect(replace).not.toHaveBeenCalled();
+    });
+    expect(mutate).toHaveBeenCalled();
   });
 });

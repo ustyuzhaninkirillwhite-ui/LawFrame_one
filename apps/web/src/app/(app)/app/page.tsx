@@ -1,5 +1,5 @@
-import { WorkspaceHome } from "@/components/shell/workspace-home";
+import { AppEntryRedirect } from "@/components/shell/app-entry-redirect";
 
 export default function Stage15AppPage() {
-  return <WorkspaceHome />;
+  return <AppEntryRedirect />;
 }

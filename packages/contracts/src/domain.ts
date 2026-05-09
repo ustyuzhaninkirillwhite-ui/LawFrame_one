@@ -782,6 +782,15 @@ export type AutomationCanvasReadinessCode =
   | "LOCAL_KEYS_INVALID"
   | "AI_TEST_BLOCKED"
   | "ACTIVEPIECES_UNAVAILABLE"
+  | "ACTIVEPIECES_VERSION_MISMATCH"
+  | "AP_PROJECT_MISSING"
+  | "AP_USER_MISSING"
+  | "AP_PROJECT_MEMBERSHIP_MISSING"
+  | "AP_FLOW_MISSING"
+  | "AP_FLOW_PROJECT_MISMATCH"
+  | "AP_MANAGED_AUTH_FAILED"
+  | "AP_WEBSOCKET_UNAVAILABLE"
+  | "AP_IFRAME_NAVIGATION_FAILED"
   | "FLOW_BINDING_MISSING"
   | "SESSION_BRIDGE_UNAVAILABLE"
   | "FEATURE_DISABLED"
@@ -793,6 +802,99 @@ export type ActivepiecesRuntimeComponentStatus =
   | "degraded"
   | "blocked"
   | "unknown";
+
+export type ActivepiecesCanvasOpenCheckStatus =
+  | "ready"
+  | "repaired"
+  | "blocked"
+  | "unavailable";
+
+export type ActivepiecesCanvasReadinessStatus =
+  ActivepiecesCanvasOpenCheckStatus;
+
+export type ActivepiecesCanvasRecoveryReason =
+  | "auth"
+  | "invalid_access"
+  | "stuck_loading";
+
+export interface ActivepiecesCanvasRefreshPolicy {
+  readonly strategy: "no_foreground_refresh";
+  readonly recoverOn: readonly ActivepiecesCanvasRecoveryReason[];
+}
+
+export interface ActivepiecesCanvasRefreshPolicyWire {
+  readonly strategy: "no_foreground_refresh";
+  readonly recover_on: readonly ActivepiecesCanvasRecoveryReason[];
+}
+
+export type ActivepiecesCanvasReadinessCheckStatus =
+  | "pass"
+  | "warn"
+  | "fail"
+  | "repaired";
+
+export interface ActivepiecesCanvasReadinessCheck {
+  readonly name: string;
+  readonly status: ActivepiecesCanvasReadinessCheckStatus;
+  readonly code?: AutomationCanvasReadinessCode | null;
+  readonly message?: string | null;
+}
+
+export interface ActivepiecesCanvasReadinessCheckWire {
+  readonly name: string;
+  readonly status: ActivepiecesCanvasReadinessCheckStatus;
+  readonly code?: AutomationCanvasReadinessCode | null;
+  readonly message?: string | null;
+}
+
+export interface ActivepiecesCanvasOpenCheck {
+  readonly status: ActivepiecesCanvasOpenCheckStatus;
+  readonly reasonCode: AutomationCanvasReadinessCode;
+  readonly activepiecesProjectId: string | null;
+  readonly activepiecesFlowId: string | null;
+  readonly activepiecesFlowVersionId?: string | null;
+  readonly readinessVersion?: string | null;
+  readonly activepiecesVersion?: string | null;
+  readonly embedSdkVersion?: string | null;
+  readonly expectedRoute?: string | null;
+  readonly refreshPolicy?: ActivepiecesCanvasRefreshPolicy;
+  readonly repairAttempted: boolean;
+  readonly checkedAt: string;
+  readonly checks?: readonly ActivepiecesCanvasReadinessCheck[];
+  readonly canonicalReplacementRoute?: string | null;
+  readonly message?: string | null;
+}
+
+export interface ActivepiecesCanvasOpenCheckWire {
+  readonly status: ActivepiecesCanvasOpenCheckStatus;
+  readonly reason_code: AutomationCanvasReadinessCode;
+  readonly readiness_code?: AutomationCanvasReadinessCode;
+  readonly activepieces_project_id: string | null;
+  readonly activepieces_flow_id: string | null;
+  readonly activepieces_flow_version_id?: string | null;
+  readonly readiness_version?: string | null;
+  readonly activepieces_version?: string | null;
+  readonly embed_sdk_version?: string | null;
+  readonly expected_route?: string | null;
+  readonly refresh_policy?: ActivepiecesCanvasRefreshPolicyWire;
+  readonly repair_attempted: boolean;
+  readonly checked_at: string;
+  readonly checks?: readonly ActivepiecesCanvasReadinessCheckWire[];
+  readonly canonical_replacement_route?: string | null;
+  readonly message?: string | null;
+}
+
+export interface ActivepiecesCanvasReadinessResponse
+  extends ActivepiecesCanvasOpenCheck {
+  readonly status: ActivepiecesCanvasReadinessStatus;
+  readonly readinessCode: AutomationCanvasReadinessCode;
+}
+
+export interface ActivepiecesCanvasReadinessWireResponse
+  extends ActivepiecesCanvasOpenCheckWire {
+  readonly status: ActivepiecesCanvasReadinessStatus;
+  readonly readiness_code: AutomationCanvasReadinessCode;
+}
 
 export interface CreateActivepiecesSessionRequest {
   readonly workspaceId?: string;
@@ -839,6 +941,39 @@ export interface InitializeActivepiecesSessionWireResponse {
   readonly status: "initialized";
   readonly session_id: string;
   readonly initialized_at: string;
+}
+
+export type ActivepiecesIframeHealthEvent =
+  | "ready"
+  | "stuck_loading"
+  | "invalid_access"
+  | "recovered";
+
+export interface RecordActivepiecesIframeHealthRequest {
+  readonly sessionId: string;
+  readonly event: ActivepiecesIframeHealthEvent;
+  readonly details?: Record<string, unknown>;
+  readonly clientTraceId?: string | null;
+}
+
+export interface RecordActivepiecesIframeHealthWireRequest {
+  readonly event: ActivepiecesIframeHealthEvent;
+  readonly details?: Record<string, unknown>;
+  readonly client_trace_id?: string | null;
+}
+
+export interface RecordActivepiecesIframeHealthResponse {
+  readonly status: "recorded";
+  readonly sessionId: string;
+  readonly event: ActivepiecesIframeHealthEvent;
+  readonly recordedAt: string;
+}
+
+export interface RecordActivepiecesIframeHealthWireResponse {
+  readonly status: "recorded";
+  readonly session_id: string;
+  readonly event: ActivepiecesIframeHealthEvent;
+  readonly recorded_at: string;
 }
 
 export interface RuntimeConnectionSummary {
@@ -1694,6 +1829,8 @@ export interface ActivepiecesSessionReadyResponse {
   readonly instanceUrl: string;
   readonly builderUrl: string;
   readonly initialRoute: string;
+  readonly expectedRoute: string;
+  readonly refreshPolicy: ActivepiecesCanvasRefreshPolicy;
   readonly jwtToken: string;
   readonly expiresAt: string;
   readonly ttlSeconds: number;
@@ -1724,6 +1861,7 @@ export interface ActivepiecesSessionReadyResponse {
   readonly designSystem: "activepieces_like";
   readonly flowBinding: ActivepiecesSessionFlowBinding;
   readonly runtimeStatus: ActivepiecesSessionRuntimeStatus;
+  readonly openCheck?: ActivepiecesCanvasOpenCheck;
   readonly warnings?: readonly ActivepiecesSessionWarning[];
   readonly aiTestPolicy?: ActivepiecesAiTestPolicy;
   readonly diagnostics?: ActivepiecesSessionDiagnostics;
@@ -1758,6 +1896,8 @@ export interface ActivepiecesSessionReadyWireResponse {
   readonly instance_url: string;
   readonly builder_url: string;
   readonly initial_route: string;
+  readonly expected_route: string;
+  readonly refresh_policy: ActivepiecesCanvasRefreshPolicyWire;
   readonly jwt_token: string;
   readonly expires_at: string;
   readonly ttl_seconds: number;
@@ -1788,6 +1928,7 @@ export interface ActivepiecesSessionReadyWireResponse {
   readonly design_system: "activepieces_like";
   readonly flow_binding: ActivepiecesSessionFlowBindingWire;
   readonly runtime_status: ActivepiecesSessionRuntimeStatusWire;
+  readonly open_check?: ActivepiecesCanvasOpenCheckWire;
   readonly warnings?: readonly ActivepiecesSessionWarningWire[];
   readonly ai_test_policy?: ActivepiecesAiTestPolicyWire;
   readonly diagnostics?: ActivepiecesSessionDiagnosticsWire;
@@ -1861,6 +2002,7 @@ export interface ActivepiecesSessionBlockedResponse {
   readonly role: null;
   readonly message: string;
   readonly fallback: ActivepiecesSessionFallback;
+  readonly openCheck?: ActivepiecesCanvasOpenCheck;
   readonly warnings?: readonly ActivepiecesSessionWarning[];
   readonly aiTestPolicy?: ActivepiecesAiTestPolicy;
   readonly diagnostics?: ActivepiecesSessionDiagnostics;
@@ -1874,6 +2016,7 @@ export interface ActivepiecesSessionUnavailableResponse {
   readonly role: null;
   readonly message: string;
   readonly fallback: ActivepiecesSessionFallback;
+  readonly openCheck?: ActivepiecesCanvasOpenCheck;
   readonly warnings?: readonly ActivepiecesSessionWarning[];
   readonly diagnostics?: ActivepiecesSessionDiagnostics;
 }
@@ -1886,6 +2029,7 @@ export interface ActivepiecesSessionBlockedWireResponse {
   readonly role: null;
   readonly message: string;
   readonly fallback: ActivepiecesSessionFallbackWire;
+  readonly open_check?: ActivepiecesCanvasOpenCheckWire;
   readonly warnings?: readonly ActivepiecesSessionWarningWire[];
   readonly ai_test_policy?: ActivepiecesAiTestPolicyWire;
   readonly diagnostics?: ActivepiecesSessionDiagnosticsWire;
@@ -1899,6 +2043,7 @@ export interface ActivepiecesSessionUnavailableWireResponse {
   readonly role: null;
   readonly message: string;
   readonly fallback: ActivepiecesSessionFallbackWire;
+  readonly open_check?: ActivepiecesCanvasOpenCheckWire;
   readonly warnings?: readonly ActivepiecesSessionWarningWire[];
   readonly diagnostics?: ActivepiecesSessionDiagnosticsWire;
 }

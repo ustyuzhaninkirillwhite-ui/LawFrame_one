@@ -10,6 +10,8 @@ type ActivepiecesEmbedSdk = {
   navigate?: (input: { route: string }) => void | Promise<void>;
 };
 
+type CanvasAuthFailureReason = "auth" | "invalid_access" | "stuck_loading";
+
 type ActivepiecesEmbedConfigureInput = {
   readonly instanceUrl: string;
   readonly jwtToken: string;
@@ -64,7 +66,7 @@ export function ActivepiecesCanvasWrapper({
   readonly session: SafeActivepiecesSession;
   readonly tokenRef: React.MutableRefObject<string | null>;
   readonly onMounted: () => void;
-  readonly onAuthFailure: () => void;
+  readonly onAuthFailure: (reason: CanvasAuthFailureReason) => void;
 }) {
   const env = React.useMemo(() => getPublicEnv(), []);
   const [sdkState, setSdkState] = React.useState<
@@ -91,6 +93,7 @@ export function ActivepiecesCanvasWrapper({
   React.useEffect(() => {
     let disposed = false;
     let disposeLocalizationOverlay: (() => void) | null = null;
+    let disposeHealthMonitor: (() => void) | null = null;
 
     async function mount() {
       try {
@@ -115,7 +118,7 @@ export function ActivepiecesCanvasWrapper({
         const handleNavigation = (input: unknown) => {
           const route = readSdkRoute(input);
           if (route && isLoginRoute(route)) {
-            onAuthFailure();
+            onAuthFailure("auth");
           }
         };
 
@@ -157,9 +160,6 @@ export function ActivepiecesCanvasWrapper({
           initialRoute: session.initialRoute,
           navigationHandler: handleNavigation,
         };
-        disposeLocalizationOverlay =
-          installEmbeddedLocalizationOverlay(containerId);
-
         await sdk.configure(configureInput);
         styleEmbeddedIframe(containerId);
 
@@ -187,13 +187,47 @@ export function ActivepiecesCanvasWrapper({
             await verifyEmbeddedLocalizationBeforeVisible(containerId);
         }
 
+        const earlyEmbeddedReadiness = classifyEmbeddedReadiness(containerId);
+        if (earlyEmbeddedReadiness === "invalid_access") {
+          onAuthFailure("invalid_access");
+          throw new Error("Activepieces reported invalid project access.");
+        }
+        if (earlyEmbeddedReadiness === "auth") {
+          onAuthFailure("auth");
+          throw new Error("Activepieces authentication was not accepted.");
+        }
+        if (earlyEmbeddedReadiness === "stuck_loading") {
+          onAuthFailure("stuck_loading");
+          throw new Error("Activepieces Canvas is stuck on the loading state.");
+        }
+
         if (!localizationReadiness.surfaceReady) {
           throw new Error(
             "Конструктор автоматизаций не отрисовал рабочую область.",
           );
         }
 
+        const embeddedReadiness = classifyEmbeddedReadiness(containerId);
+        if (embeddedReadiness === "invalid_access") {
+          onAuthFailure("invalid_access");
+          throw new Error("Activepieces reported invalid project access.");
+        }
+        if (embeddedReadiness === "auth") {
+          onAuthFailure("auth");
+          throw new Error("Activepieces authentication was not accepted.");
+        }
+        if (embeddedReadiness === "stuck_loading") {
+          onAuthFailure("stuck_loading");
+          throw new Error("Activepieces Canvas is stuck on the loading state.");
+        }
+
         if (!disposed) {
+          disposeLocalizationOverlay =
+            installEmbeddedLocalizationOverlay(containerId);
+          disposeHealthMonitor = installCanvasHealthMonitor(
+            containerId,
+            onAuthFailure,
+          );
           setSdkState("ready");
           onMounted();
         }
@@ -214,10 +248,7 @@ export function ActivepiecesCanvasWrapper({
     return () => {
       disposed = true;
       disposeLocalizationOverlay?.();
-      const container = document.getElementById(containerId);
-      if (container) {
-        container.replaceChildren();
-      }
+      disposeHealthMonitor?.();
     };
   }, [
     containerId,
@@ -428,7 +459,7 @@ async function verifyEmbeddedLocalizationBeforeVisible(containerId: string) {
   if (!doc?.body) {
     return {
       knownEnglishHits: 0,
-      surfaceReady: hasEmbeddedIframe(containerId),
+      surfaceReady: false,
     };
   }
 
@@ -440,7 +471,11 @@ async function verifyEmbeddedLocalizationBeforeVisible(containerId: string) {
     hits = knownUserFacingEnglishTerms.filter((term) =>
       containsUserFacingTerm(visiblePayload, term),
     );
-    if (visiblePayload.trim().length > 0 && hits.length === 0) {
+    const readiness = classifyEmbeddedReadiness(containerId);
+    if (readiness === "invalid_access" || readiness === "auth") {
+      break;
+    }
+    if (readiness === "ready" && hits.length === 0) {
       break;
     }
 
@@ -457,12 +492,8 @@ async function verifyEmbeddedLocalizationBeforeVisible(containerId: string) {
 
   return {
     knownEnglishHits: hits.length,
-    surfaceReady: visiblePayload.trim().length > 0,
+    surfaceReady: classifyEmbeddedReadiness(containerId) === "ready",
   };
-}
-
-function hasEmbeddedIframe(containerId: string) {
-  return Boolean(document.getElementById(containerId)?.querySelector("iframe"));
 }
 
 function styleEmbeddedIframe(containerId: string) {
@@ -514,7 +545,7 @@ function installEmbeddedLocalizationOverlay(containerId: string) {
         if (activeDocument?.body) {
           translateEmbeddedDocument(activeDocument);
         }
-      }, 50);
+      }, 500);
     };
     activeObserver = new MutationObserver(scheduleTranslate);
     activeObserver.observe(doc.body, {
@@ -541,6 +572,9 @@ function translateEmbeddedDocument(doc: Document) {
   let replacements = translateTextNodes(doc.body);
   replaceBrandedImages(doc);
   for (const element of doc.body.querySelectorAll<HTMLElement>("*")) {
+    if (isIgnoredEmbeddedElement(element)) {
+      continue;
+    }
     for (const attribute of ["aria-label", "alt", "title", "placeholder"]) {
       const value = element.getAttribute(attribute);
       if (value) {
@@ -577,7 +611,13 @@ function replaceBrandedImages(doc: Document) {
 }
 
 function translateTextNodes(root: Node) {
-  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+    acceptNode(node) {
+      return isNodeInUserVisibleSurface(node)
+        ? NodeFilter.FILTER_ACCEPT
+        : NodeFilter.FILTER_REJECT;
+    },
+  });
   const nodes: Text[] = [];
   while (walker.nextNode()) {
     nodes.push(walker.currentNode as Text);
@@ -662,8 +702,14 @@ function waitForEmbeddedDocument(containerId: string, timeoutMs: number) {
 }
 
 function collectVisiblePayload(doc: Document) {
-  const values: string[] = [doc.title];
-  const walker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT);
+  const values: string[] = [];
+  const walker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT, {
+    acceptNode(node) {
+      return isNodeInUserVisibleSurface(node)
+        ? NodeFilter.FILTER_ACCEPT
+        : NodeFilter.FILTER_REJECT;
+    },
+  });
   while (walker.nextNode()) {
     const value = walker.currentNode.nodeValue?.trim();
     if (value) {
@@ -671,6 +717,9 @@ function collectVisiblePayload(doc: Document) {
     }
   }
   for (const element of doc.body.querySelectorAll<HTMLElement>("*")) {
+    if (isIgnoredEmbeddedElement(element)) {
+      continue;
+    }
     for (const attribute of ["aria-label", "alt", "title", "placeholder"]) {
       const value = element.getAttribute(attribute)?.trim();
       if (value) {
@@ -680,6 +729,150 @@ function collectVisiblePayload(doc: Document) {
   }
   return values.join("\n");
 }
+
+function classifyEmbeddedReadiness(containerId: string) {
+  const doc = document
+    .getElementById(containerId)
+    ?.querySelector("iframe")
+    ?.contentDocument;
+  if (!doc?.body) {
+    return "pending";
+  }
+
+  const visiblePayload = collectVisiblePayload(doc);
+  const payload = visiblePayload.toLowerCase();
+  if (
+    /\binvalid access\b/.test(payload) ||
+    /do not have access/.test(payload) ||
+    /access denied/.test(payload)
+  ) {
+    return "invalid_access";
+  }
+  if (/\blog\s*in\b/.test(payload) || /\bsign\s*in\b/.test(payload)) {
+    return "auth";
+  }
+  if (isSpinnerOnlyDocument(doc, visiblePayload)) {
+    return "stuck_loading";
+  }
+  if (!hasBuilderSurface(doc, visiblePayload)) {
+    return "pending";
+  }
+
+  return "ready";
+}
+
+function installCanvasHealthMonitor(
+  containerId: string,
+  onAuthFailure: (reason: CanvasAuthFailureReason) => void,
+) {
+  let stuckSinceMs: number | null = null;
+  let reported = false;
+
+  const check = () => {
+    if (reported) {
+      return;
+    }
+
+    const readiness = classifyEmbeddedReadiness(containerId);
+    if (readiness === "invalid_access" || readiness === "auth") {
+      reported = true;
+      onAuthFailure(readiness);
+      return;
+    }
+
+    if (readiness !== "stuck_loading") {
+      stuckSinceMs = null;
+      return;
+    }
+
+    stuckSinceMs ??= Date.now();
+    if (Date.now() - stuckSinceMs >= 15_000) {
+      reported = true;
+      onAuthFailure("stuck_loading");
+    }
+  };
+
+  const intervalId = window.setInterval(check, 1_000);
+  check();
+
+  return () => {
+    window.clearInterval(intervalId);
+  };
+}
+
+function hasBuilderSurface(doc: Document, visiblePayload: string) {
+  if (
+    doc.body.querySelector(
+      [
+        "[data-testid*='flow']",
+        "[data-test-id*='flow']",
+        "[class*='react-flow']",
+        "[class*='flow-canvas']",
+        "[class*='flow-builder']",
+      ].join(","),
+    )
+  ) {
+    return true;
+  }
+
+  return [
+    /\bFlow Builder\b/i,
+    /\bManual Trigger\b/i,
+    /\bTrigger this flow manually\b/i,
+    /\bTest Flow\b/i,
+    /\bPublish\b/i,
+    /\bRuns\b/i,
+    /\bVersions\b/i,
+    /Сценар/i,
+    /Ручн/i,
+    /Запуск/i,
+  ].some((pattern) => pattern.test(visiblePayload));
+}
+
+function isSpinnerOnlyDocument(doc: Document, visiblePayload: string) {
+  const hasSpinner = Boolean(
+    doc.body.querySelector(
+      [
+        ".animate-spin",
+        "[class*='spinner']",
+        "[class*='Spinner']",
+        "[class*='loader']",
+        "[class*='Loader']",
+        "[role='progressbar']",
+        "svg.animate-spin",
+      ].join(","),
+    ),
+  );
+  return hasSpinner && visiblePayload.trim().length === 0;
+}
+
+function isNodeInUserVisibleSurface(node: Node) {
+  const parent =
+    node.nodeType === Node.TEXT_NODE
+      ? node.parentElement
+      : node.nodeType === Node.ELEMENT_NODE
+        ? node
+        : null;
+  return Boolean(
+    parent &&
+      "closest" in parent &&
+      !(parent as Element).closest(ignoredEmbeddedElementSelector),
+  );
+}
+
+function isIgnoredEmbeddedElement(element: Element) {
+  return Boolean(element.closest(ignoredEmbeddedElementSelector));
+}
+
+const ignoredEmbeddedElementSelector = [
+  "style",
+  "script",
+  "template",
+  "noscript",
+  "[hidden]",
+  "[aria-hidden='true']",
+  "[data-radix-popper-content-wrapper][style*='visibility: hidden']",
+].join(",");
 
 function containsUserFacingTerm(payload: string, term: string) {
   return term.includes(" ")

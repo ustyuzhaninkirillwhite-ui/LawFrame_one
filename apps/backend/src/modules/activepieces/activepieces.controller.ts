@@ -4,6 +4,7 @@ import type {
   ActivepiecesStepEventCallback,
   CreateActivepiecesEmbedTokenRequest,
   CreateActivepiecesSessionRequest,
+  RecordActivepiecesIframeHealthRequest,
   CreateRunArtifactRequest,
   RuntimeApprovalGateCallback,
   RuntimeDeliveryGateCallback,
@@ -98,6 +99,31 @@ export class ActivepiecesController {
     );
   }
 
+  @Get('projects/:projectId/automations/:automationId/canvas-readiness')
+  @Header('Cache-Control', 'no-store, no-cache, private')
+  @Header('Referrer-Policy', 'no-referrer')
+  @UseGuards(AuthGuard, WorkspaceContextGuard)
+  getCanvasReadiness(
+    @LexframeRequestContext() context: LexframeRequest['lexframe'],
+    @Param('projectId') projectId: string,
+    @Param('automationId') automationId: string,
+    @Req() request: LexframeRequest,
+  ) {
+    if (!context?.actor || !context.access) {
+      throw new Error('Workspace access context was not attached.');
+    }
+
+    return this.activepiecesService.getCanvasReadiness(
+      context.actor,
+      context.access,
+      {
+        projectId,
+        automationId,
+      },
+      requestMeta(request),
+    );
+  }
+
   @Post('activepieces/managed-authn/external-token')
   @HttpCode(200)
   @Header('Cache-Control', 'no-store, no-cache, private')
@@ -142,6 +168,30 @@ export class ActivepiecesController {
       context.actor,
       context.access,
       sessionId,
+      requestMeta(request),
+    );
+  }
+
+  @Post('activepieces/session/:sessionId/iframe-health')
+  @HttpCode(200)
+  @Header('Cache-Control', 'no-store, no-cache, private')
+  @Header('Referrer-Policy', 'no-referrer')
+  @UseGuards(AuthGuard, WorkspaceContextGuard)
+  recordIframeHealth(
+    @LexframeRequestContext() context: LexframeRequest['lexframe'],
+    @Param('sessionId') sessionId: string,
+    @Body() body: unknown,
+    @Req() request: LexframeRequest,
+  ) {
+    if (!context?.actor || !context.access) {
+      throw new Error('Workspace access context was not attached.');
+    }
+
+    return this.activepiecesService.recordIframeHealth(
+      context.actor,
+      context.access,
+      sessionId,
+      parseRecordIframeHealthRequest(body),
       requestMeta(request),
     );
   }
@@ -799,6 +849,45 @@ function parseCreateSessionRequest(
       ? { idempotencyKey: value.idempotency_key.trim() || null }
       : value.idempotency_key === null
         ? { idempotencyKey: null }
+        : {}),
+  };
+}
+
+function parseRecordIframeHealthRequest(
+  body: unknown,
+): Omit<RecordActivepiecesIframeHealthRequest, 'sessionId'> {
+  const value = asRecord(body);
+  const event = value.event;
+  if (
+    event !== 'ready' &&
+    event !== 'stuck_loading' &&
+    event !== 'invalid_access' &&
+    event !== 'recovered'
+  ) {
+    throw new AppHttpException(
+      'VALIDATION_ERROR',
+      400,
+      'Activepieces iframe health event is invalid.',
+    );
+  }
+
+  return {
+    event,
+    ...(value.details !== undefined
+      ? {
+          details:
+            value.details === null
+              ? {}
+              : asLooseRecord(
+                  value.details,
+                  'Activepieces iframe health details must be an object.',
+                ),
+        }
+      : {}),
+    ...(typeof value.client_trace_id === 'string'
+      ? { clientTraceId: value.client_trace_id.trim() || null }
+      : value.client_trace_id === null
+        ? { clientTraceId: null }
         : {}),
   };
 }

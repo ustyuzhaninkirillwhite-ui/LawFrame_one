@@ -96,6 +96,16 @@ export interface Stage15ProjectListResponse {
   readonly items: readonly Stage15ProjectSummary[];
 }
 
+export interface Stage15CreateProjectRequest {
+  readonly name: string;
+  readonly description?: string | null;
+  readonly color?: string | null;
+}
+
+export interface Stage15ProjectCreatedResponse {
+  readonly project: Stage15ProjectSummary;
+}
+
 export interface Stage15CreateProjectChatRequest {
   readonly title?: string | null;
   readonly source?: "project_chat" | "automation_chat" | "global_chat";

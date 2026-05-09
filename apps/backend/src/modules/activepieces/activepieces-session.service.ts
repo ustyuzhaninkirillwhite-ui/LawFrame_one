@@ -1,10 +1,13 @@
 import type {
+  ActivepiecesCanvasReadinessWireResponse,
   ActivepiecesSessionPreferredMode,
   ActivepiecesSessionReadyWireResponse,
   ActivepiecesSessionWireResponse,
   InitializeActivepiecesSessionWireResponse,
   CreateActivepiecesSessionRequest,
   AutomationCanvasReadinessCode,
+  RecordActivepiecesIframeHealthRequest,
+  RecordActivepiecesIframeHealthWireResponse,
 } from '@lexframe/contracts';
 import type {
   AccessContext,
@@ -19,6 +22,8 @@ import { DatabaseService } from '../database/database.service';
 import { LocalOwnerKeyVaultService } from '../local-owner-key-vault/local-owner-key-vault.service';
 import type { SafeLocalKeysStatus } from '../local-owner-key-vault/local-owner-key-vault.types';
 import { ActivepiecesAuditWriter } from './activepieces-audit-writer';
+import { ActivepiecesCanvasProvisioningService } from './activepieces-canvas-provisioning.service';
+import { ActivepiecesCanvasReadinessService } from './activepieces-canvas-readiness.service';
 import { ActivepiecesFlowProvisioningService } from './activepieces-flow-provisioning.service';
 import { ActivepiecesIdentityBridge } from './activepieces-identity-bridge';
 import { ActivepiecesJwtSigner } from './activepieces-jwt-signer';
@@ -38,10 +43,6 @@ interface WorkspaceSecurityRow {
   readonly pieces_filter_type: string;
   readonly pieces_tags: readonly string[] | null;
   readonly incident_lock_active: boolean;
-}
-
-interface ExistingIdempotencyRow {
-  readonly request_hash: string | null;
 }
 
 interface InitializedSessionRow {
@@ -65,13 +66,24 @@ interface ManagedAuthnBindingRow {
   readonly full_name: string | null;
 }
 
+interface ResolvedAutomationForSession {
+  readonly automation: ActivepiecesInstalledAutomationForSession;
+  readonly canonicalReplacementRoute: string | null;
+}
+
 const RATE_LIMIT_WINDOW_MS = 60_000;
 const SUCCESS_SESSION_LIMIT = 10;
 const FAILED_SESSION_LIMIT = 5;
 const STAGE17_ACTIVEPIECES_PLATFORM_ID = 'lfstg17platform000001';
+const ACTIVEPIECES_CANVAS_CANONICAL_SYNC_HASH =
+  'stage21-activepieces-0.82-canvas-v1';
 const ACTIVEPIECES_RUNTIME_PROBE_ATTEMPTS = 3;
 const ACTIVEPIECES_RUNTIME_PROBE_TIMEOUT_MS = 5_000;
 const ACTIVEPIECES_RUNTIME_PROBE_RETRY_DELAY_MS = 400;
+const ACTIVEPIECES_CANVAS_REFRESH_POLICY = {
+  strategy: 'no_foreground_refresh',
+  recover_on: ['auth', 'invalid_access', 'stuck_loading'],
+} as const;
 
 @Injectable()
 export class ActivepiecesSessionService {
@@ -88,7 +100,9 @@ export class ActivepiecesSessionService {
     private readonly roleMapper: ActivepiecesRoleMapper,
     private readonly piecesPolicyService: ActivepiecesPiecesPolicyService,
     private readonly identityBridge: ActivepiecesIdentityBridge,
+    private readonly canvasProvisioningService: ActivepiecesCanvasProvisioningService,
     private readonly flowProvisioningService: ActivepiecesFlowProvisioningService,
+    private readonly canvasReadinessService: ActivepiecesCanvasReadinessService,
     private readonly jwtSigner: ActivepiecesJwtSigner,
     private readonly auditWriter: ActivepiecesAuditWriter,
     private readonly localOwnerKeyVaultService: LocalOwnerKeyVaultService,
@@ -176,28 +190,32 @@ export class ActivepiecesSessionService {
       const cacheKey = idempotencyKey
         ? `${workspaceId}:${actor.id}:${idempotencyKey}`
         : null;
+      let cachedResponse: ActivepiecesSessionReadyWireResponse | null = null;
 
       if (idempotencyKey && cacheKey) {
-        const cached = this.readCachedSession(cacheKey, requestHash);
-        if (cached) {
-          return cached;
-        }
-        await this.assertIdempotencyReplayAllowed({
-          workspaceId,
-          actorId: actor.id,
-          projectId: input.projectId,
-          idempotencyKey,
-          requestHash,
-        });
+        cachedResponse = this.readCachedSession(cacheKey, requestHash);
       }
 
-      const [workspaceSecurity, automation, runtimeStatus, localKeysStatus] =
+      const [workspaceSecurity, resolvedAutomation, runtimeStatus, localKeysStatus] =
         await Promise.all([
           this.getWorkspaceSecurity(workspaceId),
-          this.getInstalledAutomation(workspaceId, input.automationId),
+          this.resolveInstalledAutomationForRoute(
+            workspaceId,
+            input.automationId,
+            input.projectId,
+          ),
           this.getRuntimeStatus(),
           Promise.resolve(this.localOwnerKeyVaultService.getSafeStatus()),
         ]);
+      const initialAutomation = resolvedAutomation.automation;
+      const automation = await this.ensureAutomationUsesCanonicalRuntimeIds({
+        actor,
+        access,
+        workspaceId,
+        automation: initialAutomation,
+        projectId: input.projectId,
+        traceId: traceMeta.traceId,
+      });
 
       this.assertAutomationReady(automation, input.projectId);
 
@@ -287,6 +305,27 @@ export class ActivepiecesSessionService {
         },
       });
 
+      await this.identityBridge.ensureProjectMembership({
+        workspaceId,
+        projectBinding,
+        userBinding,
+        role: mappedRole.role,
+        traceId: traceMeta.traceId,
+      });
+      await this.auditWriter.record({
+        actor,
+        workspaceId,
+        automationId: automation.id,
+        action: 'activepieces.membership.provisioned',
+        result: 'success',
+        meta: traceMeta,
+        metadata: {
+          activepiecesProjectId: projectBinding.activepiecesProjectId,
+          activepiecesUserId: userBinding.activepiecesUserId,
+          role: mappedRole.role,
+        },
+      });
+
       const flowBinding = await this.flowProvisioningService.ensureFlowBinding({
         workspaceId,
         routeProjectId: input.projectId,
@@ -310,6 +349,72 @@ export class ActivepiecesSessionService {
         },
       });
 
+      const readiness = await this.canvasReadinessService.validate({
+        workspaceId,
+        projectId: input.projectId,
+        automationId: automation.id,
+        projectBinding,
+        userBinding,
+        flowBinding,
+        repairAttempted: false,
+        canonicalReplacementRoute: resolvedAutomation.canonicalReplacementRoute,
+      });
+      await this.auditWriter.record({
+        actor,
+        workspaceId,
+        automationId: automation.id,
+        action: 'canvas.readiness.checked',
+        result:
+          readiness.status === 'ready' || readiness.status === 'repaired'
+            ? 'success'
+            : 'error',
+        reasonCode:
+          readiness.readiness_code === 'READY'
+            ? undefined
+            : readiness.readiness_code,
+        meta: traceMeta,
+        metadata: {
+          projectId: input.projectId,
+          status: readiness.status,
+          readinessCode: readiness.readiness_code,
+          readinessVersion: readiness.readiness_version,
+          activepiecesProjectId: readiness.activepieces_project_id,
+          activepiecesFlowId: readiness.activepieces_flow_id,
+          activepiecesVersion: readiness.activepieces_version,
+          embedSdkVersion: readiness.embed_sdk_version,
+          checks: readiness.checks,
+        },
+      });
+
+      if (readiness.status !== 'ready' && readiness.status !== 'repaired') {
+        await this.auditWriter.record({
+          actor,
+          workspaceId,
+          automationId: automation.id,
+          action: 'canvas.session.blocked',
+          result: readiness.status === 'unavailable' ? 'error' : 'denied',
+          reasonCode: readiness.readiness_code,
+          meta: traceMeta,
+          metadata: {
+            projectId: input.projectId,
+            readinessVersion: readiness.readiness_version,
+            checks: readiness.checks,
+          },
+        });
+        return buildControlledReadinessFailureResponse(
+          readiness,
+          traceMeta.traceId,
+        );
+      }
+
+      if (
+        cachedResponse &&
+        cachedResponse.open_check?.readiness_version ===
+          readiness.readiness_version
+      ) {
+        return cachedResponse;
+      }
+
       const ttlSeconds = clampTtl(workspaceSecurity.tokenTtlSeconds);
       const issuedAt = new Date();
       const expiresAt = new Date(issuedAt.getTime() + ttlSeconds * 1000);
@@ -321,6 +426,7 @@ export class ActivepiecesSessionService {
       const brand = buildActivepiecesBrand();
       const modeDecision = this.resolveMode(modePreference);
       const localKeysReadiness = resolveLocalKeysReadiness(localKeysStatus);
+      const openCheck = this.canvasReadinessService.toOpenCheck(readiness);
       const jwt = await this.jwtSigner.issue({
         actor,
         access,
@@ -375,6 +481,10 @@ export class ActivepiecesSessionService {
         initial_route: buildActivepiecesInitialRoute(
           flowBinding.activepiecesFlowId,
         ),
+        expected_route: buildActivepiecesInitialRoute(
+          flowBinding.activepiecesFlowId,
+        ),
+        refresh_policy: ACTIVEPIECES_CANVAS_REFRESH_POLICY,
         jwt_token: jwt.jwtToken,
         expires_at: expiresAt.toISOString(),
         ttl_seconds: ttlSeconds,
@@ -424,6 +534,7 @@ export class ActivepiecesSessionService {
           sync_hash: flowBinding.syncHash,
         },
         runtime_status: runtimeStatus,
+        open_check: openCheck,
         ...(localKeysReadiness.warnings.length > 0
           ? { warnings: localKeysReadiness.warnings }
           : {}),
@@ -508,6 +619,139 @@ export class ActivepiecesSessionService {
     }
   }
 
+  async getCanvasReadiness(
+    actor: AuthenticatedActor,
+    access: AccessContext,
+    input: {
+      readonly projectId: string;
+      readonly automationId: string;
+    },
+    meta: ActivepiecesSessionRequestMeta,
+  ): Promise<ActivepiecesCanvasReadinessWireResponse> {
+    const workspaceId = access.activeWorkspace?.id ?? null;
+    if (!workspaceId) {
+      throw new AppHttpException(
+        'WORKSPACE_ACCESS_DENIED',
+        403,
+        'Active workspace is required to check Activepieces Canvas readiness.',
+      );
+    }
+
+    if (this.env.ACTIVEPIECES_MVP_CANVAS_ENABLED === '0') {
+      throw new AppHttpException(
+        'FEATURE_DISABLED',
+        503,
+        'Activepieces Canvas is disabled.',
+      );
+    }
+
+    const traceMeta = {
+      ...meta,
+      traceId: meta.traceId,
+    };
+    const [workspaceSecurity, resolvedAutomation] = await Promise.all([
+      this.getWorkspaceSecurity(workspaceId),
+      this.resolveInstalledAutomationForRoute(
+        workspaceId,
+        input.automationId,
+        input.projectId,
+      ),
+    ]);
+    const initialAutomation = resolvedAutomation.automation;
+    const automation = await this.ensureAutomationUsesCanonicalRuntimeIds({
+      actor,
+      access,
+      workspaceId,
+      automation: initialAutomation,
+      projectId: input.projectId,
+      traceId: traceMeta.traceId,
+    });
+
+    this.assertAutomationReady(automation, input.projectId);
+
+    if (workspaceSecurity.incidentLockActive) {
+      throw new AppHttpException(
+        'INCIDENT_LOCK',
+        423,
+        'Activepieces Canvas is blocked while incident mode is active.',
+      );
+    }
+
+    const piecesPolicy = this.piecesPolicyService.buildAutomationCanvasPolicy({
+      workspaceSecurity,
+      automation,
+    });
+    const mappedRole = this.roleMapper.mapAutomationCanvasRole({
+      access,
+      readOnlySupported: true,
+    });
+    const projectBinding = await this.identityBridge.ensureProjectBinding({
+      workspaceId,
+      actor,
+      automation,
+      piecesPolicy,
+      routeProjectId: input.projectId,
+    });
+    const userBinding = await this.identityBridge.ensureUserBinding({
+      workspaceId,
+      actor,
+      role: mappedRole.role,
+    });
+    await this.identityBridge.ensureProjectMembership({
+      workspaceId,
+      projectBinding,
+      userBinding,
+      role: mappedRole.role,
+      traceId: traceMeta.traceId,
+    });
+    const flowBinding = await this.flowProvisioningService.ensureFlowBinding({
+      workspaceId,
+      routeProjectId: input.projectId,
+      automation,
+      projectBinding,
+      traceId: traceMeta.traceId,
+    });
+    const readiness = await this.canvasReadinessService.validate({
+      workspaceId,
+      projectId: input.projectId,
+      automationId: automation.id,
+      projectBinding,
+      userBinding,
+      flowBinding,
+      repairAttempted: false,
+      canonicalReplacementRoute: resolvedAutomation.canonicalReplacementRoute,
+    });
+
+    await this.auditWriter.record({
+      actor,
+      workspaceId,
+      automationId: automation.id,
+      action: 'canvas.readiness.checked',
+      result:
+        readiness.status === 'ready' || readiness.status === 'repaired'
+          ? 'success'
+          : 'error',
+      reasonCode:
+        readiness.readiness_code === 'READY'
+          ? undefined
+          : readiness.readiness_code,
+      meta: traceMeta,
+      metadata: {
+        projectId: input.projectId,
+        status: readiness.status,
+        readinessCode: readiness.readiness_code,
+        readinessVersion: readiness.readiness_version,
+        activepiecesProjectId: readiness.activepieces_project_id,
+        activepiecesFlowId: readiness.activepieces_flow_id,
+        activepiecesVersion: readiness.activepieces_version,
+        embedSdkVersion: readiness.embed_sdk_version,
+        checks: readiness.checks,
+      },
+    });
+
+    return readiness;
+  }
+
   async initializeSession(
     actor: AuthenticatedActor,
     access: AccessContext,
@@ -564,6 +808,74 @@ export class ActivepiecesSessionService {
       status: 'initialized',
       session_id: row.id,
       initialized_at: row.initialized_at,
+    };
+  }
+
+  async recordIframeHealth(
+    actor: AuthenticatedActor,
+    access: AccessContext,
+    sessionId: string,
+    input: Omit<RecordActivepiecesIframeHealthRequest, 'sessionId'>,
+    meta: ActivepiecesSessionRequestMeta,
+  ): Promise<RecordActivepiecesIframeHealthWireResponse> {
+    const workspaceId = access.activeWorkspace?.id ?? null;
+    if (!workspaceId) {
+      throw new AppHttpException(
+        'WORKSPACE_ACCESS_DENIED',
+        403,
+        'Active workspace is required to record Activepieces Canvas health.',
+      );
+    }
+
+    const row = await this.databaseService.one<InitializedSessionRow>(
+      `
+        select
+          id,
+          coalesce(initialized_at, issued_at)::text as initialized_at,
+          installed_automation_id
+        from app.activepieces_embed_sessions
+        where id = $1
+          and workspace_id = $2
+          and auth_user_id = $3
+          and token_expires_at > timezone('utc', now())
+        limit 1
+      `,
+      [sessionId, workspaceId, actor.id],
+    );
+
+    if (!row) {
+      throw new AppHttpException(
+        'SESSION_INVALID',
+        404,
+        'Activepieces session is expired or does not belong to this workspace.',
+      );
+    }
+
+    const recordedAt = new Date().toISOString();
+    await this.auditWriter.record({
+      actor,
+      workspaceId,
+      automationId: row.installed_automation_id,
+      sessionId: row.id,
+      action: `canvas.iframe.${input.event}`,
+      result: activepiecesIframeHealthResult(input.event),
+      reasonCode: activepiecesIframeHealthReasonCode(input.event),
+      meta: {
+        ...meta,
+        traceId: input.clientTraceId ?? meta.traceId,
+      },
+      metadata: {
+        event: input.event,
+        details: input.details ?? {},
+        recordedAt,
+      },
+    });
+
+    return {
+      status: 'recorded',
+      session_id: row.id,
+      event: input.event,
+      recorded_at: recordedAt,
     };
   }
 
@@ -703,8 +1015,90 @@ export class ActivepiecesSessionService {
     workspaceId: string,
     automationId: string,
   ): Promise<ActivepiecesInstalledAutomationForSession> {
-    const row =
-      await this.databaseService.one<ActivepiecesInstalledAutomationForSession>(
+    const row = await this.getInstalledAutomationRow(workspaceId, automationId);
+
+    if (!row) {
+      throw new AppHttpException(
+        'AUTOMATION_ACCESS_DENIED',
+        403,
+        'Automation does not belong to the active workspace.',
+      );
+    }
+
+    return row;
+  }
+
+  private async resolveInstalledAutomationForRoute(
+    workspaceId: string,
+    automationId: string,
+    routeProjectId: string,
+  ): Promise<ResolvedAutomationForSession> {
+    const exact = await this.getInstalledAutomationRow(workspaceId, automationId);
+    if (exact) {
+      return {
+        automation: exact,
+        canonicalReplacementRoute: null,
+      };
+    }
+
+    const canonical = await this.getCanonicalInstalledAutomation(workspaceId);
+    if (!canonical) {
+      throw new AppHttpException(
+        'AUTOMATION_ACCESS_DENIED',
+        403,
+        'Automation does not belong to the active workspace.',
+      );
+    }
+
+    return {
+      automation: canonical,
+      canonicalReplacementRoute: buildProjectAutomationRoute(
+        routeProjectId,
+        canonical.id,
+      ),
+    };
+  }
+
+  private async getInstalledAutomationRow(
+    workspaceId: string,
+    automationId: string,
+  ): Promise<ActivepiecesInstalledAutomationForSession | null> {
+    return this.databaseService.one<ActivepiecesInstalledAutomationForSession>(
+      `
+        select
+          id,
+          workspace_id,
+          template_id,
+          source_template_version_id,
+          title,
+          version,
+          workflow_state,
+          builder_state,
+          sync_state,
+          compatibility_status,
+          available,
+          workflow,
+          active_canvas_version_id,
+          production_disabled_at,
+          production_disabled_reason,
+          runtime_project_id,
+          runtime_flow_id,
+          sync_hash
+        from app.installed_automations
+        where workspace_id = $1
+          and id = $2
+          and deleted_at is null
+        limit 1
+      `,
+      [workspaceId, automationId],
+    );
+  }
+
+  private async getCanonicalInstalledAutomation(
+    workspaceId: string,
+  ): Promise<ActivepiecesInstalledAutomationForSession | null> {
+    const result =
+      await this.databaseService.query<ActivepiecesInstalledAutomationForSession>(
         `
           select
             id,
@@ -727,22 +1121,30 @@ export class ActivepiecesSessionService {
             sync_hash
           from app.installed_automations
           where workspace_id = $1
-            and id = $2
             and deleted_at is null
-          limit 1
+            and available = true
+            and builder_state = 'ready'
+            and sync_state = 'synced'
+            and compatibility_status <> 'policy_blocked'
+          order by
+            case when sync_hash = $2 then 0 else 1 end,
+            updated_at desc
+          limit 2
         `,
-        [workspaceId, automationId],
+        [workspaceId, ACTIVEPIECES_CANVAS_CANONICAL_SYNC_HASH],
       );
-
-    if (!row) {
-      throw new AppHttpException(
-        'AUTOMATION_ACCESS_DENIED',
-        403,
-        'Automation does not belong to the active workspace.',
-      );
+    const rows = result.rows;
+    const candidate = rows[0] ?? null;
+    if (!candidate) {
+      return null;
     }
-
-    return row;
+    if (
+      candidate.sync_hash === ACTIVEPIECES_CANVAS_CANONICAL_SYNC_HASH ||
+      rows.length === 1
+    ) {
+      return candidate;
+    }
+    return null;
   }
 
   private assertAutomationReady(
@@ -779,6 +1181,48 @@ export class ActivepiecesSessionService {
         },
       );
     }
+  }
+
+  private async ensureAutomationUsesCanonicalRuntimeIds(input: {
+    readonly actor: AuthenticatedActor;
+    readonly access: AccessContext;
+    readonly workspaceId: string;
+    readonly automation: ActivepiecesInstalledAutomationForSession;
+    readonly projectId: string;
+    readonly traceId: string | null;
+  }): Promise<ActivepiecesInstalledAutomationForSession> {
+    if (hasCanonicalActivepiecesRuntimeIds(input.automation)) {
+      return input.automation;
+    }
+
+    await this.auditWriter.record({
+      actor: input.actor,
+      workspaceId: input.workspaceId,
+      automationId: input.automation.id,
+      action: 'canvas.readiness.repaired',
+      result: 'success',
+      reasonCode: 'AP_MANAGED_AUTH_FAILED',
+      meta: {
+        requestId: null,
+        traceId: input.traceId,
+      },
+      metadata: {
+        projectId: input.projectId,
+        repair: 'canonical_activepieces_runtime_ids',
+        runtimeProjectId: input.automation.runtime_project_id,
+        runtimeFlowId: input.automation.runtime_flow_id,
+        activeCanvasVersionId: input.automation.active_canvas_version_id,
+      },
+    });
+
+    await this.canvasProvisioningService.ensureStage17Canvas({
+      actor: input.actor,
+      access: input.access,
+      projectId: input.projectId,
+      traceId: input.traceId,
+    });
+
+    return this.getInstalledAutomation(input.workspaceId, input.automation.id);
   }
 
   private async getRuntimeStatus(): Promise<
@@ -863,47 +1307,6 @@ export class ActivepiecesSessionService {
       instanceUrl,
       prefix,
     };
-  }
-
-  private async assertIdempotencyReplayAllowed(input: {
-    readonly workspaceId: string;
-    readonly actorId: string;
-    readonly projectId: string;
-    readonly idempotencyKey: string;
-    readonly requestHash: string;
-  }) {
-    const row = await this.databaseService.one<ExistingIdempotencyRow>(
-      `
-        select request_hash
-        from app.activepieces_embed_sessions
-        where workspace_id = $1
-          and auth_user_id = $2
-          and project_id = $3
-          and idempotency_key = $4
-          and token_expires_at > timezone('utc', now())
-        order by created_at desc
-        limit 1
-      `,
-      [input.workspaceId, input.actorId, input.projectId, input.idempotencyKey],
-    );
-
-    if (!row) {
-      return;
-    }
-
-    if (row.request_hash !== input.requestHash) {
-      throw new AppHttpException(
-        'INVALID_CLIENT_FIELD',
-        409,
-        'Idempotency key was reused with a different Activepieces session request.',
-      );
-    }
-
-    throw new AppHttpException(
-      'INVALID_CLIENT_FIELD',
-      409,
-      'Idempotent Activepieces session response is no longer available in memory.',
-    );
   }
 
   private readCachedSession(
@@ -1064,6 +1467,25 @@ function clampTtl(value: number) {
   return Math.max(60, Math.min(Number.isFinite(value) ? value : 120, 300));
 }
 
+function hasCanonicalActivepiecesRuntimeIds(
+  automation: ActivepiecesInstalledAutomationForSession,
+) {
+  return (
+    isCanonicalActivepiecesId(automation.runtime_project_id) &&
+    isCanonicalActivepiecesId(automation.runtime_flow_id) &&
+    isCanonicalActivepiecesId(automation.active_canvas_version_id) &&
+    automation.sync_hash === ACTIVEPIECES_CANVAS_CANONICAL_SYNC_HASH
+  );
+}
+
+function isCanonicalActivepiecesId(value: string | null | undefined) {
+  return (
+    typeof value === 'string' &&
+    /^[0-9a-zA-Z]{21}$/.test(value) &&
+    !value.startsWith('lfstg17')
+  );
+}
+
 function normalizeOptionalString(value: string | null | undefined) {
   const trimmed = value?.trim();
   return trimmed ? trimmed : null;
@@ -1199,6 +1621,14 @@ function buildControlledSessionFailureResponse(
       allow_settings_tab: true,
       allow_diagnostics_tab: true,
     },
+    open_check: buildOpenCheck({
+      status: 'blocked',
+      reasonCode: readinessCode,
+      activepiecesProjectId: null,
+      activepiecesFlowId: null,
+      repairAttempted: false,
+      checkedAt: new Date(),
+    }),
     diagnostics: {
       trace_id: traceId,
       safe_to_show: true,
@@ -1221,6 +1651,80 @@ function buildControlledSessionFailureResponse(
   };
 }
 
+function buildControlledReadinessFailureResponse(
+  readiness: ActivepiecesCanvasReadinessWireResponse,
+  traceId: string | null,
+): ActivepiecesSessionWireResponse {
+  const response = {
+    readiness_code: readiness.readiness_code,
+    jwt_token: null,
+    expires_at: null,
+    role: null,
+    message: readiness.message ?? messageForReadiness(readiness.readiness_code),
+    fallback: {
+      show_builder_unavailable_state: true,
+      allow_lexframe_canvas_reserve: true,
+      allow_runs_tab: true,
+      allow_settings_tab: true,
+      allow_diagnostics_tab: true,
+    },
+    open_check: readiness,
+    diagnostics: {
+      trace_id: traceId,
+      safe_to_show: true,
+    },
+  } as const;
+
+  return readiness.status === 'unavailable'
+    ? {
+        status: 'unavailable',
+        ...response,
+      }
+    : {
+        status: 'blocked',
+        ...response,
+      };
+}
+
+function buildOpenCheck(input: {
+  readonly status: 'ready' | 'repaired' | 'blocked' | 'unavailable';
+  readonly reasonCode: AutomationCanvasReadinessCode;
+  readonly activepiecesProjectId: string | null;
+  readonly activepiecesFlowId: string | null;
+  readonly repairAttempted: boolean;
+  readonly checkedAt: Date;
+}) {
+  return {
+    status: input.status,
+    reason_code: input.reasonCode,
+    activepieces_project_id: input.activepiecesProjectId,
+    activepieces_flow_id: input.activepiecesFlowId,
+    expected_route: buildActivepiecesInitialRoute(input.activepiecesFlowId),
+    refresh_policy: ACTIVEPIECES_CANVAS_REFRESH_POLICY,
+    repair_attempted: input.repairAttempted,
+    checked_at: input.checkedAt.toISOString(),
+  } as const;
+}
+
+function activepiecesIframeHealthResult(
+  event: RecordActivepiecesIframeHealthRequest['event'],
+): 'success' | 'error' {
+  return event === 'ready' || event === 'recovered' ? 'success' : 'error';
+}
+
+function activepiecesIframeHealthReasonCode(
+  event: RecordActivepiecesIframeHealthRequest['event'],
+): AutomationCanvasReadinessCode | undefined {
+  switch (event) {
+    case 'stuck_loading':
+      return 'AP_IFRAME_NAVIGATION_FAILED';
+    case 'invalid_access':
+      return 'PERMISSION_DENIED';
+    default:
+      return undefined;
+  }
+}
+
 function mapSessionErrorToReadinessCode(
   code: string,
 ): AutomationCanvasReadinessCode | null {
@@ -1235,6 +1739,24 @@ function mapSessionErrorToReadinessCode(
     case 'ACTIVEPIECES_RUNTIME_UNAVAILABLE':
     case 'ACTIVEPIECES_UNAVAILABLE':
       return 'ACTIVEPIECES_UNAVAILABLE';
+    case 'ACTIVEPIECES_VERSION_MISMATCH':
+      return 'ACTIVEPIECES_VERSION_MISMATCH';
+    case 'AP_PROJECT_MISSING':
+      return 'AP_PROJECT_MISSING';
+    case 'AP_USER_MISSING':
+      return 'AP_USER_MISSING';
+    case 'AP_PROJECT_MEMBERSHIP_MISSING':
+      return 'AP_PROJECT_MEMBERSHIP_MISSING';
+    case 'AP_FLOW_MISSING':
+      return 'AP_FLOW_MISSING';
+    case 'AP_FLOW_PROJECT_MISMATCH':
+      return 'AP_FLOW_PROJECT_MISMATCH';
+    case 'AP_MANAGED_AUTH_FAILED':
+      return 'AP_MANAGED_AUTH_FAILED';
+    case 'AP_WEBSOCKET_UNAVAILABLE':
+      return 'AP_WEBSOCKET_UNAVAILABLE';
+    case 'AP_IFRAME_NAVIGATION_FAILED':
+      return 'AP_IFRAME_NAVIGATION_FAILED';
     case 'ACTIVEPIECES_BINDING_BROKEN':
     case 'FLOW_BINDING_MISSING':
     case 'READINESS_GATE_BLOCKED':
@@ -1249,6 +1771,24 @@ function mapSessionErrorToReadinessCode(
 
 function messageForReadiness(code: AutomationCanvasReadinessCode) {
   switch (code) {
+    case 'ACTIVEPIECES_VERSION_MISMATCH':
+      return 'ActivePieces runtime and embed SDK versions are incompatible.';
+    case 'AP_PROJECT_MISSING':
+      return 'ActivePieces project is missing.';
+    case 'AP_USER_MISSING':
+      return 'ActivePieces user is missing.';
+    case 'AP_PROJECT_MEMBERSHIP_MISSING':
+      return 'ActivePieces project membership is missing.';
+    case 'AP_FLOW_MISSING':
+      return 'ActivePieces flow or flow version is missing.';
+    case 'AP_FLOW_PROJECT_MISMATCH':
+      return 'ActivePieces flow belongs to another project.';
+    case 'AP_WEBSOCKET_UNAVAILABLE':
+      return 'ActivePieces websocket endpoint is unavailable.';
+    case 'AP_MANAGED_AUTH_FAILED':
+      return 'ActivePieces managed authentication failed.';
+    case 'AP_IFRAME_NAVIGATION_FAILED':
+      return 'ActivePieces iframe did not open the requested flow.';
     case 'ACTIVEPIECES_UNAVAILABLE':
       return 'Конструктор автоматизаций временно недоступен.';
     case 'SESSION_BRIDGE_UNAVAILABLE':
@@ -1262,6 +1802,12 @@ function messageForReadiness(code: AutomationCanvasReadinessCode) {
     default:
       return 'Конструктор автоматизаций временно недоступен.';
   }
+}
+
+function buildProjectAutomationRoute(projectId: string, automationId: string) {
+  return `/app/projects/${encodeURIComponent(
+    projectId,
+  )}/automations/${encodeURIComponent(automationId)}/automation`;
 }
 
 function hashCanonical(value: unknown) {

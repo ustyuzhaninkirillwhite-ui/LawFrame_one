@@ -19,7 +19,7 @@ import {
 const STAGE17_TEMPLATE_CODE = 'stage17.activepieces.canvas';
 const STAGE17_TEMPLATE_VERSION = 'v17-canvas';
 const STAGE17_PLATFORM_ID = 'lfstg17platform000001';
-const STAGE17_SYNC_HASH = 'stage17-canvas-runtime-v3-max-catalog';
+const STAGE17_SYNC_HASH = 'stage21-activepieces-0.82-canvas-v1';
 const STAGE17_FLOW_DISPLAY_NAME = 'Сценарий AI-шлюза LexFrame';
 const STAGE17_MANUAL_TRIGGER_DISPLAY_NAME = 'Ручной запуск';
 const STAGE17_MANUAL_TRIGGER_DESCRIPTION =
@@ -740,10 +740,39 @@ export class ActivepiecesCanvasProvisioningService implements OnModuleDestroy {
             "tokenVersion",
             provider
           )
-          values ($1, $2, 'managed-by-lexframe-jwt', false, false, true, $3, $4, 'stage17', 'EMAIL')
+          values (
+            $1::varchar,
+            case
+              when exists (
+                select 1
+                from user_identity
+                where email = $2::varchar
+                  and id <> $1::varchar
+              )
+              then $5::varchar
+              else $2::varchar
+            end,
+            'managed-by-lexframe-jwt',
+            false,
+            false,
+            true,
+            $3,
+            $4,
+            'stage17',
+            'EMAIL'
+          )
           on conflict (id) do update
           set
-            email = excluded.email,
+            email = case
+              when exists (
+                select 1
+                from user_identity
+                where email = $2::varchar
+                  and id <> $1::varchar
+              )
+              then $5::varchar
+              else $2::varchar
+            end,
             verified = true,
             "firstName" = excluded."firstName",
             "lastName" = excluded."lastName",
@@ -754,6 +783,7 @@ export class ActivepiecesCanvasProvisioningService implements OnModuleDestroy {
           input.actor.email,
           firstName,
           lastNameParts.join(' ') || 'Stage17',
+          `${ids.identityId}@local.lexframe`,
         ],
       );
 
@@ -1059,7 +1089,8 @@ export class ActivepiecesCanvasProvisioningService implements OnModuleDestroy {
                 'packageType', 'REGISTRY',
                 'triggerName', 'manual_trigger',
                 'input', '{}'::jsonb,
-                'inputUiInfo', '{}'::jsonb
+                'inputUiInfo', '{}'::jsonb,
+                'propertySettings', '{}'::jsonb
               ),
               'lastUpdatedDate', ${nowExpression}
             ),
@@ -1359,11 +1390,12 @@ export class ActivepiecesCanvasProvisioningService implements OnModuleDestroy {
               'pieceName', '@activepieces/piece-manual-trigger',
               'pieceVersion', '0.0.5',
               'pieceType', 'OFFICIAL',
-              'packageType', 'REGISTRY',
-              'triggerName', 'manual_trigger',
-              'input', '{}'::jsonb,
-              'inputUiInfo', '{}'::jsonb
-            ),
+                'packageType', 'REGISTRY',
+                'triggerName', 'manual_trigger',
+                'input', '{}'::jsonb,
+                'inputUiInfo', '{}'::jsonb,
+                'propertySettings', '{}'::jsonb
+              ),
             'lastUpdatedDate', ${input.nowExpression}
           ),
           true,
@@ -1431,7 +1463,10 @@ export class ActivepiecesCanvasProvisioningService implements OnModuleDestroy {
       `,
       [externalProjectId, STAGE17_PLATFORM_ID],
     );
-    const resolvedProjectId = project.rows[0]?.id ?? input.ids.projectId;
+    const existingProjectId = project.rows[0]?.id ?? null;
+    const resolvedProjectId = isValidActivepiecesId(existingProjectId)
+      ? existingProjectId
+      : input.ids.projectId;
     const flow = await client.query<{ readonly id: string }>(
       `
         select id
@@ -1442,7 +1477,10 @@ export class ActivepiecesCanvasProvisioningService implements OnModuleDestroy {
       `,
       [input.automationId],
     );
-    const resolvedFlowId = flow.rows[0]?.id ?? input.ids.flowId;
+    const existingFlowId = flow.rows[0]?.id ?? null;
+    const resolvedFlowId = isValidActivepiecesId(existingFlowId)
+      ? existingFlowId
+      : input.ids.flowId;
     const flowVersion = await client.query<{ readonly id: string }>(
       `
         select id
@@ -1464,9 +1502,27 @@ export class ActivepiecesCanvasProvisioningService implements OnModuleDestroy {
       [resolvedProjectId],
     );
 
+    const existingUser = user.rows[0] ?? null;
+    const resolvedUserId = isValidActivepiecesId(existingUser?.id)
+      ? existingUser.id
+      : input.ids.userId;
+    const resolvedIdentityId =
+      isValidActivepiecesId(existingUser?.id) && existingUser?.identityId
+        ? existingUser.identityId
+        : input.ids.identityId;
+
+    await detachLegacyExternalIds(client, {
+      externalUserId,
+      externalProjectId,
+      automationId: input.automationId,
+      userId: existingUser?.id ?? null,
+      projectId: existingProjectId,
+      flowId: existingFlowId,
+    });
+
     return {
-      identityId: user.rows[0]?.identityId ?? input.ids.identityId,
-      userId: user.rows[0]?.id ?? input.ids.userId,
+      identityId: resolvedIdentityId,
+      userId: resolvedUserId,
       projectId: resolvedProjectId,
       flowId: resolvedFlowId,
       flowVersionId: flowVersion.rows[0]?.id ?? input.ids.flowVersionId,
@@ -1592,6 +1648,73 @@ function idFrom(prefix: string, value: string) {
     0,
     21,
   );
+}
+
+function isValidActivepiecesId(value: string | null | undefined): value is string {
+  return (
+    typeof value === 'string' &&
+    /^[0-9a-zA-Z]{21}$/.test(value) &&
+    !value.startsWith('lfstg17')
+  );
+}
+
+async function detachLegacyExternalIds(
+  client: PoolClient,
+  input: {
+    readonly externalUserId: string;
+    readonly externalProjectId: string;
+    readonly automationId: string;
+    readonly userId: string | null;
+    readonly projectId: string | null;
+    readonly flowId: string | null;
+  },
+) {
+  if (input.userId && !isValidActivepiecesId(input.userId)) {
+    await client.query(
+      `
+        update "user"
+        set "externalId" = $2,
+            updated = now()
+        where id = $1
+          and "externalId" = $3
+      `,
+      [
+        input.userId,
+        `${input.externalUserId}:legacy:${input.userId}`,
+        input.externalUserId,
+      ],
+    );
+  }
+
+  if (input.projectId && !isValidActivepiecesId(input.projectId)) {
+    await client.query(
+      `
+        update project
+        set "externalId" = $2,
+            updated = now()
+        where id = $1
+          and "externalId" = $3
+      `,
+      [
+        input.projectId,
+        `${input.externalProjectId}:legacy:${input.projectId}`,
+        input.externalProjectId,
+      ],
+    );
+  }
+
+  if (input.flowId && !isValidActivepiecesId(input.flowId)) {
+    await client.query(
+      `
+        update flow
+        set "externalId" = $2,
+            updated = now()
+        where id = $1
+          and "externalId" = $3
+      `,
+      [input.flowId, `${input.automationId}:legacy:${input.flowId}`, input.automationId],
+    );
+  }
 }
 
 function readSecret(envValue: string, filePath: string) {

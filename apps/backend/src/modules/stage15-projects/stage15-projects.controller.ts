@@ -1,5 +1,7 @@
 import type {
   Stage15CreateProjectChatRequest,
+  Stage15CreateProjectRequest,
+  Stage15ProjectCreatedResponse,
   Stage15ProjectChatCreatedResponse,
   Stage15ProjectChatSummary,
   Stage15ProjectDetail,
@@ -37,6 +39,16 @@ export class Stage15ProjectsController {
     @LexframeRequestContext() context: LexframeRequest['lexframe'],
   ): Promise<Stage15ProjectListResponse> {
     return this.stage15ProjectsService.listProjects(context);
+  }
+
+  @Post()
+  @HttpCode(200)
+  @RequiredPermissions('workspace.update')
+  createProject(
+    @LexframeRequestContext() context: LexframeRequest['lexframe'],
+    @Body() body: Stage15CreateProjectRequest,
+  ): Promise<Stage15ProjectCreatedResponse> {
+    return this.stage15ProjectsService.createProject(context, body);
   }
 
   @Get(':projectId')

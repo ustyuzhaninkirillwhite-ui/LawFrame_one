@@ -17,6 +17,7 @@ import {
   useEnsureStage17CanvasAutomation,
   useStage15ProjectAutomations,
 } from "@/hooks/domain/stage15";
+import { useSessionBridge } from "@/providers/session-provider";
 import { ProjectAutomations } from "./project-automations";
 
 const ENSURE_TIMEOUT_MS = 20_000;
@@ -27,10 +28,16 @@ export function ProjectAutomationsLanding({
   readonly projectId: string;
 }) {
   const router = useRouter();
+  const { apiClient } = useSessionBridge();
   const automations = useStage15ProjectAutomations(projectId);
   const ensureCanvas = useEnsureStage17CanvasAutomation(projectId);
   const ensureRequestedRef = React.useRef(false);
   const [ensureTimedOut, setEnsureTimedOut] = React.useState(false);
+  const [readinessFailure, setReadinessFailure] = React.useState<{
+    readonly code: string;
+    readonly message: string;
+  } | null>(null);
+  const [readinessLoading, setReadinessLoading] = React.useState(false);
   const items = React.useMemo(() => automations.data ?? [], [automations.data]);
   const automationToOpen = React.useMemo(() => {
     const activepiecesReady = items.find(
@@ -40,7 +47,7 @@ export function ProjectAutomationsLanding({
         Boolean(item.runtimeFlowId),
     );
 
-    return activepiecesReady ?? (items.length === 1 ? items[0]! : null);
+    return activepiecesReady ?? null;
   }, [items]);
 
   React.useEffect(() => {
@@ -56,16 +63,69 @@ export function ProjectAutomationsLanding({
   }, [ensureCanvas.isPending]);
 
   React.useEffect(() => {
+    let cancelled = false;
+
     if (automationToOpen) {
-      router.replace(
-        `/app/projects/${projectId}/automations/${automationToOpen.id}/automation`,
-      );
+      setReadinessFailure(null);
+      setReadinessLoading(true);
+      void apiClient
+        .getActivepiecesCanvasReadiness({
+          projectId,
+          automationId: automationToOpen.id,
+        })
+        .then((readiness) => {
+          if (cancelled) {
+            return;
+          }
+          if (
+            readiness.status === "ready" ||
+            readiness.status === "repaired"
+          ) {
+            router.replace(
+              `/app/projects/${projectId}/automations/${automationToOpen.id}/automation`,
+            );
+            return;
+          }
+          setReadinessFailure({
+            code: readiness.readinessCode,
+            message:
+              readiness.message ??
+              "Конструктор автоматизаций временно недоступен.",
+          });
+        })
+        .catch((error) => {
+          if (cancelled) {
+            return;
+          }
+          setReadinessFailure({
+            code: "READINESS_CHECK_FAILED",
+            message:
+              error instanceof Error
+                ? error.message
+                : "Не удалось проверить готовность конструктора.",
+          });
+        })
+        .finally(() => {
+          if (!cancelled) {
+            setReadinessLoading(false);
+          }
+        });
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    if (!automationToOpen) {
+      setReadinessFailure(null);
+      setReadinessLoading(false);
+    }
+
+    if (automationToOpen) {
       return;
     }
 
     if (
       automations.isSuccess &&
-      items.length === 0 &&
       !ensureRequestedRef.current &&
       !ensureCanvas.isPending
     ) {
@@ -81,9 +141,24 @@ export function ProjectAutomationsLanding({
         },
       });
     }
-  }, [automationToOpen, automations, ensureCanvas, items, projectId, router]);
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    apiClient,
+    automationToOpen,
+    automations,
+    ensureCanvas,
+    items,
+    projectId,
+    router,
+  ]);
 
-  if (automations.isLoading || (ensureCanvas.isPending && !ensureTimedOut)) {
+  if (
+    automations.isLoading ||
+    readinessLoading ||
+    (ensureCanvas.isPending && !ensureTimedOut)
+  ) {
     return (
       <QueryState
         title="Открываем конструктор автоматизаций"
@@ -133,6 +208,33 @@ export function ProjectAutomationsLanding({
     );
   }
 
+  if (readinessFailure) {
+    return (
+      <Card>
+        <CardHeader>
+          <Badge variant="danger">недоступно</Badge>
+          <CardTitle>Конструктор автоматизаций временно недоступен</CardTitle>
+          <CardDescription>{readinessFailure.message}</CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-wrap gap-3">
+          <Button
+            onClick={() => {
+              setReadinessFailure(null);
+              void automations.refetch();
+            }}
+          >
+            <RotateCw className="mr-2 size-4" aria-hidden="true" />
+            Обновить состояние
+          </Button>
+          <div className="flex items-center gap-2 text-sm text-[color:var(--muted-strong)]">
+            <AlertCircle className="size-4" aria-hidden="true" />
+            {readinessFailure.code}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   if (automationToOpen) {
     return (
       <QueryState
@@ -142,7 +244,7 @@ export function ProjectAutomationsLanding({
     );
   }
 
-  if (items.length > 1) {
+  if (items.length > 0) {
     return <ProjectAutomations projectId={projectId} />;
   }
 

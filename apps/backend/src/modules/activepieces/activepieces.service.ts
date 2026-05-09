@@ -1,5 +1,6 @@
 import type {
   ActivepiecesIntegrationStatus,
+  ActivepiecesCanvasReadinessWireResponse,
   ActivepiecesWorkspaceSecurityState,
   ActivepiecesEmbedTokenResponse,
   ActivepiecesRunSmokeRequest,
@@ -16,6 +17,8 @@ import type {
   LexFrameWorkflowV2,
   RuntimeConnectionSummary,
   RuntimePieceRequirement,
+  RecordActivepiecesIframeHealthRequest,
+  RecordActivepiecesIframeHealthWireResponse,
   RuntimeApprovalGateCallback,
   RuntimeDeliveryGateCallback,
   StartAutomationRunRequest,
@@ -501,6 +504,31 @@ export class ActivepiecesService {
     );
   }
 
+  async getCanvasReadiness(
+    actor: AuthenticatedActor,
+    access: AccessContext,
+    input: {
+      readonly projectId: string;
+      readonly automationId: string;
+    },
+    meta: RequestMeta,
+  ): Promise<ActivepiecesCanvasReadinessWireResponse> {
+    if (!this.activepiecesSessionService) {
+      throw new AppHttpException(
+        'ACTIVEPIECES_NOT_CONFIGURED',
+        503,
+        'Activepieces Stage 17.5 session service is not configured.',
+      );
+    }
+
+    return this.activepiecesSessionService.getCanvasReadiness(
+      actor,
+      access,
+      input,
+      meta,
+    );
+  }
+
   async initializeSession(
     actor: AuthenticatedActor,
     access: AccessContext,
@@ -519,6 +547,30 @@ export class ActivepiecesService {
       actor,
       access,
       sessionId,
+      meta,
+    );
+  }
+
+  async recordIframeHealth(
+    actor: AuthenticatedActor,
+    access: AccessContext,
+    sessionId: string,
+    input: Omit<RecordActivepiecesIframeHealthRequest, 'sessionId'>,
+    meta: RequestMeta,
+  ): Promise<RecordActivepiecesIframeHealthWireResponse> {
+    if (!this.activepiecesSessionService) {
+      throw new AppHttpException(
+        'ACTIVEPIECES_NOT_CONFIGURED',
+        503,
+        'Activepieces Stage 17.5 session service is not configured.',
+      );
+    }
+
+    return this.activepiecesSessionService.recordIframeHealth(
+      actor,
+      access,
+      sessionId,
+      input,
       meta,
     );
   }

@@ -1,6 +1,8 @@
 import type {
   InstalledAutomationDetail,
   Stage15CreateProjectChatRequest,
+  Stage15CreateProjectRequest,
+  Stage15ProjectCreatedResponse,
   Stage15ProjectChatCreatedResponse,
   Stage15ProjectChatSummary,
   Stage15ProjectDetail,
@@ -25,6 +27,20 @@ import { DashboardService } from '../dashboard/dashboard.service';
 import { DatabaseService } from '../database/database.service';
 
 const DEFAULT_STAGE17_PROJECT_ID = 'project_claim_001';
+const DEFAULT_PROJECT_COLOR = '#3B82F6';
+
+interface ProjectRow {
+  readonly id: string;
+  readonly workspace_id: string;
+  readonly name: string;
+  readonly description: string;
+  readonly icon: string;
+  readonly color: string;
+  readonly status: Stage15ProjectSummary['status'];
+  readonly owner_user_id: string | null;
+  readonly created_at: string;
+  readonly updated_at: string;
+}
 
 @Injectable()
 export class Stage15ProjectsService {
@@ -40,9 +56,76 @@ export class Stage15ProjectsService {
     context: LexframeRequestState | undefined,
   ): Promise<Stage15ProjectListResponse> {
     const { actor, access } = this.requireContext(context);
-    const project = await this.buildProjectSummary(actor, access);
+    await this.ensureDefaultProject(actor, access);
+    const rows = await this.listProjectRows(access);
+    const items = await Promise.all(
+      rows.map((row) => this.buildProjectSummary(row, actor, access)),
+    );
 
-    return { items: [project] };
+    return { items };
+  }
+
+  async createProject(
+    context: LexframeRequestState | undefined,
+    input: Stage15CreateProjectRequest,
+  ): Promise<Stage15ProjectCreatedResponse> {
+    const { actor, access } = this.requireContext(context);
+    const workspace = this.requireWorkspace(access);
+    const name = input.name.trim();
+
+    if (!name) {
+      throw new AppHttpException(
+        'VALIDATION_ERROR',
+        400,
+        'Project name is required.',
+      );
+    }
+
+    const description = input.description?.trim() ?? '';
+    const color = normalizeProjectColor(input.color);
+    const icon = projectIconFor(name);
+    const row = await this.databaseService.one<ProjectRow>(
+      `
+        insert into app.projects (
+          workspace_id,
+          id,
+          name,
+          description,
+          icon,
+          color,
+          status,
+          owner_user_id,
+          created_by,
+          updated_by
+        )
+        values (
+          $1,
+          'project_' || replace(public.app_uuid_v7()::text, '-', ''),
+          $2,
+          $3,
+          $4,
+          $5,
+          'active',
+          $6,
+          $6,
+          $6
+        )
+        returning *
+      `,
+      [workspace.id, name, description, icon, color, actor.id],
+    );
+
+    if (!row) {
+      throw new AppHttpException(
+        'INVALID_REQUEST',
+        500,
+        'Project could not be created.',
+      );
+    }
+
+    return {
+      project: await this.buildProjectSummary(row, actor, access),
+    };
   }
 
   async getProject(
@@ -50,10 +133,10 @@ export class Stage15ProjectsService {
     projectId: string,
   ): Promise<Stage15ProjectDetail> {
     const { actor, access } = this.requireContext(context);
-    this.assertProjectId(access, projectId);
+    const row = await this.requireProjectRow(actor, access, projectId);
 
     const [project, automations, snapshot, chats] = await Promise.all([
-      this.buildProjectSummary(actor, access),
+      this.buildProjectSummary(row, actor, access),
       this.automationLibraryService.listInstalled(access),
       this.dashboardService.getSnapshot(actor, access),
       this.listProjectChats(context, projectId),
@@ -76,10 +159,10 @@ export class Stage15ProjectsService {
     projectId: string,
   ): Promise<Stage15ProjectSnapshot> {
     const { actor, access } = this.requireContext(context);
-    this.assertProjectId(access, projectId);
+    const row = await this.requireProjectRow(actor, access, projectId);
 
     const [project, automations, snapshot, chats] = await Promise.all([
-      this.buildProjectSummary(actor, access),
+      this.buildProjectSummary(row, actor, access),
       this.automationLibraryService.listInstalled(access),
       this.dashboardService.getSnapshot(actor, access),
       this.listProjectChats(context, projectId),
@@ -98,8 +181,8 @@ export class Stage15ProjectsService {
     context: LexframeRequestState | undefined,
     projectId: string,
   ): Promise<readonly Stage15ProjectChatSummary[]> {
-    const { access } = this.requireContext(context);
-    this.assertProjectId(access, projectId);
+    const { actor, access } = this.requireContext(context);
+    await this.assertProjectId(actor, access, projectId);
     const response = await this.chatThreadService.listProjectThreads(
       context,
       projectId,
@@ -113,8 +196,8 @@ export class Stage15ProjectsService {
     projectId: string,
     input: Stage15CreateProjectChatRequest = {},
   ): Promise<Stage15ProjectChatCreatedResponse> {
-    const { access } = this.requireContext(context);
-    this.assertProjectId(access, projectId);
+    const { actor, access } = this.requireContext(context);
+    await this.assertProjectId(actor, access, projectId);
 
     return this.chatThreadService.createProjectChatForStage15(
       context,
@@ -130,8 +213,8 @@ export class Stage15ProjectsService {
     context: LexframeRequestState | undefined,
     projectId: string,
   ): Promise<readonly InstalledAutomationDetail[]> {
-    const { access } = this.requireContext(context);
-    this.assertProjectId(access, projectId);
+    const { actor, access } = this.requireContext(context);
+    await this.assertProjectId(actor, access, projectId);
 
     return this.automationLibraryService.listInstalled(access);
   }
@@ -142,7 +225,7 @@ export class Stage15ProjectsService {
     traceId: string | null,
   ) {
     const { actor, access } = this.requireContext(context);
-    this.assertProjectId(access, projectId);
+    await this.assertProjectId(actor, access, projectId);
 
     return this.activepiecesCanvasProvisioningService.ensureStage17Canvas({
       actor,
@@ -153,6 +236,7 @@ export class Stage15ProjectsService {
   }
 
   private async buildProjectSummary(
+    row: ProjectRow,
     actor: AuthenticatedActor,
     access: AccessContext,
   ): Promise<Stage15ProjectSummary> {
@@ -162,19 +246,19 @@ export class Stage15ProjectsService {
       this.dashboardService.getSnapshot(actor, access),
       this.countDocuments(workspace.id),
       this.chatThreadService
-        .listProjectThreads({ actor, access }, this.projectIdFor(access))
+        .listProjectThreads({ actor, access }, row.id)
         .catch(() => ({ items: [] })),
     ]);
 
     return {
-      id: this.projectIdFor(access),
+      id: row.id,
       workspaceId: workspace.id,
-      name: workspace.name,
-      description: `Workspace project ${workspace.name}: chats, documents and automations.`,
-      icon: workspace.name.trim().charAt(0).toUpperCase() || 'P',
-      color: '#3B82F6',
-      status: 'active',
-      ownerUserId: actor.id,
+      name: row.name,
+      description: row.description,
+      icon: row.icon,
+      color: row.color,
+      status: row.status,
+      ownerUserId: row.owner_user_id ?? actor.id,
       role: mapProjectRole(access),
       counters: {
         chats: chats.items.length,
@@ -188,8 +272,122 @@ export class Stage15ProjectsService {
           0,
         ),
       },
-      lastActivityAt: snapshot.generatedAt,
+      lastActivityAt: row.updated_at ?? snapshot.generatedAt,
     };
+  }
+
+  private async ensureDefaultProject(
+    actor: AuthenticatedActor,
+    access: AccessContext,
+  ): Promise<ProjectRow> {
+    const workspace = this.requireWorkspace(access);
+    const name = workspace.name || 'LexFrame';
+
+    const row = await this.databaseService.one<ProjectRow>(
+      `
+        insert into app.projects (
+          workspace_id,
+          id,
+          name,
+          description,
+          icon,
+          color,
+          status,
+          owner_user_id,
+          created_by,
+          updated_by
+        )
+        values (
+          $1,
+          $2,
+          $3,
+          $4,
+          $5,
+          $6,
+          'active',
+          $7,
+          $7,
+          $7
+        )
+        on conflict (workspace_id, id) do update
+        set updated_at = app.projects.updated_at
+        returning *
+      `,
+      [
+        workspace.id,
+        DEFAULT_STAGE17_PROJECT_ID,
+        name,
+        'Default LexFrame project for existing Stage 17-21 routes.',
+        projectIconFor(name),
+        DEFAULT_PROJECT_COLOR,
+        actor.id,
+      ],
+    );
+
+    if (!row) {
+      throw new AppHttpException(
+        'INVALID_REQUEST',
+        500,
+        'Default project could not be resolved.',
+      );
+    }
+
+    return row;
+  }
+
+  private async listProjectRows(access: AccessContext): Promise<readonly ProjectRow[]> {
+    const workspace = this.requireWorkspace(access);
+    const result = await this.databaseService.query<ProjectRow>(
+      `
+        select *
+        from app.projects
+        where workspace_id = $1
+          and status <> 'archived'
+        order by
+          case when id = $2 then 0 else 1 end,
+          updated_at desc
+      `,
+      [workspace.id, DEFAULT_STAGE17_PROJECT_ID],
+    );
+
+    return result.rows;
+  }
+
+  private async requireProjectRow(
+    actor: AuthenticatedActor,
+    access: AccessContext,
+    projectId: string,
+  ): Promise<ProjectRow> {
+    await this.ensureDefaultProject(actor, access);
+    const row = await this.findProjectRow(access, projectId);
+
+    if (!row) {
+      throw new AppHttpException(
+        'WORKSPACE_ACCESS_DENIED',
+        404,
+        'Project is not available in the active workspace.',
+      );
+    }
+
+    return row;
+  }
+
+  private async findProjectRow(
+    access: AccessContext,
+    projectId: string,
+  ): Promise<ProjectRow | null> {
+    const workspace = this.requireWorkspace(access);
+
+    return this.databaseService.one<ProjectRow>(
+      `
+        select *
+        from app.projects
+        where workspace_id = $1
+          and id = $2
+          and status <> 'archived'
+      `,
+      [workspace.id, projectId],
+    );
   }
 
   private async countDocuments(workspaceId: string): Promise<number> {
@@ -238,24 +436,20 @@ export class Stage15ProjectsService {
     return access.activeWorkspace;
   }
 
-  private assertProjectId(access: AccessContext, projectId: string) {
-    const allowedIds = new Set([
-      DEFAULT_STAGE17_PROJECT_ID,
-      this.projectIdFor(access),
-    ]);
+  private async assertProjectId(
+    actor: AuthenticatedActor,
+    access: AccessContext,
+    projectId: string,
+  ) {
+    const row = await this.requireProjectRow(actor, access, projectId);
 
-    if (!allowedIds.has(projectId)) {
+    if (!row) {
       throw new AppHttpException(
         'WORKSPACE_ACCESS_DENIED',
         404,
         'Project is not available in the active workspace.',
       );
     }
-  }
-
-  private projectIdFor(access: AccessContext) {
-    this.requireWorkspace(access);
-    return DEFAULT_STAGE17_PROJECT_ID;
   }
 }
 
@@ -269,4 +463,18 @@ function mapProjectRole(access: AccessContext): Stage15ProjectSummary['role'] {
   }
 
   return 'editor';
+}
+
+function normalizeProjectColor(color: string | null | undefined) {
+  const candidate = color?.trim();
+
+  if (candidate && /^#[0-9a-fA-F]{6}$/.test(candidate)) {
+    return candidate;
+  }
+
+  return DEFAULT_PROJECT_COLOR;
+}
+
+function projectIconFor(name: string) {
+  return name.trim().charAt(0).toUpperCase() || 'P';
 }

@@ -65,6 +65,7 @@ import type {
   ApprovalTaskRequestChangesRequest,
   StartAutomationRunRequest,
   Stage15CreateProjectChatRequest,
+  Stage15CreateProjectRequest,
   Stage15WorkflowDraftMaterializeRequest,
   SubmitPublicationRequest,
   SyncAutomationRuntimeRequest,
@@ -340,6 +341,20 @@ export function useStage15Projects() {
     queryFn: () => apiClient.listProjects(),
     enabled,
     staleTime: 15_000,
+  });
+}
+
+export function useCreateStage15Project() {
+  const { apiClient } = useSessionBridge();
+  const { workspaceId } = useWorkspaceEnabled();
+  const invalidate = useStage15Invalidation();
+
+  return useMutation({
+    mutationFn: (input: Stage15CreateProjectRequest) =>
+      apiClient.createProject(input),
+    onSuccess: async () => {
+      await invalidate(workspaceId);
+    },
   });
 }
 

@@ -1,6 +1,8 @@
 import type {
   InstalledAutomationDetail,
+  Stage15CreateProjectRequest,
   Stage15CreateProjectChatRequest,
+  Stage15ProjectCreatedResponse,
   Stage15ProjectChatCreatedResponse,
   Stage15ProjectChatSummary,
   Stage15ProjectDetail,
@@ -13,6 +15,9 @@ import { requestJson, withJsonBody, type FetchOptions } from "./core";
 
 export interface Stage15Api {
   listProjects(): Promise<Stage15ProjectListResponse>;
+  createProject(
+    input: Stage15CreateProjectRequest,
+  ): Promise<Stage15ProjectCreatedResponse>;
   getProject(projectId: string): Promise<Stage15ProjectDetail>;
   getProjectDashboardSnapshot(
     projectId: string,
@@ -35,6 +40,8 @@ export interface Stage15Api {
 export function createStage15Client(options: FetchOptions): Stage15Api {
   return {
     listProjects: () => requestJson(options, "/projects"),
+    createProject: (input) =>
+      requestJson(options, "/projects", withJsonBody(input, { method: "POST" })),
     getProject: (projectId) => requestJson(options, `/projects/${projectId}`),
     getProjectDashboardSnapshot: (projectId) =>
       requestJson(options, `/projects/${projectId}/snapshot`),

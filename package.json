@@ -161,6 +161,7 @@
     "stage21:security:ssrf-guard-test": "node scripts/stage21/gates.mjs ssrf-guard-test",
     "stage21:visual:settings": "node scripts/stage21/gates.mjs visual",
     "stage21:release-gate": "node scripts/stage21/gates.mjs release-gate",
+    "stage21-up": "node scripts/stage21-up.mjs",
     "check": "corepack pnpm build && corepack pnpm check:contracts && corepack pnpm check:backend && corepack pnpm check:frontend && corepack pnpm check:db && corepack pnpm check:ai && corepack pnpm check:activepieces && corepack pnpm check:security && corepack pnpm check:e2e",
     "dev:web": "corepack pnpm --filter @lexframe/web dev",
     "dev:backend": "corepack pnpm --filter @lexframe/backend start:dev"

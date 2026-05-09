@@ -364,7 +364,7 @@ export function ProjectHome({ projectId }: { readonly projectId: string }) {
             <div className={cn(panelRecipe.muted, "p-4")}>
               <div className="flex items-center gap-2 text-sm font-semibold">
                 <Sparkles className="h-4 w-4 text-[color:var(--accent-strong)]" />
-                Pravacontour
+                LexFrame
               </div>
               <div className="mt-3 text-sm leading-6 text-[color:var(--muted-strong)]">
                 {project.description}

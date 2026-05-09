@@ -5,6 +5,7 @@ import {
   type ApiClient,
 } from "@lexframe/api-client";
 import type {
+  ActivepiecesCanvasReadinessResponse,
   ActivepiecesSessionReadyResponse,
   ActivepiecesSessionResponse,
   AutomationCanvasReadinessCode,
@@ -49,15 +50,37 @@ export type ActivepiecesCanvasSessionState =
       readonly code: AutomationCanvasReadinessCode | null;
     };
 
+type SessionRequestReason =
+  | "initial"
+  | "background_readiness"
+  | "recover"
+  | "retry"
+  | "invalid_access";
+
+type CachedActivepiecesSession = {
+  readonly safeSession: SafeActivepiecesSession;
+  readonly jwtToken: string;
+  readonly expiresAtMs: number;
+  readonly readinessVersion: string | null;
+};
+
+const SESSION_REUSE_BUFFER_MS = 15_000;
+const activepiecesSessionCache = new Map<string, CachedActivepiecesSession>();
+
 export function useActivepiecesSession({
   projectId,
   automationId,
+  enabled = true,
 }: {
   readonly projectId: string;
   readonly automationId: string;
+  readonly enabled?: boolean;
 }) {
   const { apiClient, authPending, sessionContext } = useSessionBridge();
   const workspaceId = sessionContext.activeWorkspace?.id ?? null;
+  const sessionCacheKey = workspaceId
+    ? createCanvasSessionCacheKey(workspaceId, projectId, automationId)
+    : null;
   const tokenRef = React.useRef<string | null>(null);
   const [state, setState] = React.useState<ActivepiecesCanvasSessionState>({
     phase: "idle",
@@ -69,11 +92,56 @@ export function useActivepiecesSession({
 
   const clearToken = React.useCallback(() => {
     tokenRef.current = null;
-  }, []);
+    if (sessionCacheKey) {
+      activepiecesSessionCache.delete(sessionCacheKey);
+    }
+  }, [sessionCacheKey]);
 
   const requestSession = React.useCallback(
-    async (reason: "initial" | "refresh" | "retry" = "initial") => {
-      clearToken();
+    async (reason: SessionRequestReason = "initial") => {
+      if (!enabled) {
+        if (reason !== "background_readiness") {
+          setState({
+            phase: "idle",
+            session: null,
+            response: null,
+            message: null,
+            code: null,
+          });
+        }
+        return null;
+      }
+
+      if (reason === "background_readiness") {
+        if (authPending || !workspaceId) {
+          return null;
+        }
+
+        try {
+          return await apiClient.getActivepiecesCanvasReadiness({
+            projectId,
+            automationId,
+          });
+        } catch {
+          return null;
+        }
+      }
+
+      if (
+        reason === "invalid_access" ||
+        reason === "recover" ||
+        reason === "retry"
+      ) {
+        tokenRef.current = null;
+      }
+      if (
+        (reason === "invalid_access" ||
+          reason === "recover" ||
+          reason === "retry") &&
+        sessionCacheKey
+      ) {
+        activepiecesSessionCache.delete(sessionCacheKey);
+      }
 
       if (authPending) {
         setState({
@@ -107,13 +175,48 @@ export function useActivepiecesSession({
         session: null,
         response: null,
         message:
-          reason === "refresh"
+          reason === "recover"
             ? "Обновляем защищённую сессию конструктора."
             : "Готовим защищённую сессию конструктора.",
         code: null,
       });
 
       try {
+        const readiness = await apiClient.getActivepiecesCanvasReadiness({
+          projectId,
+          automationId,
+        });
+
+        if (readiness.status !== "ready" && readiness.status !== "repaired") {
+          const failure = buildFailureFromReadiness(readiness);
+          setState({
+            phase: failure.status === "blocked" ? "blocked" : "unavailable",
+            session: null,
+            response: failure,
+            message: failure.message,
+            code: failure.readinessCode,
+          });
+          return failure;
+        }
+
+        if (reason === "initial" && sessionCacheKey) {
+          const cached = readCachedSession(sessionCacheKey);
+          if (
+            cached &&
+            cached.readinessVersion === (readiness.readinessVersion ?? null)
+          ) {
+            tokenRef.current = cached.jwtToken;
+            setState({
+              phase: "available",
+              session: cached.safeSession,
+              response: cached.safeSession,
+              message: null,
+              code: cached.safeSession.readinessCode,
+            });
+            return cached.safeSession;
+          }
+        }
+
         const response = await apiClient.createActivepiecesSession({
           workspaceId,
           projectId,
@@ -123,12 +226,29 @@ export function useActivepiecesSession({
           modePreference: "auto",
           returnBuilderConfig: true,
           clientTraceId: createClientTraceId(),
-          idempotencyKey: reason === "initial" ? createClientTraceId() : null,
+          idempotencyKey: reason === "initial" ? sessionCacheKey : null,
         });
 
         if (isAvailableSession(response)) {
           tokenRef.current = response.jwtToken;
-          const safeSession = redactSession(response);
+          const safeSession = stabilizeSessionContainer(
+            redactSession(response),
+            sessionCacheKey,
+            response.openCheck?.readinessVersion ??
+              readiness.readinessVersion ??
+              null,
+          );
+          if (sessionCacheKey) {
+            activepiecesSessionCache.set(sessionCacheKey, {
+              safeSession,
+              jwtToken: response.jwtToken,
+              expiresAtMs: new Date(response.expiresAt).getTime(),
+              readinessVersion:
+                response.openCheck?.readinessVersion ??
+                readiness.readinessVersion ??
+                null,
+            });
+          }
           setState({
             phase: "available",
             session: safeSession,
@@ -159,57 +279,26 @@ export function useActivepiecesSession({
         return response;
       }
     },
-    [apiClient, authPending, automationId, clearToken, projectId, workspaceId],
+    [
+      apiClient,
+      authPending,
+      automationId,
+      enabled,
+      projectId,
+      sessionCacheKey,
+      workspaceId,
+    ],
   );
 
   React.useEffect(() => {
-    let disposed = false;
-
     const timeoutId = window.setTimeout(() => {
-      void requestSession("initial").then(() => {
-        if (disposed) {
-          clearToken();
-        }
-      });
+      void requestSession("initial");
     }, 0);
 
     return () => {
-      disposed = true;
       window.clearTimeout(timeoutId);
-      clearToken();
     };
-  }, [clearToken, requestSession]);
-
-  React.useEffect(() => {
-    if (state.phase !== "available") {
-      return;
-    }
-
-    const expiresAtMs = new Date(state.session.expiresAt).getTime();
-    const refreshAtMs = Math.max(Date.now() + 5_000, expiresAtMs - 30_000);
-    const refreshDelay = Math.max(0, refreshAtMs - Date.now());
-
-    const refresh = () => {
-      if (document.hidden) {
-        return;
-      }
-
-      void requestSession("refresh");
-    };
-    const timeoutId = window.setTimeout(refresh, refreshDelay);
-    const handleVisibilityChange = () => {
-      if (!document.hidden && Date.now() >= refreshAtMs) {
-        void requestSession("refresh");
-      }
-    };
-
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-
-    return () => {
-      window.clearTimeout(timeoutId);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-    };
-  }, [requestSession, state]);
+  }, [requestSession]);
 
   return {
     state,
@@ -233,6 +322,94 @@ function redactSession(
   const { jwtToken, ...safeSession } = session;
   void jwtToken;
   return safeSession;
+}
+
+function stabilizeSessionContainer(
+  session: SafeActivepiecesSession,
+  cacheKey: string | null,
+  readinessVersion: string | null,
+): SafeActivepiecesSession {
+  void readinessVersion;
+  if (!cacheKey) {
+    return session;
+  }
+
+  const containerId = stableContainerId(cacheKey);
+  return {
+    ...session,
+    sdkConfig: {
+      ...session.sdkConfig,
+      containerId,
+      embedding: {
+        ...session.sdkConfig.embedding,
+        containerId,
+      },
+    },
+  };
+}
+
+function buildFailureFromReadiness(
+  readiness: ActivepiecesCanvasReadinessResponse,
+): ActivepiecesSessionFailureResponse {
+  const response = {
+    readinessCode: readiness.readinessCode,
+    jwtToken: null,
+    expiresAt: null,
+    role: null,
+    message:
+      readiness.message ??
+      "Конструктор автоматизаций временно недоступен.",
+    fallback: {
+      showBuilderUnavailableState: true,
+      allowLexframeCanvasReserve: true,
+      allowRunsTab: true,
+      allowSettingsTab: true,
+      allowDiagnosticsTab: true,
+    },
+    openCheck: readiness,
+    diagnostics: {
+      traceId: null,
+      safeToShow: true,
+    },
+  };
+
+  if (readiness.status === "unavailable") {
+    return {
+      status: "unavailable",
+      ...response,
+    };
+  }
+
+  return {
+    status: "blocked",
+    ...response,
+  };
+}
+
+function createCanvasSessionCacheKey(
+  workspaceId: string,
+  projectId: string,
+  automationId: string,
+) {
+  return `canvas:${workspaceId}:${projectId}:${automationId}`;
+}
+
+function readCachedSession(cacheKey: string) {
+  const cached = activepiecesSessionCache.get(cacheKey);
+  if (!cached) {
+    return null;
+  }
+
+  if (cached.expiresAtMs - SESSION_REUSE_BUFFER_MS <= Date.now()) {
+    activepiecesSessionCache.delete(cacheKey);
+    return null;
+  }
+
+  return cached;
+}
+
+function stableContainerId(cacheKey: string) {
+  return `activepieces-canvas-${cacheKey.replace(/[^a-zA-Z0-9_-]/g, "-")}`;
 }
 
 function mapSessionError(error: unknown): ActivepiecesSessionFailureResponse {
@@ -304,6 +481,24 @@ function mapErrorCode(code: string | null): AutomationCanvasReadinessCode {
     case "ACTIVEPIECES_RUNTIME_UNAVAILABLE":
     case "ACTIVEPIECES_UNAVAILABLE":
       return "ACTIVEPIECES_UNAVAILABLE";
+    case "ACTIVEPIECES_VERSION_MISMATCH":
+      return "ACTIVEPIECES_VERSION_MISMATCH";
+    case "AP_PROJECT_MISSING":
+      return "AP_PROJECT_MISSING";
+    case "AP_USER_MISSING":
+      return "AP_USER_MISSING";
+    case "AP_PROJECT_MEMBERSHIP_MISSING":
+      return "AP_PROJECT_MEMBERSHIP_MISSING";
+    case "AP_FLOW_MISSING":
+      return "AP_FLOW_MISSING";
+    case "AP_FLOW_PROJECT_MISMATCH":
+      return "AP_FLOW_PROJECT_MISMATCH";
+    case "AP_MANAGED_AUTH_FAILED":
+      return "AP_MANAGED_AUTH_FAILED";
+    case "AP_WEBSOCKET_UNAVAILABLE":
+      return "AP_WEBSOCKET_UNAVAILABLE";
+    case "AP_IFRAME_NAVIGATION_FAILED":
+      return "AP_IFRAME_NAVIGATION_FAILED";
     case "ACTIVEPIECES_BINDING_BROKEN":
     case "FLOW_BINDING_MISSING":
     case "READINESS_GATE_BLOCKED":
@@ -317,6 +512,7 @@ function isUnavailableError(code: string | null) {
   return (
     code === "ACTIVEPIECES_RUNTIME_UNAVAILABLE" ||
     code === "ACTIVEPIECES_UNAVAILABLE" ||
+    code === "AP_WEBSOCKET_UNAVAILABLE" ||
     code === "SESSION_BRIDGE_UNAVAILABLE" ||
     code === null
   );

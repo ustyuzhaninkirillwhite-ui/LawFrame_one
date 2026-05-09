@@ -38,7 +38,7 @@ export function WorkspaceHome() {
             Stage 15
           </div>
           <h1 className="mt-3 font-[family-name:var(--font-display)] text-5xl leading-[0.92]">
-            Проекты Pravacontour
+            Проекты LexFrame
           </h1>
           <p className="mt-4 max-w-3xl text-base leading-7 text-[color:var(--muted)]">
             Project-first workspace объединяет чаты, документы, автоматизации, запуски и

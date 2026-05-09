@@ -169,7 +169,7 @@ set label = excluded.label,
     high_risk = excluded.high_risk;
 
 insert into app.role_permissions (role_code, permission_code)
-select role_code, permission_code
+select role_code::workspace_role, permission_code
 from (
   values
     ('owner', 'settings.view'),

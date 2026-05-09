@@ -1,19 +1,12 @@
 "use client";
 
-import type {
-  ChatMessageDto,
-  ChatThreadSummary,
-  ProjectKnowledgeItem,
-} from "@lexframe/contracts";
+import type { ChatMessageDto } from "@lexframe/contracts";
 import { useRouter } from "next/navigation";
 import * as React from "react";
 import { useSessionBridge } from "@/providers/session-provider";
 import { createLexFrameChatApi } from "../api/chatApi";
 import { getChatMessageText } from "../domain/chatMappers";
-import { LegalDataWarning } from "./LegalDataWarning";
 import { LexFrameThread } from "./LexFrameThread";
-import { LexFrameThreadList } from "./LexFrameThreadList";
-import { ProjectContextDrawer } from "./ProjectContextDrawer";
 
 export function LexFrameChatShell({
   projectId,
@@ -25,9 +18,7 @@ export function LexFrameChatShell({
   const router = useRouter();
   const { apiClient, sessionContext } = useSessionBridge();
   const chatApi = React.useMemo(() => createLexFrameChatApi(apiClient), [apiClient]);
-  const [threads, setThreads] = React.useState<ChatThreadSummary[]>([]);
   const [messages, setMessages] = React.useState<ChatMessageDto[]>([]);
-  const [knowledge, setKnowledge] = React.useState<ProjectKnowledgeItem[]>([]);
   const [activeThreadId, setActiveThreadId] = React.useState<string | null>(
     initialThreadId,
   );
@@ -38,17 +29,13 @@ export function LexFrameChatShell({
     "automation_builder.create_intent",
   );
 
-  const loadThreads = React.useCallback(async () => {
-    const response = await chatApi.listProjectThreads(projectId);
-    setThreads([...response.items]);
-  }, [chatApi, projectId]);
-
   const loadMessages = React.useCallback(
     async (threadId: string | null) => {
       if (!threadId) {
         setMessages([]);
         return;
       }
+
       const response = await chatApi.listMessages(threadId);
       setMessages([...response.items]);
     },
@@ -57,39 +44,26 @@ export function LexFrameChatShell({
 
   React.useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    void loadThreads();
-  }, [loadThreads]);
+    setActiveThreadId(initialThreadId);
+  }, [initialThreadId]);
 
   React.useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     void loadMessages(activeThreadId);
   }, [activeThreadId, loadMessages]);
 
-  React.useEffect(() => {
-    chatApi
-      .listProjectKnowledge(projectId)
-      .then((response) => setKnowledge([...response.items]))
-      .catch(() => setKnowledge([]));
-  }, [chatApi, projectId]);
-
-  const createThread = React.useCallback(async () => {
-    const response = await chatApi.createProjectThread(projectId, {
-      title: "Новый чат проекта",
-      source: "project_chat",
-    });
-    setActiveThreadId(response.chat.id);
-    await loadThreads();
-  }, [chatApi, loadThreads, projectId]);
-
   const sendMessage = React.useCallback(
     async (text: string) => {
       let threadId = activeThreadId;
+      let createdThread = false;
+
       if (!threadId) {
         const created = await chatApi.createProjectThread(projectId, {
           title: text.slice(0, 80),
           source: "project_chat",
         });
         threadId = created.chat.id;
+        createdThread = true;
         setActiveThreadId(threadId);
       }
 
@@ -98,18 +72,23 @@ export function LexFrameChatShell({
         const snapshot = await chatApi.streamMessage(threadId, { text });
         setActiveStreamId(snapshot.streamId);
         await loadMessages(threadId);
-        await loadThreads();
+
+        if (createdThread) {
+          router.push(`/app/projects/${projectId}/chats/${threadId}`);
+        }
       } finally {
         setIsRunning(false);
       }
     },
-    [activeThreadId, chatApi, loadMessages, loadThreads, projectId],
+    [activeThreadId, chatApi, loadMessages, projectId, router],
   );
 
   const cancelStream = React.useCallback(() => {
     if (!activeThreadId || !activeStreamId) {
+      setIsRunning(false);
       return;
     }
+
     void chatApi.cancelStream(activeThreadId, activeStreamId).finally(() => {
       setIsRunning(false);
     });
@@ -120,11 +99,12 @@ export function LexFrameChatShell({
       if (!activeThreadId) {
         return;
       }
+
       const response = await chatApi.branchThread(activeThreadId, messageId);
       setActiveThreadId(response.thread.id);
-      await loadThreads();
+      router.push(`/app/projects/${projectId}/chats/${response.thread.id}`);
     },
-    [activeThreadId, chatApi, loadThreads],
+    [activeThreadId, chatApi, projectId, router],
   );
 
   const regenerate = React.useCallback(
@@ -132,6 +112,7 @@ export function LexFrameChatShell({
       if (!activeThreadId) {
         return;
       }
+
       setIsRunning(true);
       try {
         const snapshot = await chatApi.regenerate(activeThreadId, messageId);
@@ -172,31 +153,26 @@ export function LexFrameChatShell({
   );
 
   return (
-    <div className="flex h-[calc(100vh-5rem)] flex-col overflow-hidden border border-slate-200 bg-white md:flex-row">
-      <LexFrameThreadList
-        threads={threads}
-        activeThreadId={activeThreadId}
-        onCreate={() => void createThread()}
-        onSelect={setActiveThreadId}
+    <section className="flex min-h-[calc(100vh-9rem)] flex-1 flex-col overflow-hidden bg-[color:var(--lf-bg-panel)]">
+      <header className="flex shrink-0 items-center justify-between border-b border-[color:var(--lf-border)] px-4 py-3">
+        <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[color:var(--lf-text-muted)]">
+          LexFrame AI
+        </div>
+      </header>
+      <LexFrameThread
+        messages={messages}
+        isRunning={isRunning}
+        disabled={!canSend}
+        onSend={sendMessage}
+        onCancel={cancelStream}
+        onRegenerate={(messageId) => void regenerate(messageId)}
+        onBranch={(messageId) => void branch(messageId)}
+        onCreateAutomation={
+          canCreateAutomation
+            ? (messageId) => void createAutomationFromMessage(messageId)
+            : undefined
+        }
       />
-      <main className="flex min-w-0 flex-1 flex-col">
-        <LegalDataWarning />
-        <LexFrameThread
-          messages={messages}
-          isRunning={isRunning}
-          disabled={!canSend}
-          onSend={sendMessage}
-          onCancel={cancelStream}
-          onRegenerate={(messageId) => void regenerate(messageId)}
-          onBranch={(messageId) => void branch(messageId)}
-          onCreateAutomation={
-            canCreateAutomation
-              ? (messageId) => void createAutomationFromMessage(messageId)
-              : undefined
-          }
-        />
-      </main>
-      <ProjectContextDrawer items={knowledge} />
-    </div>
+    </section>
   );
 }

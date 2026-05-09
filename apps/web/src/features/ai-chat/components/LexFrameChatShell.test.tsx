@@ -1,0 +1,206 @@
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import type { ChatMessageDto, ChatThreadSummary } from "@lexframe/contracts";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { LexFrameChatShell } from "./LexFrameChatShell";
+
+const mocks = vi.hoisted(() => ({
+  push: vi.fn(),
+  chatApi: {
+    listProjectThreads: vi.fn(),
+    createProjectThread: vi.fn(),
+    getThread: vi.fn(),
+    listMessages: vi.fn(),
+    streamMessage: vi.fn(),
+    cancelStream: vi.fn(),
+    branchThread: vi.fn(),
+    regenerate: vi.fn(),
+    edit: vi.fn(),
+    listProjectKnowledge: vi.fn(),
+  },
+}));
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: mocks.push }),
+}));
+
+vi.mock("@/providers/session-provider", () => ({
+  useSessionBridge: () => ({
+    apiClient: {
+      createAutomationIntent: vi.fn(),
+    },
+    sessionContext: {
+      permissions: ["chat.create", "automation_builder.create_intent"],
+    },
+  }),
+}));
+
+vi.mock("../api/chatApi", () => ({
+  createLexFrameChatApi: () => mocks.chatApi,
+}));
+
+vi.mock("../runtime/useLexFrameExternalStoreRuntime", () => ({
+  useLexFrameExternalStoreRuntime: () => ({}),
+}));
+
+vi.mock("@assistant-ui/react", () => {
+  const Passthrough = ({ children }: { readonly children?: unknown }) => children;
+
+  return {
+    AssistantRuntimeProvider: Passthrough,
+    ComposerPrimitive: {
+      Root: Passthrough,
+      Input: () => null,
+      Send: () => null,
+    },
+    MessagePrimitive: {
+      Root: Passthrough,
+      Parts: () => null,
+    },
+    ThreadPrimitive: {
+      Root: () => null,
+      Viewport: Passthrough,
+      Messages: () => null,
+    },
+  };
+});
+
+describe("LexFrameChatShell", () => {
+  afterEach(() => {
+    cleanup();
+  });
+
+  beforeEach(() => {
+    mocks.push.mockReset();
+    for (const apiMock of Object.values(mocks.chatApi)) {
+      apiMock.mockReset();
+    }
+    mocks.chatApi.listProjectThreads.mockResolvedValue({
+      items: [thread("thread_existing", "Новый чат проекта")],
+    });
+    mocks.chatApi.listMessages.mockResolvedValue({ items: [] });
+    mocks.chatApi.listProjectKnowledge.mockResolvedValue({ items: [] });
+    mocks.chatApi.createProjectThread.mockResolvedValue({
+      chat: {
+        id: "thread_created",
+        projectId: "project_claim_001",
+        title: "Проверить позицию",
+        status: "active",
+        lastMessagePreview: "",
+        selectedDocumentIds: [],
+        linkedAutomationId: null,
+        updatedAt: "2026-05-08T10:00:00.000Z",
+      },
+      session: {} as never,
+    });
+    mocks.chatApi.streamMessage.mockResolvedValue({ streamId: "stream_1" });
+  });
+
+  it("renders a clean empty chat without inner thread list, context drawer, or warning panel", async () => {
+    render(<LexFrameChatShell projectId="project_claim_001" initialThreadId={null} />);
+
+    expect(await screen.findByText("С чего начнем?")).toBeInTheDocument();
+    expect(screen.queryByText("Контекст проекта")).not.toBeInTheDocument();
+    expect(screen.queryByText("Чат создан. История хранится в LexFrame DB.")).not.toBeInTheDocument();
+    expect(screen.queryByText("Новый чат проекта")).not.toBeInTheDocument();
+    expect(screen.queryByText(/Юридические материалы/i)).not.toBeInTheDocument();
+  });
+
+  it("creates a project chat, streams the first prompt, and navigates to the chat route", async () => {
+    render(<LexFrameChatShell projectId="project_claim_001" initialThreadId={null} />);
+
+    fireEvent.change(screen.getByRole("textbox", { name: "Запрос к LexFrame" }), {
+      target: { value: "Проверить позицию" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Отправить сообщение" }));
+
+    await waitFor(() => {
+      expect(mocks.chatApi.createProjectThread).toHaveBeenCalledWith("project_claim_001", {
+        title: "Проверить позицию",
+        source: "project_chat",
+      });
+      expect(mocks.chatApi.streamMessage).toHaveBeenCalledWith("thread_created", {
+        text: "Проверить позицию",
+      });
+      expect(mocks.push).toHaveBeenCalledWith(
+        "/app/projects/project_claim_001/chats/thread_created",
+      );
+    });
+  });
+
+  it("renders user and agent messages with distinct conversational alignment", async () => {
+    mocks.chatApi.listMessages.mockResolvedValue({
+      items: [
+        message("user", "Я написал запрос", "message_user"),
+        message("assistant", "Агент ответил по делу", "message_assistant"),
+        message("system", "technical system note", "message_system"),
+      ],
+    });
+
+    const { container } = render(
+      <LexFrameChatShell
+        projectId="project_claim_001"
+        initialThreadId="thread_existing"
+      />,
+    );
+
+    expect(await screen.findByText("Я написал запрос")).toBeInTheDocument();
+    expect(screen.getByText("Агент ответил по делу")).toBeInTheDocument();
+    expect(screen.queryByText("technical system note")).not.toBeInTheDocument();
+
+    const userMessage = container.querySelector('[data-message-role="user"]');
+    const assistantMessage = container.querySelector('[data-message-role="assistant"]');
+
+    expect(userMessage).toHaveClass("justify-end");
+    expect(assistantMessage).toHaveClass("justify-start");
+  });
+});
+
+function thread(id: string, title: string): ChatThreadSummary {
+  return {
+    id,
+    workspaceId: "ws_1",
+    projectId: "project_claim_001",
+    kind: "project",
+    visibility: "project",
+    status: "active",
+    title,
+    lastMessagePreview: null,
+    currentBranchId: null,
+    createdBy: "user_1",
+    createdAt: "2026-05-08T10:00:00.000Z",
+    updatedAt: "2026-05-08T10:00:00.000Z",
+    archivedAt: null,
+    deletedAt: null,
+  };
+}
+
+function message(
+  role: ChatMessageDto["role"],
+  text: string,
+  id: string,
+): ChatMessageDto {
+  return {
+    id,
+    threadId: "thread_existing",
+    workspaceId: "ws_1",
+    projectId: "project_claim_001",
+    role,
+    status: "completed",
+    parentMessageId: null,
+    createdBy: role === "user" ? "user_1" : null,
+    requestId: null,
+    traceId: null,
+    parts: [
+      {
+        id: `${id}_part`,
+        type: "text",
+        text,
+        payload: {},
+        sequence: 0,
+      },
+    ],
+    attachments: [],
+    createdAt: "2026-05-08T10:00:00.000Z",
+    updatedAt: "2026-05-08T10:00:00.000Z",
+  };
+}

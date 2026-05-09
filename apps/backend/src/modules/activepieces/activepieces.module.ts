@@ -12,6 +12,7 @@ import { SecretsModule } from '../secrets/secrets.module';
 import { WorkflowCompilerModule } from '../workflow-compiler/workflow-compiler.module';
 import { ActivepiecesController } from './activepieces.controller';
 import { ActivepiecesAuditWriter } from './activepieces-audit-writer';
+import { ActivepiecesCanvasReadinessService } from './activepieces-canvas-readiness.service';
 import { ActivepiecesCanvasProvisioningService } from './activepieces-canvas-provisioning.service';
 import { ActivepiecesFlowProvisioningService } from './activepieces-flow-provisioning.service';
 import { ActivepiecesIdentityBridge } from './activepieces-identity-bridge';
@@ -39,6 +40,7 @@ import { ActivepiecesService } from './activepieces.service';
   providers: [
     ActivepiecesService,
     ActivepiecesCanvasProvisioningService,
+    ActivepiecesCanvasReadinessService,
     ActivepiecesSessionService,
     ActivepiecesRoleMapper,
     ActivepiecesPiecesPolicyService,
@@ -50,6 +52,7 @@ import { ActivepiecesService } from './activepieces.service';
   exports: [
     ActivepiecesService,
     ActivepiecesCanvasProvisioningService,
+    ActivepiecesCanvasReadinessService,
     ActivepiecesSessionService,
   ],
 })
