@@ -575,6 +575,7 @@ export class CanvasAiOrchestrator {
 
   private async generateStructured(
     input: {
+      readonly actor: AuthenticatedActor;
       readonly access: AccessContext;
       readonly request: CanvasAiMessageRequest;
       readonly meta: RequestMeta;
@@ -600,6 +601,7 @@ export class CanvasAiOrchestrator {
       prompt,
       schemaId: 'canvas_ai_structured_output.v1',
       fallback,
+      actorUserId: input.actor.id,
       jsonSchema: {
         name: 'canvas_ai_structured_output',
         strict: true,

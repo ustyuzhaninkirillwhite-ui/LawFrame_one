@@ -1,6 +1,6 @@
 "use client";
 
-import type { ChatMessageDto } from "@lexframe/contracts";
+import type { ChatMessageDto, ChatStreamSnapshot } from "@lexframe/contracts";
 import { useRouter } from "next/navigation";
 import * as React from "react";
 import { useSessionBridge } from "@/providers/session-provider";
@@ -24,6 +24,10 @@ export function LexFrameChatShell({
   );
   const [isRunning, setIsRunning] = React.useState(false);
   const [activeStreamId, setActiveStreamId] = React.useState<string | null>(null);
+  const [streamErrorMessage, setStreamErrorMessage] = React.useState<string | null>(
+    null,
+  );
+  const messageLoadRequestId = React.useRef(0);
   const canSend = sessionContext.permissions.includes("chat.create");
   const canCreateAutomation = sessionContext.permissions.includes(
     "automation_builder.create_intent",
@@ -31,13 +35,22 @@ export function LexFrameChatShell({
 
   const loadMessages = React.useCallback(
     async (threadId: string | null) => {
+      const requestId = messageLoadRequestId.current + 1;
+      messageLoadRequestId.current = requestId;
+
       if (!threadId) {
-        setMessages([]);
-        return;
+        if (requestId === messageLoadRequestId.current) {
+          setMessages([]);
+        }
+        return [];
       }
 
       const response = await chatApi.listMessages(threadId);
-      setMessages([...response.items]);
+      const nextMessages = [...response.items];
+      if (requestId === messageLoadRequestId.current) {
+        setMessages(nextMessages);
+      }
+      return nextMessages;
     },
     [chatApi],
   );
@@ -67,11 +80,30 @@ export function LexFrameChatShell({
         setActiveThreadId(threadId);
       }
 
+      setStreamErrorMessage(null);
+      setActiveStreamId(null);
       setIsRunning(true);
       try {
         const snapshot = await chatApi.streamMessage(threadId, { text });
         setActiveStreamId(snapshot.streamId);
-        await loadMessages(threadId);
+        const snapshotMessage = createAssistantMessageFromSnapshot(snapshot, projectId);
+        if (snapshotMessage) {
+          setMessages((current) => upsertChatMessage(current, snapshotMessage));
+        }
+        const persistedMessages = await loadMessages(threadId);
+        if (
+          snapshotMessage &&
+          !persistedMessages.some((message) => message.id === snapshotMessage.id)
+        ) {
+          setMessages((current) => upsertChatMessage(current, snapshotMessage));
+        }
+
+        if (createdThread) {
+          router.push(`/app/projects/${projectId}/chats/${threadId}`);
+        }
+      } catch (error) {
+        await loadMessages(threadId).catch(() => undefined);
+        setStreamErrorMessage(formatChatStreamError(error));
 
         if (createdThread) {
           router.push(`/app/projects/${projectId}/chats/${threadId}`);
@@ -114,10 +146,14 @@ export function LexFrameChatShell({
       }
 
       setIsRunning(true);
+      setStreamErrorMessage(null);
       try {
         const snapshot = await chatApi.regenerate(activeThreadId, messageId);
         setActiveStreamId(snapshot.streamId);
         await loadMessages(activeThreadId);
+      } catch (error) {
+        await loadMessages(activeThreadId).catch(() => undefined);
+        setStreamErrorMessage(formatChatStreamError(error));
       } finally {
         setIsRunning(false);
       }
@@ -162,6 +198,7 @@ export function LexFrameChatShell({
       <LexFrameThread
         messages={messages}
         isRunning={isRunning}
+        streamErrorMessage={streamErrorMessage}
         disabled={!canSend}
         onSend={sendMessage}
         onCancel={cancelStream}
@@ -175,4 +212,83 @@ export function LexFrameChatShell({
       />
     </section>
   );
+}
+
+function formatChatStreamError(error: unknown): string {
+  const code = getSafeErrorCode(error);
+
+  if (code) {
+    return `Не удалось получить ответ LexFrame AI. Код: ${code}. Проверьте подключение провайдера в настройках.`;
+  }
+
+  return "Не удалось получить ответ LexFrame AI. Проверьте подключение провайдера в настройках.";
+}
+
+function getSafeErrorCode(error: unknown): string | null {
+  if (typeof error !== "object" || error === null) {
+    return null;
+  }
+
+  const code = (error as { readonly code?: unknown }).code;
+
+  if (typeof code !== "string" || !/^[A-Z0-9_:-]{2,80}$/.test(code)) {
+    return null;
+  }
+
+  return code;
+}
+
+function createAssistantMessageFromSnapshot(
+  snapshot: ChatStreamSnapshot,
+  projectId: string,
+): ChatMessageDto | null {
+  const text = snapshot.events
+    .filter((event) => event.type === "text_delta")
+    .map((event) =>
+      typeof event.payload.delta === "string" ? event.payload.delta : "",
+    )
+    .join("")
+    .trim();
+
+  if (!text) {
+    return null;
+  }
+
+  const timestamp = new Date().toISOString();
+  return {
+    id: snapshot.messageId,
+    threadId: snapshot.threadId,
+    workspaceId: snapshot.workspaceId,
+    projectId,
+    role: "assistant",
+    status: snapshot.status === "completed" ? "completed" : "streaming",
+    parentMessageId: null,
+    createdBy: null,
+    requestId: null,
+    traceId: null,
+    parts: [
+      {
+        id: `${snapshot.messageId}_stream_text`,
+        type: "markdown",
+        text,
+        payload: {},
+        sequence: 0,
+      },
+    ],
+    attachments: [],
+    createdAt: timestamp,
+    updatedAt: timestamp,
+  };
+}
+
+function upsertChatMessage(
+  messages: readonly ChatMessageDto[],
+  message: ChatMessageDto,
+) {
+  const existingIndex = messages.findIndex((item) => item.id === message.id);
+  if (existingIndex === -1) {
+    return [...messages, message];
+  }
+
+  return messages.map((item, index) => (index === existingIndex ? message : item));
 }

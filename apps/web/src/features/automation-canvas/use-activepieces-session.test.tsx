@@ -118,6 +118,32 @@ describe("useActivepiecesSession", () => {
     ).toHaveBeenCalledTimes(1);
     vi.useRealTimers();
   });
+
+  it("keeps runtime blockers controlled and does not request a JWT session", async () => {
+    bridge.apiClient.getActivepiecesCanvasReadiness.mockResolvedValue({
+      status: "unavailable",
+      reasonCode: "ACTIVEPIECES_UNAVAILABLE",
+      readinessCode: "ACTIVEPIECES_UNAVAILABLE",
+      activepiecesProjectId: null,
+      activepiecesFlowId: null,
+      activepiecesFlowVersionId: null,
+      readinessVersion: "readiness_unavailable",
+      activepiecesVersion: null,
+      embedSdkVersion: null,
+      repairAttempted: false,
+      checkedAt: "2026-05-08T10:00:00.000Z",
+      checks: [],
+      canonicalReplacementRoute: null,
+      message: "Automation runtime is unavailable.",
+    });
+
+    render(
+      <SessionProbe projectId="project_claim_001" automationId="aut_blocked" />,
+    );
+
+    expect(await screen.findByText("unavailable")).toBeInTheDocument();
+    expect(bridge.apiClient.createActivepiecesSession).not.toHaveBeenCalled();
+  });
 });
 
 function SessionProbe({

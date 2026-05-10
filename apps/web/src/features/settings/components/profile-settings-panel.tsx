@@ -49,6 +49,7 @@ export function ProfileSettingsPanel({
         </Field>
         <Field label="Отображаемое имя">
           <Input
+            data-testid="settings-profile-display-name"
             value={form.displayName}
             onChange={(event) =>
               setForm((current) => ({
@@ -60,6 +61,7 @@ export function ProfileSettingsPanel({
         </Field>
         <Field label="Имя">
           <Input
+            data-testid="settings-profile-first-name"
             value={form.firstName}
             onChange={(event) =>
               setForm((current) => ({
@@ -71,6 +73,7 @@ export function ProfileSettingsPanel({
         </Field>
         <Field label="Фамилия">
           <Input
+            data-testid="settings-profile-last-name"
             value={form.lastName}
             onChange={(event) =>
               setForm((current) => ({

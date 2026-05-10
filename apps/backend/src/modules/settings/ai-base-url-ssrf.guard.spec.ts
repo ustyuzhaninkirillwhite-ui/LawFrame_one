@@ -37,4 +37,15 @@ describe('Stage 21 AI provider base URL SSRF guard', () => {
       }),
     ).resolves.toBe('https://api.example.test/v1');
   });
+
+  it('returns a controlled guard error when production DNS verification fails', async () => {
+    await expect(
+      validateAiProviderBaseUrl('https://api.example.test/v1', {
+        production: true,
+        resolveHost: async () => {
+          throw new Error('getaddrinfo EAI_AGAIN api.example.test');
+        },
+      }),
+    ).rejects.toMatchObject({ code: 'AI_BASE_URL_DNS_LOOKUP_FAILED' });
+  });
 });

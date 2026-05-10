@@ -1,0 +1,158 @@
+{
+  "generatedAt": "2026-05-10T10:39:39.461Z",
+  "domainEvidence": {
+    "settings": {
+      "status": "PASS",
+      "profile": {
+        "id": "437605b9-0bbd-109a-04d7-ad01c63f310a",
+        "email": "stage21-live-1778409556079@lexframe.local",
+        "displayName": "Stage21 Live Smoke Updated",
+        "updatedAt": "2026-05-10 10:39:34.579987+00"
+      },
+      "workspace": {
+        "id": "cf25792f-90fe-4c23-aed0-236fddb8f1ac",
+        "organizationDisplayName": "Stage21 Org 1778409558228",
+        "updatedAt": "2026-05-10 10:39:18.353027+00"
+      },
+      "aiSettings": {
+        "connectionId": "27431b45-7be0-4f53-a2ab-a94227bd11be",
+        "provider": "cometapi",
+        "baseUrl": "https://api.cometapi.com/v1",
+        "modelId": "deepseek-v4-pro",
+        "secretRefId": "b3212979-e0a2-4132-a87a-4faf742d3dab",
+        "secretBackend": "dev_mock",
+        "secretFingerprint": "sha256:4a1292be31b313a7",
+        "rawSecretInProductDb": false
+      },
+      "routePreference": {
+        "routeGroup": "chat_ai",
+        "providerConnectionId": "27431b45-7be0-4f53-a2ab-a94227bd11be",
+        "modelId": "deepseek-v4-pro",
+        "capabilitiesConfirmed": {
+          "jsonMode": true,
+          "streaming": true,
+          "toolCalls": true,
+          "structuredJsonSchema": true
+        }
+      }
+    },
+    "projects": {
+      "status": "PASS",
+      "projectId": "project_3eede482ff9a4a01ac3ccbf35795483d",
+      "workspaceId": "cf25792f-90fe-4c23-aed0-236fddb8f1ac",
+      "name": "Stage21 Live 1778409560037",
+      "projectStatus": "active",
+      "updatedAt": "2026-05-10 10:39:20.204221+00"
+    },
+    "chat": {
+      "status": "PASS",
+      "threadId": "c24900d0-135b-4ba7-8622-0088cb9ea8b7",
+      "projectId": "project_3eede482ff9a4a01ac3ccbf35795483d",
+      "userMessageId": "3bc99342-3d2c-43fd-8805-aed5811f3dd4",
+      "assistantMessageId": "7538ac20-3a5d-43ee-b909-33833c2d7ee7",
+      "markerPersisted": true,
+      "controlledFailurePersisted": false,
+      "streamJobId": "2a9bae92-7bcb-4177-b5e2-c8a8d742dcc9",
+      "streamJobStatus": "completed"
+    },
+    "automations": {
+      "status": "PASS",
+      "automationId": "7081ca3b-e20c-4d17-8ed3-0ebee147f32d",
+      "readinessStatus": "ready",
+      "readinessCode": "READY",
+      "installedAutomation": {
+        "id": "7081ca3b-e20c-4d17-8ed3-0ebee147f32d",
+        "builderState": "ready",
+        "syncState": "synced",
+        "runtimeProjectId": "lfpdd6c686465c3e2893b",
+        "runtimeFlowId": "lff2c5da99318f7408c74"
+      },
+      "projectBindingRows": 1,
+      "userBindingRows": 1,
+      "flowBindingRows": 1,
+      "sessionRows": 1,
+      "sessions": [
+        {
+          "id": "435dc6c2-c512-42fa-abd6-ea7af39eb1fd",
+          "sessionId": "435dc6c2-c512-42fa-abd6-ea7af39eb1fd",
+          "status": "issued",
+          "mode": "iframe_embed",
+          "hasTokenHash": true,
+          "hasJtiHash": true
+        }
+      ]
+    },
+    "secretSafety": {
+      "status": "PASS",
+      "searchedTables": [
+        "ai_provider_connections",
+        "ai_secret_refs",
+        "chat_messages",
+        "chat_message_parts",
+        "activepieces_embed_sessions",
+        "audit_events"
+      ],
+      "scannedRows": 162,
+      "rawSecretHits": 0,
+      "rawSecretInProductDb": false
+    }
+  },
+  "audit": {
+    "actions": [
+      "activepieces.flow.provisioned",
+      "activepieces.membership.provisioned",
+      "activepieces.pieces_policy.evaluated",
+      "activepieces.project.provisioned",
+      "activepieces.role.mapped",
+      "activepieces.session.issued",
+      "activepieces.session.requested",
+      "activepieces.user.provisioned",
+      "canvas.readiness.checked",
+      "canvas.readiness.repaired",
+      "chat.message.created",
+      "chat.message.stream_completed",
+      "chat.thread.created",
+      "settings.ai.connection.test.completed",
+      "settings.ai.connection.test.started",
+      "settings.ai.provider_connection.created",
+      "settings.ai.route_group.preference.updated",
+      "settings.ai.secret.created",
+      "settings.opened",
+      "settings.organization.updated",
+      "settings.profile.updated",
+      "workspace.created"
+    ],
+    "expectedActions": [
+      "settings.profile.updated",
+      "settings.organization.updated",
+      "settings.ai.route_group.preference.updated",
+      "chat.message.stream_completed"
+    ],
+    "activepiecesActions": [
+      "activepieces.flow.provisioned",
+      "activepieces.membership.provisioned",
+      "activepieces.user.provisioned",
+      "activepieces.project.provisioned",
+      "activepieces.role.mapped",
+      "activepieces.pieces_policy.evaluated",
+      "activepieces.session.requested",
+      "activepieces.session.issued",
+      "activepieces.flow.provisioned",
+      "activepieces.membership.provisioned",
+      "activepieces.user.provisioned",
+      "activepieces.project.provisioned",
+      "activepieces.role.mapped",
+      "activepieces.pieces_policy.evaluated",
+      "activepieces.session.requested",
+      "activepieces.session.issued",
+      "activepieces.flow.provisioned",
+      "activepieces.membership.provisioned",
+      "activepieces.user.provisioned",
+      "activepieces.project.provisioned",
+      "activepieces.role.mapped",
+      "activepieces.pieces_policy.evaluated",
+      "activepieces.session.requested"
+    ],
+    "rawSecretInAudit": false
+  }
+}

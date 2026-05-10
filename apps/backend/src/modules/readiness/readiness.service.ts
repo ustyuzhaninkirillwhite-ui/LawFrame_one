@@ -181,6 +181,7 @@ export class ReadinessService {
     const routes = routeRegistry.listRoutes();
     const vaultStatus = this.localOwnerKeyVaultService.getSafeStatus();
     const hasCometSecret =
+      isConfiguredSecret(this.env.COMETAPI_KEY) ||
       isConfiguredSecret(this.env.COMETAPI_API_KEY) ||
       hasConfiguredSecretList(this.env.COMETAPI_API_KEYS) ||
       vaultStatus.keys.routes.some(
@@ -1239,6 +1240,7 @@ export class ReadinessService {
     const aiProviderMode = this.env.AI_PROVIDER_MODE;
     const aiKeyConfigured =
       isConfiguredSecret(this.env.XAI_API_KEY) ||
+      isConfiguredSecret(this.env.COMETAPI_KEY) ||
       isConfiguredSecret(this.env.COMETAPI_API_KEY) ||
       hasConfiguredSecretList(this.env.COMETAPI_API_KEYS) ||
       localKeyConfigured;
@@ -1526,6 +1528,7 @@ export class ReadinessService {
       localKeysStatus.status === 'ready' && localKeysStatus.keys.enabled > 0;
     const aiKeyConfigured =
       isConfiguredSecret(this.env.XAI_API_KEY) ||
+      isConfiguredSecret(this.env.COMETAPI_KEY) ||
       isConfiguredSecret(this.env.COMETAPI_API_KEY) ||
       hasConfiguredSecretList(this.env.COMETAPI_API_KEYS) ||
       localKeyConfigured;
@@ -1775,6 +1778,7 @@ export class ReadinessService {
           realProviderKeyConfigured: aiKeyConfigured,
           xaiConfigured: isConfiguredSecret(this.env.XAI_API_KEY),
           cometConfigured:
+            isConfiguredSecret(this.env.COMETAPI_KEY) ||
             isConfiguredSecret(this.env.COMETAPI_API_KEY) ||
             hasConfiguredSecretList(this.env.COMETAPI_API_KEYS),
           localOwnerKeyVaultReady: localKeyConfigured,

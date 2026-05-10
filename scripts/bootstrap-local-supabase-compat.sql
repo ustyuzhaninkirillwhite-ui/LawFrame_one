@@ -26,6 +26,7 @@ $$;
 
 create schema if not exists auth;
 create schema if not exists storage;
+create schema if not exists vault;
 
 create table if not exists auth.users (
   id uuid primary key,
@@ -66,6 +67,51 @@ exception
     return null;
 end;
 $$;
+
+create table if not exists vault.secrets (
+  id uuid primary key default gen_random_uuid(),
+  name text not null unique,
+  secret text not null,
+  description text null,
+  created_at timestamptz not null default timezone('utc', now()),
+  updated_at timestamptz not null default timezone('utc', now())
+);
+
+drop function if exists vault.create_secret(text, text, text);
+
+create or replace function vault.create_secret(
+  secret_value text,
+  secret_name text,
+  secret_description text default null
+)
+returns uuid
+language plpgsql
+security definer
+as $$
+declare
+  secret_id uuid;
+begin
+  insert into vault.secrets (name, secret, description)
+  values (secret_name, secret_value, secret_description)
+  on conflict (name) do update
+    set secret = excluded.secret,
+        description = excluded.description,
+        updated_at = timezone('utc', now())
+  returning id into secret_id;
+
+  return secret_id;
+end;
+$$;
+
+create or replace view vault.decrypted_secrets as
+select
+  id,
+  name,
+  secret as decrypted_secret,
+  description,
+  created_at,
+  updated_at
+from vault.secrets;
 
 create table if not exists storage.buckets (
   id text primary key,

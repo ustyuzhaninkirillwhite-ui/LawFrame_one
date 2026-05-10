@@ -266,6 +266,7 @@ function resolveAiDependency(
 ): RuntimeDependencyStatus {
   const hasRealAiKey =
     isConfiguredSecret(env.XAI_API_KEY) ||
+    isConfiguredSecret(env.COMETAPI_KEY) ||
     isConfiguredSecret(env.COMETAPI_API_KEY) ||
     hasConfiguredSecretList(env.COMETAPI_API_KEYS);
 

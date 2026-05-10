@@ -28,7 +28,7 @@ export const serverEnvSchema = z.object({
   LEXFRAME_AI_DEFAULT_PROVIDER: z
     .enum(["cometapi", "openai_compatible", "openai", "mock"])
     .default("cometapi"),
-  LEXFRAME_AI_DEFAULT_MODEL: z.string().min(1).default("deepseek-v4-flash"),
+  LEXFRAME_AI_DEFAULT_MODEL: z.string().min(1).default("deepseek-v4-pro"),
   LEXFRAME_AI_DEFAULT_ROUTE: z.string().min(1).default("default_chat"),
   LEXFRAME_AI_DEFAULT_REASONING_MODE: z.string().min(1).default("non_thinking"),
   LEXFRAME_COMETAPI_BASE_URL: z
@@ -106,6 +106,7 @@ export const serverEnvSchema = z.object({
   LEXFRAME_RUNTIME_MASTER_SECRET: z.string().min(16).default("stage4_runtime_master_secret"),
   CONTAINER_REGISTRY: z.string().min(1).default("ghcr.io/example/lexframe"),
   XAI_API_KEY: z.string().min(10).default("stage0_xai_api_key"),
+  COMETAPI_KEY: z.string().default(""),
   COMETAPI_API_KEY: z.string().min(10).default("stage0_comet_api_key"),
   COMETAPI_API_KEYS: z.string().default(""),
   LEXFRAME_LOCAL_KEYS_FILE: z.string().default(""),

@@ -20,6 +20,16 @@ const providers: readonly AiProviderCode[] = [
   "mock",
 ];
 
+const DEFAULT_AI_PROVIDER: AiProviderCode = "cometapi";
+const DEFAULT_AI_BASE_URL = "https://api.cometapi.com/v1";
+const DEFAULT_AI_MODEL_ID = "grok-4-1-fast-non-reasoning";
+const DEFAULT_AI_CAPABILITIES: AiProviderConnectionCapabilities = {
+  streaming: true,
+  jsonMode: true,
+  structuredJsonSchema: true,
+  toolCalls: true,
+};
+
 export interface AiProviderConnectionFormValue {
   readonly providerCode: AiProviderCode;
   readonly baseUrl: string;
@@ -31,61 +41,89 @@ export interface AiProviderConnectionFormValue {
 export function AiProviderConnectionForm({
   connection,
   disabled,
+  resetSensitiveInputVersion,
   routeGroup,
   testPending,
+  testRequiresSave,
   testResult,
   onChange,
   onTest,
 }: {
   readonly connection: AiProviderConnectionDto | null;
   readonly disabled?: boolean;
+  readonly resetSensitiveInputVersion?: number;
   readonly routeGroup: AiRouteGroup;
   readonly testPending?: boolean;
+  readonly testRequiresSave?: boolean;
   readonly testResult?: AiConnectionTestResultDto | null;
   readonly onChange: (value: AiProviderConnectionFormValue) => void;
   readonly onTest: () => void;
 }) {
   const [value, setValue] = React.useState<AiProviderConnectionFormValue>(() => ({
-    providerCode: connection?.providerCode ?? "openai_compatible",
-    baseUrl: connection?.baseUrl ?? "https://api.example.com/v1",
-    modelId: connection?.modelId ?? "",
+    providerCode: connection?.providerCode ?? DEFAULT_AI_PROVIDER,
+    baseUrl: connection?.baseUrl ?? DEFAULT_AI_BASE_URL,
+    modelId: connection?.modelId ?? DEFAULT_AI_MODEL_ID,
     apiKey: "",
     capabilities: {
-      streaming: connection?.capabilities.streaming ?? true,
-      jsonMode: connection?.capabilities.jsonMode ?? routeGroup === "automation_ai",
+      streaming:
+        connection?.capabilities.streaming ?? DEFAULT_AI_CAPABILITIES.streaming,
+      jsonMode:
+        connection?.capabilities.jsonMode ?? DEFAULT_AI_CAPABILITIES.jsonMode,
       structuredJsonSchema:
         connection?.capabilities.structuredJsonSchema ??
-        routeGroup === "automation_ai",
-      toolCalls: connection?.capabilities.toolCalls ?? true,
+        DEFAULT_AI_CAPABILITIES.structuredJsonSchema,
+      toolCalls:
+        connection?.capabilities.toolCalls ?? DEFAULT_AI_CAPABILITIES.toolCalls,
     },
   }));
 
   React.useEffect(() => {
     const next = {
-      providerCode: connection?.providerCode ?? "openai_compatible",
-      baseUrl: connection?.baseUrl ?? "https://api.example.com/v1",
-      modelId: connection?.modelId ?? "",
+      providerCode: connection?.providerCode ?? DEFAULT_AI_PROVIDER,
+      baseUrl: connection?.baseUrl ?? DEFAULT_AI_BASE_URL,
+      modelId: connection?.modelId ?? DEFAULT_AI_MODEL_ID,
       apiKey: "",
       capabilities: {
-        streaming: connection?.capabilities.streaming ?? true,
+        streaming:
+          connection?.capabilities.streaming ??
+          DEFAULT_AI_CAPABILITIES.streaming,
         jsonMode:
-          connection?.capabilities.jsonMode ?? routeGroup === "automation_ai",
+          connection?.capabilities.jsonMode ?? DEFAULT_AI_CAPABILITIES.jsonMode,
         structuredJsonSchema:
           connection?.capabilities.structuredJsonSchema ??
-          routeGroup === "automation_ai",
-        toolCalls: connection?.capabilities.toolCalls ?? true,
+          DEFAULT_AI_CAPABILITIES.structuredJsonSchema,
+        toolCalls:
+          connection?.capabilities.toolCalls ??
+          DEFAULT_AI_CAPABILITIES.toolCalls,
       },
     };
     setValue(next);
     onChange(next);
   }, [connection, onChange, routeGroup]);
 
-  const update = (patch: Partial<AiProviderConnectionFormValue>) => {
-    setValue((current) => {
-      const next = { ...current, ...patch };
+  const previousResetVersion = React.useRef(resetSensitiveInputVersion);
+
+  React.useEffect(() => {
+    if (
+      resetSensitiveInputVersion === undefined ||
+      previousResetVersion.current === resetSensitiveInputVersion
+    ) {
+      return;
+    }
+
+    previousResetVersion.current = resetSensitiveInputVersion;
+
+    if (value.apiKey) {
+      const next = { ...value, apiKey: "" };
+      setValue(next);
       onChange(next);
-      return next;
-    });
+    }
+  }, [onChange, resetSensitiveInputVersion, value]);
+
+  const update = (patch: Partial<AiProviderConnectionFormValue>) => {
+    const next = { ...value, ...patch };
+    setValue(next);
+    onChange(next);
   };
 
   const updateCapability = (
@@ -180,8 +218,9 @@ export function AiProviderConnectionForm({
       />
 
       <AiConnectionTestButton
-        disabled={disabled || !connection}
+        disabled={disabled || (!connection && !value.apiKey.trim())}
         isPending={testPending}
+        requiresSave={testRequiresSave}
         result={testResult}
         onTest={onTest}
       />

@@ -27,6 +27,7 @@ export function SettingsSidebarNav({
         <button
           key={tab.id}
           type="button"
+          data-testid={`settings-tab-${tab.id}`}
           className={cn(
             "flex items-center gap-2 rounded-[var(--lf-radius-control)] px-3 py-2 text-left text-sm transition",
             activeTab === tab.id

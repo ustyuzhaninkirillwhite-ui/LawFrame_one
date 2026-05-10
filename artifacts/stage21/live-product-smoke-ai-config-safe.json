@@ -1,0 +1,18 @@
+{
+  "provider": "cometapi",
+  "sourceClass": "local_config_file",
+  "baseUrl": "https://api.cometapi.com/v1",
+  "model": "deepseek-v4-pro",
+  "keyFingerprint": "sha256:4a1292be31b313a7",
+  "rawLength": 51,
+  "sanitizedLength": 51,
+  "expectedLengthMatched": true,
+  "previousFingerprintUsed": false,
+  "hasBom": false,
+  "hasLeadingWhitespace": false,
+  "hasTrailingWhitespace": false,
+  "hasWrappingQuotes": false,
+  "hasEmbeddedNewline": false,
+  "hasControlCharacters": false,
+  "hasCometPrefixInsideToken": false
+}

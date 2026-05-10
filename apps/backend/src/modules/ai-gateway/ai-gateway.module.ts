@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { AiSecretsModule } from '../ai-secrets/ai-secrets.module';
 import { AuditModule } from '../audit/audit.module';
 import { IdentityModule } from '../identity/identity.module';
 import { LocalOwnerKeyVaultModule } from '../local-owner-key-vault/local-owner-key-vault.module';
@@ -27,6 +28,7 @@ import { AiRouteGroupResolverService } from './ai-route-group-resolver.service';
   imports: [
     IdentityModule,
     AuditModule,
+    AiSecretsModule,
     LocalOwnerKeyVaultModule,
     RuntimeModule,
   ],

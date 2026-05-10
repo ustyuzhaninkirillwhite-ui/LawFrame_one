@@ -1,0 +1,120 @@
+{
+  "generatedAt": "2026-05-10T10:39:35.223Z",
+  "actorUserId": "437605b9-0bbd-109a-04d7-ad01c63f310a",
+  "email": "stage21-live-1778409556079@lexframe.local",
+  "workspaceId": "cf25792f-90fe-4c23-aed0-236fddb8f1ac",
+  "projectId": "project_3eede482ff9a4a01ac3ccbf35795483d",
+  "projectName": "Stage21 Live 1778409560037",
+  "organizationDisplayName": "Stage21 Org 1778409558228",
+  "chatThreadId": "c24900d0-135b-4ba7-8622-0088cb9ea8b7",
+  "assistantMessageId": "7538ac20-3a5d-43ee-b909-33833c2d7ee7",
+  "userMessageId": "3bc99342-3d2c-43fd-8805-aed5811f3dd4",
+  "connectionId": "27431b45-7be0-4f53-a2ab-a94227bd11be",
+  "routeGroup": "chat_ai",
+  "provider": "cometapi",
+  "providerHost": "api.cometapi.com",
+  "modelId": "deepseek-v4-pro",
+  "connectionTest": {
+    "providerConnectionId": "27431b45-7be0-4f53-a2ab-a94227bd11be",
+    "status": "success",
+    "latencyMs": 1061,
+    "testedAt": "2026-05-10T10:39:19.988Z",
+    "errorCode": null,
+    "message": "Provider models endpoint responded to a prompt-free health check.",
+    "redacted": true
+  },
+  "automation": {
+    "automationId": "7081ca3b-e20c-4d17-8ed3-0ebee147f32d",
+    "readinessStatus": "ready",
+    "readinessCode": "READY",
+    "canvasState": "canvas",
+    "routeContextPreserved": true
+  },
+  "browserNetwork": {
+    "directProviderRequests": 0,
+    "chatRequests": [
+      "GET /api/chat/threads/c24900d0-135b-4ba7-8622-0088cb9ea8b7/messages",
+      "POST /api/chat/threads/c24900d0-135b-4ba7-8622-0088cb9ea8b7/messages:stream",
+      "GET /api/chat/threads/c24900d0-135b-4ba7-8622-0088cb9ea8b7/messages",
+      "GET /api/chat/threads/c24900d0-135b-4ba7-8622-0088cb9ea8b7/messages"
+    ],
+    "requestCount": 266
+  },
+  "browserStorageScanned": true,
+  "domainResults": {
+    "settings": {
+      "status": "PASS",
+      "code": null,
+      "message": null,
+      "evidence": {
+        "connectionId": "27431b45-7be0-4f53-a2ab-a94227bd11be",
+        "connectionTestStatus": "success",
+        "profileDisplayName": "Stage21 Live Smoke Updated",
+        "organizationDisplayName": "Stage21 Org 1778409558228"
+      }
+    },
+    "projects": {
+      "status": "PASS",
+      "code": null,
+      "message": null,
+      "evidence": {
+        "projectId": "project_3eede482ff9a4a01ac3ccbf35795483d",
+        "projectName": "Stage21 Live 1778409560037",
+        "createdWithoutManualReload": true
+      }
+    },
+    "chat": {
+      "status": "PASS",
+      "code": null,
+      "message": null,
+      "evidence": {
+        "chatThreadId": "c24900d0-135b-4ba7-8622-0088cb9ea8b7",
+        "userMessageId": "3bc99342-3d2c-43fd-8805-aed5811f3dd4",
+        "assistantMessageId": "7538ac20-3a5d-43ee-b909-33833c2d7ee7",
+        "markerPersisted": true,
+        "uiMarkerObserved": "persisted",
+        "runningStateCompleted": true
+      }
+    },
+    "automations": {
+      "status": "PASS",
+      "code": null,
+      "message": null,
+      "evidence": {
+        "automationId": "7081ca3b-e20c-4d17-8ed3-0ebee147f32d",
+        "readinessStatus": "ready",
+        "readinessCode": "READY",
+        "canvasState": "canvas",
+        "routeContextPreserved": true
+      }
+    },
+    "secretSafety": {
+      "status": "PASS",
+      "code": null,
+      "message": null,
+      "evidence": {
+        "browserStorageScanned": true,
+        "directProviderRequests": 0,
+        "browserRequestCount": 266,
+        "artifactScan": {
+          "files": [
+            "artifacts\\stage21\\live-product-smoke.json",
+            "artifacts\\stage21\\live-product-smoke-db-evidence.json",
+            "artifacts\\stage21\\live-product-smoke-provider-probe.json",
+            "artifacts\\stage21\\live-product-smoke-ai-config-safe.json"
+          ],
+          "patterns": [
+            "raw provider key",
+            "Authorization Bearer",
+            "JWT shape",
+            "service/runtime/admin secret names",
+            "private key blocks"
+          ],
+          "rawSecretHits": 0,
+          "patternHits": [],
+          "result": "PASS"
+        }
+      }
+    }
+  }
+}

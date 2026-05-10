@@ -156,6 +156,7 @@ export function SettingsShell({
                       "settings.ai.manage_workspace",
                     )}
                     connections={aiQuery.data.providerConnections}
+                    policies={aiQuery.data.effectivePolicies}
                     preferences={aiQuery.data.routeGroups}
                   />
                 ) : null

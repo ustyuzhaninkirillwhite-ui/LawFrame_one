@@ -2,6 +2,8 @@ import { defineConfig } from "@playwright/test";
 import { generateKeyPairSync } from "node:crypto";
 
 const isStage17LiveRun = process.env.LEXFRAME_STAGE17_17_10_LIVE === "1";
+const isStage21LiveSmokeRun =
+  process.env.LEXFRAME_STAGE21_LIVE_PRODUCT_SMOKE === "1";
 const isStage1820AuditRun =
   process.env.LEXFRAME_STAGE18_20_AUDIT === "1" ||
   process.argv.some((arg) => /stage18|stage19|stage20|stage18-20/i.test(arg));
@@ -50,6 +52,11 @@ const deliveryWebhookUrl =
 const deliveryWebhookToken =
   process.env.LEXFRAME_DELIVERY_WEBHOOK_TOKEN ?? "local_delivery_token";
 const activepiecesSigningPrivateKey = resolveActivepiecesSigningPrivateKey();
+const frontendServerEnv = stripServerOnlySecrets(process.env);
+const prepareSearchIndexCommand =
+  process.env.LEXFRAME_E2E_SKIP_SEARCH_INDEX === "1"
+    ? ""
+    : "node ../../scripts/prepare-stage14-search-index.mjs && ";
 process.env.LEXFRAME_DELIVERY_TRANSPORT ??= deliveryTransport;
 process.env.LEXFRAME_DELIVERY_WEBHOOK_URL ??= deliveryWebhookUrl;
 process.env.LEXFRAME_DELIVERY_WEBHOOK_TOKEN ??= deliveryWebhookToken;
@@ -92,16 +99,16 @@ export default defineConfig({
   ],
   use: {
     baseURL,
-    trace: "retain-on-failure",
-    video: "retain-on-failure",
-    screenshot: "only-on-failure",
+    trace: isStage21LiveSmokeRun ? "off" : "retain-on-failure",
+    video: isStage21LiveSmokeRun ? "off" : "retain-on-failure",
+    screenshot: isStage21LiveSmokeRun ? "off" : "only-on-failure",
   },
   outputDir: playwrightArtifactDir
     ? `${playwrightArtifactDir}/test-results`
     : "test-results",
   webServer: [
     {
-      command: `corepack pnpm --dir ../.. stage16:build:backend-runtime && node ../../scripts/prepare-stage14-search-index.mjs && node ../../scripts/stage16-start-backend-runtime.mjs`,
+      command: `corepack pnpm --dir ../.. stage16:build:backend-runtime && ${prepareSearchIndexCommand}node ../../scripts/stage16-start-backend-runtime.mjs`,
       url: `${apiBaseURL}/health/live`,
       timeout: 240_000,
       reuseExistingServer,
@@ -161,7 +168,7 @@ export default defineConfig({
       timeout: 180_000,
       reuseExistingServer,
       env: {
-        ...process.env,
+        ...frontendServerEnv,
         NEXT_PUBLIC_ENABLE_MSW: useMsw ? "1" : "0",
         NEXT_PUBLIC_API_BASE_URL: apiBaseURL,
         NEXT_PUBLIC_SUPABASE_URL:
@@ -199,4 +206,32 @@ function resolveActivepiecesSigningPrivateKey() {
     },
   });
   return privateKey;
+}
+
+function stripServerOnlySecrets(
+  source: NodeJS.ProcessEnv,
+): NodeJS.ProcessEnv {
+  const result = { ...source };
+  const forbidden = new Set([
+    "ACTIVEPIECES_API_KEY",
+    "ACTIVEPIECES_API_KEY_SECRET_REF",
+    "ACTIVEPIECES_SIGNING_PRIVATE_KEY",
+    "ACTIVEPIECES_SIGNING_PRIVATE_KEY_SECRET_REF",
+    "COMETAPI_API_KEY",
+    "COMETAPI_API_KEYS",
+    "COMETAPI_KEY",
+    "LEXFRAME_STAGE21_AI_API_KEY",
+    "LEXFRAME_DELIVERY_WEBHOOK_TOKEN",
+    "LEXFRAME_RUNTIME_MASTER_SECRET",
+    "OPENAI_API_KEY",
+    "SUPABASE_DB_URL",
+    "SUPABASE_SECRET_KEY",
+    "XAI_API_KEY",
+  ]);
+
+  for (const key of forbidden) {
+    delete result[key];
+  }
+
+  return result;
 }

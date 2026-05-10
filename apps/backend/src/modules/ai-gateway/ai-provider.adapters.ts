@@ -3,8 +3,18 @@ import type {
   KeyResolverResult,
   SafeLocalKeyRoute,
 } from '../local-owner-key-vault/local-owner-key-vault.types';
+import type { SecretString } from '../local-owner-key-vault/secret-string';
 import { loadServerEnv } from '@lexframe/config';
 import { Injectable } from '@nestjs/common';
+import { createHash } from 'node:crypto';
+
+export interface RuntimeProviderConnectionCredential {
+  readonly providerConnectionId: string;
+  readonly baseUrl: string;
+  readonly apiKey: SecretString;
+  readonly fingerprint: string | null;
+  readonly secretRefId?: string | null;
+}
 
 export interface StructuredAiRequest<T> {
   readonly provider: AiProvider;
@@ -25,6 +35,7 @@ export interface StructuredAiRequest<T> {
   readonly maxToolCalls?: number;
   readonly traceId?: string | null;
   readonly localOwnerKey?: KeyResolverResult | null;
+  readonly runtimeConnection?: RuntimeProviderConnectionCredential | null;
 }
 
 export interface StructuredAiResponse<T> {
@@ -44,6 +55,58 @@ export interface StructuredAiResponse<T> {
   };
 }
 
+export interface ChatCompletionMessage {
+  readonly role: 'system' | 'user' | 'assistant';
+  readonly content: string;
+}
+
+export interface ChatCompletionRequestDescriptor {
+  readonly provider: AiProvider;
+  readonly compatibility: 'openai_chat_completions';
+  readonly method: 'POST';
+  readonly endpointPath: '/chat/completions';
+  readonly baseUrlHost: string;
+  readonly baseUrlPath: string;
+  readonly model: string;
+  readonly bodyKeys: readonly string[];
+  readonly hasAuthorizationHeader: boolean;
+  readonly authorizationScheme: 'Bearer';
+  readonly secretFingerprint: string | null;
+  readonly sourceTokenFingerprint: string | null;
+  readonly outgoingHeaderTokenFingerprint: string | null;
+  readonly fingerprintsMatch: boolean;
+  readonly outgoingHeaderLength: number;
+  readonly stream: boolean;
+  readonly maxTokens: number;
+  readonly reasoningEffort: string;
+  readonly thinkingEnabled: boolean;
+}
+
+export interface ChatCompletionStreamRequest {
+  readonly provider: AiProvider;
+  readonly model: string;
+  readonly messages: readonly ChatCompletionMessage[];
+  readonly maxTokens: number;
+  readonly reasoningEffort: string;
+  readonly thinking?: { readonly type: 'enabled' | 'disabled' };
+  readonly traceId?: string | null;
+  readonly localOwnerKey?: KeyResolverResult | null;
+  readonly runtimeConnection?: RuntimeProviderConnectionCredential | null;
+}
+
+export interface ChatCompletionStreamResponse {
+  readonly ok: boolean;
+  readonly provider: AiProvider;
+  readonly model: string;
+  readonly text: string;
+  readonly latencyMs: number;
+  readonly contentChunkCount: number;
+  readonly reasoningChunkCount: number;
+  readonly status: number | null;
+  readonly errorClass: string | null;
+  readonly requestDescriptor: ChatCompletionRequestDescriptor;
+}
+
 export interface AiProviderAdapter {
   readonly provider: AiProvider;
   readonly supports: {
@@ -55,6 +118,9 @@ export interface AiProviderAdapter {
   generateStructured<T>(
     request: StructuredAiRequest<T>,
   ): Promise<StructuredAiResponse<T>>;
+  streamChatCompletion(
+    request: ChatCompletionStreamRequest,
+  ): Promise<ChatCompletionStreamResponse>;
 }
 
 interface ChatCompletionResponse {
@@ -221,6 +287,265 @@ async function requestOpenAiCompatibleStructuredOutput<T>(input: {
   return buildFallbackResponse(input.provider, input.request, startedAt);
 }
 
+async function requestOpenAiCompatibleChatStream(input: {
+  readonly provider: AiProvider;
+  readonly apiKey: string;
+  readonly baseUrl: string;
+  readonly secretFingerprint: string | null;
+  readonly request: ChatCompletionStreamRequest;
+  readonly timeoutMs?: number;
+}): Promise<ChatCompletionStreamResponse> {
+  const startedAt = Date.now();
+  const endpoint = `${normalizeOpenAiBaseUrl(input.baseUrl)}/chat/completions`;
+  const sourceTokenFingerprint = fingerprintProviderSecret(input.apiKey);
+  const descriptor = buildChatCompletionDescriptor({
+    provider: input.provider,
+    endpoint,
+    model: input.request.model,
+    secretFingerprint: input.secretFingerprint,
+    sourceTokenFingerprint,
+    outgoingHeaderTokenFingerprint: sourceTokenFingerprint,
+    outgoingHeaderLength: input.apiKey.length,
+    maxTokens: input.request.maxTokens,
+    reasoningEffort: input.request.reasoningEffort,
+    thinkingEnabled: input.request.thinking?.type === 'enabled',
+  });
+  const controller = new AbortController();
+  const timeout = setTimeout(
+    () => controller.abort(),
+    input.timeoutMs ?? 90_000,
+  );
+
+  try {
+    const body = {
+      model: input.request.model,
+      messages: input.request.messages.map((message) => ({
+        role: message.role,
+        content: message.content,
+      })),
+      stream: true,
+      max_tokens: input.request.maxTokens,
+      reasoning_effort: input.request.reasoningEffort,
+      thinking: input.request.thinking ?? { type: 'enabled' as const },
+    };
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      signal: controller.signal,
+      headers: {
+        authorization: `Bearer ${input.apiKey}`,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      const responseBody = await response.text().catch(() => '');
+      return {
+        ok: false,
+        provider: input.provider,
+        model: input.request.model,
+        text: '',
+        latencyMs: Date.now() - startedAt,
+        contentChunkCount: 0,
+        reasoningChunkCount: 0,
+        status: response.status,
+        errorClass: classifyProviderError(response.status, responseBody),
+        requestDescriptor: descriptor,
+      };
+    }
+
+    const streamText = await response.text();
+    const parsed = parseOpenAiCompatibleSse(streamText);
+
+    return {
+      ok: parsed.text.trim().length > 0,
+      provider: input.provider,
+      model: input.request.model,
+      text: parsed.text.trim(),
+      latencyMs: Date.now() - startedAt,
+      contentChunkCount: parsed.contentChunkCount,
+      reasoningChunkCount: parsed.reasoningChunkCount,
+      status: response.status,
+      errorClass: parsed.text.trim().length > 0 ? null : 'PROVIDER_EMPTY_RESPONSE',
+      requestDescriptor: descriptor,
+    };
+  } catch {
+    return {
+      ok: false,
+      provider: input.provider,
+      model: input.request.model,
+      text: '',
+      latencyMs: Date.now() - startedAt,
+      contentChunkCount: 0,
+      reasoningChunkCount: 0,
+      status: null,
+      errorClass: 'PROVIDER_NETWORK_ERROR',
+      requestDescriptor: descriptor,
+    };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+function normalizeOpenAiBaseUrl(baseUrl: string) {
+  return baseUrl.replace(/\/chat\/completions\/?$/i, '').replace(/\/+$/, '');
+}
+
+function buildChatCompletionDescriptor(input: {
+  readonly provider: AiProvider;
+  readonly endpoint: string;
+  readonly model: string;
+  readonly secretFingerprint: string | null;
+  readonly sourceTokenFingerprint: string | null;
+  readonly outgoingHeaderTokenFingerprint: string | null;
+  readonly outgoingHeaderLength: number;
+  readonly maxTokens: number;
+  readonly reasoningEffort: string;
+  readonly thinkingEnabled: boolean;
+}): ChatCompletionRequestDescriptor {
+  const url = new URL(input.endpoint);
+  const basePath = url.pathname.replace(/\/chat\/completions$/i, '') || '/';
+
+  return {
+    provider: input.provider,
+    compatibility: 'openai_chat_completions',
+    method: 'POST',
+    endpointPath: '/chat/completions',
+    baseUrlHost: url.host,
+    baseUrlPath: basePath,
+    model: input.model,
+    bodyKeys: [
+      'model',
+      'messages',
+      'stream',
+      'max_tokens',
+      'reasoning_effort',
+      'thinking',
+    ],
+    hasAuthorizationHeader: true,
+    authorizationScheme: 'Bearer',
+    secretFingerprint: input.secretFingerprint,
+    sourceTokenFingerprint: input.sourceTokenFingerprint,
+    outgoingHeaderTokenFingerprint: input.outgoingHeaderTokenFingerprint,
+    fingerprintsMatch:
+      input.sourceTokenFingerprint !== null &&
+      input.sourceTokenFingerprint === input.outgoingHeaderTokenFingerprint,
+    outgoingHeaderLength: input.outgoingHeaderLength,
+    stream: true,
+    maxTokens: input.maxTokens,
+    reasoningEffort: input.reasoningEffort,
+    thinkingEnabled: input.thinkingEnabled,
+  };
+}
+
+function fingerprintProviderSecret(value: string) {
+  return `sha256:${createHash('sha256').update(value).digest('hex').slice(0, 16)}`;
+}
+
+function parseOpenAiCompatibleSse(value: string) {
+  let text = '';
+  let contentChunkCount = 0;
+  let reasoningChunkCount = 0;
+
+  for (const rawLine of value.split(/\r?\n/)) {
+    const line = rawLine.trim();
+    if (!line.startsWith('data:')) {
+      continue;
+    }
+
+    const data = line.slice('data:'.length).trim();
+    if (!data || data === '[DONE]') {
+      continue;
+    }
+
+    let payload: {
+      readonly choices?: readonly {
+        readonly delta?: Record<string, unknown>;
+      }[];
+    };
+
+    try {
+      payload = JSON.parse(data) as typeof payload;
+    } catch {
+      continue;
+    }
+
+    for (const choice of payload.choices ?? []) {
+      const delta = choice.delta ?? {};
+      const content = coerceStreamText(delta.content);
+      if (content) {
+        text += content;
+        contentChunkCount += 1;
+      }
+      if (coerceReasoningText(delta)) {
+        reasoningChunkCount += 1;
+      }
+    }
+  }
+
+  return { text, contentChunkCount, reasoningChunkCount };
+}
+
+function coerceStreamText(value: unknown): string {
+  if (typeof value === 'string') {
+    return value;
+  }
+
+  if (Array.isArray(value)) {
+    return value
+      .map((part) =>
+        typeof part === 'object' &&
+        part !== null &&
+        'text' in part &&
+        typeof part.text === 'string'
+          ? part.text
+          : '',
+      )
+      .join('');
+  }
+
+  return '';
+}
+
+function coerceReasoningText(delta: Record<string, unknown>) {
+  const modelExtra =
+    typeof delta.model_extra === 'object' && delta.model_extra !== null
+      ? (delta.model_extra as Record<string, unknown>)
+      : {};
+  const additionalKwargs =
+    typeof delta.additional_kwargs === 'object' &&
+    delta.additional_kwargs !== null
+      ? (delta.additional_kwargs as Record<string, unknown>)
+      : {};
+
+  return [
+    delta.reasoning_content,
+    delta.reasoning,
+    modelExtra.reasoning_content,
+    additionalKwargs.reasoning_content,
+  ].some((value) => typeof value === 'string' && value.length > 0);
+}
+
+function classifyProviderError(status: number, body: string) {
+  const text = body.toLowerCase();
+  if (status === 401 || text.includes('invalid token') || text.includes('unauthorized')) {
+    return 'PROVIDER_AUTH_INVALID_TOKEN';
+  }
+  if (status === 403) {
+    return 'PROVIDER_AUTH_FORBIDDEN';
+  }
+  if (status === 404) {
+    return 'PROVIDER_ENDPOINT_OR_MODEL_NOT_FOUND';
+  }
+  if (status === 429) {
+    return 'PROVIDER_RATE_LIMITED';
+  }
+  if (status >= 500) {
+    return 'PROVIDER_SERVER_ERROR';
+  }
+  return 'PROVIDER_ERROR';
+}
+
 @Injectable()
 export class LocalMockAdapter implements AiProviderAdapter {
   readonly provider = 'local' as const;
@@ -237,6 +562,36 @@ export class LocalMockAdapter implements AiProviderAdapter {
     return Promise.resolve(
       buildFallbackResponse(this.provider, request, Date.now()),
     );
+  }
+
+  streamChatCompletion(
+    request: ChatCompletionStreamRequest,
+  ): Promise<ChatCompletionStreamResponse> {
+    const descriptor = buildChatCompletionDescriptor({
+      provider: this.provider,
+      endpoint: 'http://local.mock/v1/chat/completions',
+      model: request.model,
+      secretFingerprint: null,
+      sourceTokenFingerprint: null,
+      outgoingHeaderTokenFingerprint: null,
+      outgoingHeaderLength: 0,
+      maxTokens: request.maxTokens,
+      reasoningEffort: request.reasoningEffort,
+      thinkingEnabled: request.thinking?.type === 'enabled',
+    });
+
+    return Promise.resolve({
+      ok: false,
+      provider: this.provider,
+      model: request.model,
+      text: '',
+      latencyMs: 0,
+      contentChunkCount: 0,
+      reasoningChunkCount: 0,
+      status: null,
+      errorClass: 'PROVIDER_NOT_CONFIGURED',
+      requestDescriptor: descriptor,
+    });
   }
 }
 
@@ -267,6 +622,21 @@ export class XAiAdapter implements AiProviderAdapter {
       request,
     });
   }
+
+  streamChatCompletion(
+    request: ChatCompletionStreamRequest,
+  ): Promise<ChatCompletionStreamResponse> {
+    const apiKey =
+      request.localOwnerKey?.api_key.revealForProviderCall() ??
+      this.env.XAI_API_KEY;
+    return requestOpenAiCompatibleChatStream({
+      provider: this.provider,
+      apiKey,
+      baseUrl: 'https://api.x.ai/v1',
+      secretFingerprint: request.localOwnerKey?.fingerprint ?? null,
+      request,
+    });
+  }
 }
 
 @Injectable()
@@ -278,37 +648,97 @@ export class CometApiAdapter implements AiProviderAdapter {
     webSearch: false,
     zeroDataRetention: false,
   };
-  private readonly env = loadServerEnv();
-  private readonly apiKeys = getConfiguredCometApiKeys(this.env);
   private apiKeyCursor = 0;
 
   async generateStructured<T>(
     request: StructuredAiRequest<T>,
   ): Promise<StructuredAiResponse<T>> {
-    const apiKey = this.nextApiKey();
+    const env = loadServerEnv();
+    const runtimeConnection = request.runtimeConnection ?? null;
+    const fallbackApiKey =
+      runtimeConnection || request.localOwnerKey ? null : this.nextApiKey(env);
+    const apiKey =
+      runtimeConnection?.apiKey.revealForProviderCall() ??
+      request.localOwnerKey?.api_key.revealForProviderCall() ??
+      fallbackApiKey;
 
-    if (!request.localOwnerKey && !apiKey) {
+    if (!apiKey) {
       return buildFallbackResponse(this.provider, request, Date.now());
     }
 
     return requestOpenAiCompatibleStructuredOutput({
       provider: this.provider,
-      apiKey:
-        request.localOwnerKey?.api_key.revealForProviderCall() ?? apiKey ?? '',
-      endpoint: `${this.env.LEXFRAME_COMETAPI_BASE_URL.replace(/\/$/, '')}/chat/completions`,
+      apiKey,
+      endpoint: `${(
+        runtimeConnection?.baseUrl ?? env.LEXFRAME_COMETAPI_BASE_URL
+      ).replace(/\/$/, '')}/chat/completions`,
       request,
-      timeoutMs: this.env.LEXFRAME_AI_REQUEST_TIMEOUT_MS,
-      retryCount: this.env.LEXFRAME_AI_RETRY_COUNT,
+      timeoutMs: env.LEXFRAME_AI_REQUEST_TIMEOUT_MS,
+      retryCount: env.LEXFRAME_AI_RETRY_COUNT,
     });
   }
 
-  private nextApiKey() {
-    if (this.apiKeys.length === 0) {
+  streamChatCompletion(
+    request: ChatCompletionStreamRequest,
+  ): Promise<ChatCompletionStreamResponse> {
+    const env = loadServerEnv();
+    const runtimeConnection = request.runtimeConnection ?? null;
+    const fallbackApiKey =
+      runtimeConnection || request.localOwnerKey ? null : this.nextApiKey(env);
+    const apiKey =
+      runtimeConnection?.apiKey.revealForProviderCall() ??
+      request.localOwnerKey?.api_key.revealForProviderCall() ??
+      fallbackApiKey;
+    const baseUrl =
+      runtimeConnection?.baseUrl ?? env.LEXFRAME_COMETAPI_BASE_URL;
+    const fingerprint =
+      runtimeConnection?.fingerprint ?? request.localOwnerKey?.fingerprint ?? null;
+
+    if (!apiKey) {
+      const descriptor = buildChatCompletionDescriptor({
+        provider: this.provider,
+        endpoint: `${normalizeOpenAiBaseUrl(baseUrl)}/chat/completions`,
+        model: request.model,
+        secretFingerprint: fingerprint,
+        sourceTokenFingerprint: null,
+        outgoingHeaderTokenFingerprint: null,
+        outgoingHeaderLength: 0,
+        maxTokens: request.maxTokens,
+        reasoningEffort: request.reasoningEffort,
+        thinkingEnabled: request.thinking?.type === 'enabled',
+      });
+      return Promise.resolve({
+        ok: false,
+        provider: this.provider,
+        model: request.model,
+        text: '',
+        latencyMs: 0,
+        contentChunkCount: 0,
+        reasoningChunkCount: 0,
+        status: null,
+        errorClass: 'PROVIDER_NOT_CONFIGURED',
+        requestDescriptor: descriptor,
+      });
+    }
+
+    return requestOpenAiCompatibleChatStream({
+      provider: this.provider,
+      apiKey,
+      baseUrl,
+      secretFingerprint: fingerprint,
+      request,
+      timeoutMs: env.LEXFRAME_AI_REQUEST_TIMEOUT_MS,
+    });
+  }
+
+  private nextApiKey(env = loadServerEnv()) {
+    const apiKeys = getConfiguredCometApiKeys(env);
+    if (apiKeys.length === 0) {
       return null;
     }
 
-    const apiKey = this.apiKeys[this.apiKeyCursor % this.apiKeys.length];
-    this.apiKeyCursor = (this.apiKeyCursor + 1) % this.apiKeys.length;
+    const apiKey = apiKeys[this.apiKeyCursor % apiKeys.length];
+    this.apiKeyCursor = (this.apiKeyCursor + 1) % apiKeys.length;
 
     return apiKey;
   }
@@ -344,7 +774,11 @@ export class AiProviderRegistry {
 }
 
 function getConfiguredCometApiKeys(env: ReturnType<typeof loadServerEnv>) {
-  const keys = [...env.COMETAPI_API_KEYS.split(/[\s,;]+/), env.COMETAPI_API_KEY]
+  const keys = [
+    ...env.COMETAPI_API_KEYS.split(/[\s,;]+/),
+    env.COMETAPI_KEY,
+    env.COMETAPI_API_KEY,
+  ]
     .map((value) => value.trim())
     .filter(isConfiguredSecret);
 

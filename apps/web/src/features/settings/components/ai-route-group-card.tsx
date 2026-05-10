@@ -20,6 +20,7 @@ export function AiRouteGroupCard({
   connection,
   isSaving,
   preference,
+  resetSensitiveInputVersion,
   routeGroup,
   testPending,
   testResult,
@@ -31,12 +32,13 @@ export function AiRouteGroupCard({
   readonly connection: AiProviderConnectionDto | null;
   readonly isSaving?: boolean;
   readonly preference: AiRouteGroupPreferenceDto | null;
+  readonly resetSensitiveInputVersion?: number;
   readonly routeGroup: AiRouteGroup;
   readonly testPending?: boolean;
   readonly testResult?: AiConnectionTestResultDto | null;
   readonly title: string;
   readonly onSave: (input: AiProviderConnectionFormValue) => Promise<void>;
-  readonly onTest: () => void;
+  readonly onTest: (input: AiProviderConnectionFormValue) => Promise<void> | void;
 }) {
   const [form, setForm] = React.useState<AiProviderConnectionFormValue | null>(
     null,
@@ -45,6 +47,8 @@ export function AiRouteGroupCard({
     routeGroup === "automation_ai" &&
     !form?.capabilities.structuredJsonSchema &&
     !form?.capabilities.jsonMode;
+  const testRequiresSave =
+    Boolean(form?.apiKey.trim()) || !connection?.secret.hasSecret;
 
   return (
     <section className="grid gap-4 rounded-[var(--lf-radius-card)] border border-[color:var(--lf-border)] bg-[color:var(--lf-bg-panel)] p-4">
@@ -82,11 +86,17 @@ export function AiRouteGroupCard({
       <AiProviderConnectionForm
         connection={connection}
         disabled={!canManageWorkspace}
+        resetSensitiveInputVersion={resetSensitiveInputVersion}
         routeGroup={routeGroup}
         testPending={testPending}
+        testRequiresSave={testRequiresSave}
         testResult={testResult}
         onChange={setForm}
-        onTest={onTest}
+        onTest={() => {
+          if (form) {
+            void Promise.resolve(onTest(form)).catch(() => undefined);
+          }
+        }}
       />
 
       <div className="flex justify-end">
@@ -95,7 +105,7 @@ export function AiRouteGroupCard({
           disabled={!canManageWorkspace || isSaving || automationCapabilityMissing}
           onClick={() => {
             if (form) {
-              void onSave(form);
+              void onSave(form).catch(() => undefined);
             }
           }}
         >

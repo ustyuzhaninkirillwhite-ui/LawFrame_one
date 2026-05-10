@@ -181,6 +181,9 @@ export interface AiEffectivePolicyDto {
   readonly supportsStreaming: boolean;
   readonly supportsJson: boolean;
   readonly supportsToolCalls: boolean;
+  readonly runtimeMode: "mock" | "controlled-real" | "env-secret" | "unknown";
+  readonly runtimeUsesSavedConnection: boolean;
+  readonly runtimeNotice: string | null;
   readonly policyDecisionId: string;
   readonly resolvedAt: string;
 }

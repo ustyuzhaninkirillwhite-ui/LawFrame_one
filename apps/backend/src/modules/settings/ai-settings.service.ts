@@ -22,7 +22,10 @@ import { AppHttpException } from '../../common/errors/app-http.exception';
 import { AiRouteGroupResolverService } from '../ai-gateway/ai-route-group-resolver.service';
 import { AuditService } from '../audit/audit.service';
 import { DatabaseService } from '../database/database.service';
-import { validateAiProviderBaseUrl } from './ai-base-url-ssrf.guard';
+import {
+  AiBaseUrlGuardError,
+  validateAiProviderBaseUrl,
+} from './ai-base-url-ssrf.guard';
 import { AiSecretService } from './ai-secret.service';
 import { redactSecrets, redactText } from './settings-redactor';
 
@@ -107,22 +110,13 @@ export class AiSettingsService {
     assertRouteGroup(input.request.routeGroup);
     assertAutomationCapabilities(input.request.routeGroup, input.request.capabilities);
 
-    const baseUrl = await validateAiProviderBaseUrl(input.request.baseUrl, {
-      production: process.env.NODE_ENV === 'production',
-      allowlist: parseAllowlist(process.env.LEXFRAME_AI_BASE_URL_ALLOWLIST),
-    });
+    const baseUrl = await validateConfiguredAiProviderBaseUrl(
+      input.request.baseUrl,
+    );
     const connectionId = randomUUID();
-    const secret = input.request.apiKey
-      ? await this.aiSecretService.createOrRotateSecret({
-          actor: input.actor,
-          workspaceId,
-          ownerScope,
-          ownerUserId: ownerScope === 'user' ? input.actor.id : null,
-          providerConnectionId: connectionId,
-          providerCode: input.request.providerCode,
-          apiKey: input.request.apiKey,
-        })
-      : null;
+    let secret: Awaited<
+      ReturnType<AiSecretService['createOrRotateSecret']>
+    > | null = null;
 
     await this.databaseService.query(
       `
@@ -143,7 +137,7 @@ export class AiSettingsService {
           default_model,
           provider_metadata_redacted
         )
-        values ($1, $2, $3, $4, $5, $6, $6, $7, $8, $8, true, 'manual_allowlist', $9::text[], $10, $11::jsonb)
+        values ($1, $2, $3, $4, $5, $6, $6, $7, $8::text, $9::uuid, true, 'manual_allowlist', $10::text[], $11, $12::jsonb)
       `,
       [
         connectionId,
@@ -154,7 +148,8 @@ export class AiSettingsService {
         input.request.uiLabel ??
           `${input.request.providerCode} ${input.request.modelId}`,
         baseUrl,
-        secret?.secretRefId ?? null,
+        `ai_provider_connection:${connectionId}:missing_secret`,
+        null,
         [input.request.modelId],
         input.request.modelId,
         JSON.stringify({
@@ -162,6 +157,30 @@ export class AiSettingsService {
         }),
       ],
     );
+
+    if (input.request.apiKey) {
+      secret = await this.aiSecretService.createOrRotateSecret({
+        actor: input.actor,
+        workspaceId,
+        ownerScope,
+        ownerUserId: ownerScope === 'user' ? input.actor.id : null,
+        providerConnectionId: connectionId,
+        providerCode: input.request.providerCode,
+        apiKey: input.request.apiKey,
+      });
+
+      await this.databaseService.query(
+        `
+          update app.ai_provider_connections
+          set secret_ref_id = $3::uuid,
+              api_key_ref = $4::text,
+              updated_at = timezone('utc', now())
+          where id = $1
+            and workspace_id = $2
+        `,
+        [connectionId, workspaceId, secret.secretRefId, secret.secretRefId],
+      );
+    }
 
     await this.audit({
       actor: input.actor,
@@ -217,10 +236,7 @@ export class AiSettingsService {
     const current = await this.getRawConnection(workspaceId, input.connectionId);
     assertManagePermission(input.access, current.owner_scope);
     const baseUrl = input.request.baseUrl
-      ? await validateAiProviderBaseUrl(input.request.baseUrl, {
-          production: process.env.NODE_ENV === 'production',
-          allowlist: parseAllowlist(process.env.LEXFRAME_AI_BASE_URL_ALLOWLIST),
-        })
+      ? await validateConfiguredAiProviderBaseUrl(input.request.baseUrl)
       : null;
 
     await this.databaseService.query(
@@ -301,13 +317,13 @@ export class AiSettingsService {
     await this.databaseService.query(
       `
         update app.ai_provider_connections
-        set secret_ref_id = $3,
-            api_key_ref = $3,
+        set secret_ref_id = $3::uuid,
+            api_key_ref = $4::text,
             updated_at = timezone('utc', now())
         where id = $1
           and workspace_id = $2
       `,
-      [input.connectionId, workspaceId, secret.secretRefId],
+      [input.connectionId, workspaceId, secret.secretRefId, secret.secretRefId],
     );
 
     await this.audit({
@@ -369,7 +385,7 @@ export class AiSettingsService {
     });
 
     const startedAt = Date.now();
-    const result = await this.runMinimalConnectionTest(current);
+    const result = await this.runMinimalConnectionTest(workspaceId, current);
     const latencyMs = Date.now() - startedAt;
     const testedAt = new Date().toISOString();
     const response: AiConnectionTestResultDto = {
@@ -741,6 +757,7 @@ export class AiSettingsService {
   }
 
   private async runMinimalConnectionTest(
+    workspaceId: string,
     connection: ProviderConnectionRow,
   ): Promise<{
     readonly status: AiConnectionTestResultDto['status'];
@@ -764,8 +781,16 @@ export class AiSettingsService {
     }
 
     try {
-      const response = await fetch(`${connection.base_url.replace(/\/$/, '')}/models`, {
+      const runtimeSecret =
+        await this.aiSecretService.resolveProviderCallSecret({
+          workspaceId,
+          providerConnectionId: connection.id,
+        });
+      const response = await fetch(`${runtimeSecret.baseUrl.replace(/\/$/, '')}/models`, {
         method: 'GET',
+        headers: {
+          authorization: `Bearer ${runtimeSecret.apiKey.revealForProviderCall()}`,
+        },
         signal: AbortSignal.timeout(5000),
       });
 
@@ -781,6 +806,14 @@ export class AiSettingsService {
             message: redactText(`Provider health check failed with HTTP ${response.status}.`),
           };
     } catch (error) {
+      if (error instanceof AppHttpException) {
+        return {
+          status: 'blocked',
+          errorCode: error.code,
+          message: redactText(error.message),
+        };
+      }
+
       return {
         status: 'failed',
         errorCode: 'PROVIDER_HEALTH_CHECK_FAILED',
@@ -975,4 +1008,26 @@ function parseAllowlist(value: string | undefined): readonly string[] | undefine
     .map((item) => item.trim())
     .filter(Boolean);
   return items?.length ? items : undefined;
+}
+
+async function validateConfiguredAiProviderBaseUrl(rawUrl: string) {
+  try {
+    return await validateAiProviderBaseUrl(rawUrl, {
+      production: isProductionAiDeploy(),
+      allowlist: parseAllowlist(process.env.LEXFRAME_AI_BASE_URL_ALLOWLIST),
+    });
+  } catch (error) {
+    if (error instanceof AiBaseUrlGuardError) {
+      throw new AppHttpException(error.code, 400, error.message);
+    }
+
+    throw error;
+  }
+}
+
+function isProductionAiDeploy() {
+  return (
+    process.env.LEXFRAME_DEPLOY_ENV === 'production' ||
+    process.env.LEXFRAME_ENV_PROFILE === 'production'
+  );
 }

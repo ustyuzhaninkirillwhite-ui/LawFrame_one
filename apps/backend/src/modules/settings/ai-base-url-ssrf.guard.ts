@@ -1,5 +1,8 @@
 import { promises as dns } from 'node:dns';
 import { isIP } from 'node:net';
+import type { ErrorCode } from '@lexframe/contracts';
+
+type AiBaseUrlGuardCode = Extract<ErrorCode, `AI_BASE_URL_${string}`>;
 
 export interface AiBaseUrlGuardOptions {
   readonly production: boolean;
@@ -9,7 +12,7 @@ export interface AiBaseUrlGuardOptions {
 
 export class AiBaseUrlGuardError extends Error {
   constructor(
-    public readonly code: string,
+    public readonly code: AiBaseUrlGuardCode,
     message: string,
   ) {
     super(message);
@@ -82,10 +85,18 @@ async function assertPublicHost(
   }
 
   const directIpVersion = isIP(hostname);
-  const addresses =
-    directIpVersion > 0
-      ? [hostname]
-      : await (resolveHost ?? defaultResolveHost)(hostname);
+  let addresses: readonly string[];
+  try {
+    addresses =
+      directIpVersion > 0
+        ? [hostname]
+        : await (resolveHost ?? defaultResolveHost)(hostname);
+  } catch {
+    throw new AiBaseUrlGuardError(
+      'AI_BASE_URL_DNS_LOOKUP_FAILED',
+      'AI provider base URL host could not be verified.',
+    );
+  }
 
   if (addresses.length === 0 || addresses.some((address) => isPrivateIp(address))) {
     throwBlocked();

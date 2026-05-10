@@ -1,27 +1,36 @@
 "use client";
 
+import { ApiClientError } from "@lexframe/api-client";
 import type {
   AiConnectionTestResultDto,
+  AiEffectivePolicyDto,
   AiProviderConnectionDto,
   AiRouteGroup,
   AiRouteGroupPreferenceDto,
 } from "@lexframe/contracts";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import * as React from "react";
-import { SettingsErrorState } from "./settings-error-state";
-import { AiRouteGroupCard } from "./ai-route-group-card";
-import type { AiProviderConnectionFormValue } from "./ai-provider-connection-form";
 import { useSessionBridge } from "@/providers/session-provider";
+import type { AiProviderConnectionFormValue } from "./ai-provider-connection-form";
+import { AiRouteGroupCard } from "./ai-route-group-card";
+import { SettingsErrorState } from "./settings-error-state";
+
+const WORKSPACE_DEFAULT_ROUTE_GROUPS: readonly AiRouteGroup[] = [
+  "chat_ai",
+  "automation_ai",
+];
 
 export function AiSettingsPanel({
   canManageSelf,
   canManageWorkspace,
   connections,
+  policies = [],
   preferences,
 }: {
   readonly canManageSelf: boolean;
   readonly canManageWorkspace: boolean;
   readonly connections: readonly AiProviderConnectionDto[];
+  readonly policies?: readonly AiEffectivePolicyDto[];
   readonly preferences: readonly AiRouteGroupPreferenceDto[];
 }) {
   const { apiClient } = useSessionBridge();
@@ -30,8 +39,61 @@ export function AiSettingsPanel({
   const [testResults, setTestResults] = React.useState<
     Record<string, AiConnectionTestResultDto>
   >({});
-  const ownerScope = canManageWorkspace ? "workspace" : "user";
-  const canManage = canManageWorkspace || canManageSelf;
+  const [resetSensitiveInputVersion, setResetSensitiveInputVersion] =
+    React.useState(0);
+  const ownerScope = "workspace";
+  const canManage = canManageWorkspace;
+  const isMockRuntime = policies.some((policy) => policy.runtimeMode === "mock");
+  void canManageSelf;
+
+  const persistAiSettings = async (input: {
+    readonly routeGroup: AiRouteGroup;
+    readonly form: AiProviderConnectionFormValue;
+    readonly connection: AiProviderConnectionDto | null;
+  }) => {
+    const apiKey = input.form.apiKey.trim();
+    let persistedConnection = input.connection
+      ? await apiClient.updateAiProviderConnection(input.connection.id, {
+          format: "manual_form",
+          providerCode: input.form.providerCode,
+          baseUrl: input.form.baseUrl,
+          modelId: input.form.modelId,
+          capabilities: input.form.capabilities,
+          enabled: true,
+        })
+      : await apiClient.createAiProviderConnection({
+          format: "manual_form",
+          routeGroup: input.routeGroup,
+          ownerScope,
+          providerCode: input.form.providerCode,
+          baseUrl: input.form.baseUrl,
+          modelId: input.form.modelId,
+          apiKey: apiKey || null,
+          capabilities: input.form.capabilities,
+        });
+
+    if (input.connection && apiKey) {
+      persistedConnection = await apiClient.replaceAiProviderConnectionSecret(
+        input.connection.id,
+        { apiKey },
+      );
+    }
+
+    await Promise.all(
+      WORKSPACE_DEFAULT_ROUTE_GROUPS.map((routeGroup) =>
+        apiClient.updateAiRouteGroupPreference(routeGroup, {
+          format: "manual_form",
+          scopeType: ownerScope,
+          providerConnectionId: persistedConnection.id,
+          modelId: input.form.modelId,
+          enabled: true,
+          capabilitiesConfirmed: input.form.capabilities,
+        }),
+      ),
+    );
+
+    return persistedConnection;
+  };
 
   const saveMutation = useMutation({
     mutationFn: async (input: {
@@ -40,95 +102,97 @@ export function AiSettingsPanel({
       readonly connection: AiProviderConnectionDto | null;
     }) => {
       setError(null);
-      const connection =
-        input.connection ??
-        (await apiClient.createAiProviderConnection({
-          format: "manual_form",
-          routeGroup: input.routeGroup,
-          ownerScope,
-          providerCode: input.form.providerCode,
-          baseUrl: input.form.baseUrl,
-          modelId: input.form.modelId,
-          apiKey: input.form.apiKey || null,
-          capabilities: input.form.capabilities,
-        }));
-
-      const updatedConnection = input.connection
-        ? await apiClient.updateAiProviderConnection(input.connection.id, {
-            format: "manual_form",
-            providerCode: input.form.providerCode,
-            baseUrl: input.form.baseUrl,
-            modelId: input.form.modelId,
-            capabilities: input.form.capabilities,
-            enabled: true,
-          })
-        : connection;
-
-      if (input.connection && input.form.apiKey) {
-        await apiClient.replaceAiProviderConnectionSecret(input.connection.id, {
-          apiKey: input.form.apiKey,
-        });
-      }
-
-      await apiClient.updateAiRouteGroupPreference(input.routeGroup, {
-        format: "manual_form",
-        scopeType: ownerScope,
-        providerConnectionId: updatedConnection.id,
-        modelId: input.form.modelId,
-        enabled: true,
-        capabilitiesConfirmed: input.form.capabilities,
-      });
+      return persistAiSettings(input);
     },
-    onSuccess: async () => {
+    onSuccess: () => {
+      setResetSensitiveInputVersion((current) => current + 1);
+    },
+    onSettled: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["settings", "ai"] });
+    },
+    onError: (mutationError) => {
+      setError(formatAiSettingsError(mutationError, "AI settings save failed."));
+    },
+  });
+
+  const saveAndTestMutation = useMutation({
+    mutationFn: async (input: {
+      readonly routeGroup: AiRouteGroup;
+      readonly form: AiProviderConnectionFormValue;
+      readonly connection: AiProviderConnectionDto | null;
+    }) => {
+      setError(null);
+      const persistedConnection = await persistAiSettings(input);
+      return apiClient.testAiProviderConnection(persistedConnection.id);
+    },
+    onSuccess: (result) => {
+      setTestResults((current) => ({
+        ...current,
+        [result.providerConnectionId]: result,
+      }));
+      setResetSensitiveInputVersion((current) => current + 1);
+    },
+    onSettled: async () => {
       await queryClient.invalidateQueries({ queryKey: ["settings", "ai"] });
     },
     onError: (mutationError) => {
       setError(
-        mutationError instanceof Error
-          ? mutationError.message
-          : "AI settings save failed.",
+        formatAiSettingsError(mutationError, "Connection save and test failed."),
       );
     },
   });
 
   const testMutation = useMutation({
-    mutationFn: async (connectionId: string) =>
-      apiClient.testAiProviderConnection(connectionId),
+    mutationFn: async (connectionId: string) => {
+      setError(null);
+      return apiClient.testAiProviderConnection(connectionId);
+    },
     onSuccess: (result) => {
       setTestResults((current) => ({
         ...current,
         [result.providerConnectionId]: result,
       }));
     },
+    onSettled: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["settings", "ai"] });
+    },
     onError: (mutationError) => {
-      setError(
-        mutationError instanceof Error
-          ? mutationError.message
-          : "Connection test failed.",
-      );
+      setError(formatAiSettingsError(mutationError, "Connection test failed."));
     },
   });
 
   const renderCard = (routeGroup: AiRouteGroup, title: string) => {
     const preference = pickPreference(preferences, routeGroup, ownerScope);
     const connection = pickConnection(connections, preference);
+    const isTesting = testMutation.isPending || saveAndTestMutation.isPending;
+
     return (
       <AiRouteGroupCard
         key={routeGroup}
         canManageWorkspace={canManage}
         connection={connection}
-        isSaving={saveMutation.isPending}
+        isSaving={saveMutation.isPending || saveAndTestMutation.isPending}
         preference={preference}
+        resetSensitiveInputVersion={resetSensitiveInputVersion}
         routeGroup={routeGroup}
-        testPending={testMutation.isPending}
+        testPending={isTesting}
         testResult={connection ? testResults[connection.id] : null}
         title={title}
         onSave={(form) =>
-          saveMutation.mutateAsync({ routeGroup, form, connection })
+          saveMutation.mutateAsync({ routeGroup, form, connection }).then(() => undefined)
         }
-        onTest={() => {
+        onTest={(form) => {
+          const shouldPersistBeforeTest =
+            Boolean(form.apiKey.trim()) || !connection?.secret.hasSecret;
+
+          if (shouldPersistBeforeTest) {
+            return saveAndTestMutation
+              .mutateAsync({ routeGroup, form, connection })
+              .then(() => undefined);
+          }
+
           if (connection) {
-            testMutation.mutate(connection.id);
+            return testMutation.mutateAsync(connection.id).then(() => undefined);
           }
         }}
       />
@@ -143,7 +207,17 @@ export function AiSettingsPanel({
           Чат и автоматизации используют разные route groups в LexFrame AI Gateway.
         </p>
       </div>
-      {error ? <SettingsErrorState message={error} /> : null}
+      {isMockRuntime ? (
+        <div className="rounded-[var(--lf-radius-control)] border border-[color:var(--warning)]/40 bg-[color:var(--warning)]/10 p-3 text-sm text-[color:var(--lf-text-primary)]">
+          AI_PROVIDER_MODE=mock: сохранённые ключи не используются runtime-вызовами.
+        </div>
+      ) : null}
+      {error ? (
+        <SettingsErrorState
+          title="Не удалось сохранить или проверить AI-настройки"
+          message={error}
+        />
+      ) : null}
       <div className="grid gap-4">
         {renderCard("chat_ai", "Чат и общение")}
         {renderCard("automation_ai", "Автоматизации")}
@@ -182,4 +256,24 @@ function pickConnection(
   }
 
   return connections[0] ?? null;
+}
+
+function formatAiSettingsError(error: unknown, fallback: string): string {
+  if (error instanceof ApiClientError) {
+    if (error.code === "AI_SECRET_BACKEND_UNAVAILABLE") {
+      return `Хранилище AI-ключей недоступно: ${error.message}`;
+    }
+
+    if (error.code === "AI_SECRET_MISSING") {
+      return "API-ключ не сохранён. Введите новый ключ, сохраните настройки и повторите проверку.";
+    }
+
+    return error.message || fallback;
+  }
+
+  if (error instanceof Error) {
+    return error.message || fallback;
+  }
+
+  return fallback;
 }

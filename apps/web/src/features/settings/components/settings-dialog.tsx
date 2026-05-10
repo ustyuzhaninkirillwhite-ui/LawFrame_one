@@ -11,7 +11,15 @@ export function SettingsDialog({
   readonly onClose: () => void;
 }) {
   return (
-    <Dialog open={open} className="max-h-[calc(100vh-2rem)] overflow-auto">
+    <Dialog
+      open={open}
+      className="max-h-[calc(100vh-2rem)] overflow-auto"
+      onKeyDown={(event) => {
+        if (event.key === "Escape") {
+          onClose();
+        }
+      }}
+    >
       <SettingsShell mode="dialog" onClose={onClose} />
     </Dialog>
   );

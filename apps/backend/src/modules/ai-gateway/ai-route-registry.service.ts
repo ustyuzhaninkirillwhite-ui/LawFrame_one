@@ -9,7 +9,7 @@ import { loadServerEnv } from '@lexframe/config';
 import { Injectable } from '@nestjs/common';
 
 const NOW_PLACEHOLDER = '1970-01-01T00:00:00.000Z';
-const DEFAULT_MODEL = 'deepseek-v4-flash';
+const DEFAULT_MODEL = 'deepseek-v4-pro';
 const DEFAULT_PROVIDER_CONNECTION_ID = 'owner_default_ai';
 
 @Injectable()

@@ -1,14 +1,14 @@
 import { AiModelRouteRegistryService } from './ai-route-registry.service';
 
 describe('AiModelRouteRegistryService Stage 18 defaults', () => {
-  it('routes ordinary AI work through CometAPI deepseek-v4-flash', () => {
+  it('routes ordinary AI work through CometAPI deepseek-v4-pro', () => {
     const registry = new AiModelRouteRegistryService();
 
     expect(registry.getRoute('default_chat')).toMatchObject({
       routeCode: 'default_chat',
       providerConnectionId: 'owner_default_ai',
       providerCode: 'cometapi',
-      model: 'deepseek-v4-flash',
+      model: 'deepseek-v4-pro',
       supportsStreaming: true,
       supportsJson: true,
       supportsToolCalls: true,
@@ -19,13 +19,13 @@ describe('AiModelRouteRegistryService Stage 18 defaults', () => {
     expect(registry.getRoute('agent_general')).toMatchObject({
       routeCode: 'agent_general',
       providerCode: 'cometapi',
-      model: 'deepseek-v4-flash',
+      model: 'deepseek-v4-pro',
       enabled: true,
     });
     expect(registry.getRoute('rag_legal_summary')).toMatchObject({
       routeCode: 'rag_legal_summary',
       providerCode: 'cometapi',
-      model: 'deepseek-v4-flash',
+      model: 'deepseek-v4-pro',
       supportsToolCalls: false,
       enabled: true,
     });

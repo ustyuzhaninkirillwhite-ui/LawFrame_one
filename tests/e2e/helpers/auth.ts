@@ -41,7 +41,7 @@ export async function signInAsDemo(
     .poll(() => new URL(page.url()).pathname, {
       timeout: 15_000,
     })
-    .toMatch(/\/app$|\/dashboard$|\/onboarding\/workspace$/);
+    .toMatch(/\/app(?:\/.*)?$|\/dashboard$|\/onboarding\/workspace$/);
 
   if (page.url().endsWith("/onboarding/workspace")) {
     if (options?.createWorkspaceIfNeeded === false) {
@@ -54,7 +54,7 @@ export async function signInAsDemo(
     await page.locator("button").nth(0).click();
   }
 
-  await expect(page).toHaveURL(/\/app$|\/dashboard$/);
+  await expect(page).toHaveURL(/\/app(?:\/.*)?$|\/dashboard$/);
   await expect
     .poll(() =>
       page.evaluate(() =>

@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { ChatMessageDto, ChatThreadSummary } from "@lexframe/contracts";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { LexFrameChatShell } from "./LexFrameChatShell";
@@ -127,6 +127,134 @@ describe("LexFrameChatShell", () => {
     });
   });
 
+  it("reloads persisted messages and shows a safe diagnostic when the stream fails", async () => {
+    const providerError = Object.assign(
+      new Error("raw provider invalid token should stay out of the UI"),
+      { code: "AI_GATEWAY_NOT_READY" },
+    );
+
+    mocks.chatApi.listMessages
+      .mockResolvedValueOnce({ items: [] })
+      .mockResolvedValueOnce({
+        items: [message("user", "LEXFRAME_CHAT_SMOKE_OK", "message_user")],
+      });
+    mocks.chatApi.streamMessage.mockRejectedValue(providerError);
+
+    const { container } = render(
+      <LexFrameChatShell
+        projectId="project_claim_001"
+        initialThreadId="thread_existing"
+      />,
+    );
+
+    fireEvent.change(screen.getByRole("textbox"), {
+      target: { value: "LEXFRAME_CHAT_SMOKE_OK" },
+    });
+
+    const sendButton = container.querySelector('button[type="submit"]');
+    expect(sendButton).not.toBeNull();
+    fireEvent.click(sendButton as HTMLElement);
+
+    expect(await screen.findByText("LEXFRAME_CHAT_SMOKE_OK")).toBeInTheDocument();
+    expect(screen.getByTestId("chat-stream-error")).toHaveTextContent(
+      "AI_GATEWAY_NOT_READY",
+    );
+    expect(screen.queryByText(/invalid token/i)).not.toBeInTheDocument();
+    expect(mocks.chatApi.streamMessage).toHaveBeenCalledWith("thread_existing", {
+      text: "LEXFRAME_CHAT_SMOKE_OK",
+    });
+    await waitFor(() => {
+      expect(mocks.chatApi.listMessages).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  it("renders the successful stream snapshot while persisted messages refresh", async () => {
+    mocks.chatApi.listMessages.mockResolvedValue({ items: [] });
+    mocks.chatApi.streamMessage.mockResolvedValue({
+      streamId: "stream_live",
+      workspaceId: "ws_1",
+      threadId: "thread_existing",
+      messageId: "message_assistant_live",
+      status: "completed",
+      events: [
+        {
+          type: "text_delta",
+          payload: {
+            messageId: "message_assistant_live",
+            delta: "LEXFRAME_CHAT_SMOKE_OK live response",
+          },
+        },
+      ],
+    });
+
+    const { container } = render(
+      <LexFrameChatShell
+        projectId="project_claim_001"
+        initialThreadId="thread_existing"
+      />,
+    );
+
+    fireEvent.change(screen.getByRole("textbox"), {
+      target: { value: "LEXFRAME_CHAT_SMOKE_OK" },
+    });
+    const sendButton = container.querySelector('button[type="submit"]');
+    expect(sendButton).not.toBeNull();
+    fireEvent.click(sendButton as HTMLElement);
+
+    expect(await screen.findByText("LEXFRAME_CHAT_SMOKE_OK live response")).toBeInTheDocument();
+    expect(
+      document.querySelector('[data-message-role="assistant"]'),
+    ).toBeInTheDocument();
+  });
+
+  it("does not let a stale initial message load erase a completed assistant response", async () => {
+    const initialLoad = deferred<{ readonly items: readonly ChatMessageDto[] }>();
+    mocks.chatApi.listMessages
+      .mockReturnValueOnce(initialLoad.promise)
+      .mockResolvedValueOnce({
+        items: [message("assistant", "LEXFRAME_CHAT_SMOKE_OK persisted response", "message_assistant_live")],
+      });
+    mocks.chatApi.streamMessage.mockResolvedValue({
+      streamId: "stream_live",
+      workspaceId: "ws_1",
+      threadId: "thread_existing",
+      messageId: "message_assistant_live",
+      status: "completed",
+      events: [
+        {
+          type: "text_delta",
+          payload: {
+            messageId: "message_assistant_live",
+            delta: "LEXFRAME_CHAT_SMOKE_OK persisted response",
+          },
+        },
+      ],
+    });
+
+    const { container } = render(
+      <LexFrameChatShell
+        projectId="project_claim_001"
+        initialThreadId="thread_existing"
+      />,
+    );
+
+    fireEvent.change(screen.getByRole("textbox"), {
+      target: { value: "LEXFRAME_CHAT_SMOKE_OK" },
+    });
+    const sendButton = container.querySelector('button[type="submit"]');
+    expect(sendButton).not.toBeNull();
+    fireEvent.click(sendButton as HTMLElement);
+
+    expect(await screen.findByText("LEXFRAME_CHAT_SMOKE_OK persisted response")).toBeInTheDocument();
+
+    await act(async () => {
+      initialLoad.resolve({ items: [] });
+      await initialLoad.promise;
+    });
+
+    expect(screen.getByText("LEXFRAME_CHAT_SMOKE_OK persisted response")).toBeInTheDocument();
+  });
+
   it("renders user and agent messages with distinct conversational alignment", async () => {
     mocks.chatApi.listMessages.mockResolvedValue({
       items: [
@@ -203,4 +331,15 @@ function message(
     createdAt: "2026-05-08T10:00:00.000Z",
     updatedAt: "2026-05-08T10:00:00.000Z",
   };
+}
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  let reject!: (error: unknown) => void;
+  const promise = new Promise<T>((promiseResolve, promiseReject) => {
+    resolve = promiseResolve;
+    reject = promiseReject;
+  });
+
+  return { promise, resolve, reject };
 }

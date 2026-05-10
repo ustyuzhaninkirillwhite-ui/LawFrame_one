@@ -8,6 +8,7 @@ import type {
   AiDataClass,
   AiMessageResponseType,
   AiProvider,
+  AiProviderCode,
   AiProviderRoute,
   AiRouteCode,
   AiRedactionEntity,
@@ -57,13 +58,17 @@ import {
   generateWorkflowPatchDiff,
   validateWorkflowPatch,
 } from '@lexframe/workflow';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Optional } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { AuditService } from '../audit/audit.service';
 import { DatabaseService } from '../database/database.service';
+import { AiSecretService } from '../settings/ai-secret.service';
 import { AiPolicyService } from './ai-policy.service';
 import {
   AiProviderRegistry,
+  type ChatCompletionMessage,
+  type ChatCompletionStreamRequest,
+  type ChatCompletionStreamResponse,
   type StructuredAiRequest,
   type StructuredAiResponse,
 } from './ai-provider.adapters';
@@ -98,6 +103,7 @@ import {
   summarizeAiResponse,
   withRoute,
 } from './ai-gateway.helpers';
+import { AiRouteGroupResolverService } from './ai-route-group-resolver.service';
 import { AiModelRouteRegistryService } from './ai-route-registry.service';
 import {
   buildStage18StreamError,
@@ -286,6 +292,9 @@ interface ProviderDecision {
   readonly provider: AiProvider;
   readonly model: string;
   readonly routeReason: string;
+  readonly providerConnectionId?: string | null;
+  readonly baseUrl?: string | null;
+  readonly keyFingerprint?: string | null;
 }
 
 interface AiGatewayAuditEventInput {
@@ -366,6 +375,10 @@ export class AIGatewayService {
     private readonly localKeyResolver: LocalKeyResolver,
     private readonly localOwnerKeyVaultService: LocalOwnerKeyVaultService,
     private readonly aiModelRouteRegistryService: AiModelRouteRegistryService = new AiModelRouteRegistryService(),
+    @Optional()
+    private readonly aiRouteGroupResolverService?: AiRouteGroupResolverService,
+    @Optional()
+    private readonly aiSecretService?: AiSecretService,
   ) {}
 
   async planStructuredRoute(input: {
@@ -374,6 +387,7 @@ export class AIGatewayService {
     readonly taskType: AiRequestSummary['taskType'];
     readonly hasDocuments: boolean;
     readonly routeCode?: AiRouteCode;
+    readonly actorUserId?: string | null;
   }): Promise<{
     readonly dataClass: AiDataClass;
     readonly policy: AiPolicyContext;
@@ -381,6 +395,9 @@ export class AIGatewayService {
     readonly provider: AiProvider | null;
     readonly model: string | null;
     readonly routeReason: string;
+    readonly providerConnectionId: string | null;
+    readonly baseUrl: string | null;
+    readonly keyFingerprint: string | null;
     readonly blocked: boolean;
     readonly blockedReasonCode: string | null;
     readonly blockedMessage: string | null;
@@ -407,18 +424,23 @@ export class AIGatewayService {
         provider: null,
         model: null,
         routeReason: block.reasonCode,
+        providerConnectionId: null,
+        baseUrl: null,
+        keyFingerprint: null,
         blocked: true,
         blockedReasonCode: block.reasonCode,
         blockedMessage: block.message,
       };
     }
 
-    const decision = this.resolveProviderDecision(
+    const decision = await this.resolveProviderDecision(
       dataClass,
       policy,
       input.taskType,
       input.hasDocuments,
       input.routeCode,
+      input.access,
+      input.actorUserId ?? null,
     );
 
     return {
@@ -428,6 +450,9 @@ export class AIGatewayService {
       provider: decision.provider,
       model: decision.model,
       routeReason: decision.routeReason,
+      providerConnectionId: decision.providerConnectionId ?? null,
+      baseUrl: decision.baseUrl ?? null,
+      keyFingerprint: decision.keyFingerprint ?? null,
       blocked: false,
       blockedReasonCode: null,
       blockedMessage: null,
@@ -528,6 +553,7 @@ export class AIGatewayService {
     readonly maxToolCalls?: number;
     readonly route?: AiRouteCode;
     readonly traceId?: string | null;
+    readonly actorUserId?: string | null;
   }): Promise<{
     readonly route: Awaited<
       ReturnType<AIGatewayService['planStructuredRoute']>
@@ -540,6 +566,7 @@ export class AIGatewayService {
       taskType: input.taskType,
       hasDocuments: input.hasDocuments,
       routeCode: input.route,
+      actorUserId: input.actorUserId ?? null,
     });
 
     if (route.blocked || !route.provider || !route.model) {
@@ -561,6 +588,13 @@ export class AIGatewayService {
     }
 
     const adapter = this.aiProviderRegistry.get(route.provider);
+    const runtimeConnection = await this.resolveRuntimeConnectionForDecision({
+      workspaceId: input.access.activeWorkspace?.id ?? null,
+      providerDecision: {
+        provider: route.provider,
+        providerConnectionId: route.providerConnectionId,
+      },
+    });
     const localOwnerKey = this.resolveLocalOwnerKeyForProvider({
       purpose:
         input.taskType === 'workflow_planning'
@@ -581,6 +615,110 @@ export class AIGatewayService {
       maxToolCalls: input.maxToolCalls,
       traceId: input.traceId ?? null,
       localOwnerKey,
+      runtimeConnection,
+    });
+
+    return { route, response };
+  }
+
+  async streamChatCompletion(input: {
+    readonly access: AccessContext;
+    readonly classification: DataClassification;
+    readonly taskType: AiRequestSummary['taskType'];
+    readonly hasDocuments: boolean;
+    readonly messages: readonly ChatCompletionMessage[];
+    readonly maxTokens: number;
+    readonly reasoningEffort: string;
+    readonly thinking?: ChatCompletionStreamRequest['thinking'];
+    readonly route?: AiRouteCode;
+    readonly traceId?: string | null;
+    readonly actorUserId?: string | null;
+  }): Promise<{
+    readonly route: Awaited<
+      ReturnType<AIGatewayService['planStructuredRoute']>
+    >;
+    readonly response: ChatCompletionStreamResponse;
+  }> {
+    const route = await this.planStructuredRoute({
+      access: input.access,
+      classification: input.classification,
+      taskType: input.taskType,
+      hasDocuments: input.hasDocuments,
+      routeCode: input.route,
+      actorUserId: input.actorUserId ?? null,
+    });
+
+    if (route.blocked || !route.provider || !route.model) {
+      return {
+        route,
+        response: {
+          ok: false,
+          provider: 'local',
+          model: route.model ?? 'local-fallback',
+          text: '',
+          latencyMs: 0,
+          contentChunkCount: 0,
+          reasoningChunkCount: 0,
+          status: null,
+          errorClass: route.blocked
+            ? 'AI_ROUTE_BLOCKED'
+            : 'PROVIDER_NOT_CONFIGURED',
+          requestDescriptor: {
+            provider: 'local',
+            compatibility: 'openai_chat_completions',
+            method: 'POST',
+            endpointPath: '/chat/completions',
+            baseUrlHost: 'local',
+            baseUrlPath: '/v1',
+            model: route.model ?? 'local-fallback',
+            bodyKeys: [
+              'model',
+              'messages',
+              'stream',
+              'max_tokens',
+              'reasoning_effort',
+              'thinking',
+            ],
+            hasAuthorizationHeader: false,
+            authorizationScheme: 'Bearer',
+            secretFingerprint: null,
+            sourceTokenFingerprint: null,
+            outgoingHeaderTokenFingerprint: null,
+            fingerprintsMatch: false,
+            outgoingHeaderLength: 0,
+            stream: true,
+            maxTokens: input.maxTokens,
+            reasoningEffort: input.reasoningEffort,
+            thinkingEnabled: input.thinking?.type === 'enabled',
+          },
+        },
+      };
+    }
+
+    const adapter = this.aiProviderRegistry.get(route.provider);
+    const runtimeConnection = await this.resolveRuntimeConnectionForDecision({
+      workspaceId: input.access.activeWorkspace?.id ?? null,
+      providerDecision: {
+        provider: route.provider,
+        providerConnectionId: route.providerConnectionId,
+      },
+    });
+    const localOwnerKey = this.resolveLocalOwnerKeyForProvider({
+      purpose: 'ai_gateway',
+      provider: route.provider,
+      workspaceId: input.access.activeWorkspace?.id ?? null,
+      traceId: input.traceId ?? null,
+    });
+    const response = await adapter.streamChatCompletion({
+      provider: route.provider,
+      model: route.model,
+      messages: input.messages,
+      maxTokens: input.maxTokens,
+      reasoningEffort: input.reasoningEffort,
+      thinking: input.thinking,
+      traceId: input.traceId ?? null,
+      localOwnerKey,
+      runtimeConnection,
     });
 
     return { route, response };
@@ -1329,11 +1467,15 @@ export class AIGatewayService {
   ): Promise<WorkflowDraftDetail> {
     const workspaceId = access.activeWorkspace!.id;
     const dataClass = this.inferWorkflowDataClass(input.workflow);
-    const route = this.resolveProviderDecision(
+    const route = await this.resolveProviderDecision(
       dataClass,
       policy,
       'workflow_planning',
       false,
+      undefined,
+      access,
+      actor.id,
+      meta.traceId,
     );
 
     const validationReport = createWorkflowValidationReport(input.workflow);
@@ -1444,11 +1586,15 @@ export class AIGatewayService {
       selection,
     );
 
-    const providerDecision = this.resolveProviderDecision(
+    const providerDecision = await this.resolveProviderDecision(
       dataClass,
       policy,
       'workflow_planning',
       selection.documents.length > 0,
+      undefined,
+      access,
+      actor.id,
+      meta.traceId,
     );
 
     const workflow = this.buildWorkflowDraft({
@@ -1602,11 +1748,15 @@ export class AIGatewayService {
       );
     }
 
-    const providerDecision = this.resolveProviderDecision(
+    const providerDecision = await this.resolveProviderDecision(
       input.classification,
       policy,
       'field_extraction',
       false,
+      undefined,
+      access,
+      actor.id,
+      meta.traceId,
     );
     const requestId = await this.createAiRequest({
       workspaceId,
@@ -1623,6 +1773,10 @@ export class AIGatewayService {
 
     const adapter = this.aiProviderRegistry.get(providerDecision.provider);
     const fallback = this.redactText(input.text, input.redactionPolicy);
+    const runtimeConnection = await this.resolveRuntimeConnectionForDecision({
+      workspaceId,
+      providerDecision,
+    });
     const localOwnerKey = this.resolveLocalOwnerKeyForProvider({
       purpose: 'ai_gateway',
       provider: providerDecision.provider,
@@ -1636,6 +1790,7 @@ export class AIGatewayService {
       schemaId: AI_SCHEMA_IDS.redactionPreview,
       fallback,
       localOwnerKey,
+      runtimeConnection,
     });
     this.assertProviderResponseReady(providerDecision, providerResponse);
 
@@ -1826,11 +1981,15 @@ export class AIGatewayService {
     readonly selection: SelectionContext;
     readonly meta: RequestMeta;
   }): Promise<AiChatResponse> {
-    const providerDecision = this.resolveProviderDecision(
+    const providerDecision = await this.resolveProviderDecision(
       input.dataClass,
       input.policy,
       'workflow_planning',
       input.selection.documents.length > 0,
+      undefined,
+      input.access,
+      input.actor.id,
+      input.meta.traceId,
     );
     const questions = this.buildClarificationQuestions(
       input.message,
@@ -1860,6 +2019,10 @@ export class AIGatewayService {
     });
 
     const adapter = this.aiProviderRegistry.get(providerDecision.provider);
+    const runtimeConnection = await this.resolveRuntimeConnectionForDecision({
+      workspaceId: input.access.activeWorkspace!.id,
+      providerDecision,
+    });
     const localOwnerKey = this.resolveLocalOwnerKeyForProvider({
       purpose: 'workflow_planning',
       provider: providerDecision.provider,
@@ -1880,6 +2043,7 @@ export class AIGatewayService {
         warnings: policyReport.warnings,
       },
       localOwnerKey,
+      runtimeConnection,
     });
     this.assertProviderResponseReady(providerDecision, providerResponse);
 
@@ -2060,11 +2224,15 @@ export class AIGatewayService {
     const baseWorkflow = this.getBaseWorkflow(
       input.selection.automation?.workflow,
     );
-    const providerDecision = this.resolveProviderDecision(
+    const providerDecision = await this.resolveProviderDecision(
       input.dataClass,
       input.policy,
       'workflow_patch',
       input.selection.documents.length > 0,
+      undefined,
+      input.access,
+      input.actor.id,
+      input.meta.traceId,
     );
     const patch = this.buildWorkflowPatch(
       baseWorkflow,
@@ -2086,6 +2254,10 @@ export class AIGatewayService {
     }
 
     const adapter = this.aiProviderRegistry.get(providerDecision.provider);
+    const runtimeConnection = await this.resolveRuntimeConnectionForDecision({
+      workspaceId: input.access.activeWorkspace!.id,
+      providerDecision,
+    });
     const localOwnerKey = this.resolveLocalOwnerKeyForProvider({
       purpose: 'workflow_planning',
       provider: providerDecision.provider,
@@ -2099,6 +2271,7 @@ export class AIGatewayService {
       schemaId: AI_SCHEMA_IDS.workflowPatch,
       fallback: patch,
       localOwnerKey,
+      runtimeConnection,
     });
     this.assertProviderResponseReady(providerDecision, providerResponse);
 
@@ -3199,6 +3372,21 @@ export class AIGatewayService {
       ],
     );
 
+    if (providerDecision.providerConnectionId) {
+      await this.recordRequestEvent(
+        requestId,
+        workspaceId,
+        'ai.provider_connection.used',
+        {
+          provider_connection_id: providerDecision.providerConnectionId,
+          fingerprint: providerDecision.keyFingerprint ?? null,
+          provider: providerDecision.provider,
+          route: providerDecision.route,
+          model: providerDecision.model,
+        },
+      );
+    }
+
     if (localOwnerKey) {
       await this.recordRequestEvent(
         requestId,
@@ -3521,6 +3709,41 @@ export class AIGatewayService {
     }
   }
 
+  private async resolveRuntimeConnectionForDecision(input: {
+    readonly workspaceId: string | null;
+    readonly providerDecision: Pick<
+      ProviderDecision,
+      'provider' | 'providerConnectionId'
+    >;
+  }): Promise<NonNullable<StructuredAiRequest<unknown>['runtimeConnection']> | null> {
+    if (
+      input.providerDecision.provider === 'local' ||
+      !input.providerDecision.providerConnectionId ||
+      !input.workspaceId ||
+      !this.aiSecretService
+    ) {
+      return null;
+    }
+
+    const secret = await this.aiSecretService.resolveProviderCallSecret({
+      workspaceId: input.workspaceId,
+      providerConnectionId: input.providerDecision.providerConnectionId,
+    });
+
+    await this.aiSecretService.markProviderConnectionUsed({
+      workspaceId: input.workspaceId,
+      providerConnectionId: input.providerDecision.providerConnectionId,
+    });
+
+    return {
+      providerConnectionId: secret.providerConnectionId,
+      baseUrl: secret.baseUrl,
+      apiKey: secret.apiKey,
+      fingerprint: secret.fingerprint,
+      secretRefId: secret.secretRefId,
+    };
+  }
+
   private async verifyRuntimeAuthorization(
     runId: string,
     authorization: string | undefined,
@@ -3755,13 +3978,16 @@ export class AIGatewayService {
     return 'A_PUBLIC';
   }
 
-  private resolveProviderDecision(
+  private async resolveProviderDecision(
     dataClass: AiDataClass,
     policy: AiPolicyContext,
     taskType: AiRequestSummary['taskType'],
     hasDocuments: boolean,
     routeCode?: AiRouteCode,
-  ): ProviderDecision {
+    access?: AccessContext | null,
+    actorUserId?: string | null,
+    traceId?: string | null,
+  ): Promise<ProviderDecision> {
     void policy;
 
     if (dataClass === 'D_AI_EXTERNAL_FORBIDDEN') {
@@ -3826,6 +4052,17 @@ export class AIGatewayService {
       };
     }
 
+    const savedPreference = await this.resolveSavedProviderDecision({
+      access,
+      actorUserId: actorUserId ?? null,
+      requestedRoute,
+      traceId,
+    });
+
+    if (savedPreference) {
+      return savedPreference;
+    }
+
     const route = this.aiModelRouteRegistryService.getRoute(requestedRoute);
     if (!route.enabled) {
       throw new AppHttpException(
@@ -3853,6 +4090,65 @@ export class AIGatewayService {
       provider: 'cometapi',
       model: route.model,
       routeReason: `stage18_route_registry:${route.routeCode}`,
+    };
+  }
+
+  private async resolveSavedProviderDecision(input: {
+    readonly access?: AccessContext | null;
+    readonly actorUserId?: string | null;
+    readonly requestedRoute: AiRouteCode;
+    readonly traceId?: string | null;
+  }): Promise<ProviderDecision | null> {
+    if (!this.aiRouteGroupResolverService) {
+      return null;
+    }
+
+    const workspaceId = input.access?.activeWorkspace?.id;
+    if (!workspaceId) {
+      return null;
+    }
+
+    const policy =
+      await this.aiRouteGroupResolverService.resolveEffectivePolicy({
+        workspaceId,
+        actorUserId: input.actorUserId ?? null,
+        routeCode: input.requestedRoute,
+        permissions: Array.from(
+          new Set([
+            ...(input.access?.permissions ?? []),
+            'settings.ai.manage_workspace',
+          ]),
+        ),
+        traceId: input.traceId ?? 'trace_unavailable',
+      });
+
+    if (policy.source === 'stage18_default_route') {
+      return null;
+    }
+
+    const provider = mapPreferenceProviderCode(policy.providerCode);
+    if (!provider) {
+      return null;
+    }
+
+    if (
+      provider !== 'local' &&
+      (!policy.providerConnectionId ||
+        !policy.hasSecret ||
+        policy.secretStatus !== 'active')
+    ) {
+      return null;
+    }
+
+    return {
+      route: policy.routeCode,
+      provider,
+      model: policy.modelId,
+      routeReason: `${policy.source}:${policy.routeCode}`,
+      providerConnectionId:
+        provider === 'local' ? null : policy.providerConnectionId,
+      baseUrl: policy.baseUrl,
+      keyFingerprint: policy.fingerprint,
     };
   }
 
@@ -4478,6 +4774,18 @@ function findForbiddenRuntimePayloadPath(
     if (match) {
       return match;
     }
+  }
+
+  return null;
+}
+
+function mapPreferenceProviderCode(providerCode: AiProviderCode): AiProvider | null {
+  if (providerCode === 'cometapi' || providerCode === 'openai_compatible') {
+    return 'cometapi';
+  }
+
+  if (providerCode === 'mock') {
+    return 'local';
   }
 
   return null;

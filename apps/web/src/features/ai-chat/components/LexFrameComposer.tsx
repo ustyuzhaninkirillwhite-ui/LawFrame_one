@@ -43,6 +43,7 @@ export function LexFrameComposer({
           <Plus size={17} aria-hidden="true" />
         </button>
         <textarea
+          data-testid="chat-composer-input"
           className="h-9 min-w-0 flex-1 resize-none bg-transparent px-1 py-2 text-sm leading-5 text-[color:var(--lf-text-primary)] outline-none placeholder:text-[color:var(--lf-text-muted)] disabled:cursor-not-allowed disabled:opacity-60"
           value={text}
           disabled={disabled}

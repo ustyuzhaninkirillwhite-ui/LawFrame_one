@@ -458,6 +458,10 @@ function buildAiSettings(): AiSettingsResponse {
         supportsStreaming: true,
         supportsJson: true,
         supportsToolCalls: true,
+        runtimeMode: "mock",
+        runtimeUsesSavedConnection: false,
+        runtimeNotice:
+          "AI_PROVIDER_MODE=mock: runtime AI calls use the local mock provider; saved provider keys are retained but not used.",
         policyDecisionId: "stage21-chat-policy",
         resolvedAt: "2026-05-07T10:03:00.000Z",
       },
@@ -475,6 +479,10 @@ function buildAiSettings(): AiSettingsResponse {
         supportsStreaming: true,
         supportsJson: true,
         supportsToolCalls: true,
+        runtimeMode: "mock",
+        runtimeUsesSavedConnection: false,
+        runtimeNotice:
+          "AI_PROVIDER_MODE=mock: runtime AI calls use the local mock provider; saved provider keys are retained but not used.",
         policyDecisionId: "stage21-automation-policy",
         resolvedAt: "2026-05-07T10:03:00.000Z",
       },

@@ -12,6 +12,7 @@ import { LexFrameMessage } from "./LexFrameMessage";
 export function LexFrameThread({
   messages,
   isRunning,
+  streamErrorMessage,
   disabled,
   onSend,
   onCancel,
@@ -21,6 +22,7 @@ export function LexFrameThread({
 }: {
   readonly messages: readonly ChatMessageDto[];
   readonly isRunning: boolean;
+  readonly streamErrorMessage?: string | null;
   readonly disabled: boolean;
   readonly onSend: (text: string) => Promise<void>;
   readonly onCancel: () => void;
@@ -86,6 +88,16 @@ export function LexFrameThread({
               ) : null}
             </div>
           )}
+          {streamErrorMessage ? (
+            <div
+              className="mx-auto mt-4 max-w-3xl rounded-[var(--lf-radius-card)] border border-[color:var(--danger)]/30 bg-[color:var(--danger)]/10 px-4 py-3 text-sm text-[color:var(--lf-text-primary)]"
+              role="status"
+              aria-live="polite"
+              data-testid="chat-stream-error"
+            >
+              {streamErrorMessage}
+            </div>
+          ) : null}
         </div>
         <LexFrameComposer
           disabled={disabled}

@@ -350,6 +350,7 @@ export function ProjectHome({ projectId }: { readonly projectId: string }) {
             </div>
             <Button
               type="button"
+              data-testid="project-new-chat-button"
               disabled={createChat.isPending}
               onClick={() => void createProjectChat()}
             >

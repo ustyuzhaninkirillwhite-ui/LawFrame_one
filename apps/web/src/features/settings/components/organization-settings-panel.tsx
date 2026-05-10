@@ -51,6 +51,7 @@ export function OrganizationSettingsPanel({
       <div className="grid gap-4 md:grid-cols-2">
         <Field label="Display name">
           <Input
+            data-testid="settings-organization-display-name"
             value={form.organizationDisplayName}
             disabled={disabled}
             onChange={(event) =>
@@ -63,6 +64,7 @@ export function OrganizationSettingsPanel({
         </Field>
         <Field label="Legal name">
           <Input
+            data-testid="settings-organization-legal-name"
             value={form.organizationLegalName}
             disabled={disabled}
             onChange={(event) =>

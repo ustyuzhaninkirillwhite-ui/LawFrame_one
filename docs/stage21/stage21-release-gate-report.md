@@ -1,6 +1,6 @@
 # Stage 21 Release Gate Report
 
-Generated at: 2026-05-07T17:41:15.048Z
+Generated at: 2026-05-09T05:56:46.065Z
 
 ## Checks
 - settings schema/type contracts: wired

@@ -5,10 +5,10 @@ import type {
   AiRouteCode,
   AiRouteGroup,
 } from '@lexframe/contracts';
-import type { DatabaseService } from '../database/database.service';
 import { createHash, randomUUID } from 'node:crypto';
-import { Injectable, Optional } from '@nestjs/common';
+import { Inject, Injectable, Optional } from '@nestjs/common';
 import { AppHttpException } from '../../common/errors/app-http.exception';
+import { DatabaseService } from '../database/database.service';
 import { AiModelRouteRegistryService } from './ai-route-registry.service';
 
 const CHAT_AI_ROUTES = [
@@ -52,7 +52,7 @@ interface PreferenceRow {
 
 export interface ResolveEffectivePolicyInput {
   readonly workspaceId: string;
-  readonly actorUserId: string;
+  readonly actorUserId: string | null;
   readonly routeCode?: AiRouteCode;
   readonly routeGroup?: AiRouteGroup;
   readonly permissions: readonly string[];
@@ -62,7 +62,9 @@ export interface ResolveEffectivePolicyInput {
 @Injectable()
 export class AiRouteGroupResolverService {
   constructor(
-    @Optional() private readonly databaseService: DatabaseService | undefined,
+    @Optional()
+    @Inject(DatabaseService)
+    private readonly databaseService: DatabaseService | undefined,
     private readonly routeRegistry: AiModelRouteRegistryService,
   ) {}
 
@@ -132,6 +134,7 @@ export class AiRouteGroupResolverService {
       supportsStreaming: fallbackRoute.supportsStreaming,
       supportsJson: fallbackRoute.supportsJson,
       supportsToolCalls: fallbackRoute.supportsToolCalls,
+      ...runtimePolicyMetadata(false),
       policyDecisionId: stablePolicyDecisionId({
         routeGroup,
         routeCode,
@@ -162,7 +165,7 @@ export class AiRouteGroupResolverService {
 
   private async findEffectivePreference(input: {
     readonly workspaceId: string;
-    readonly actorUserId: string;
+    readonly actorUserId: string | null;
     readonly routeGroup: AiRouteGroup;
     readonly permissions: readonly string[];
   }): Promise<PreferenceRow | null> {
@@ -170,12 +173,22 @@ export class AiRouteGroupResolverService {
       return null;
     }
 
-    const canUseSelfPreference = input.permissions.includes(
-      'settings.ai.manage_self',
-    );
-    const canUseWorkspacePreference = input.permissions.includes(
-      'settings.ai.manage_workspace',
-    );
+    const canUseRuntimeRoute =
+      (input.routeGroup === 'chat_ai' && input.permissions.includes('ai.chat.use')) ||
+      (input.routeGroup === 'automation_ai' &&
+        input.permissions.includes('canvas.ai.use'));
+    const canViewSettingsPolicy =
+      input.permissions.includes('settings.ai.view') ||
+      input.permissions.includes('settings.ai.effective_policy.view');
+    const canUseSelfPreference =
+      input.actorUserId !== null &&
+      (input.permissions.includes('settings.ai.manage_self') ||
+        canUseRuntimeRoute ||
+        canViewSettingsPolicy);
+    const canUseWorkspacePreference =
+      input.permissions.includes('settings.ai.manage_workspace') ||
+      canUseRuntimeRoute ||
+      canViewSettingsPolicy;
 
     const candidates: Array<{
       readonly source: 'user_preference' | 'workspace_preference' | 'system_default';
@@ -314,6 +327,7 @@ export class AiRouteGroupResolverService {
       supportsStreaming: row.supports_streaming ?? true,
       supportsJson: row.supports_json ?? false,
       supportsToolCalls: row.supports_tool_calls ?? false,
+      ...runtimePolicyMetadata(true),
       policyDecisionId: stablePolicyDecisionId({
         routeGroup: row.route_group,
         routeCode,
@@ -349,7 +363,7 @@ export class AiRouteGroupResolverService {
 
   private async persistSnapshot(
     workspaceId: string,
-    actorUserId: string,
+    actorUserId: string | null,
     policy: AiEffectivePolicyDto,
   ) {
     if (!this.databaseService) {
@@ -410,6 +424,32 @@ function isMissingStage21Schema(error: unknown): boolean {
     'code' in error &&
     ['42P01', '42703'].includes(String((error as { code?: string }).code))
   );
+}
+
+function runtimePolicyMetadata(savedConnection: boolean): Pick<
+  AiEffectivePolicyDto,
+  'runtimeMode' | 'runtimeNotice' | 'runtimeUsesSavedConnection'
+> {
+  const mode = normalizeAiProviderMode(process.env.AI_PROVIDER_MODE);
+
+  return {
+    runtimeMode: mode,
+    runtimeUsesSavedConnection: mode !== 'mock' && savedConnection,
+    runtimeNotice:
+      mode === 'mock'
+        ? 'AI_PROVIDER_MODE=mock: runtime AI calls use the local mock provider; saved provider keys are retained but not used.'
+        : null,
+  };
+}
+
+function normalizeAiProviderMode(
+  value: string | undefined,
+): AiEffectivePolicyDto['runtimeMode'] {
+  if (value === 'mock' || value === 'controlled-real' || value === 'env-secret') {
+    return value;
+  }
+
+  return 'unknown';
 }
 
 function stablePolicyDecisionId(value: {

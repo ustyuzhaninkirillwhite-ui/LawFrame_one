@@ -136,6 +136,7 @@ export class LegalRagService {
       schemaId: 'lexframe.legal_analysis.v1',
       fallback,
       traceId: meta.traceId,
+      actorUserId: actor.id,
     });
     const response = gatewayResponse.response;
     const validated = validateAnalysisOutput(

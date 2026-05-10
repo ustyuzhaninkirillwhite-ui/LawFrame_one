@@ -1127,9 +1127,7 @@ export class ActivepiecesCanvasProvisioningService implements OnModuleDestroy {
         'ACTIVEPIECES_RUNTIME_UNAVAILABLE',
         503,
         'Automation canvas provisioning failed.',
-        {
-          reason: error instanceof Error ? error.message : 'unknown',
-        },
+        redactActivepiecesProvisioningError(error),
       );
     } finally {
       client.release();
@@ -1617,6 +1615,24 @@ export class ActivepiecesCanvasProvisioningService implements OnModuleDestroy {
   async onModuleDestroy() {
     await this.apPool?.end();
   }
+}
+
+export function redactActivepiecesProvisioningError(error: unknown) {
+  return {
+    reasonCode: classifyActivepiecesProvisioningError(error),
+    safeToShow: true,
+  };
+}
+
+function classifyActivepiecesProvisioningError(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error ?? '');
+  if (/duplicate key|unique constraint/i.test(message)) {
+    return 'AP_PROVISIONING_CONFLICT';
+  }
+  if (/ECONNREFUSED|ENOTFOUND|ETIMEDOUT|connection|network/i.test(message)) {
+    return 'AP_RUNTIME_UNREACHABLE';
+  }
+  return 'AP_PROVISIONING_FAILED';
 }
 
 interface ActivepiecesIds {
