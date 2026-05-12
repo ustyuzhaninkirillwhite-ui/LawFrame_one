@@ -1,5 +1,5 @@
 import { loadServerEnv } from '@lexframe/config';
-import { Injectable, OnModuleDestroy } from '@nestjs/common';
+import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import {
   Pool,
   type PoolClient,
@@ -9,6 +9,7 @@ import {
 
 @Injectable()
 export class DatabaseService implements OnModuleDestroy {
+  private readonly logger = new Logger(DatabaseService.name);
   private readonly pool: Pool;
 
   constructor() {
@@ -16,6 +17,10 @@ export class DatabaseService implements OnModuleDestroy {
 
     this.pool = new Pool({
       connectionString: env.SUPABASE_DB_URL,
+    });
+    this.pool.on('error', (error: Error & { readonly code?: string }) => {
+      const code = error.code ? ` (${error.code})` : '';
+      this.logger.warn(`Postgres idle client error${code}: ${error.message}`);
     });
   }
 
