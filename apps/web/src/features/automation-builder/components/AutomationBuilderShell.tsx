@@ -121,9 +121,27 @@ export function AutomationBuilderShell({
     if (!initialBlueprintId) {
       return;
     }
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    refreshBlueprint(initialBlueprintId).catch((cause) => setError(normalizeError(cause)));
-  }, [initialBlueprintId, refreshBlueprint]);
+
+    let disposed = false;
+    api
+      .getBlueprint(initialBlueprintId)
+      .then((nextBlueprint) => {
+        if (disposed) {
+          return;
+        }
+        setBlueprint(nextBlueprint);
+        setValidation(nextBlueprint.validationSummary);
+      })
+      .catch((cause) => {
+        if (!disposed) {
+          setError(normalizeError(cause));
+        }
+      });
+
+    return () => {
+      disposed = true;
+    };
+  }, [api, initialBlueprintId]);
 
   const guarded = React.useCallback(
     async (action: () => Promise<void>) => {

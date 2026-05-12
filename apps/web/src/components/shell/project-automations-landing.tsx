@@ -77,15 +77,26 @@ export function ProjectAutomationsLanding({
 }) {
   const router = useRouter();
   const { apiClient } = useSessionBridge();
-  const automations = useStage15ProjectAutomations(projectId);
-  const ensureCanvas = useEnsureStage17CanvasAutomation(projectId);
+  const {
+    data: automationData,
+    isLoading: automationsLoading,
+    isSuccess: automationsSuccess,
+    isError: automationsError,
+    refetch: refetchAutomations,
+  } = useStage15ProjectAutomations(projectId);
+  const {
+    isPending: ensureCanvasPending,
+    isError: ensureCanvasError,
+    mutate: ensureCanvasAutomation,
+    reset: resetEnsureCanvas,
+  } = useEnsureStage17CanvasAutomation(projectId);
   const ensureRequestedRef = React.useRef(false);
   const [ensureTimedOut, setEnsureTimedOut] = React.useState(false);
   const [readinessState, dispatchReadiness] = React.useReducer(
     readinessReducer,
     initialReadinessState,
   );
-  const items = React.useMemo(() => automations.data ?? [], [automations.data]);
+  const items = React.useMemo(() => automationData ?? [], [automationData]);
   const automationToOpen = React.useMemo(() => {
     const activepiecesReady = items.find(
       (item) =>
@@ -98,7 +109,7 @@ export function ProjectAutomationsLanding({
   }, [items]);
 
   React.useEffect(() => {
-    if (!ensureCanvas.isPending) {
+    if (!ensureCanvasPending) {
       return;
     }
 
@@ -107,7 +118,7 @@ export function ProjectAutomationsLanding({
     }, ENSURE_TIMEOUT_MS);
 
     return () => window.clearTimeout(timeout);
-  }, [ensureCanvas.isPending]);
+  }, [ensureCanvasPending]);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -162,24 +173,18 @@ export function ProjectAutomationsLanding({
       };
     }
 
-    if (!automationToOpen) {
-      dispatchReadiness({ type: "idle" });
-    }
-
-    if (automationToOpen) {
-      return;
-    }
+    dispatchReadiness({ type: "idle" });
 
     if (
-      automations.isSuccess &&
+      automationsSuccess &&
       !ensureRequestedRef.current &&
-      !ensureCanvas.isPending
+      !ensureCanvasPending
     ) {
       ensureRequestedRef.current = true;
       setEnsureTimedOut(false);
-      ensureCanvas.mutate(undefined, {
+      ensureCanvasAutomation(undefined, {
         onSuccess: (result) => {
-          void automations.refetch();
+          void refetchAutomations();
           router.replace(result.route);
         },
         onError: () => {
@@ -193,17 +198,18 @@ export function ProjectAutomationsLanding({
   }, [
     apiClient,
     automationToOpen,
-    automations,
-    ensureCanvas,
-    items,
+    automationsSuccess,
+    ensureCanvasAutomation,
+    ensureCanvasPending,
     projectId,
+    refetchAutomations,
     router,
   ]);
 
   if (
-    automations.isLoading ||
+    automationsLoading ||
     readinessState.status === "loading" ||
-    (ensureCanvas.isPending && !ensureTimedOut)
+    (ensureCanvasPending && !ensureTimedOut)
   ) {
     return (
       <QueryState
@@ -213,7 +219,7 @@ export function ProjectAutomationsLanding({
     );
   }
 
-  if (automations.isError || ensureCanvas.isError || ensureTimedOut) {
+  if (automationsError || ensureCanvasError || ensureTimedOut) {
     return (
       <Card>
         <CardHeader>
@@ -229,14 +235,14 @@ export function ProjectAutomationsLanding({
             onClick={() => {
               ensureRequestedRef.current = false;
               setEnsureTimedOut(false);
-              ensureCanvas.reset();
-              if (automations.isError) {
-                void automations.refetch();
+              resetEnsureCanvas();
+              if (automationsError) {
+                void refetchAutomations();
                 return;
               }
-              ensureCanvas.mutate(undefined, {
+              ensureCanvasAutomation(undefined, {
                 onSuccess: (result) => {
-                  void automations.refetch();
+                  void refetchAutomations();
                   router.replace(result.route);
                 },
               });
@@ -266,7 +272,7 @@ export function ProjectAutomationsLanding({
           <Button
             onClick={() => {
               dispatchReadiness({ type: "idle" });
-              void automations.refetch();
+              void refetchAutomations();
             }}
           >
             <RotateCw className="mr-2 size-4" aria-hidden="true" />

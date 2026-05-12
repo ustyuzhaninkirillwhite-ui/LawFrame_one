@@ -21,8 +21,22 @@ export function LexFrameChatShell({
   const { apiClient, sessionContext } = useSessionBridge();
   const chatApi = React.useMemo(() => createLexFrameChatApi(apiClient), [apiClient]);
   const [messages, setMessages] = React.useState<ChatMessageDto[]>([]);
-  const [activeThreadId, setActiveThreadId] = React.useState<string | null>(
-    initialThreadId,
+  const [threadOverride, setThreadOverride] = React.useState<{
+    readonly routeThreadId: string | null;
+    readonly activeThreadId: string | null;
+  } | null>(null);
+  const activeThreadId =
+    threadOverride?.routeThreadId === initialThreadId
+      ? threadOverride.activeThreadId
+      : initialThreadId;
+  const setActiveThreadId = React.useCallback(
+    (threadId: string | null) => {
+      setThreadOverride({
+        routeThreadId: initialThreadId,
+        activeThreadId: threadId,
+      });
+    },
+    [initialThreadId],
   );
   const [isRunning, setIsRunning] = React.useState(false);
   const [activeStreamId, setActiveStreamId] = React.useState<string | null>(null);
@@ -74,11 +88,6 @@ export function LexFrameChatShell({
     },
     [chatApi],
   );
-
-  React.useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setActiveThreadId(initialThreadId);
-  }, [initialThreadId]);
 
   React.useEffect(() => {
     void loadMessages(activeThreadId);
@@ -139,6 +148,7 @@ export function LexFrameChatShell({
       loadMessages,
       projectId,
       router,
+      setActiveThreadId,
     ],
   );
 
@@ -163,7 +173,7 @@ export function LexFrameChatShell({
       setActiveThreadId(response.thread.id);
       router.push(`/app/projects/${projectId}/chats/${response.thread.id}`);
     },
-    [activeThreadId, chatApi, projectId, router],
+    [activeThreadId, chatApi, projectId, router, setActiveThreadId],
   );
 
   const regenerate = React.useCallback(

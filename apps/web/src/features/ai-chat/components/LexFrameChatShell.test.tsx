@@ -296,6 +296,33 @@ describe("LexFrameChatShell", () => {
     expect(userMessage).toHaveClass("justify-end");
     expect(assistantMessage).toHaveClass("justify-start");
   });
+
+  it("reloads messages when the route thread changes", async () => {
+    const { rerender } = render(
+      <LexFrameChatShell
+        projectId="project_claim_001"
+        initialThreadId="thread_existing"
+      />,
+    );
+
+    await waitFor(() => {
+      expect(mocks.chatApi.listMessages).toHaveBeenCalledWith(
+        "thread_existing",
+      );
+    });
+
+    mocks.chatApi.listMessages.mockClear();
+    rerender(
+      <LexFrameChatShell
+        projectId="project_claim_001"
+        initialThreadId="thread_next"
+      />,
+    );
+
+    await waitFor(() => {
+      expect(mocks.chatApi.listMessages).toHaveBeenCalledWith("thread_next");
+    });
+  });
 });
 
 function thread(id: string, title: string): ChatThreadSummary {
