@@ -35,3 +35,12 @@ tmp/
 tmp_*
 stage16-audit-evidence-*/
 backend-startup-env.json
+
+# Generated audit/report artifacts
+/stage17-*.png
+/lexframe-light-theme-canvas-smoke.png
+/artifacts/pravokontur-presentation/
+/artifacts/reports/
+/artifacts/stage17/*.png
+/artifacts/stage18-20/remediation/e2e/playwright/
+/artifacts/stage21/playwright/*.png

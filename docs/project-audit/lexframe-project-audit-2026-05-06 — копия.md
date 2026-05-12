@@ -170,7 +170,7 @@ LexFrame решает задачу юридической операционно
 | `tmp`, `tmp_docker_diag` | Локальные временные diagnostics. | Debug only. | Документация, source, committed decisions. |
 | `node_modules` | Installed dependencies. | Local dependency cache. | Manual edits. |
 | `.env*` | Local/example environment files. | Local configuration. | Секреты в документации или audit excerpts. |
-| `*.log`, `stage17-*.png`, `lexframe-light-theme-canvas-smoke.png` | Runtime logs/screenshots. | Evidence and debugging. | Source-of-truth implementation. |
+| `*.log`, `stage17-*.png`, `lexframe-light-theme-canvas-smoke.png` | Runtime logs/screenshots. | Generated evidence/debugging; PNG outputs are ignored after the 2026-05-12 cleanup. | Source-of-truth implementation. |
 
 ### 5.2 Root Files
 
@@ -517,7 +517,7 @@ Package: `packages/design-system-activepieces-bridge`.
 
 - `docs/stage17/17.8/design-token-mapping.md`: `Status: IMPLEMENTED / LIGHT DEFAULT UPDATED`, дата 2026-05-06.
 - `docs/stage17/visual-regression-report.md`: AP-like surfaces and canvas preservation surfaces.
-- `stage17-app-live.png`, `stage17-project-live.png`, `stage17-automation-canvas-live.png`, `lexframe-light-theme-canvas-smoke.png`: локальные screenshots/evidence.
+- `stage17-app-live.png`, `stage17-project-live.png`, `stage17-automation-canvas-live.png`, `lexframe-light-theme-canvas-smoke.png`: generated local screenshots removed from git in the 2026-05-12 cleanup.
 - `pnpm stage17:17.8:check` and `pnpm stage17:visual:regression`: validation commands for design convergence.
 
 ## 11. Data Layer And Supabase
@@ -1016,4 +1016,3 @@ Use this checklist when updating this audit or preparing the next one.
 - [ ] Run or explicitly defer relevant checks.
 - [ ] Scan the audit for accidental secret values.
 - [ ] Keep existing historical audit files intact.
-
