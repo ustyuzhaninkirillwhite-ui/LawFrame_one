@@ -786,25 +786,72 @@ export class AiSettingsService {
           workspaceId,
           providerConnectionId: connection.id,
         });
-      const response = await fetch(`${runtimeSecret.baseUrl.replace(/\/$/, '')}/models`, {
+      const baseUrl = runtimeSecret.baseUrl.replace(/\/$/, '');
+      const apiKey = runtimeSecret.apiKey.revealForProviderCall();
+
+      await fetch(`${baseUrl}/models`, {
         method: 'GET',
         headers: {
-          authorization: `Bearer ${runtimeSecret.apiKey.revealForProviderCall()}`,
+          authorization: `Bearer ${apiKey}`,
         },
         signal: AbortSignal.timeout(5000),
+      }).catch(() => null);
+
+      const response = await fetch(`${baseUrl}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          authorization: `Bearer ${apiKey}`,
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: connection.default_model,
+          messages: [
+            {
+              role: 'system',
+              content: 'Return a short visible health-check sentence.',
+            },
+            {
+              role: 'user',
+              content: 'Reply with OK in one short sentence.',
+            },
+          ],
+          stream: true,
+          max_tokens: 768,
+          reasoning_effort: 'low',
+          thinking: { type: 'disabled' },
+        }),
+        signal: AbortSignal.timeout(10_000),
       });
 
-      return response.ok
-        ? {
-            status: 'success',
-            errorCode: null,
-            message: 'Provider models endpoint responded to a prompt-free health check.',
-          }
-        : {
-            status: 'failed',
-            errorCode: `HTTP_${response.status}`,
-            message: redactText(`Provider health check failed with HTTP ${response.status}.`),
-          };
+      if (!response.ok) {
+        return {
+          status: 'failed',
+          errorCode: `HTTP_${response.status}`,
+          message: redactText(
+            `Provider chat stream check failed with HTTP ${response.status}.`,
+          ),
+        };
+      }
+
+      const visibleText = parseVisibleChatStreamText(
+        await response.text().catch(() => ''),
+      );
+
+      if (!visibleText.trim()) {
+        return {
+          status: 'failed',
+          errorCode: 'AI_PROVIDER_EMPTY_RESPONSE',
+          message:
+            'Provider chat stream endpoint responded without visible assistant content.',
+        };
+      }
+
+      return {
+        status: 'success',
+        errorCode: null,
+        message:
+          'Provider chat stream endpoint responded with visible assistant content.',
+      };
     } catch (error) {
       if (error instanceof AppHttpException) {
         return {
@@ -1030,4 +1077,70 @@ function isProductionAiDeploy() {
     process.env.LEXFRAME_DEPLOY_ENV === 'production' ||
     process.env.LEXFRAME_ENV_PROFILE === 'production'
   );
+}
+
+function parseVisibleChatStreamText(value: string) {
+  let text = '';
+
+  for (const rawLine of value.split(/\r?\n/)) {
+    const line = rawLine.trim();
+    if (!line.startsWith('data:')) {
+      continue;
+    }
+
+    const data = line.slice('data:'.length).trim();
+    if (!data || data === '[DONE]') {
+      continue;
+    }
+
+    let payload: {
+      readonly choices?: readonly {
+        readonly delta?: Record<string, unknown>;
+        readonly message?: { readonly content?: unknown };
+        readonly text?: unknown;
+      }[];
+    };
+
+    try {
+      payload = JSON.parse(data) as typeof payload;
+    } catch {
+      continue;
+    }
+
+    for (const choice of payload.choices ?? []) {
+      const delta = choice.delta ?? {};
+      text += [
+        delta.content,
+        delta.text,
+        delta.output_text,
+        choice.message?.content,
+        choice.text,
+      ]
+        .map(coerceVisibleStreamPart)
+        .join('');
+    }
+  }
+
+  return text;
+}
+
+function coerceVisibleStreamPart(value: unknown): string {
+  if (typeof value === 'string') {
+    return value;
+  }
+
+  if (Array.isArray(value)) {
+    return value
+      .map((part) =>
+        typeof part === 'object' &&
+        part !== null &&
+        'text' in part &&
+        typeof part.text === 'string'
+          ? part.text
+          : '',
+      )
+      .join('');
+  }
+
+  return '';
 }

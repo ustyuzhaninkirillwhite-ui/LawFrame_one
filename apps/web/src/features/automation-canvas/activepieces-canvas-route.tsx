@@ -3,6 +3,7 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { QueryState } from "@/components/stage3-shared";
+import { Button } from "@/components/ui/button";
 import { ActivepiecesCanvasWrapper } from "./activepieces-canvas-wrapper";
 import { BuilderUnavailableState } from "./builder-unavailable-state";
 import { useActivepiecesSession } from "./use-activepieces-session";
@@ -26,6 +27,10 @@ export function ActivepiecesCanvasRoute({
   const recoveryRetriesRef = React.useRef(0);
   const [canvasFailure, setCanvasFailure] =
     React.useState<ReturnType<typeof buildCanvasFailure> | null>(null);
+  const [runState, setRunState] = React.useState<{
+    readonly status: "idle" | "running" | "success" | "error";
+    readonly message: string | null;
+  }>({ status: "idle", message: null });
   const safeSession =
     state.phase === "available" ? state.session : null;
   const canonicalReplacementRoute =
@@ -75,6 +80,30 @@ export function ActivepiecesCanvasRoute({
     void requestSession("retry");
   }, [requestSession]);
 
+  const handleStartDryRun = React.useCallback(() => {
+    setRunState({ status: "running", message: "Запускаем dry-run..." });
+    void apiClient
+      .startAutomationRun(automationId, {
+        mode: "dry_run",
+        idempotencyKey: `canvas-run:${automationId}:${Date.now()}`,
+      })
+      .then((response) => {
+        setRunState({
+          status: "success",
+          message: `Запуск создан: ${response.runId} (${response.status})`,
+        });
+      })
+      .catch((error) => {
+        setRunState({
+          status: "error",
+          message:
+            error instanceof Error
+              ? error.message
+              : "Не удалось запустить automation dry-run.",
+        });
+      });
+  }, [apiClient, automationId]);
+
   React.useEffect(() => {
     if (canonicalReplacementRoute) {
       router.replace(canonicalReplacementRoute);
@@ -86,6 +115,26 @@ export function ActivepiecesCanvasRoute({
       aria-label="Конструктор автоматизаций"
       className="h-screen min-h-0 overflow-hidden bg-[color:var(--lf-bg-app)]"
     >
+      <div className="absolute right-5 top-5 z-20 flex max-w-[min(520px,calc(100%-2.5rem))] flex-wrap items-center justify-end gap-2 rounded-[18px] border border-[color:var(--lf-border)] bg-[color:var(--lf-bg-card)]/90 p-2 text-sm shadow-[var(--lf-shadow-card)] backdrop-blur">
+        {runState.message ? (
+          <span
+            className={
+              runState.status === "error"
+                ? "text-[color:var(--lf-danger)]"
+                : "text-[color:var(--lf-text-secondary)]"
+            }
+          >
+            {runState.message}
+          </span>
+        ) : null}
+        <Button
+          type="button"
+          disabled={runState.status === "running"}
+          onClick={handleStartDryRun}
+        >
+          {runState.status === "running" ? "Запускаем..." : "Запустить dry-run"}
+        </Button>
+      </div>
       <CanvasPane
         sessionState={state}
         canvasFailure={canvasFailure}

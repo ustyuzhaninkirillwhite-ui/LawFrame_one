@@ -1,6 +1,7 @@
 import type {
   CompleteUploadRequest,
   CreateDocumentVersionUploadIntentRequest,
+  DocumentUploadContentRequest,
   DocumentKind,
   DocumentListQuery,
   DocumentObjectRole,
@@ -144,6 +145,30 @@ export class DocumentsController {
       documentId,
       versionId,
       parseCompleteUploadRequest(body),
+      requestMeta(request),
+    );
+  }
+
+  @Post(':documentId/versions/:versionId/content')
+  @HttpCode(200)
+  @RequiredPermissions('document.upload')
+  uploadVersionContent(
+    @LexframeRequestContext() context: LexframeRequest['lexframe'],
+    @Param('documentId') documentId: string,
+    @Param('versionId') versionId: string,
+    @Body() body: unknown,
+    @Req() request: LexframeRequest,
+  ) {
+    if (!context?.actor || !context.access) {
+      throw new Error('Workspace access context was not attached.');
+    }
+
+    return this.documentsService.uploadVersionContent(
+      context.actor,
+      context.access,
+      documentId,
+      versionId,
+      parseDocumentUploadContentRequest(body),
       requestMeta(request),
     );
   }
@@ -349,6 +374,29 @@ function parseCompleteUploadRequest(body: unknown): CompleteUploadRequest {
     ),
     ...(typeof value.sha256 === 'string' && value.sha256.trim().length > 0
       ? { sha256: value.sha256.trim() }
+      : {}),
+  };
+}
+
+function parseDocumentUploadContentRequest(
+  body: unknown,
+): DocumentUploadContentRequest {
+  const value = asRecord(body);
+  return {
+    contentBase64: expectString(
+      value.contentBase64,
+      'Upload content must include base64 file bytes.',
+    ),
+    clientReportedSize: expectPositiveNumber(
+      value.clientReportedSize,
+      'Client-reported size must be a positive number.',
+    ),
+    clientReportedMimeType: expectString(
+      value.clientReportedMimeType,
+      'Client-reported MIME type is required.',
+    ),
+    ...(typeof value.sha256 === 'string' || value.sha256 === null
+      ? { sha256: value.sha256 }
       : {}),
   };
 }

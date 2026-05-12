@@ -659,6 +659,8 @@ export class AIGatewayService {
           latencyMs: 0,
           contentChunkCount: 0,
           reasoningChunkCount: 0,
+          attemptCount: 0,
+          retryReason: null,
           status: null,
           errorClass: route.blocked
             ? 'AI_ROUTE_BLOCKED'

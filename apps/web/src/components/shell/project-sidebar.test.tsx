@@ -4,6 +4,16 @@ import { ProjectSidebar } from "./project-sidebar";
 
 const push = vi.fn();
 const searchChats = vi.fn();
+let projectChats: readonly {
+  readonly id: string;
+  readonly projectId: string;
+  readonly title: string;
+  readonly status: "active";
+  readonly lastMessagePreview: string | null;
+  readonly selectedDocumentIds: readonly string[];
+  readonly linkedAutomationId: string | null;
+  readonly updatedAt: string;
+}[] = [];
 let pathname = "/app/connectors";
 
 vi.mock("next/navigation", () => ({
@@ -56,7 +66,7 @@ vi.mock("@/hooks/domain/stage15", () => ({
     isPending: false,
     mutateAsync: vi.fn(),
   }),
-  useStage15ProjectChats: () => ({ data: [] }),
+  useStage15ProjectChats: () => ({ data: projectChats, isLoading: false, error: null }),
   useStage15Projects: () => ({
     data: {
       items: [
@@ -93,6 +103,18 @@ describe("ProjectSidebar", () => {
     searchChats.mockReset();
     createChat.mockClear();
     pathname = "/app/connectors";
+    projectChats = [
+      {
+        id: "chat_project_recent",
+        projectId: "project_claim_001",
+        title: "Проектный чат из DB",
+        status: "active",
+        lastMessagePreview: "Последний вопрос в чате",
+        selectedDocumentIds: [],
+        linkedAutomationId: null,
+        updatedAt: "2026-05-08T10:00:00.000Z",
+      },
+    ];
     searchChats.mockResolvedValue({
       items: [
         {
@@ -134,7 +156,10 @@ describe("ProjectSidebar", () => {
 
     expect(screen.getByRole("button", { name: "Новый чат" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Поиск в чатах" })).toBeInTheDocument();
-    expect(await screen.findByRole("link", { name: "Проверка позиции по делу" })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("link", { name: "Проектный чат из DB" }),
+    ).toBeInTheDocument();
+    expect(searchChats).not.toHaveBeenCalled();
   });
 
   it("orders chat, tools, project, and automation blocks", async () => {
@@ -170,13 +195,17 @@ describe("ProjectSidebar", () => {
     expect(precedes(pulse, library)).toBe(true);
   });
 
-  it("opens a recent chat from the workspace chat list", async () => {
+  it("opens a recent chat from the project-scoped chat list", async () => {
     render(<ProjectSidebar />);
 
-    fireEvent.click(await screen.findByRole("link", { name: "Проверка позиции по делу" }));
+    fireEvent.click(
+      await screen.findByRole("link", { name: "Проектный чат из DB" }),
+    );
 
     await waitFor(() => {
-      expect(push).toHaveBeenCalledWith("/app/projects/project_claim_001/chats/chat_1");
+      expect(push).toHaveBeenCalledWith(
+        "/app/projects/project_claim_001/chats/chat_project_recent",
+      );
     });
   });
 });

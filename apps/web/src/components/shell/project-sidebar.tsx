@@ -1,6 +1,10 @@
 "use client";
 
-import type { ChatSearchResult, Stage15ProjectSummary } from "@lexframe/contracts";
+import type {
+  ChatSearchResult,
+  Stage15ProjectChatSummary,
+  Stage15ProjectSummary,
+} from "@lexframe/contracts";
 import {
   Cable,
   ChevronDown,
@@ -28,6 +32,7 @@ import { Button } from "@/components/ui/button";
 import {
   useCreateStage15Project,
   useCreateStage15ProjectChat,
+  useStage15ProjectChats,
   useStage15Projects,
 } from "@/hooks/domain/stage15";
 import { useNotifications } from "@/hooks/use-stage0-data";
@@ -59,9 +64,6 @@ export function ProjectSidebar({
   const [searching, setSearching] = React.useState(false);
   const [searchError, setSearchError] = React.useState<string | null>(null);
   const [toolsOpen, setToolsOpen] = React.useState(false);
-  const [recentChats, setRecentChats] = React.useState<readonly ChatSearchResult[]>([]);
-  const [recentChatsLoading, setRecentChatsLoading] = React.useState(false);
-  const [recentChatsError, setRecentChatsError] = React.useState<string | null>(null);
 
   const projectsQuery = useStage15Projects();
   const projects = projectsQuery.data?.items ?? [];
@@ -89,6 +91,22 @@ export function ProjectSidebar({
     [notifications.data?.items],
   );
   const createChat = useCreateStage15ProjectChat(activeProjectId);
+  const projectChatsQuery = useStage15ProjectChats(activeProjectId);
+  const recentChats = React.useMemo(
+    () =>
+      canSearchChats
+        ? (projectChatsQuery.data ?? []).map((chat) =>
+            mapProjectChatToSearchResult(
+              chat,
+              sessionContext.activeWorkspace?.id ?? "",
+            ),
+          )
+        : [],
+    [canSearchChats, projectChatsQuery.data, sessionContext.activeWorkspace?.id],
+  );
+  const recentChatsError = projectChatsQuery.error
+    ? "Чаты временно недоступны."
+    : null;
   const createProject = useCreateStage15Project();
   const themeToggleLabel =
     theme === "dark" ? "Включить светлую тему" : "Включить тёмную тему";
@@ -107,41 +125,6 @@ export function ProjectSidebar({
 
     return () => window.clearTimeout(timeoutId);
   }, [pathname]);
-
-  React.useEffect(() => {
-    let cancelled = false;
-
-    if (!canSearchChats) {
-      setRecentChats([]);
-      setRecentChatsError(null);
-      return;
-    }
-
-    setRecentChatsLoading(true);
-    setRecentChatsError(null);
-
-    void apiClient
-      .searchChats({ q: "" })
-      .then((response) => {
-        if (!cancelled) {
-          setRecentChats(response.items);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setRecentChatsError("Чаты временно недоступны.");
-        }
-      })
-      .finally(() => {
-        if (!cancelled) {
-          setRecentChatsLoading(false);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [apiClient, canSearchChats, sessionContext.activeWorkspace?.id]);
 
   const handleCreateChat = async () => {
     if (!activeProjectId) {
@@ -250,7 +233,7 @@ export function ProjectSidebar({
             activeProjectId={activeProjectId}
             chats={recentChats}
             error={recentChatsError}
-            loading={recentChatsLoading}
+            loading={canSearchChats && projectChatsQuery.isLoading}
             onOpenChat={openChatResult}
           />
         </SidebarSection>
@@ -648,6 +631,33 @@ function RecentChatsList({
       ))}
     </div>
   );
+}
+
+function mapProjectChatToSearchResult(
+  chat: Stage15ProjectChatSummary,
+  workspaceId: string,
+): ChatSearchResult {
+  return {
+    thread: {
+      id: chat.id,
+      workspaceId,
+      projectId: chat.projectId,
+      kind: "project",
+      visibility: "project",
+      status: chat.status === "active" ? "active" : "archived",
+      title: chat.title,
+      lastMessagePreview: chat.lastMessagePreview,
+      currentBranchId: null,
+      createdBy: null,
+      createdAt: chat.updatedAt,
+      updatedAt: chat.updatedAt,
+      archivedAt: null,
+      deletedAt: null,
+    },
+    messageId: null,
+    snippet: chat.lastMessagePreview,
+    classification: null,
+  };
 }
 
 function RecentChatLink({

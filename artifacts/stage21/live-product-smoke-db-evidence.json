@@ -1,32 +1,32 @@
 {
-  "generatedAt": "2026-05-10T10:39:39.461Z",
+  "generatedAt": "2026-05-10T11:38:37.926Z",
   "domainEvidence": {
     "settings": {
       "status": "PASS",
       "profile": {
-        "id": "437605b9-0bbd-109a-04d7-ad01c63f310a",
-        "email": "stage21-live-1778409556079@lexframe.local",
+        "id": "99f53f94-b38c-0d5a-3fa4-3d23d9226fbb",
+        "email": "stage21-live-1778413088983@lexframe.local",
         "displayName": "Stage21 Live Smoke Updated",
-        "updatedAt": "2026-05-10 10:39:34.579987+00"
+        "updatedAt": "2026-05-10 11:38:33.354012+00"
       },
       "workspace": {
-        "id": "cf25792f-90fe-4c23-aed0-236fddb8f1ac",
-        "organizationDisplayName": "Stage21 Org 1778409558228",
-        "updatedAt": "2026-05-10 10:39:18.353027+00"
+        "id": "a719885c-12b5-4f92-9231-8ce3ad84d0b6",
+        "organizationDisplayName": "Stage21 Org 1778413091503",
+        "updatedAt": "2026-05-10 11:38:11.611829+00"
       },
       "aiSettings": {
-        "connectionId": "27431b45-7be0-4f53-a2ab-a94227bd11be",
+        "connectionId": "99d113e3-daf0-42fa-9def-e9759b1b7019",
         "provider": "cometapi",
         "baseUrl": "https://api.cometapi.com/v1",
         "modelId": "deepseek-v4-pro",
-        "secretRefId": "b3212979-e0a2-4132-a87a-4faf742d3dab",
+        "secretRefId": "348e2779-1956-449c-a6e3-89ee671e9ec6",
         "secretBackend": "dev_mock",
         "secretFingerprint": "sha256:4a1292be31b313a7",
         "rawSecretInProductDb": false
       },
       "routePreference": {
         "routeGroup": "chat_ai",
-        "providerConnectionId": "27431b45-7be0-4f53-a2ab-a94227bd11be",
+        "providerConnectionId": "99d113e3-daf0-42fa-9def-e9759b1b7019",
         "modelId": "deepseek-v4-pro",
         "capabilitiesConfirmed": {
           "jsonMode": true,
@@ -38,34 +38,34 @@
     },
     "projects": {
       "status": "PASS",
-      "projectId": "project_3eede482ff9a4a01ac3ccbf35795483d",
-      "workspaceId": "cf25792f-90fe-4c23-aed0-236fddb8f1ac",
-      "name": "Stage21 Live 1778409560037",
+      "projectId": "project_307f0e84d3ce4dcb95dda0c273f196be",
+      "workspaceId": "a719885c-12b5-4f92-9231-8ce3ad84d0b6",
+      "name": "Stage21 Live 1778413102732",
       "projectStatus": "active",
-      "updatedAt": "2026-05-10 10:39:20.204221+00"
+      "updatedAt": "2026-05-10 11:38:22.874237+00"
     },
     "chat": {
       "status": "PASS",
-      "threadId": "c24900d0-135b-4ba7-8622-0088cb9ea8b7",
-      "projectId": "project_3eede482ff9a4a01ac3ccbf35795483d",
-      "userMessageId": "3bc99342-3d2c-43fd-8805-aed5811f3dd4",
-      "assistantMessageId": "7538ac20-3a5d-43ee-b909-33833c2d7ee7",
+      "threadId": "8328499a-7976-4d50-9002-78343fcf8ffd",
+      "projectId": "project_307f0e84d3ce4dcb95dda0c273f196be",
+      "userMessageId": "e23da80c-6a68-4909-bb33-b23e972db3a6",
+      "assistantMessageId": "4cf5cc05-46c6-4aa8-b25c-5c9f8c612e86",
       "markerPersisted": true,
       "controlledFailurePersisted": false,
-      "streamJobId": "2a9bae92-7bcb-4177-b5e2-c8a8d742dcc9",
+      "streamJobId": "1a8cb78d-60cd-4268-8867-c507c18f3824",
       "streamJobStatus": "completed"
     },
     "automations": {
       "status": "PASS",
-      "automationId": "7081ca3b-e20c-4d17-8ed3-0ebee147f32d",
+      "automationId": "e0641711-c56e-4636-9e2b-c331e6cbad34",
       "readinessStatus": "ready",
       "readinessCode": "READY",
       "installedAutomation": {
-        "id": "7081ca3b-e20c-4d17-8ed3-0ebee147f32d",
+        "id": "e0641711-c56e-4636-9e2b-c331e6cbad34",
         "builderState": "ready",
         "syncState": "synced",
-        "runtimeProjectId": "lfpdd6c686465c3e2893b",
-        "runtimeFlowId": "lff2c5da99318f7408c74"
+        "runtimeProjectId": "lfpd8805c780a1cea803a",
+        "runtimeFlowId": "lff527b87e695fd891187"
       },
       "projectBindingRows": 1,
       "userBindingRows": 1,
@@ -73,8 +73,8 @@
       "sessionRows": 1,
       "sessions": [
         {
-          "id": "435dc6c2-c512-42fa-abd6-ea7af39eb1fd",
-          "sessionId": "435dc6c2-c512-42fa-abd6-ea7af39eb1fd",
+          "id": "d71b6331-7abc-4479-8b2e-268b3a986079",
+          "sessionId": "d71b6331-7abc-4479-8b2e-268b3a986079",
           "status": "issued",
           "mode": "iframe_embed",
           "hasTokenHash": true,
@@ -92,7 +92,7 @@
         "activepieces_embed_sessions",
         "audit_events"
       ],
-      "scannedRows": 162,
+      "scannedRows": 166,
       "rawSecretHits": 0,
       "rawSecretInProductDb": false
     }
@@ -112,7 +112,7 @@
       "chat.message.created",
       "chat.message.stream_completed",
       "chat.thread.created",
-      "settings.ai.connection.test.completed",
+      "settings.ai.connection.test.failed",
       "settings.ai.connection.test.started",
       "settings.ai.provider_connection.created",
       "settings.ai.route_group.preference.updated",

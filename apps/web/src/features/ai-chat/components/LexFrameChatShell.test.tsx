@@ -5,6 +5,7 @@ import { LexFrameChatShell } from "./LexFrameChatShell";
 
 const mocks = vi.hoisted(() => ({
   push: vi.fn(),
+  invalidateQueries: vi.fn(),
   chatApi: {
     listProjectThreads: vi.fn(),
     createProjectThread: vi.fn(),
@@ -23,12 +24,19 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: mocks.push }),
 }));
 
+vi.mock("@tanstack/react-query", () => ({
+  useQueryClient: () => ({
+    invalidateQueries: mocks.invalidateQueries,
+  }),
+}));
+
 vi.mock("@/providers/session-provider", () => ({
   useSessionBridge: () => ({
     apiClient: {
       createAutomationIntent: vi.fn(),
     },
     sessionContext: {
+      activeWorkspace: { id: "ws_1" },
       permissions: ["chat.create", "automation_builder.create_intent"],
     },
   }),
@@ -71,6 +79,7 @@ describe("LexFrameChatShell", () => {
 
   beforeEach(() => {
     mocks.push.mockReset();
+    mocks.invalidateQueries.mockReset();
     for (const apiMock of Object.values(mocks.chatApi)) {
       apiMock.mockReset();
     }
@@ -166,6 +175,9 @@ describe("LexFrameChatShell", () => {
     await waitFor(() => {
       expect(mocks.chatApi.listMessages).toHaveBeenCalledTimes(2);
     });
+    expect(mocks.invalidateQueries).toHaveBeenCalledWith({
+      queryKey: ["stage15-project-chats", "ws_1", "project_claim_001"],
+    });
   });
 
   it("renders the successful stream snapshot while persisted messages refresh", async () => {
@@ -205,6 +217,9 @@ describe("LexFrameChatShell", () => {
     expect(
       document.querySelector('[data-message-role="assistant"]'),
     ).toBeInTheDocument();
+    expect(mocks.invalidateQueries).toHaveBeenCalledWith({
+      queryKey: ["stage15-project-chats", "ws_1", "project_claim_001"],
+    });
   });
 
   it("does not let a stale initial message load erase a completed assistant response", async () => {

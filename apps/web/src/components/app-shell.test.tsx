@@ -29,6 +29,8 @@ describe("AppShell", () => {
 
   beforeEach(() => {
     navigation.pathname = "/app/connectors";
+    window.sessionStorage.clear();
+    window.localStorage.clear();
   });
 
   it("keeps the global floating composer on non-chat app routes", () => {
@@ -51,5 +53,24 @@ describe("AppShell", () => {
     );
 
     expect(screen.queryByText("Global floating composer")).not.toBeInTheDocument();
+  });
+
+  it("clears stale Activepieces browser tokens outside the embed route", () => {
+    window.sessionStorage.setItem(
+      "token",
+      [
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
+        "eyJpc3MiOiJhY3RpdmVwaWVjZXMiLCJ0eXBlIjoiQUNDRVNTIn0",
+        "signature",
+      ].join("."),
+    );
+
+    render(
+      <AppShell>
+        <div>Content</div>
+      </AppShell>,
+    );
+
+    expect(window.sessionStorage.getItem("token")).toBeNull();
   });
 });

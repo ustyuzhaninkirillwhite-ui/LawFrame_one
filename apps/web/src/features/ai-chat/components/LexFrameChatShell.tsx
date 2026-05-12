@@ -1,6 +1,7 @@
 "use client";
 
 import type { ChatMessageDto, ChatStreamSnapshot } from "@lexframe/contracts";
+import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import * as React from "react";
 import { useSessionBridge } from "@/providers/session-provider";
@@ -16,6 +17,7 @@ export function LexFrameChatShell({
   readonly initialThreadId: string | null;
 }) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { apiClient, sessionContext } = useSessionBridge();
   const chatApi = React.useMemo(() => createLexFrameChatApi(apiClient), [apiClient]);
   const [messages, setMessages] = React.useState<ChatMessageDto[]>([]);
@@ -32,6 +34,24 @@ export function LexFrameChatShell({
   const canCreateAutomation = sessionContext.permissions.includes(
     "automation_builder.create_intent",
   );
+  const invalidateProjectChatSurfaces = React.useCallback(() => {
+    const workspaceId = sessionContext.activeWorkspace?.id;
+    if (!workspaceId || !projectId) {
+      return;
+    }
+
+    void Promise.all([
+      queryClient.invalidateQueries({
+        queryKey: ["stage15-project-chats", workspaceId, projectId],
+      }),
+      queryClient.invalidateQueries({
+        queryKey: ["stage15-project-snapshot", workspaceId, projectId],
+      }),
+      queryClient.invalidateQueries({
+        queryKey: ["stage15-projects", workspaceId],
+      }),
+    ]);
+  }, [projectId, queryClient, sessionContext.activeWorkspace?.id]);
 
   const loadMessages = React.useCallback(
     async (threadId: string | null) => {
@@ -110,9 +130,17 @@ export function LexFrameChatShell({
         }
       } finally {
         setIsRunning(false);
+        invalidateProjectChatSurfaces();
       }
     },
-    [activeThreadId, chatApi, loadMessages, projectId, router],
+    [
+      activeThreadId,
+      chatApi,
+      invalidateProjectChatSurfaces,
+      loadMessages,
+      projectId,
+      router,
+    ],
   );
 
   const cancelStream = React.useCallback(() => {

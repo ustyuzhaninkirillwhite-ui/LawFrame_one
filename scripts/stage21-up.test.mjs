@@ -28,6 +28,8 @@ test("stage21-up builds the existing integrated compose runtime with Stage 21 id
     LEXFRAME_RELEASE_SHA: "local-stage21",
     LEXFRAME_RUNTIME_IMAGE_TAG: "stage21-local",
     NEXT_PUBLIC_CONTRACTS_VERSION: "stage21",
+    ACTIVEPIECES_IMAGE_TAG: "0.82.0",
+    ACTIVEPIECES_EMBED_SDK_VERSION: "0.9.0",
   });
 
   assert.deepEqual(stage21Up.buildStage21ComposeArgs("up", ["--wait"]), [
@@ -40,7 +42,6 @@ test("stage21-up builds the existing integrated compose runtime with Stage 21 id
     "local-integrated",
     "up",
     "-d",
-    "--build",
     "--wait",
   ]);
 });
@@ -70,6 +71,19 @@ test("integrated compose runtime keeps compatibility names but allows Stage 21 v
   assert.match(
     compose,
     /image:\s+lexframe-web:\$\{LEXFRAME_RUNTIME_IMAGE_TAG:-stage17-local\}/,
+  );
+});
+
+test("integrated compose runtime passes the backend-only CometAPI key alias", () => {
+  const compose = readFileSync(
+    join(repoRoot, "infra", "docker", "docker-compose.stage17.local-integrated.yml"),
+    "utf8",
+  );
+
+  assert.match(compose, /COMETAPI_KEY:\s+\$\{COMETAPI_KEY:-\}/);
+  assert.match(
+    compose,
+    /COMETAPI_API_KEY:\s+\$\{COMETAPI_API_KEY:-stage0_comet_api_key\}/,
   );
 });
 

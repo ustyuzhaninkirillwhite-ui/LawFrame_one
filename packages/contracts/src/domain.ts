@@ -1341,6 +1341,19 @@ export interface CompleteUploadRequest {
   readonly sha256?: string | null;
 }
 
+export interface DocumentUploadContentRequest {
+  readonly contentBase64: string;
+  readonly clientReportedSize: number;
+  readonly clientReportedMimeType: string;
+  readonly sha256?: string | null;
+}
+
+export interface DocumentUploadContentResponse {
+  readonly sha256: string;
+  readonly sizeBytes: number;
+  readonly mimeType: string;
+}
+
 export interface SignedUrlRequest {
   readonly versionId?: string;
   readonly objectRole: DocumentObjectRole;

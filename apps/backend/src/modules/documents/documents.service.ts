@@ -18,6 +18,8 @@ import type {
   DocumentStatus,
   DocumentStorageObject,
   DocumentSummary,
+  DocumentUploadContentRequest,
+  DocumentUploadContentResponse,
   DocumentUploadIntentRequest,
   DocumentUploadIntentResponse,
   DocumentVersionSummary,
@@ -34,7 +36,7 @@ import type { PoolClient } from 'pg';
 import { AppHttpException } from '../../common/errors/app-http.exception';
 import { loadServerEnv } from '@lexframe/config';
 import { Injectable } from '@nestjs/common';
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { AuditService } from '../audit/audit.service';
 import { DatabaseService } from '../database/database.service';
 import { LiveEventsService } from '../realtime/live-events.service';
@@ -736,6 +738,69 @@ export class DocumentsService {
     });
 
     return this.getDetail(access, documentId);
+  }
+
+  async uploadVersionContent(
+    actor: AuthenticatedActor,
+    access: AccessContext,
+    documentId: string,
+    versionId: string,
+    input: DocumentUploadContentRequest,
+    meta: RequestMeta,
+  ): Promise<DocumentUploadContentResponse> {
+    await this.getExistingVersion(
+      documentId,
+      versionId,
+      access.activeWorkspace!.id,
+    );
+    this.assertMimeAllowed(input.clientReportedMimeType);
+    this.assertSizeAllowed(input.clientReportedSize);
+
+    const bytes = decodeBase64Content(input.contentBase64);
+    if (bytes.byteLength !== input.clientReportedSize) {
+      throw new AppHttpException(
+        'DOCUMENT_UPLOAD_SIZE_MISMATCH',
+        400,
+        'Uploaded file bytes do not match the reported size.',
+        {
+          reportedSize: input.clientReportedSize,
+          receivedSize: bytes.byteLength,
+        },
+      );
+    }
+
+    const sha256 = createHash('sha256').update(bytes).digest('hex');
+    if (input.sha256 && input.sha256 !== sha256) {
+      throw new AppHttpException(
+        'DOCUMENT_UPLOAD_HASH_MISMATCH',
+        400,
+        'Uploaded file bytes do not match the reported content hash.',
+      );
+    }
+
+    await this.auditService.record({
+      actorUserId: actor.id,
+      actorEmail: actor.email,
+      workspaceId: access.activeWorkspace!.id,
+      action: 'document.version.content_received',
+      entityType: 'document_version',
+      entityId: versionId,
+      result: 'success',
+      requestId: meta.requestId,
+      traceId: meta.traceId,
+      metadata: {
+        documentId,
+        mimeType: input.clientReportedMimeType,
+        sizeBytes: bytes.byteLength,
+        sha256,
+      },
+    });
+
+    return {
+      sha256,
+      sizeBytes: bytes.byteLength,
+      mimeType: input.clientReportedMimeType,
+    };
   }
 
   async makeCurrent(
@@ -2042,6 +2107,27 @@ export class DocumentsService {
       );
     }
   }
+}
+
+function decodeBase64Content(value: string): Buffer {
+  if (!/^[A-Za-z0-9+/]+={0,2}$/.test(value) || value.length % 4 !== 0) {
+    throw new AppHttpException(
+      'DOCUMENT_UPLOAD_CONTENT_INVALID',
+      400,
+      'Uploaded file content must be valid base64.',
+    );
+  }
+
+  const buffer = Buffer.from(value, 'base64');
+  if (buffer.toString('base64') !== value) {
+    throw new AppHttpException(
+      'DOCUMENT_UPLOAD_CONTENT_INVALID',
+      400,
+      'Uploaded file content must be canonical base64.',
+    );
+  }
+
+  return buffer;
 }
 
 function mapSummaryRow(row: DocumentSummaryRow): DocumentSummary {

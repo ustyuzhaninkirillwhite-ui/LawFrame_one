@@ -151,6 +151,100 @@ describe('DocumentsService', () => {
     });
   });
 
+  it('validates uploaded file bytes and records only safe content metadata', async () => {
+    const { service, databaseService, auditService } = createService();
+
+    databaseService.one.mockResolvedValue({
+      id: 'docv_uploaded',
+      document_id: 'doc_uploaded',
+      storage_bucket: 'documents-private',
+      storage_path:
+        'workspace/ws/documents/doc_uploaded/versions/docv_uploaded/original/evidence.txt',
+      status: 'upload_pending',
+      mime_type: 'text/plain',
+      original_filename: 'evidence.txt',
+      scan_status: 'queued',
+      preview_status: 'queued',
+      extraction_status: 'queued',
+    });
+
+    const result = await service.uploadVersionContent(
+      actor,
+      access,
+      'doc_uploaded',
+      'docv_uploaded',
+      {
+        contentBase64: 'aGVsbG8=',
+        clientReportedMimeType: 'text/plain',
+        clientReportedSize: 5,
+      },
+      {
+        requestId: 'req_content',
+        traceId: 'trace_content',
+      },
+    );
+
+    expect(result).toEqual({
+      sha256:
+        '2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824',
+      sizeBytes: 5,
+      mimeType: 'text/plain',
+    });
+    expect(auditService.record).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'document.version.content_received',
+        metadata: expect.objectContaining({
+          documentId: 'doc_uploaded',
+          sizeBytes: 5,
+          mimeType: 'text/plain',
+          sha256:
+            '2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824',
+        }),
+      }),
+    );
+    expect(JSON.stringify(auditService.record.mock.calls)).not.toContain(
+      'aGVsbG8=',
+    );
+  });
+
+  it('rejects content upload when reported size does not match received bytes', async () => {
+    const { service, databaseService } = createService();
+
+    databaseService.one.mockResolvedValue({
+      id: 'docv_uploaded',
+      document_id: 'doc_uploaded',
+      storage_bucket: 'documents-private',
+      storage_path:
+        'workspace/ws/documents/doc_uploaded/versions/docv_uploaded/original/evidence.txt',
+      status: 'upload_pending',
+      mime_type: 'text/plain',
+      original_filename: 'evidence.txt',
+      scan_status: 'queued',
+      preview_status: 'queued',
+      extraction_status: 'queued',
+    });
+
+    await expectAppError(
+      service.uploadVersionContent(
+        actor,
+        access,
+        'doc_uploaded',
+        'docv_uploaded',
+        {
+          contentBase64: 'aGVsbG8=',
+          clientReportedMimeType: 'text/plain',
+          clientReportedSize: 6,
+        },
+        {
+          requestId: 'req_content',
+          traceId: 'trace_content',
+        },
+      ),
+      'DOCUMENT_UPLOAD_SIZE_MISMATCH',
+      400,
+    );
+  });
+
   it('creates run artifacts after the document version exists and only then marks it current', async () => {
     const { service, databaseService, auditService, liveEventsService } =
       createService();

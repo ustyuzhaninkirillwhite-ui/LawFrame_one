@@ -62,6 +62,7 @@ export function UploadDialog({ onUploaded }: UploadDialogProps) {
   const [lastDocumentId, setLastDocumentId] = React.useState<string | null>(
     null,
   );
+  const [selectedFile, setSelectedFile] = React.useState<File | null>(null);
   const [form, setForm] = React.useState({
     title: "New evidence package",
     description: "Stage 2 demo upload contract",
@@ -79,6 +80,9 @@ export function UploadDialog({ onUploaded }: UploadDialogProps) {
     setError(null);
 
     try {
+      if (!selectedFile) {
+        throw new Error("Select a file before starting upload.");
+      }
       const sizeBytes = Number(form.sizeBytes);
       const payload: DocumentUploadIntentRequest = {
         title: form.title.trim(),
@@ -95,16 +99,27 @@ export function UploadDialog({ onUploaded }: UploadDialogProps) {
       };
 
       const intent = await apiClient.createDocumentUploadIntent(payload);
+      const content = await apiClient.uploadDocumentVersionContent(
+        intent.documentId,
+        intent.versionId,
+        {
+          contentBase64: await fileToBase64(selectedFile),
+          clientReportedSize: sizeBytes,
+          clientReportedMimeType: form.mimeType,
+        },
+      );
       await apiClient.completeDocumentUpload(
         intent.documentId,
         intent.versionId,
         {
           clientReportedSize: sizeBytes,
           clientReportedMimeType: form.mimeType,
+          sha256: content.sha256,
         },
       );
 
       setLastDocumentId(intent.documentId);
+      setSelectedFile(null);
       setOpen(false);
       onUploaded?.(intent.documentId);
 
@@ -197,6 +212,38 @@ export function UploadDialog({ onUploaded }: UploadDialogProps) {
               />
             </div>
 
+            <label className="grid gap-2 rounded-[18px] border border-[color:var(--line)] bg-white/3 p-3 text-sm">
+              <span className="text-[color:var(--muted-strong)]">
+                Select file
+              </span>
+              <input
+                type="file"
+                aria-label="Select file"
+                onChange={(event) => {
+                  const file = event.target.files?.[0] ?? null;
+                  setSelectedFile(file);
+                  if (!file) {
+                    return;
+                  }
+                  setForm((current) => ({
+                    ...current,
+                    title:
+                      current.title === "New evidence package"
+                        ? file.name.replace(/\.[^.]+$/, "") || file.name
+                        : current.title,
+                    originalFilename: file.name,
+                    mimeType: file.type || "application/octet-stream",
+                    sizeBytes: String(file.size),
+                  }));
+                }}
+              />
+              {selectedFile ? (
+                <span className="text-xs text-[color:var(--muted)]">
+                  {selectedFile.name} · {selectedFile.size} bytes
+                </span>
+              ) : null}
+            </label>
+
             <textarea
               className="min-h-24 rounded-[22px] border border-[color:var(--line)] bg-white/4 px-4 py-3 text-sm text-[color:var(--foreground)] outline-none transition focus:border-[color:var(--accent)]"
               value={form.description}
@@ -284,7 +331,7 @@ export function UploadDialog({ onUploaded }: UploadDialogProps) {
 
             <div className="flex justify-end">
               <Button disabled={submitting} type="submit">
-                {submitting ? "Submitting…" : "Issue intent and complete"}
+                {submitting ? "Uploading..." : "Upload selected file"}
               </Button>
             </div>
           </form>
@@ -292,4 +339,33 @@ export function UploadDialog({ onUploaded }: UploadDialogProps) {
       </CardContent>
     </Card>
   );
+}
+
+async function fileToBase64(file: File): Promise<string> {
+  if (typeof file.arrayBuffer !== "function") {
+    return fileToBase64WithReader(file);
+  }
+
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  const chunkSize = 0x8000;
+  let binary = "";
+
+  for (let index = 0; index < bytes.length; index += chunkSize) {
+    binary += String.fromCharCode(...bytes.subarray(index, index + chunkSize));
+  }
+
+  return window.btoa(binary);
+}
+
+function fileToBase64WithReader(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(reader.error ?? new Error("File read failed."));
+    reader.onload = () => {
+      const result = String(reader.result ?? "");
+      const commaIndex = result.indexOf(",");
+      resolve(commaIndex >= 0 ? result.slice(commaIndex + 1) : result);
+    };
+    reader.readAsDataURL(file);
+  });
 }

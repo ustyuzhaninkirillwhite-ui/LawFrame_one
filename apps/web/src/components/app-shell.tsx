@@ -1,9 +1,10 @@
 "use client";
 
-import type * as React from "react";
+import * as React from "react";
 import { usePathname } from "next/navigation";
 import { FloatingAiComposer } from "@/components/shell/floating-ai-composer";
 import { ProjectSidebar } from "@/components/shell/project-sidebar";
+import { clearActivepiecesBrowserSessionTokens } from "@/features/automation-canvas/activepieces-browser-session";
 import {
   isAutomationCanvasRoute,
   isProjectChatRoute,
@@ -15,8 +16,19 @@ import { SystemStatusBanner } from "./system-status-banner";
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const canvasMode = isAutomationCanvasRoute(pathname);
+  const activepiecesEmbedMode = Boolean(
+    pathname?.match(
+      /^\/app\/projects\/[^/]+\/automations\/[^/]+\/automation\/?$/,
+    ),
+  );
   const projectChatMode = isProjectChatRoute(pathname);
   const projectWorkspaceMode = isProjectWorkspaceRoute(pathname);
+
+  React.useEffect(() => {
+    if (!activepiecesEmbedMode) {
+      clearActivepiecesBrowserSessionTokens();
+    }
+  }, [activepiecesEmbedMode, pathname]);
 
   return (
     <div className="flex min-h-screen bg-[color:var(--lf-bg-app)]">

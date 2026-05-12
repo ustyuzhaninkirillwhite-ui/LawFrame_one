@@ -22,14 +22,14 @@ describe("AiProviderConnectionForm", () => {
       "https://api.cometapi.com/v1",
     );
     expect(screen.getByLabelText("Model id")).toHaveValue(
-      "grok-4-1-fast-non-reasoning",
+      "deepseek-v4-pro",
     );
     expect(screen.queryByDisplayValue(/^sk-/)).not.toBeInTheDocument();
     expect(onChange).toHaveBeenLastCalledWith(
       expect.objectContaining({
         providerCode: "cometapi",
         baseUrl: "https://api.cometapi.com/v1",
-        modelId: "grok-4-1-fast-non-reasoning",
+        modelId: "deepseek-v4-pro",
         apiKey: "",
       }),
     );

@@ -210,7 +210,19 @@ describe('ChatThreadService project chat streaming', () => {
   it('audits a safe stream failure when the backend provider route falls back', async () => {
     const persistedParts: Array<{ readonly role: string; readonly text: string }> =
       [];
-    const databaseService = createDatabaseServiceMock(persistedParts);
+    const persistedStreamJobs: Array<{
+      readonly status: string;
+      readonly messageId: unknown;
+    }> = [];
+    const persistedStreamEvents: Array<{
+      readonly eventType: string;
+      readonly payload: string;
+    }> = [];
+    const databaseService = createDatabaseServiceMock(
+      persistedParts,
+      persistedStreamJobs,
+      persistedStreamEvents,
+    );
     const auditService = { record: jest.fn().mockResolvedValue(undefined) };
     const aiGatewayService = {
       buildStage18StreamFoundation: jest.fn(() => 'event: route_snapshot\n\n'),
@@ -234,6 +246,8 @@ describe('ChatThreadService project chat streaming', () => {
           reasoningChunkCount: 1,
           status: 401,
           errorClass: 'PROVIDER_AUTH_INVALID_TOKEN',
+          attemptCount: 1,
+          retryReason: null,
           requestDescriptor: {
             provider: 'cometapi',
             compatibility: 'openai_chat_completions',
@@ -306,6 +320,19 @@ describe('ChatThreadService project chat streaming', () => {
       text: 'Проверь подключение чата. Верни маркер LEXFRAME_CHAT_SMOKE_OK.',
     });
     expect(persistedParts.some((part) => part.role === 'assistant')).toBe(false);
+    expect(persistedStreamJobs).toContainEqual({
+      status: 'failed',
+      messageId: '00000000-0000-0000-0000-000000000302',
+    });
+    expect(persistedStreamEvents).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ eventType: 'route_snapshot' }),
+        expect.objectContaining({ eventType: 'error' }),
+      ]),
+    );
+    expect(JSON.stringify(persistedStreamEvents)).not.toContain(
+      'abcdef1234567890',
+    );
 
     const failedAudit = auditService.record.mock.calls
       .map(([event]) => event)
@@ -321,6 +348,10 @@ describe('ChatThreadService project chat streaming', () => {
         model: 'deepseek-v4-pro',
         provider_stream_ok: false,
         provider_error_class: 'PROVIDER_AUTH_INVALID_TOKEN',
+        provider_status: 401,
+        content_chunk_count: 0,
+        reasoning_chunk_count: 1,
+        attempt_count: 1,
         error_code: 'AI_GATEWAY_NOT_READY',
         error_status: 503,
         key_fingerprint_prefix: 'sha256:abcdef12',
@@ -332,6 +363,14 @@ describe('ChatThreadService project chat streaming', () => {
 
 function createDatabaseServiceMock(
   persistedParts: Array<{ readonly role: string; readonly text: string }>,
+  persistedStreamJobs: Array<{
+    readonly status: string;
+    readonly messageId: unknown;
+  }> = [],
+  persistedStreamEvents: Array<{
+    readonly eventType: string;
+    readonly payload: string;
+  }> = [],
 ) {
   let lastInsertedRole = 'user';
   let messageSequence = 0;
@@ -393,6 +432,22 @@ function createDatabaseServiceMock(
             },
           ],
         };
+      }
+
+      if (sql.includes('insert into app.chat_stream_jobs')) {
+        persistedStreamJobs.push({
+          messageId: values[3],
+          status: String(values[4]),
+        });
+        return { rows: [] };
+      }
+
+      if (sql.includes('insert into app.chat_stream_events')) {
+        persistedStreamEvents.push({
+          eventType: String(values[3]),
+          payload: String(values[4]),
+        });
+        return { rows: [] };
       }
 
       return { rows: [] };

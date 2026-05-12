@@ -195,6 +195,8 @@ import type {
   DocumentValidationReportDetail,
   DocumentUploadIntentRequest,
   DocumentUploadIntentResponse,
+  DocumentUploadContentRequest,
+  DocumentUploadContentResponse,
   DocumentVersionSummary,
   DsrRequest,
   EffectiveProfilePreview,
@@ -1228,6 +1230,11 @@ export interface ApiClient extends SettingsApi {
     versionId: string,
     input: CompleteUploadRequest,
   ): Promise<DocumentDetail>;
+  uploadDocumentVersionContent(
+    documentId: string,
+    versionId: string,
+    input: DocumentUploadContentRequest,
+  ): Promise<DocumentUploadContentResponse>;
   makeDocumentVersionCurrent(
     documentId: string,
     versionId: string,
@@ -3043,6 +3050,12 @@ export function createApiClient(options: FetchOptions): ApiClient {
       requestJson(
         options,
         `/documents/${documentId}/versions/${versionId}/complete`,
+        withJsonBody(input, { method: "POST" }),
+      ),
+    uploadDocumentVersionContent: (documentId, versionId, input) =>
+      requestJson(
+        options,
+        `/documents/${documentId}/versions/${versionId}/content`,
         withJsonBody(input, { method: "POST" }),
       ),
     makeDocumentVersionCurrent: (documentId, versionId) =>

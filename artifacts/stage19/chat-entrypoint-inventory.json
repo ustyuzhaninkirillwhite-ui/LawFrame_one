@@ -1,4 +1,4 @@
-{
+﻿{
   "status": "pass",
   "items": [
     {
@@ -290,7 +290,7 @@
     {
       "file": "apps/web/src/components/builder-readiness.tsx",
       "line": 138,
-      "excerpt": "error instanceof Error ? error.message : \"Не удалось инициализировать embed SDK.\",",
+      "excerpt": "error instanceof Error ? error.message : \"РќРµ СѓРґР°Р»РѕСЃСЊ РёРЅРёС†РёР°Р»РёР·РёСЂРѕРІР°С‚СЊ embed SDK.\",",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -301,7 +301,7 @@
     {
       "file": "apps/web/src/components/builder-readiness.tsx",
       "line": 246,
-      "excerpt": "{token.error instanceof Error ? token.error.message : \"Неизвестная ошибка токена.\"}",
+      "excerpt": "{token.error instanceof Error ? token.error.message : \"РќРµРёР·РІРµСЃС‚РЅР°СЏ РѕС€РёР±РєР° С‚РѕРєРµРЅР°.\"}",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -367,7 +367,7 @@
     {
       "file": "apps/web/src/components/document-detail-panel.tsx",
       "line": 294,
-      "excerpt": "Новая версия создаёт новую запись и новый storage path, без",
+      "excerpt": "РќРѕРІР°СЏ РІРµСЂСЃРёСЏ СЃРѕР·РґР°С‘С‚ РЅРѕРІСѓСЋ Р·Р°РїРёСЃСЊ Рё РЅРѕРІС‹Р№ storage path, Р±РµР·",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -455,7 +455,7 @@
     {
       "file": "apps/web/src/components/document-picker.tsx",
       "line": 35,
-      "excerpt": "Следующие этапы автоматизации и RAG должны выбирать сущность",
+      "excerpt": "РЎР»РµРґСѓСЋС‰РёРµ СЌС‚Р°РїС‹ Р°РІС‚РѕРјР°С‚РёР·Р°С†РёРё Рё RAG РґРѕР»Р¶РЅС‹ РІС‹Р±РёСЂР°С‚СЊ СЃСѓС‰РЅРѕСЃС‚СЊ",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -598,7 +598,7 @@
     {
       "file": "apps/web/src/components/readiness-map.tsx",
       "line": 17,
-      "excerpt": "Карта показывает, какие контракты уже зафиксированы и какие downstream-функции пока остаются заблокированными.",
+      "excerpt": "РљР°СЂС‚Р° РїРѕРєР°Р·С‹РІР°РµС‚, РєР°РєРёРµ РєРѕРЅС‚СЂР°РєС‚С‹ СѓР¶Рµ Р·Р°С„РёРєСЃРёСЂРѕРІР°РЅС‹ Рё РєР°РєРёРµ downstream-С„СѓРЅРєС†РёРё РїРѕРєР° РѕСЃС‚Р°СЋС‚СЃСЏ Р·Р°Р±Р»РѕРєРёСЂРѕРІР°РЅРЅС‹РјРё.",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -730,7 +730,7 @@
     {
       "file": "apps/web/src/components/run-detail-panel.tsx",
       "line": 76,
-      "excerpt": "{run.data.errorCode}: {run.data.errorMessage ?? \"Ошибка выполнения\"}",
+      "excerpt": "{run.data.errorCode}: {run.data.errorMessage ?? \"РћС€РёР±РєР° РІС‹РїРѕР»РЅРµРЅРёСЏ\"}",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -741,7 +741,7 @@
     {
       "file": "apps/web/src/components/run-detail-panel.tsx",
       "line": 215,
-      "excerpt": "{step.errorCode}: {step.errorMessage ?? \"Ошибка\"}",
+      "excerpt": "{step.errorCode}: {step.errorMessage ?? \"РћС€РёР±РєР°\"}",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -752,7 +752,7 @@
     {
       "file": "apps/web/src/components/run-detail-panel.tsx",
       "line": 310,
-      "excerpt": "получателей {request.recipientEmails.length} • вложений {request.attachmentArtifactIds.length}",
+      "excerpt": "РїРѕР»СѓС‡Р°С‚РµР»РµР№ {request.recipientEmails.length} вЂў РІР»РѕР¶РµРЅРёР№ {request.attachmentArtifactIds.length}",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -851,7 +851,7 @@
     {
       "file": "apps/web/src/components/security-console.tsx",
       "line": 126,
-      "excerpt": "<div>ID запроса: {sessionContext.requestId}</div>",
+      "excerpt": "<div>ID Р·Р°РїСЂРѕСЃР°: {sessionContext.requestId}</div>",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -1082,7 +1082,7 @@
     {
       "file": "apps/web/src/components/stage7-document-admin-panel.tsx",
       "line": 42,
-      "excerpt": "content: [{ type: \"paragraph\", content: [{ type: \"text\", text: \"Введите текст оговорки.\" }] }],",
+      "excerpt": "content: [{ type: \"paragraph\", content: [{ type: \"text\", text: \"Р’РІРµРґРёС‚Рµ С‚РµРєСЃС‚ РѕРіРѕРІРѕСЂРєРё.\" }] }],",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -1104,7 +1104,7 @@
     {
       "file": "apps/web/src/components/system-status-banner.tsx",
       "line": 9,
-      "excerpt": "storage: \"Хранилище недоступно\",",
+      "excerpt": "storage: \"РҐСЂР°РЅРёР»РёС‰Рµ РЅРµРґРѕСЃС‚СѓРїРЅРѕ\",",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -3084,7 +3084,7 @@
     {
       "file": "apps/web/src/lib/mock-contract-api.ts",
       "line": 440,
-      "excerpt": "message: \"Обратная связь сохранена для оценки и будущих решений о подавлении.\",",
+      "excerpt": "message: \"РћР±СЂР°С‚РЅР°СЏ СЃРІСЏР·СЊ СЃРѕС…СЂР°РЅРµРЅР° РґР»СЏ РѕС†РµРЅРєРё Рё Р±СѓРґСѓС‰РёС… СЂРµС€РµРЅРёР№ Рѕ РїРѕРґР°РІР»РµРЅРёРё.\",",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -3106,7 +3106,7 @@
     {
       "file": "apps/web/src/lib/mock-contract-api.ts",
       "line": 496,
-      "excerpt": "blockers: [\"Endpoint подписанных ссылок Supabase Storage не настроен.\"],",
+      "excerpt": "blockers: [\"Endpoint РїРѕРґРїРёСЃР°РЅРЅС‹С… СЃСЃС‹Р»РѕРє Supabase Storage РЅРµ РЅР°СЃС‚СЂРѕРµРЅ.\"],",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -3117,7 +3117,7 @@
     {
       "file": "apps/web/src/lib/mock-contract-api.ts",
       "line": 500,
-      "excerpt": "blockedReasons: [\"Endpoint подписанных ссылок Supabase Storage не настроен.\"],",
+      "excerpt": "blockedReasons: [\"Endpoint РїРѕРґРїРёСЃР°РЅРЅС‹С… СЃСЃС‹Р»РѕРє Supabase Storage РЅРµ РЅР°СЃС‚СЂРѕРµРЅ.\"],",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -3172,7 +3172,7 @@
     {
       "file": "apps/web/src/messages/ru.ts",
       "line": 83,
-      "excerpt": "\"AI Chat\": \"ИИ-чат\",",
+      "excerpt": "\"AI Chat\": \"РР-С‡Р°С‚\",",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -3293,7 +3293,7 @@
     {
       "file": "apps/web/src/messages/ru.ts",
       "line": 321,
-      "excerpt": "\"Раздел исследования держит правовой поиск, подбор источников и RAG на backend, а в интерфейс выводит только безопасные результаты с устойчивыми ссылками.\",",
+      "excerpt": "\"Р Р°Р·РґРµР» РёСЃСЃР»РµРґРѕРІР°РЅРёСЏ РґРµСЂР¶РёС‚ РїСЂР°РІРѕРІРѕР№ РїРѕРёСЃРє, РїРѕРґР±РѕСЂ РёСЃС‚РѕС‡РЅРёРєРѕРІ Рё RAG РЅР° backend, Р° РІ РёРЅС‚РµСЂС„РµР№СЃ РІС‹РІРѕРґРёС‚ С‚РѕР»СЊРєРѕ Р±РµР·РѕРїР°СЃРЅС‹Рµ СЂРµР·СѓР»СЊС‚Р°С‚С‹ СЃ СѓСЃС‚РѕР№С‡РёРІС‹РјРё СЃСЃС‹Р»РєР°РјРё.\",",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -3326,7 +3326,7 @@
     {
       "file": "apps/web/src/messages/ru.ts",
       "line": 375,
-      "excerpt": "\"Этап 6 отделяет правовые источники от файлового хранения, добавляет жизненный цикл и доступ, готовит их к поиску и RAG с проверенными ссылками.\",",
+      "excerpt": "\"Р­С‚Р°Рї 6 РѕС‚РґРµР»СЏРµС‚ РїСЂР°РІРѕРІС‹Рµ РёСЃС‚РѕС‡РЅРёРєРё РѕС‚ С„Р°Р№Р»РѕРІРѕРіРѕ С…СЂР°РЅРµРЅРёСЏ, РґРѕР±Р°РІР»СЏРµС‚ Р¶РёР·РЅРµРЅРЅС‹Р№ С†РёРєР» Рё РґРѕСЃС‚СѓРї, РіРѕС‚РѕРІРёС‚ РёС… Рє РїРѕРёСЃРєСѓ Рё RAG СЃ РїСЂРѕРІРµСЂРµРЅРЅС‹РјРё СЃСЃС‹Р»РєР°РјРё.\",",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -3348,7 +3348,7 @@
     {
       "file": "apps/web/src/messages/ru.ts",
       "line": 380,
-      "excerpt": "\"Страница показывает, как источник пространства перешёл из документного хранения в семантический слой для поиска, runtime и RAG.\",",
+      "excerpt": "\"РЎС‚СЂР°РЅРёС†Р° РїРѕРєР°Р·С‹РІР°РµС‚, РєР°Рє РёСЃС‚РѕС‡РЅРёРє РїСЂРѕСЃС‚СЂР°РЅСЃС‚РІР° РїРµСЂРµС€С‘Р» РёР· РґРѕРєСѓРјРµРЅС‚РЅРѕРіРѕ С…СЂР°РЅРµРЅРёСЏ РІ СЃРµРјР°РЅС‚РёС‡РµСЃРєРёР№ СЃР»РѕР№ РґР»СЏ РїРѕРёСЃРєР°, runtime Рё RAG.\",",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -3359,7 +3359,7 @@
     {
       "file": "apps/web/src/messages/ru.ts",
       "line": 420,
-      "excerpt": "\"Stage 2 Documents / Storage\": \"Этап 2: документы / хранилище\",",
+      "excerpt": "\"Stage 2 Documents / Storage\": \"Р­С‚Р°Рї 2: РґРѕРєСѓРјРµРЅС‚С‹ / С…СЂР°РЅРёР»РёС‰Рµ\",",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -3370,7 +3370,7 @@
     {
       "file": "apps/web/src/messages/ru.ts",
       "line": 492,
-      "excerpt": "acknowledged: \"принят в работу\",",
+      "excerpt": "acknowledged: \"РїСЂРёРЅСЏС‚ РІ СЂР°Р±РѕС‚Сѓ\",",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -3381,7 +3381,7 @@
     {
       "file": "apps/web/src/messages/ru.ts",
       "line": 514,
-      "excerpt": "dismissed: \"скрыто\",",
+      "excerpt": "dismissed: \"СЃРєСЂС‹С‚Рѕ\",",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -3392,7 +3392,7 @@
     {
       "file": "apps/web/src/messages/ru.ts",
       "line": 543,
-      "excerpt": "delivery_attachment: \"вложение отправки\",",
+      "excerpt": "delivery_attachment: \"РІР»РѕР¶РµРЅРёРµ РѕС‚РїСЂР°РІРєРё\",",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -3403,7 +3403,7 @@
     {
       "file": "apps/web/src/messages/ru.ts",
       "line": 569,
-      "excerpt": "global_chat: \"общий чат\",",
+      "excerpt": "global_chat: \"РѕР±С‰РёР№ С‡Р°С‚\",",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -3414,7 +3414,7 @@
     {
       "file": "apps/web/src/messages/ru.ts",
       "line": 570,
-      "excerpt": "document_chat: \"документный чат\",",
+      "excerpt": "document_chat: \"РґРѕРєСѓРјРµРЅС‚РЅС‹Р№ С‡Р°С‚\",",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -3425,7 +3425,7 @@
     {
       "file": "apps/web/src/messages/ru.ts",
       "line": 571,
-      "excerpt": "automation_chat: \"чат автоматизации\",",
+      "excerpt": "automation_chat: \"С‡Р°С‚ Р°РІС‚РѕРјР°С‚РёР·Р°С†РёРё\",",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -3469,7 +3469,7 @@
     {
       "file": "apps/web/src/messages/ru.ts",
       "line": 812,
-      "excerpt": "label: \"Использование правового RAG\",",
+      "excerpt": "label: \"РСЃРїРѕР»СЊР·РѕРІР°РЅРёРµ РїСЂР°РІРѕРІРѕРіРѕ RAG\",",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -10047,7 +10047,7 @@
     {
       "file": "apps/backend/src/modules/ai-gateway/ai-gateway.controller.ts",
       "line": 332,
-      "excerpt": "message: expectString(value.message, 'Сообщение обязательно.'),",
+      "excerpt": "message: expectString(value.message, 'РЎРѕРѕР±С‰РµРЅРёРµ РѕР±СЏР·Р°С‚РµР»СЊРЅРѕ.'),",
       "persistence_path": "Stage 18 AI Gateway tables",
       "uses_ai_gateway": true,
       "direct_provider_call_risk": false,
@@ -20145,7 +20145,7 @@
     {
       "file": "apps/backend/src/modules/canvas/canvas-draft.service.ts",
       "line": 750,
-      "excerpt": "moduleItem('condition', 'Условие', 'control', 'condition', 'GitBranch'),",
+      "excerpt": "moduleItem('condition', 'РЈСЃР»РѕРІРёРµ', 'control', 'condition', 'GitBranch'),",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -20519,7 +20519,7 @@
     {
       "file": "apps/backend/src/modules/canvas/canvas-module-availability.service.ts",
       "line": 51,
-      "excerpt": "human_reason: first?.message ?? 'Модуль заблокирован политикой.',",
+      "excerpt": "human_reason: first?.message ?? 'РњРѕРґСѓР»СЊ Р·Р°Р±Р»РѕРєРёСЂРѕРІР°РЅ РїРѕР»РёС‚РёРєРѕР№.',",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -20530,7 +20530,7 @@
     {
       "file": "apps/backend/src/modules/canvas/canvas-module-availability.service.ts",
       "line": 126,
-      "excerpt": "first?.message ?? 'Модуль требует дополнительной проверки.',",
+      "excerpt": "first?.message ?? 'РњРѕРґСѓР»СЊ С‚СЂРµР±СѓРµС‚ РґРѕРїРѕР»РЅРёС‚РµР»СЊРЅРѕР№ РїСЂРѕРІРµСЂРєРё.',",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -21377,7 +21377,7 @@
     {
       "file": "apps/backend/src/modules/canvas/canvas-presentation.service.spec.ts",
       "line": 49,
-      "excerpt": "expect(message.title).toContain('Факты дела');",
+      "excerpt": "expect(message.title).toContain('Р¤Р°РєС‚С‹ РґРµР»Р°');",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -21509,7 +21509,7 @@
     {
       "file": "apps/backend/src/modules/canvas/canvas-presentation.service.spec.ts",
       "line": 80,
-      "excerpt": "expect(message.plain_language_message).toContain('секрет');",
+      "excerpt": "expect(message.plain_language_message).toContain('СЃРµРєСЂРµС‚');",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -21806,7 +21806,7 @@
     {
       "file": "apps/backend/src/modules/canvas/canvas-presentation.service.ts",
       "line": 565,
-      "excerpt": "storage: 'Сохранение',",
+      "excerpt": "storage: 'РЎРѕС…СЂР°РЅРµРЅРёРµ',",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -37954,7 +37954,7 @@
     {
       "file": "apps/backend/src/modules/chat/chat-thread.service.ts",
       "line": 458,
-      "excerpt": "text: 'LexFrame AI Gateway обработал запрос через default_chat. Ответ сохранён в project chat.',",
+      "excerpt": "text: 'LexFrame AI Gateway РѕР±СЂР°Р±РѕС‚Р°Р» Р·Р°РїСЂРѕСЃ С‡РµСЂРµР· default_chat. РћС‚РІРµС‚ СЃРѕС…СЂР°РЅС‘РЅ РІ project chat.',",
       "persistence_path": "LexFrame DB chat_* tables",
       "uses_ai_gateway": true,
       "direct_provider_call_risk": false,
@@ -44070,7 +44070,7 @@
     {
       "file": "apps/backend/src/modules/delivery/delivery.service.ts",
       "line": 1447,
-      "excerpt": "message: 'Неизвестная ошибка транспорта отправки.',",
+      "excerpt": "message: 'РќРµРёР·РІРµСЃС‚РЅР°СЏ РѕС€РёР±РєР° С‚СЂР°РЅСЃРїРѕСЂС‚Р° РѕС‚РїСЂР°РІРєРё.',",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -47172,7 +47172,7 @@
     {
       "file": "apps/backend/src/modules/documents/documents.service.spec.ts",
       "line": 333,
-      "excerpt": ".mockResolvedValue('https://storage.lexframe.local/signed/demo');",
+      "excerpt": ".mockResolvedValue('[redacted-signed-url]');",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -49966,7 +49966,7 @@
     {
       "file": "apps/backend/src/modules/legal-rag/legal-rag.controller.ts",
       "line": 99,
-      "excerpt": "taskType: expectString(value.taskType, 'Тип задачи RAG обязателен.'),",
+      "excerpt": "taskType: expectString(value.taskType, 'РўРёРї Р·Р°РґР°С‡Рё RAG РѕР±СЏР·Р°С‚РµР»РµРЅ.'),",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -49977,7 +49977,7 @@
     {
       "file": "apps/backend/src/modules/legal-rag/legal-rag.controller.ts",
       "line": 100,
-      "excerpt": "question: expectString(value.question, 'Вопрос RAG обязателен.'),",
+      "excerpt": "question: expectString(value.question, 'Р’РѕРїСЂРѕСЃ RAG РѕР±СЏР·Р°С‚РµР»РµРЅ.'),",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -50021,7 +50021,7 @@
     {
       "file": "apps/backend/src/modules/legal-rag/legal-rag.controller.ts",
       "line": 202,
-      "excerpt": "'Режим sourceSelection.mode для RAG некорректен.',",
+      "excerpt": "'Р РµР¶РёРј sourceSelection.mode РґР»СЏ RAG РЅРµРєРѕСЂСЂРµРєС‚РµРЅ.',",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -50274,7 +50274,7 @@
     {
       "file": "apps/backend/src/modules/legal-rag/legal-rag.service.ts",
       "line": 74,
-      "excerpt": "'Для юридического RAG требуется активное рабочее пространство.',",
+      "excerpt": "'Р”Р»СЏ СЋСЂРёРґРёС‡РµСЃРєРѕРіРѕ RAG С‚СЂРµР±СѓРµС‚СЃСЏ Р°РєС‚РёРІРЅРѕРµ СЂР°Р±РѕС‡РµРµ РїСЂРѕСЃС‚СЂР°РЅСЃС‚РІРѕ.',",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -50582,7 +50582,7 @@
     {
       "file": "apps/backend/src/modules/legal-rag/legal-rag.service.ts",
       "line": 278,
-      "excerpt": "'Юридический RAG-запрос не найден в активном рабочем пространстве.',",
+      "excerpt": "'Р®СЂРёРґРёС‡РµСЃРєРёР№ RAG-Р·Р°РїСЂРѕСЃ РЅРµ РЅР°Р№РґРµРЅ РІ Р°РєС‚РёРІРЅРѕРј СЂР°Р±РѕС‡РµРј РїСЂРѕСЃС‚СЂР°РЅСЃС‚РІРµ.',",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -50901,7 +50901,7 @@
     {
       "file": "apps/backend/src/modules/legal-rag/legal-rag.service.ts",
       "line": 582,
-      "excerpt": "? `Собран контекст по вопросу \"${question}\" из ${new Set(contextCandidates.map((candidate) => candidate.source.id)).size} источников.`",
+      "excerpt": "? `РЎРѕР±СЂР°РЅ РєРѕРЅС‚РµРєСЃС‚ РїРѕ РІРѕРїСЂРѕСЃСѓ \"${question}\" РёР· ${new Set(contextCandidates.map((candidate) => candidate.source.id)).size} РёСЃС‚РѕС‡РЅРёРєРѕРІ.`",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -50978,7 +50978,7 @@
     {
       "file": "apps/backend/src/modules/legal-rag/legal-rag.service.ts",
       "line": 617,
-      "excerpt": "contextText || 'Контекст не предоставлен.',",
+      "excerpt": "contextText || 'РљРѕРЅС‚РµРєСЃС‚ РЅРµ РїСЂРµРґРѕСЃС‚Р°РІР»РµРЅ.',",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -53090,7 +53090,7 @@
     {
       "file": "apps/backend/src/modules/ops/runtime-health.service.ts",
       "line": 343,
-      "excerpt": "? `${url}: mining-worker /health/ready недоступен: ${error.message}`",
+      "excerpt": "? `${url}: mining-worker /health/ready РЅРµРґРѕСЃС‚СѓРїРµРЅ: ${error.message}`",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -53101,7 +53101,7 @@
     {
       "file": "apps/backend/src/modules/ops/runtime-health.service.ts",
       "line": 447,
-      "excerpt": "? `${url}: проверка не прошла: ${error.message}`",
+      "excerpt": "? `${url}: РїСЂРѕРІРµСЂРєР° РЅРµ РїСЂРѕС€Р»Р°: ${error.message}`",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -55411,7 +55411,7 @@
     {
       "file": "apps/backend/src/modules/readiness/readiness.service.ts",
       "line": 1368,
-      "excerpt": "`Upstream-гейты готовности не зелёные: ${upstreamBlockedStages.join(', ')}.`,",
+      "excerpt": "`Upstream-РіРµР№С‚С‹ РіРѕС‚РѕРІРЅРѕСЃС‚Рё РЅРµ Р·РµР»С‘РЅС‹Рµ: ${upstreamBlockedStages.join(', ')}.`,",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -55598,7 +55598,7 @@
     {
       "file": "apps/backend/src/modules/readiness/readiness.service.ts",
       "line": 1604,
-      "excerpt": "'Предусловия подписанных ссылок Supabase Storage настроены для скачивания документов.',",
+      "excerpt": "'РџСЂРµРґСѓСЃР»РѕРІРёСЏ РїРѕРґРїРёСЃР°РЅРЅС‹С… СЃСЃС‹Р»РѕРє Supabase Storage РЅР°СЃС‚СЂРѕРµРЅС‹ РґР»СЏ СЃРєР°С‡РёРІР°РЅРёСЏ РґРѕРєСѓРјРµРЅС‚РѕРІ.',",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -55609,7 +55609,7 @@
     {
       "file": "apps/backend/src/modules/readiness/readiness.service.ts",
       "line": 1606,
-      "excerpt": "'Подписание ссылок Supabase Storage заблокировано для строгих readiness-профилей.',",
+      "excerpt": "'РџРѕРґРїРёСЃР°РЅРёРµ СЃСЃС‹Р»РѕРє Supabase Storage Р·Р°Р±Р»РѕРєРёСЂРѕРІР°РЅРѕ РґР»СЏ СЃС‚СЂРѕРіРёС… readiness-РїСЂРѕС„РёР»РµР№.',",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -55708,7 +55708,7 @@
     {
       "file": "apps/backend/src/modules/readiness/readiness.service.ts",
       "line": 1737,
-      "excerpt": "'Webhook-транспорт отправки настроен для downstream smoke-проверки.',",
+      "excerpt": "'Webhook-С‚СЂР°РЅСЃРїРѕСЂС‚ РѕС‚РїСЂР°РІРєРё РЅР°СЃС‚СЂРѕРµРЅ РґР»СЏ downstream smoke-РїСЂРѕРІРµСЂРєРё.',",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -55752,7 +55752,7 @@
     {
       "file": "apps/backend/src/modules/readiness/readiness.service.ts",
       "line": 1800,
-      "excerpt": "'Схема realtime-событий и недавняя активность доступны для dashboard streaming.',",
+      "excerpt": "'РЎС…РµРјР° realtime-СЃРѕР±С‹С‚РёР№ Рё РЅРµРґР°РІРЅСЏСЏ Р°РєС‚РёРІРЅРѕСЃС‚СЊ РґРѕСЃС‚СѓРїРЅС‹ РґР»СЏ dashboard streaming.',",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -55763,7 +55763,7 @@
     {
       "file": "apps/backend/src/modules/readiness/readiness.service.ts",
       "line": 1801,
-      "excerpt": "summaryBlocked: 'Предусловия realtime streaming ещё не выполнены.',",
+      "excerpt": "summaryBlocked: 'РџСЂРµРґСѓСЃР»РѕРІРёСЏ realtime streaming РµС‰С‘ РЅРµ РІС‹РїРѕР»РЅРµРЅС‹.',",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -65267,7 +65267,7 @@
     {
       "file": "apps/web/src/components/ai/ai-chat-workspace.tsx",
       "line": 356,
-      "excerpt": "<EmptyState icon={MessageSquare} label=\"Сессий ИИ пока нет.\" />",
+      "excerpt": "<EmptyState icon={MessageSquare} label=\"РЎРµСЃСЃРёР№ РР РїРѕРєР° РЅРµС‚.\" />",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": true,
       "direct_provider_call_risk": false,
@@ -65344,7 +65344,7 @@
     {
       "file": "apps/web/src/components/ai/ai-chat-workspace.tsx",
       "line": 477,
-      "excerpt": "{ value: \"global_chat\", label: \"Общий чат\" },",
+      "excerpt": "{ value: \"global_chat\", label: \"РћР±С‰РёР№ С‡Р°С‚\" },",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": true,
       "direct_provider_call_risk": false,
@@ -65355,7 +65355,7 @@
     {
       "file": "apps/web/src/components/ai/ai-chat-workspace.tsx",
       "line": 478,
-      "excerpt": "{ value: \"document_chat\", label: \"Документ\" },",
+      "excerpt": "{ value: \"document_chat\", label: \"Р”РѕРєСѓРјРµРЅС‚\" },",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": true,
       "direct_provider_call_risk": false,
@@ -65366,7 +65366,7 @@
     {
       "file": "apps/web/src/components/ai/ai-chat-workspace.tsx",
       "line": 479,
-      "excerpt": "{ value: \"automation_chat\", label: \"Автоматизация\" },",
+      "excerpt": "{ value: \"automation_chat\", label: \"РђРІС‚РѕРјР°С‚РёР·Р°С†РёСЏ\" },",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": true,
       "direct_provider_call_risk": false,
@@ -65399,7 +65399,7 @@
     {
       "file": "apps/web/src/components/ai/ai-chat-workspace.tsx",
       "line": 546,
-      "excerpt": "<span>{props.deferredMessage.length} символов</span>",
+      "excerpt": "<span>{props.deferredMessage.length} СЃРёРјРІРѕР»РѕРІ</span>",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": true,
       "direct_provider_call_risk": false,
@@ -65454,7 +65454,7 @@
     {
       "file": "apps/web/src/components/ai/ai-chat-workspace.tsx",
       "line": 591,
-      "excerpt": "<EmptyState icon={MessageSquare} label=\"Сообщения пока не записаны.\" />",
+      "excerpt": "<EmptyState icon={MessageSquare} label=\"РЎРѕРѕР±С‰РµРЅРёСЏ РїРѕРєР° РЅРµ Р·Р°РїРёСЃР°РЅС‹.\" />",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": true,
       "direct_provider_call_risk": false,
@@ -65531,7 +65531,7 @@
     {
       "file": "apps/web/src/components/ai/ai-chat-workspace.tsx",
       "line": 689,
-      "excerpt": "<MetricCard label=\"Маршрут\" value={props.request.routeReason} icon={GitBranch} />",
+      "excerpt": "<MetricCard label=\"РњР°СЂС€СЂСѓС‚\" value={props.request.routeReason} icon={GitBranch} />",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": true,
       "direct_provider_call_risk": false,
@@ -66015,7 +66015,7 @@
     {
       "file": "apps/web/src/components/automations/automation-workbench-model.ts",
       "line": 648,
-      "excerpt": "message: \"В сценарии должен быть ровно один стартовый триггер.\",",
+      "excerpt": "message: \"Р’ СЃС†РµРЅР°СЂРёРё РґРѕР»Р¶РµРЅ Р±С‹С‚СЊ СЂРѕРІРЅРѕ РѕРґРёРЅ СЃС‚Р°СЂС‚РѕРІС‹Р№ С‚СЂРёРіРіРµСЂ.\",",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -66026,7 +66026,7 @@
     {
       "file": "apps/web/src/components/automations/automation-workbench-model.ts",
       "line": 657,
-      "excerpt": "message: \"Связь указывает на несуществующий блок.\",",
+      "excerpt": "message: \"РЎРІСЏР·СЊ СѓРєР°Р·С‹РІР°РµС‚ РЅР° РЅРµСЃСѓС‰РµСЃС‚РІСѓСЋС‰РёР№ Р±Р»РѕРє.\",",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -66048,7 +66048,7 @@
     {
       "file": "apps/web/src/components/automations/automation-workbench-model.ts",
       "line": 674,
-      "excerpt": "message: `Блок \"${node.title}\" не подключен к основной цепочке.`,",
+      "excerpt": "message: `Р‘Р»РѕРє \"${node.title}\" РЅРµ РїРѕРґРєР»СЋС‡РµРЅ Рє РѕСЃРЅРѕРІРЅРѕР№ С†РµРїРѕС‡РєРµ.`,",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -66059,7 +66059,7 @@
     {
       "file": "apps/web/src/components/automations/automation-workbench-model.ts",
       "line": 682,
-      "excerpt": "message: `После блока \"${node.title}\" нет следующего шага.`,",
+      "excerpt": "message: `РџРѕСЃР»Рµ Р±Р»РѕРєР° \"${node.title}\" РЅРµС‚ СЃР»РµРґСѓСЋС‰РµРіРѕ С€Р°РіР°.`,",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -66070,7 +66070,7 @@
     {
       "file": "apps/web/src/components/automations/automation-workbench-model.ts",
       "line": 690,
-      "excerpt": "message: `Для блока \"${node.title}\" не настроены входные данные.`,",
+      "excerpt": "message: `Р”Р»СЏ Р±Р»РѕРєР° \"${node.title}\" РЅРµ РЅР°СЃС‚СЂРѕРµРЅС‹ РІС…РѕРґРЅС‹Рµ РґР°РЅРЅС‹Рµ.`,",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -66081,7 +66081,7 @@
     {
       "file": "apps/web/src/components/automations/automation-workbench-model.ts",
       "line": 698,
-      "excerpt": "message: \"В сценарии обнаружен цикл. Builder v1 не запускает циклические сценарии.\",",
+      "excerpt": "message: \"Р’ СЃС†РµРЅР°СЂРёРё РѕР±РЅР°СЂСѓР¶РµРЅ С†РёРєР». Builder v1 РЅРµ Р·Р°РїСѓСЃРєР°РµС‚ С†РёРєР»РёС‡РµСЃРєРёРµ СЃС†РµРЅР°СЂРёРё.\",",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -66499,7 +66499,7 @@
     {
       "file": "apps/web/src/components/automations/automation-workbench.tsx",
       "line": 923,
-      "excerpt": "incompatible_with_canvas_context: \"не подходит здесь\",",
+      "excerpt": "incompatible_with_canvas_context: \"РЅРµ РїРѕРґС…РѕРґРёС‚ Р·РґРµСЃСЊ\",",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -67148,7 +67148,7 @@
     {
       "file": "apps/web/src/components/legal/legal-research-workspace.tsx",
       "line": 93,
-      "excerpt": "Контур исследования держит поиск и RAG на backend. Интерфейс",
+      "excerpt": "РљРѕРЅС‚СѓСЂ РёСЃСЃР»РµРґРѕРІР°РЅРёСЏ РґРµСЂР¶РёС‚ РїРѕРёСЃРє Рё RAG РЅР° backend. РРЅС‚РµСЂС„РµР№СЃ",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -67170,7 +67170,7 @@
     {
       "file": "apps/web/src/components/legal/legal-research-workspace.tsx",
       "line": 124,
-      "excerpt": "{analyzeRag.isPending ? \"Анализируем...\" : \"Запустить анализ с источниками\"}",
+      "excerpt": "{analyzeRag.isPending ? \"РђРЅР°Р»РёР·РёСЂСѓРµРј...\" : \"Р—Р°РїСѓСЃС‚РёС‚СЊ Р°РЅР°Р»РёР· СЃ РёСЃС‚РѕС‡РЅРёРєР°РјРё\"}",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -67181,7 +67181,7 @@
     {
       "file": "apps/web/src/components/legal/legal-research-workspace.tsx",
       "line": 146,
-      "excerpt": "источников для итогового RAG-запроса.",
+      "excerpt": "РёСЃС‚РѕС‡РЅРёРєРѕРІ РґР»СЏ РёС‚РѕРіРѕРІРѕРіРѕ RAG-Р·Р°РїСЂРѕСЃР°.",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -67192,7 +67192,7 @@
     {
       "file": "apps/web/src/components/legal/legal-source-detail-view.tsx",
       "line": 176,
-      "excerpt": "Поиск и RAG используют юридические фрагменты, а не сырой текст",
+      "excerpt": "РџРѕРёСЃРє Рё RAG РёСЃРїРѕР»СЊР·СѓСЋС‚ СЋСЂРёРґРёС‡РµСЃРєРёРµ С„СЂР°РіРјРµРЅС‚С‹, Р° РЅРµ СЃС‹СЂРѕР№ С‚РµРєСЃС‚",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -67225,7 +67225,7 @@
     {
       "file": "apps/web/src/components/legal/legal-sources-workspace.tsx",
       "line": 212,
-      "excerpt": "Обработано {latestJob.data.processedItems} из{\" \"}",
+      "excerpt": "РћР±СЂР°Р±РѕС‚Р°РЅРѕ {latestJob.data.processedItems} РёР·{\" \"}",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -67236,7 +67236,7 @@
     {
       "file": "apps/web/src/components/legal/legal-sources-workspace.tsx",
       "line": 232,
-      "excerpt": "Источники отделены от бинарного файлового хранилища. Поиск и RAG",
+      "excerpt": "РСЃС‚РѕС‡РЅРёРєРё РѕС‚РґРµР»РµРЅС‹ РѕС‚ Р±РёРЅР°СЂРЅРѕРіРѕ С„Р°Р№Р»РѕРІРѕРіРѕ С…СЂР°РЅРёР»РёС‰Р°. РџРѕРёСЃРє Рё RAG",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -67291,7 +67291,7 @@
     {
       "file": "apps/web/src/components/status/permission-gate.tsx",
       "line": 37,
-      "excerpt": "description: `Backend session context не содержит permission ${permission}.`,",
+      "excerpt": "description: `Backend session context РЅРµ СЃРѕРґРµСЂР¶РёС‚ permission ${permission}.`,",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -68050,7 +68050,7 @@
     {
       "file": "apps/web/src/features/automation-canvas/use-activepieces-session.ts",
       "line": 83,
-      "excerpt": "message: \"Проверяем сессию LexFrame.\",",
+      "excerpt": "message: \"РџСЂРѕРІРµСЂСЏРµРј СЃРµСЃСЃРёСЋ LexFrame.\",",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -68633,7 +68633,7 @@
     {
       "file": "apps/web/src/components/shell/project-home.tsx",
       "line": 94,
-      "excerpt": "lastMessagePreview: \"Собрать позицию, документы и сценарий отправки.\",",
+      "excerpt": "lastMessagePreview: \"РЎРѕР±СЂР°С‚СЊ РїРѕР·РёС†РёСЋ, РґРѕРєСѓРјРµРЅС‚С‹ Рё СЃС†РµРЅР°СЂРёР№ РѕС‚РїСЂР°РІРєРё.\",",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -68655,7 +68655,7 @@
     {
       "file": "apps/web/src/components/shell/project-home.tsx",
       "line": 104,
-      "excerpt": "lastMessagePreview: \"Отметить внешние действия и согласования.\",",
+      "excerpt": "lastMessagePreview: \"РћС‚РјРµС‚РёС‚СЊ РІРЅРµС€РЅРёРµ РґРµР№СЃС‚РІРёСЏ Рё СЃРѕРіР»Р°СЃРѕРІР°РЅРёСЏ.\",",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -68886,7 +68886,7 @@
     {
       "file": "apps/web/src/components/shell/project-home.tsx",
       "line": 303,
-      "excerpt": "<ContextSection icon={<Workflow className=\"h-4 w-4\" />} title=\"Автоматизации\">",
+      "excerpt": "<ContextSection icon={<Workflow className=\"h-4 w-4\" />} title=\"РђРІС‚РѕРјР°С‚РёР·Р°С†РёРё\">",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -69029,7 +69029,7 @@
     {
       "file": "apps/web/src/components/shell/project-home.tsx",
       "line": 423,
-      "excerpt": "<ContextSection icon={<MessageSquare className=\"h-4 w-4\" />} title=\"Чаты\">",
+      "excerpt": "<ContextSection icon={<MessageSquare className=\"h-4 w-4\" />} title=\"Р§Р°С‚С‹\">",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -69084,7 +69084,7 @@
     {
       "file": "apps/web/src/components/shell/project-home.tsx",
       "line": 433,
-      "excerpt": "<ContextSection icon={<Clock3 className=\"h-4 w-4\" />} title=\"Последние материалы\">",
+      "excerpt": "<ContextSection icon={<Clock3 className=\"h-4 w-4\" />} title=\"РџРѕСЃР»РµРґРЅРёРµ РјР°С‚РµСЂРёР°Р»С‹\">",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -69106,7 +69106,7 @@
     {
       "file": "apps/web/src/components/shell/project-home.tsx",
       "line": 455,
-      "excerpt": "<MiniMetric label=\"Чаты\" value={project.counters.chats} />",
+      "excerpt": "<MiniMetric label=\"Р§Р°С‚С‹\" value={project.counters.chats} />",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -69557,7 +69557,7 @@
     {
       "file": "apps/web/src/components/shell/project-sidebar.tsx",
       "line": 428,
-      "excerpt": "{project.counters.chats} чатов / {project.counters.automations} автоматизаций",
+      "excerpt": "{project.counters.chats} С‡Р°С‚РѕРІ / {project.counters.automations} Р°РІС‚РѕРјР°С‚РёР·Р°С†РёР№",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -69854,7 +69854,7 @@
     {
       "file": "apps/web/src/components/shell/workspace-home.tsx",
       "line": 104,
-      "excerpt": "<ProjectCounter label=\"Чаты\" value={project.counters.chats} />",
+      "excerpt": "<ProjectCounter label=\"Р§Р°С‚С‹\" value={project.counters.chats} />",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -71746,7 +71746,7 @@
     {
       "file": "apps/web/src/features/canvas/pages/workflow-canvas-page.tsx",
       "line": 277,
-      "excerpt": "message={operations.data.rejected_reason ?? \"Backend не принял изменение.\"}",
+      "excerpt": "message={operations.data.rejected_reason ?? \"Backend РЅРµ РїСЂРёРЅСЏР» РёР·РјРµРЅРµРЅРёРµ.\"}",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -71779,7 +71779,7 @@
     {
       "file": "apps/web/src/features/canvas/pages/workflow-canvas-page.tsx",
       "line": 295,
-      "excerpt": "message={`Редактирует: ${canvasDraft.lock.locked_by_user_email ?? \"другой пользователь\"}.`}",
+      "excerpt": "message={`Р РµРґР°РєС‚РёСЂСѓРµС‚: ${canvasDraft.lock.locked_by_user_email ?? \"РґСЂСѓРіРѕР№ РїРѕР»СЊР·РѕРІР°С‚РµР»СЊ\"}.`}",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -75134,7 +75134,7 @@
     {
       "file": "apps/web/src/features/canvas/components/module-palette.tsx",
       "line": 475,
-      "excerpt": "incompatible_with_canvas_context: \"нельзя вставить здесь\",",
+      "excerpt": "incompatible_with_canvas_context: \"РЅРµР»СЊР·СЏ РІСЃС‚Р°РІРёС‚СЊ Р·РґРµСЃСЊ\",",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -75233,7 +75233,7 @@
     {
       "file": "apps/web/src/features/canvas/components/step-inspector.tsx",
       "line": 1517,
-      "excerpt": "storage: \"Сохранение\",",
+      "excerpt": "storage: \"РЎРѕС…СЂР°РЅРµРЅРёРµ\",",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -75244,7 +75244,7 @@
     {
       "file": "apps/web/src/features/canvas/components/step-inspector.tsx",
       "line": 1530,
-      "excerpt": "storage: \"хранилище\",",
+      "excerpt": "storage: \"С…СЂР°РЅРёР»РёС‰Рµ\",",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -75673,7 +75673,7 @@
     {
       "file": "packages/canvas-test-fixtures/index.cjs",
       "line": 97,
-      "excerpt": "handle(\"true_branch\", \"Да\", \"output\"),",
+      "excerpt": "handle(\"true_branch\", \"Р”Р°\", \"output\"),",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -75684,7 +75684,7 @@
     {
       "file": "packages/canvas-test-fixtures/index.cjs",
       "line": 98,
-      "excerpt": "handle(\"false_branch\", \"Нет\", \"output\"),",
+      "excerpt": "handle(\"false_branch\", \"РќРµС‚\", \"output\"),",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -75695,7 +75695,7 @@
     {
       "file": "packages/canvas-test-fixtures/index.cjs",
       "line": 302,
-      "excerpt": "field(\"run_context\", \"Контекст запуска\", \"runtime_context\"),",
+      "excerpt": "field(\"run_context\", \"РљРѕРЅС‚РµРєСЃС‚ Р·Р°РїСѓСЃРєР°\", \"runtime_context\"),",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -75706,7 +75706,7 @@
     {
       "file": "packages/canvas-test-fixtures/index.cjs",
       "line": 453,
-      "excerpt": "outputs: [field(\"matched_branch\", \"Ветка\", \"string\")],",
+      "excerpt": "outputs: [field(\"matched_branch\", \"Р’РµС‚РєР°\", \"string\")],",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -75717,7 +75717,7 @@
     {
       "file": "packages/canvas-test-fixtures/index.cjs",
       "line": 487,
-      "excerpt": "inputs: [field(\"prompt_context\", \"Контекст\", \"json\", { required: true })],",
+      "excerpt": "inputs: [field(\"prompt_context\", \"РљРѕРЅС‚РµРєСЃС‚\", \"json\", { required: true })],",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -75739,7 +75739,7 @@
     {
       "file": "packages/canvas-test-fixtures/index.cjs",
       "line": 503,
-      "excerpt": "const storage = node(\"save\", \"storage\", \"save_to_documents\", \"Сохранить документ\", {",
+      "excerpt": "const storage = node(\"save\", \"storage\", \"save_to_documents\", \"РЎРѕС…СЂР°РЅРёС‚СЊ РґРѕРєСѓРјРµРЅС‚\", {",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -76443,7 +76443,7 @@
     {
       "file": "packages/ai-gateway/src/fixtures.ts",
       "line": 4,
-      "excerpt": "message: \"Подготовить автоматизацию претензионного порядка для клиента.\",",
+      "excerpt": "message: \"РџРѕРґРіРѕС‚РѕРІРёС‚СЊ Р°РІС‚РѕРјР°С‚РёР·Р°С†РёСЋ РїСЂРµС‚РµРЅР·РёРѕРЅРЅРѕРіРѕ РїРѕСЂСЏРґРєР° РґР»СЏ РєР»РёРµРЅС‚Р°.\",",
       "persistence_path": "Stage 18 AI Gateway tables",
       "uses_ai_gateway": true,
       "direct_provider_call_risk": false,
@@ -86860,7 +86860,7 @@
     {
       "file": "packages/contracts/src/fixtures/ai-fixtures.ts",
       "line": 82,
-      "excerpt": "message: \"Не удалось извлечь факты из документов.\",",
+      "excerpt": "message: \"РќРµ СѓРґР°Р»РѕСЃСЊ РёР·РІР»РµС‡СЊ С„Р°РєС‚С‹ РёР· РґРѕРєСѓРјРµРЅС‚РѕРІ.\",",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -86882,7 +86882,7 @@
     {
       "file": "packages/contracts/src/fixtures/ai-fixtures.ts",
       "line": 202,
-      "excerpt": "message: \"Шаг доставки требует ручного подтверждения.\",",
+      "excerpt": "message: \"РЁР°Рі РґРѕСЃС‚Р°РІРєРё С‚СЂРµР±СѓРµС‚ СЂСѓС‡РЅРѕРіРѕ РїРѕРґС‚РІРµСЂР¶РґРµРЅРёСЏ.\",",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -87003,7 +87003,7 @@
     {
       "file": "packages/contracts/src/fixtures/ai-fixtures.ts",
       "line": 342,
-      "excerpt": "message: \"Для подготовки претензии требуется шаблон.\",",
+      "excerpt": "message: \"Р”Р»СЏ РїРѕРґРіРѕС‚РѕРІРєРё РїСЂРµС‚РµРЅР·РёРё С‚СЂРµР±СѓРµС‚СЃСЏ С€Р°Р±Р»РѕРЅ.\",",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -87025,7 +87025,7 @@
     {
       "file": "packages/contracts/src/fixtures/ai-fixtures.ts",
       "line": 373,
-      "excerpt": "message: \"Внешний AI запрещён для выбранного класса данных.\",",
+      "excerpt": "message: \"Р’РЅРµС€РЅРёР№ AI Р·Р°РїСЂРµС‰С‘РЅ РґР»СЏ РІС‹Р±СЂР°РЅРЅРѕРіРѕ РєР»Р°СЃСЃР° РґР°РЅРЅС‹С….\",",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -88136,7 +88136,7 @@
     {
       "file": "packages/workflow-dsl/src/canvas-blocks.ts",
       "line": 475,
-      "excerpt": "storage_artifact: \"Сохранение результата\",",
+      "excerpt": "storage_artifact: \"РЎРѕС…СЂР°РЅРµРЅРёРµ СЂРµР·СѓР»СЊС‚Р°С‚Р°\",",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -88158,7 +88158,7 @@
     {
       "file": "packages/workflow-dsl/src/canvas-blocks.ts",
       "line": 611,
-      "excerpt": "field(\"run_context\", \"Контекст запуска\", \"run_context\"),",
+      "excerpt": "field(\"run_context\", \"РљРѕРЅС‚РµРєСЃС‚ Р·Р°РїСѓСЃРєР°\", \"run_context\"),",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -88246,7 +88246,7 @@
     {
       "file": "packages/workflow-dsl/src/canvas-blocks.ts",
       "line": 917,
-      "excerpt": "output(\"true_branch\", \"Да\"),",
+      "excerpt": "output(\"true_branch\", \"Р”Р°\"),",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -88257,7 +88257,7 @@
     {
       "file": "packages/workflow-dsl/src/canvas-blocks.ts",
       "line": 918,
-      "excerpt": "output(\"false_branch\", \"Нет\"),",
+      "excerpt": "output(\"false_branch\", \"РќРµС‚\"),",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -88334,7 +88334,7 @@
     {
       "file": "packages/workflow-dsl/src/canvas-blocks.ts",
       "line": 1025,
-      "excerpt": "field(\"attachments\", \"Вложения\", \"document[]\", false, \"confidential\", [\"step_output\", \"document\"]),",
+      "excerpt": "field(\"attachments\", \"Р’Р»РѕР¶РµРЅРёСЏ\", \"document[]\", false, \"confidential\", [\"step_output\", \"document\"]),",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -88411,7 +88411,7 @@
     {
       "file": "packages/workflow-dsl/src/canvas-blocks.ts",
       "line": 1182,
-      "excerpt": "field(\"branch_a\", \"Ветка A\", \"any\", true, \"workspace_internal\", [\"step_output\"]),",
+      "excerpt": "field(\"branch_a\", \"Р’РµС‚РєР° A\", \"any\", true, \"workspace_internal\", [\"step_output\"]),",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -88422,7 +88422,7 @@
     {
       "file": "packages/workflow-dsl/src/canvas-blocks.ts",
       "line": 1183,
-      "excerpt": "field(\"branch_b\", \"Ветка B\", \"any\", true, \"workspace_internal\", [\"step_output\"]),",
+      "excerpt": "field(\"branch_b\", \"Р’РµС‚РєР° B\", \"any\", true, \"workspace_internal\", [\"step_output\"]),",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -88433,7 +88433,7 @@
     {
       "file": "packages/workflow-dsl/src/canvas-blocks.ts",
       "line": 1185,
-      "excerpt": "outputs: [field(\"merged_context\", \"Объединенный контекст\", \"object\")],",
+      "excerpt": "outputs: [field(\"merged_context\", \"РћР±СЉРµРґРёРЅРµРЅРЅС‹Р№ РєРѕРЅС‚РµРєСЃС‚\", \"object\")],",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -90897,7 +90897,7 @@
     {
       "file": "tests/e2e/stage19-project-chat-live.spec.ts",
       "line": 127,
-      "excerpt": "`${session.apiBaseUrl}/chat/search?q=${encodeURIComponent(\"юридический\")}&projectId=${projectId}`,",
+      "excerpt": "`${session.apiBaseUrl}/chat/search?q=${encodeURIComponent(\"СЋСЂРёРґРёС‡РµСЃРєРёР№\")}&projectId=${projectId}`,",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": true,
       "direct_provider_call_risk": false,
@@ -92426,7 +92426,7 @@
     {
       "file": "docs/canvas/acceptance-tests.md",
       "line": 16,
-      "excerpt": "- Branch без fallback даёт validation warning/error согласно rule.",
+      "excerpt": "- Branch Р±РµР· fallback РґР°С‘С‚ validation warning/error СЃРѕРіР»Р°СЃРЅРѕ rule.",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -92437,7 +92437,7 @@
     {
       "file": "docs/canvas/acceptance-tests.md",
       "line": 22,
-      "excerpt": "- Downstream binding запрещён.",
+      "excerpt": "- Downstream binding Р·Р°РїСЂРµС‰С‘РЅ.",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -92448,7 +92448,7 @@
     {
       "file": "docs/canvas/acceptance-tests.md",
       "line": 23,
-      "excerpt": "- Branch output без Merge не становится общим контекстом без validation issue.",
+      "excerpt": "- Branch output Р±РµР· Merge РЅРµ СЃС‚Р°РЅРѕРІРёС‚СЃСЏ РѕР±С‰РёРј РєРѕРЅС‚РµРєСЃС‚РѕРј Р±РµР· validation issue.",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -92459,7 +92459,7 @@
     {
       "file": "docs/canvas/acceptance-tests.md",
       "line": 30,
-      "excerpt": "- Storage block не сохраняет signed URL как output.",
+      "excerpt": "- Storage block РЅРµ СЃРѕС…СЂР°РЅСЏРµС‚ signed URL РєР°Рє output.",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -92470,7 +92470,7 @@
     {
       "file": "docs/canvas/block-io-contracts.md",
       "line": 21,
-      "excerpt": "| `manual_start` | нет | `run_context`, `input_documents`, `profile_snapshot` | `main_output` |",
+      "excerpt": "| `manual_start` | РЅРµС‚ | `run_context`, `input_documents`, `profile_snapshot` | `main_output` |",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -92536,7 +92536,7 @@
     {
       "file": "docs/canvas/block-io-contracts.md",
       "line": 39,
-      "excerpt": "- Binding на downstream step запрещён.",
+      "excerpt": "- Binding РЅР° downstream step Р·Р°РїСЂРµС‰С‘РЅ.",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -92547,7 +92547,7 @@
     {
       "file": "docs/canvas/block-taxonomy.md",
       "line": 19,
-      "excerpt": "| Storage/Artifact | `storage` | Создаёт управляемый artifact/document record | Сохранить результат | Product DB artifact service |",
+      "excerpt": "| Storage/Artifact | `storage` | РЎРѕР·РґР°С‘С‚ СѓРїСЂР°РІР»СЏРµРјС‹Р№ artifact/document record | РЎРѕС…СЂР°РЅРёС‚СЊ СЂРµР·СѓР»СЊС‚Р°С‚ | Product DB artifact service |",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -92569,7 +92569,7 @@
     {
       "file": "docs/canvas/no-code-behavior.md",
       "line": 36,
-      "excerpt": "- Branch без fallback предлагает ветку \"Иначе\".",
+      "excerpt": "- Branch Р±РµР· fallback РїСЂРµРґР»Р°РіР°РµС‚ РІРµС‚РєСѓ \"РРЅР°С‡Рµ\".",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -92602,7 +92602,7 @@
     {
       "file": "docs/canvas/security-rules.md",
       "line": 32,
-      "excerpt": "AI Action проходит только через AI gateway. Delivery проходит только через LexFrame delivery service. Storage создаёт managed artifact/document record и не возвращает signed URL. Activepieces остаётся runtime/builder контуром, но Canvas reg",
+      "excerpt": "AI Action РїСЂРѕС…РѕРґРёС‚ С‚РѕР»СЊРєРѕ С‡РµСЂРµР· AI gateway. Delivery РїСЂРѕС…РѕРґРёС‚ С‚РѕР»СЊРєРѕ С‡РµСЂРµР· LexFrame delivery service. Storage СЃРѕР·РґР°С‘С‚ managed artifact/document record Рё РЅРµ РІРѕР·РІСЂР°С‰Р°РµС‚ signed URL. Activepieces РѕСЃС‚Р°С‘С‚СЃСЏ runtime/builder РєРѕРЅС‚СѓСЂРѕРј, РЅРѕ Canvas reg",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -92833,7 +92833,7 @@
     {
       "file": "docs/integrations/activepieces.md",
       "line": 6,
-      "excerpt": "- Activepieces хранит только executable projection, embedded builder session и downstream runtime state.",
+      "excerpt": "- Activepieces С…СЂР°РЅРёС‚ С‚РѕР»СЊРєРѕ executable projection, embedded builder session Рё downstream runtime state.",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -92877,7 +92877,7 @@
     {
       "file": "docs/product/canvas-copywriting-guide.md",
       "line": 56,
-      "excerpt": "- `plain_language_message`: что не так;",
+      "excerpt": "- `plain_language_message`: С‡С‚Рѕ РЅРµ С‚Р°Рє;",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -92888,7 +92888,7 @@
     {
       "file": "docs/product/canvas-copywriting-guide.md",
       "line": 63,
-      "excerpt": "- Message: `Шаг не знает, какие факты использовать для анализа.`",
+      "excerpt": "- Message: `РЁР°Рі РЅРµ Р·РЅР°РµС‚, РєР°РєРёРµ С„Р°РєС‚С‹ РёСЃРїРѕР»СЊР·РѕРІР°С‚СЊ РґР»СЏ Р°РЅР°Р»РёР·Р°.`",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -98861,7 +98861,7 @@
     {
       "file": "docs/project-audit/lexframe-project-audit-2026-05-05.md",
       "line": 15,
-      "excerpt": "- Next.js frontend на App Router с рабочими экранами продукта, embedded Activepieces canvas/runtime route, admin/security views, documents, recommendations, library, modules, chat and project flows.",
+      "excerpt": "- Next.js frontend РЅР° App Router СЃ СЂР°Р±РѕС‡РёРјРё СЌРєСЂР°РЅР°РјРё РїСЂРѕРґСѓРєС‚Р°, embedded Activepieces canvas/runtime route, admin/security views, documents, recommendations, library, modules, chat and project flows.",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -99266,9 +99266,9 @@
       "stage19_change": "inventoried"
     },
     {
-      "file": "docs/project-audit/lexframe-project-audit-2026-05-06 — копия.md",
+      "file": "docs/project-audit/lexframe-project-audit-2026-05-06 вЂ” РєРѕРїРёСЏ.md",
       "line": 7,
-      "excerpt": "Git context: `main`, `3b6e77b Обновлена дизайн-конвергенция Stage 17`",
+      "excerpt": "Git context: `main`, `3b6e77b РћР±РЅРѕРІР»РµРЅР° РґРёР·Р°Р№РЅ-РєРѕРЅРІРµСЂРіРµРЅС†РёСЏ Stage 17`",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -99277,9 +99277,9 @@
       "stage19_change": "inventoried"
     },
     {
-      "file": "docs/project-audit/lexframe-project-audit-2026-05-06 — копия.md",
+      "file": "docs/project-audit/lexframe-project-audit-2026-05-06 вЂ” РєРѕРїРёСЏ.md",
       "line": 13,
-      "excerpt": "LexFrame - это платформа для юридической автоматизации, построенная вокруг рабочих пространств, проектов, документов, юридических источников, AI/RAG-сценариев, canvas/workflow-модели, запусков автоматизаций, согласований и доставки результа",
+      "excerpt": "LexFrame - СЌС‚Рѕ РїР»Р°С‚С„РѕСЂРјР° РґР»СЏ СЋСЂРёРґРёС‡РµСЃРєРѕР№ Р°РІС‚РѕРјР°С‚РёР·Р°С†РёРё, РїРѕСЃС‚СЂРѕРµРЅРЅР°СЏ РІРѕРєСЂСѓРі СЂР°Р±РѕС‡РёС… РїСЂРѕСЃС‚СЂР°РЅСЃС‚РІ, РїСЂРѕРµРєС‚РѕРІ, РґРѕРєСѓРјРµРЅС‚РѕРІ, СЋСЂРёРґРёС‡РµСЃРєРёС… РёСЃС‚РѕС‡РЅРёРєРѕРІ, AI/RAG-СЃС†РµРЅР°СЂРёРµРІ, canvas/workflow-РјРѕРґРµР»Рё, Р·Р°РїСѓСЃРєРѕРІ Р°РІС‚РѕРјР°С‚РёР·Р°С†РёР№, СЃРѕРіР»Р°СЃРѕРІР°РЅРёР№ Рё РґРѕСЃС‚Р°РІРєРё СЂРµР·СѓР»СЊС‚Р°",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -99288,9 +99288,9 @@
       "stage19_change": "inventoried"
     },
     {
-      "file": "docs/project-audit/lexframe-project-audit-2026-05-06 — копия.md",
+      "file": "docs/project-audit/lexframe-project-audit-2026-05-06 вЂ” РєРѕРїРёСЏ.md",
       "line": 18,
-      "excerpt": "- Работа с документами: загрузка, классификация, шаблоны, генерация, валидация, signed URL/storage readiness.",
+      "excerpt": "- Р Р°Р±РѕС‚Р° СЃ РґРѕРєСѓРјРµРЅС‚Р°РјРё: Р·Р°РіСЂСѓР·РєР°, РєР»Р°СЃСЃРёС„РёРєР°С†РёСЏ, С€Р°Р±Р»РѕРЅС‹, РіРµРЅРµСЂР°С†РёСЏ, РІР°Р»РёРґР°С†РёСЏ, signed URL/storage readiness.",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -99299,9 +99299,9 @@
       "stage19_change": "inventoried"
     },
     {
-      "file": "docs/project-audit/lexframe-project-audit-2026-05-06 — копия.md",
+      "file": "docs/project-audit/lexframe-project-audit-2026-05-06 вЂ” РєРѕРїРёСЏ.md",
       "line": 19,
-      "excerpt": "- Юридический поиск, источники и RAG-анализ.",
+      "excerpt": "- Р®СЂРёРґРёС‡РµСЃРєРёР№ РїРѕРёСЃРє, РёСЃС‚РѕС‡РЅРёРєРё Рё RAG-Р°РЅР°Р»РёР·.",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -99310,9 +99310,9 @@
       "stage19_change": "inventoried"
     },
     {
-      "file": "docs/project-audit/lexframe-project-audit-2026-05-06 — копия.md",
+      "file": "docs/project-audit/lexframe-project-audit-2026-05-06 вЂ” РєРѕРїРёСЏ.md",
       "line": 70,
-      "excerpt": "| `tests/e2e` | Playwright coverage по readiness, documents, Activepieces, security, Stage 17 canvas/design. |",
+      "excerpt": "| `tests/e2e` | Playwright coverage РїРѕ readiness, documents, Activepieces, security, Stage 17 canvas/design. |",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -99321,9 +99321,9 @@
       "stage19_change": "inventoried"
     },
     {
-      "file": "docs/project-audit/lexframe-project-audit-2026-05-06 — копия.md",
+      "file": "docs/project-audit/lexframe-project-audit-2026-05-06 вЂ” РєРѕРїРёСЏ.md",
       "line": 71,
-      "excerpt": "| Git context | Последние коммиты Stage 17 и чистый `git status` на момент аудита. |",
+      "excerpt": "| Git context | РџРѕСЃР»РµРґРЅРёРµ РєРѕРјРјРёС‚С‹ Stage 17 Рё С‡РёСЃС‚С‹Р№ `git status` РЅР° РјРѕРјРµРЅС‚ Р°СѓРґРёС‚Р°. |",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -99332,9 +99332,9 @@
       "stage19_change": "inventoried"
     },
     {
-      "file": "docs/project-audit/lexframe-project-audit-2026-05-06 — копия.md",
+      "file": "docs/project-audit/lexframe-project-audit-2026-05-06 вЂ” РєРѕРїРёСЏ.md",
       "line": 74,
-      "excerpt": "Дополнительный источник ориентации: codebase-memory graph для проекта `E-Law_frame_main`. Индекс содержит 37 372 nodes и 74 586 edges, включая functions, methods, classes, files, routes, imports, calls и тестовые связи. Граф подтверждает кр",
+      "excerpt": "Р”РѕРїРѕР»РЅРёС‚РµР»СЊРЅС‹Р№ РёСЃС‚РѕС‡РЅРёРє РѕСЂРёРµРЅС‚Р°С†РёРё: codebase-memory graph РґР»СЏ РїСЂРѕРµРєС‚Р° `E-Law_frame_main`. РРЅРґРµРєСЃ СЃРѕРґРµСЂР¶РёС‚ 37 372 nodes Рё 74 586 edges, РІРєР»СЋС‡Р°СЏ functions, methods, classes, files, routes, imports, calls Рё С‚РµСЃС‚РѕРІС‹Рµ СЃРІСЏР·Рё. Р“СЂР°С„ РїРѕРґС‚РІРµСЂР¶РґР°РµС‚ РєСЂ",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -99343,9 +99343,9 @@
       "stage19_change": "inventoried"
     },
     {
-      "file": "docs/project-audit/lexframe-project-audit-2026-05-06 — копия.md",
+      "file": "docs/project-audit/lexframe-project-audit-2026-05-06 вЂ” РєРѕРїРёСЏ.md",
       "line": 85,
-      "excerpt": "| Legal source | Юридический источник или материал для поиска/RAG. |",
+      "excerpt": "| Legal source | Р®СЂРёРґРёС‡РµСЃРєРёР№ РёСЃС‚РѕС‡РЅРёРє РёР»Рё РјР°С‚РµСЂРёР°Р» РґР»СЏ РїРѕРёСЃРєР°/RAG. |",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -99354,9 +99354,9 @@
       "stage19_change": "inventoried"
     },
     {
-      "file": "docs/project-audit/lexframe-project-audit-2026-05-06 — копия.md",
+      "file": "docs/project-audit/lexframe-project-audit-2026-05-06 вЂ” РєРѕРїРёСЏ.md",
       "line": 91,
-      "excerpt": "| Readiness | Диагностика готовности runtime, storage, AI, Activepieces, delivery и security prerequisites. |",
+      "excerpt": "| Readiness | Р”РёР°РіРЅРѕСЃС‚РёРєР° РіРѕС‚РѕРІРЅРѕСЃС‚Рё runtime, storage, AI, Activepieces, delivery Рё security prerequisites. |",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -99365,9 +99365,9 @@
       "stage19_change": "inventoried"
     },
     {
-      "file": "docs/project-audit/lexframe-project-audit-2026-05-06 — копия.md",
+      "file": "docs/project-audit/lexframe-project-audit-2026-05-06 вЂ” РєРѕРїРёСЏ.md",
       "line": 97,
-      "excerpt": "- Пользователь запускает RAG-анализ или AI chat с учетом политики провайдера и безопасности.",
+      "excerpt": "- РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ Р·Р°РїСѓСЃРєР°РµС‚ RAG-Р°РЅР°Р»РёР· РёР»Рё AI chat СЃ СѓС‡РµС‚РѕРј РїРѕР»РёС‚РёРєРё РїСЂРѕРІР°Р№РґРµСЂР° Рё Р±РµР·РѕРїР°СЃРЅРѕСЃС‚Рё.",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -99376,7 +99376,7 @@
       "stage19_change": "inventoried"
     },
     {
-      "file": "docs/project-audit/lexframe-project-audit-2026-05-06 — копия.md",
+      "file": "docs/project-audit/lexframe-project-audit-2026-05-06 вЂ” РєРѕРїРёСЏ.md",
       "line": 140,
       "excerpt": "- Services: Postgres, Redis, Activepieces app/worker, OpenSearch, storage sandbox, delivery sandbox.",
       "persistence_path": "existing_or_reference",
@@ -99387,9 +99387,9 @@
       "stage19_change": "inventoried"
     },
     {
-      "file": "docs/project-audit/lexframe-project-audit-2026-05-06 — копия.md",
+      "file": "docs/project-audit/lexframe-project-audit-2026-05-06 вЂ” РєРѕРїРёСЏ.md",
       "line": 159,
-      "excerpt": "| `activepieces` | Локальный/вендорный Activepieces runtime context, если используется в Stage 17. | Runtime integration and patch/provision workflow. | LexFrame source, секреты, неописанные ручные патчи. |",
+      "excerpt": "| `activepieces` | Р›РѕРєР°Р»СЊРЅС‹Р№/РІРµРЅРґРѕСЂРЅС‹Р№ Activepieces runtime context, РµСЃР»Рё РёСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ РІ Stage 17. | Runtime integration and patch/provision workflow. | LexFrame source, СЃРµРєСЂРµС‚С‹, РЅРµРѕРїРёСЃР°РЅРЅС‹Рµ СЂСѓС‡РЅС‹Рµ РїР°С‚С‡Рё. |",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -99398,9 +99398,9 @@
       "stage19_change": "inventoried"
     },
     {
-      "file": "docs/project-audit/lexframe-project-audit-2026-05-06 — копия.md",
+      "file": "docs/project-audit/lexframe-project-audit-2026-05-06 вЂ” РєРѕРїРёСЏ.md",
       "line": 193,
-      "excerpt": "`apps/backend` - основной NestJS API. Он отвечает за доменную бизнес-логику, HTTP contracts, readiness, storage policies, Activepieces integration, AI gateway, canvas services, security controls и runtime callbacks.",
+      "excerpt": "`apps/backend` - РѕСЃРЅРѕРІРЅРѕР№ NestJS API. РћРЅ РѕС‚РІРµС‡Р°РµС‚ Р·Р° РґРѕРјРµРЅРЅСѓСЋ Р±РёР·РЅРµСЃ-Р»РѕРіРёРєСѓ, HTTP contracts, readiness, storage policies, Activepieces integration, AI gateway, canvas services, security controls Рё runtime callbacks.",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -99409,7 +99409,7 @@
       "stage19_change": "inventoried"
     },
     {
-      "file": "docs/project-audit/lexframe-project-audit-2026-05-06 — копия.md",
+      "file": "docs/project-audit/lexframe-project-audit-2026-05-06 вЂ” РєРѕРїРёСЏ.md",
       "line": 198,
       "excerpt": "- `src/modules/ai-gateway`: AI chat/runtime, provider adapters, policy, workspace guards, redaction/security.",
       "persistence_path": "existing_or_reference",
@@ -99420,7 +99420,7 @@
       "stage19_change": "inventoried"
     },
     {
-      "file": "docs/project-audit/lexframe-project-audit-2026-05-06 — копия.md",
+      "file": "docs/project-audit/lexframe-project-audit-2026-05-06 вЂ” РєРѕРїРёСЏ.md",
       "line": 202,
       "excerpt": "- `src/modules/legal-*`: legal sources, legal search, indexing and RAG.",
       "persistence_path": "existing_or_reference",
@@ -99431,9 +99431,9 @@
       "stage19_change": "inventoried"
     },
     {
-      "file": "docs/project-audit/lexframe-project-audit-2026-05-06 — копия.md",
+      "file": "docs/project-audit/lexframe-project-audit-2026-05-06 вЂ” РєРѕРїРёСЏ.md",
       "line": 220,
-      "excerpt": "`apps/web` - Next.js App Router UI. Это основная пользовательская оболочка LexFrame: рабочие пространства, проекты, документы, автоматизации, builder/canvas, AI chat, recommendations, admin/security.",
+      "excerpt": "`apps/web` - Next.js App Router UI. Р­С‚Рѕ РѕСЃРЅРѕРІРЅР°СЏ РїРѕР»СЊР·РѕРІР°С‚РµР»СЊСЃРєР°СЏ РѕР±РѕР»РѕС‡РєР° LexFrame: СЂР°Р±РѕС‡РёРµ РїСЂРѕСЃС‚СЂР°РЅСЃС‚РІР°, РїСЂРѕРµРєС‚С‹, РґРѕРєСѓРјРµРЅС‚С‹, Р°РІС‚РѕРјР°С‚РёР·Р°С†РёРё, builder/canvas, AI chat, recommendations, admin/security.",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -99442,9 +99442,9 @@
       "stage19_change": "inventoried"
     },
     {
-      "file": "docs/project-audit/lexframe-project-audit-2026-05-06 — копия.md",
+      "file": "docs/project-audit/lexframe-project-audit-2026-05-06 вЂ” РєРѕРїРёСЏ.md",
       "line": 229,
-      "excerpt": "- `src/messages`: русская локализация UI.",
+      "excerpt": "- `src/messages`: СЂСѓСЃСЃРєР°СЏ Р»РѕРєР°Р»РёР·Р°С†РёСЏ UI.",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -99453,7 +99453,7 @@
       "stage19_change": "inventoried"
     },
     {
-      "file": "docs/project-audit/lexframe-project-audit-2026-05-06 — копия.md",
+      "file": "docs/project-audit/lexframe-project-audit-2026-05-06 вЂ” РєРѕРїРёСЏ.md",
       "line": 276,
       "excerpt": "| `@lexframe/ai-gateway` | AI assets, schemas and prompts. |",
       "persistence_path": "existing_or_reference",
@@ -99464,9 +99464,9 @@
       "stage19_change": "inventoried"
     },
     {
-      "file": "docs/project-audit/lexframe-project-audit-2026-05-06 — копия.md",
+      "file": "docs/project-audit/lexframe-project-audit-2026-05-06 вЂ” РєРѕРїРёСЏ.md",
       "line": 298,
-      "excerpt": "| Legal knowledge | `legal-sources`, `legal-search`, `legal-rag`, `legal-indexing`, `legal-modules` | Источники, индексирование, поиск, RAG-анализ, каталог юридических модулей. |",
+      "excerpt": "| Legal knowledge | `legal-sources`, `legal-search`, `legal-rag`, `legal-indexing`, `legal-modules` | РСЃС‚РѕС‡РЅРёРєРё, РёРЅРґРµРєСЃРёСЂРѕРІР°РЅРёРµ, РїРѕРёСЃРє, RAG-Р°РЅР°Р»РёР·, РєР°С‚Р°Р»РѕРі СЋСЂРёРґРёС‡РµСЃРєРёС… РјРѕРґСѓР»РµР№. |",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -99475,7 +99475,7 @@
       "stage19_change": "inventoried"
     },
     {
-      "file": "docs/project-audit/lexframe-project-audit-2026-05-06 — копия.md",
+      "file": "docs/project-audit/lexframe-project-audit-2026-05-06 вЂ” РєРѕРїРёСЏ.md",
       "line": 299,
       "excerpt": "| AI | `ai-gateway` | AI requests, chat sessions, provider adapters, runtime policy, redaction/security. |",
       "persistence_path": "existing_or_reference",
@@ -99486,7 +99486,7 @@
       "stage19_change": "inventoried"
     },
     {
-      "file": "docs/project-audit/lexframe-project-audit-2026-05-06 — копия.md",
+      "file": "docs/project-audit/lexframe-project-audit-2026-05-06 вЂ” РєРѕРїРёСЏ.md",
       "line": 312,
       "excerpt": "| `ai-gateway/ai-gateway.controller.ts` | AI chat/session/request APIs. | Provider policy, redaction, data classification. |",
       "persistence_path": "existing_or_reference",
@@ -99497,7 +99497,7 @@
       "stage19_change": "inventoried"
     },
     {
-      "file": "docs/project-audit/lexframe-project-audit-2026-05-06 — копия.md",
+      "file": "docs/project-audit/lexframe-project-audit-2026-05-06 вЂ” РєРѕРїРёСЏ.md",
       "line": 331,
       "excerpt": "| `documents/documents.controller.ts` | Document upload/list/detail/storage flows. | Storage readiness and signed URL policy. |",
       "persistence_path": "existing_or_reference",
@@ -99508,7 +99508,7 @@
       "stage19_change": "inventoried"
     },
     {
-      "file": "docs/project-audit/lexframe-project-audit-2026-05-06 — копия.md",
+      "file": "docs/project-audit/lexframe-project-audit-2026-05-06 вЂ” РєРѕРїРёСЏ.md",
       "line": 332,
       "excerpt": "| `identity/identity.controller.ts` | Identity/session context. | Authentication boundary. |",
       "persistence_path": "existing_or_reference",
@@ -99519,7 +99519,7 @@
       "stage19_change": "inventoried"
     },
     {
-      "file": "docs/project-audit/lexframe-project-audit-2026-05-06 — копия.md",
+      "file": "docs/project-audit/lexframe-project-audit-2026-05-06 вЂ” РєРѕРїРёСЏ.md",
       "line": 334,
       "excerpt": "| `legal-rag/legal-rag.controller.ts` | RAG analysis and request summaries. | Source visibility, prompt safety, context limits. |",
       "persistence_path": "existing_or_reference",
@@ -99530,7 +99530,7 @@
       "stage19_change": "inventoried"
     },
     {
-      "file": "docs/project-audit/lexframe-project-audit-2026-05-06 — копия.md",
+      "file": "docs/project-audit/lexframe-project-audit-2026-05-06 вЂ” РєРѕРїРёСЏ.md",
       "line": 376,
       "excerpt": "| `/app/projects/[projectId]/chats/[chatId]` | Project-scoped chat workspace. |",
       "persistence_path": "existing_or_reference",
@@ -99541,7 +99541,7 @@
       "stage19_change": "inventoried"
     },
     {
-      "file": "docs/project-audit/lexframe-project-audit-2026-05-06 — копия.md",
+      "file": "docs/project-audit/lexframe-project-audit-2026-05-06 вЂ” РєРѕРїРёСЏ.md",
       "line": 379,
       "excerpt": "| `/chat` | AI chat workspace. |",
       "persistence_path": "existing_or_reference",
@@ -99552,7 +99552,7 @@
       "stage19_change": "inventoried"
     },
     {
-      "file": "docs/project-audit/lexframe-project-audit-2026-05-06 — копия.md",
+      "file": "docs/project-audit/lexframe-project-audit-2026-05-06 вЂ” РєРѕРїРёСЏ.md",
       "line": 402,
       "excerpt": "| Messages | `apps/web/src/messages` | Russian UI copy. |",
       "persistence_path": "existing_or_reference",
@@ -99563,7 +99563,7 @@
       "stage19_change": "inventoried"
     },
     {
-      "file": "docs/project-audit/lexframe-project-audit-2026-05-06 — копия.md",
+      "file": "docs/project-audit/lexframe-project-audit-2026-05-06 вЂ” РєРѕРїРёСЏ.md",
       "line": 421,
       "excerpt": "- Storage key: `lexframe-ui-theme`.",
       "persistence_path": "existing_or_reference",
@@ -99574,9 +99574,9 @@
       "stage19_change": "inventoried"
     },
     {
-      "file": "docs/project-audit/lexframe-project-audit-2026-05-06 — копия.md",
+      "file": "docs/project-audit/lexframe-project-audit-2026-05-06 вЂ” РєРѕРїРёСЏ.md",
       "line": 433,
-      "excerpt": "- Создает `ThemeContext`.",
+      "excerpt": "- РЎРѕР·РґР°РµС‚ `ThemeContext`.",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -99585,9 +99585,9 @@
       "stage19_change": "inventoried"
     },
     {
-      "file": "docs/project-audit/lexframe-project-audit-2026-05-06 — копия.md",
+      "file": "docs/project-audit/lexframe-project-audit-2026-05-06 вЂ” РєРѕРїРёСЏ.md",
       "line": 434,
-      "excerpt": "- Читает persisted theme из `localStorage`.",
+      "excerpt": "- Р§РёС‚Р°РµС‚ persisted theme РёР· `localStorage`.",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -99596,9 +99596,9 @@
       "stage19_change": "inventoried"
     },
     {
-      "file": "docs/project-audit/lexframe-project-audit-2026-05-06 — копия.md",
+      "file": "docs/project-audit/lexframe-project-audit-2026-05-06 вЂ” РєРѕРїРёСЏ.md",
       "line": 449,
-      "excerpt": "- Ставит `data-theme`, classes `light`/`dark` and `colorScheme`.",
+      "excerpt": "- РЎС‚Р°РІРёС‚ `data-theme`, classes `light`/`dark` and `colorScheme`.",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -99607,7 +99607,7 @@
       "stage19_change": "inventoried"
     },
     {
-      "file": "docs/project-audit/lexframe-project-audit-2026-05-06 — копия.md",
+      "file": "docs/project-audit/lexframe-project-audit-2026-05-06 вЂ” РєРѕРїРёСЏ.md",
       "line": 538,
       "excerpt": "| `tests/pgtap` | SQL-level assertions, likely RLS/security coverage. | `pnpm check:db`, `pnpm db:test:rls`. | Tests require compatible local DB state. |",
       "persistence_path": "existing_or_reference",
@@ -99618,7 +99618,7 @@
       "stage19_change": "inventoried"
     },
     {
-      "file": "docs/project-audit/lexframe-project-audit-2026-05-06 — копия.md",
+      "file": "docs/project-audit/lexframe-project-audit-2026-05-06 вЂ” РєРѕРїРёСЏ.md",
       "line": 650,
       "excerpt": "| Documents storage | Access to private documents. | Signed URLs, readiness errors when storage unavailable. |",
       "persistence_path": "existing_or_reference",
@@ -99629,7 +99629,7 @@
       "stage19_change": "inventoried"
     },
     {
-      "file": "docs/project-audit/lexframe-project-audit-2026-05-06 — копия.md",
+      "file": "docs/project-audit/lexframe-project-audit-2026-05-06 вЂ” РєРѕРїРёСЏ.md",
       "line": 669,
       "excerpt": "| `pnpm check:ai` | AI assets validation. | AI gateway asset/prompt/schema changes. |",
       "persistence_path": "existing_or_reference",
@@ -99640,7 +99640,7 @@
       "stage19_change": "inventoried"
     },
     {
-      "file": "docs/project-audit/lexframe-project-audit-2026-05-06 — копия.md",
+      "file": "docs/project-audit/lexframe-project-audit-2026-05-06 вЂ” РєРѕРїРёСЏ.md",
       "line": 718,
       "excerpt": "| Backend API | Broad module coverage, active Stage 17 integration. | Controllers/modules present, backend package scripts. | Large Activepieces/canvas services need focused regression tests. |",
       "persistence_path": "existing_or_reference",
@@ -99651,7 +99651,7 @@
       "stage19_change": "inventoried"
     },
     {
-      "file": "docs/project-audit/lexframe-project-audit-2026-05-06 — копия.md",
+      "file": "docs/project-audit/lexframe-project-audit-2026-05-06 вЂ” РєРѕРїРёСЏ.md",
       "line": 741,
       "excerpt": "- Ensure Stage 17 pieces inventory/build/sync/verify reports are regenerated after catalog changes.",
       "persistence_path": "existing_or_reference",
@@ -99662,7 +99662,7 @@
       "stage19_change": "inventoried"
     },
     {
-      "file": "docs/project-audit/lexframe-project-audit-2026-05-06 — копия.md",
+      "file": "docs/project-audit/lexframe-project-audit-2026-05-06 вЂ” РєРѕРїРёСЏ.md",
       "line": 755,
       "excerpt": "- Update `README.md` to acknowledge Stage 17 as current runtime track.",
       "persistence_path": "existing_or_reference",
@@ -99673,7 +99673,7 @@
       "stage19_change": "inventoried"
     },
     {
-      "file": "docs/project-audit/lexframe-project-audit-2026-05-06 — копия.md",
+      "file": "docs/project-audit/lexframe-project-audit-2026-05-06 вЂ” РєРѕРїРёСЏ.md",
       "line": 885,
       "excerpt": "legal-rag",
       "persistence_path": "existing_or_reference",
@@ -99684,7 +99684,7 @@
       "stage19_change": "inventoried"
     },
     {
-      "file": "docs/project-audit/lexframe-project-audit-2026-05-06 — копия.md",
+      "file": "docs/project-audit/lexframe-project-audit-2026-05-06 вЂ” РєРѕРїРёСЏ.md",
       "line": 918,
       "excerpt": "- `/chat`",
       "persistence_path": "existing_or_reference",
@@ -99695,7 +99695,7 @@
       "stage19_change": "inventoried"
     },
     {
-      "file": "docs/project-audit/lexframe-project-audit-2026-05-06 — копия.md",
+      "file": "docs/project-audit/lexframe-project-audit-2026-05-06 вЂ” РєРѕРїРёСЏ.md",
       "line": 971,
       "excerpt": "| Supabase/storage | `SUPABASE_SECRET_KEY`, storage endpoint/bucket variables. |",
       "persistence_path": "existing_or_reference",
@@ -99706,7 +99706,7 @@
       "stage19_change": "inventoried"
     },
     {
-      "file": "docs/project-audit/lexframe-project-audit-2026-05-06 — копия.md",
+      "file": "docs/project-audit/lexframe-project-audit-2026-05-06 вЂ” РєРѕРїРёСЏ.md",
       "line": 991,
       "excerpt": "| RAG | Retrieval-augmented generation for legal analysis. |",
       "persistence_path": "existing_or_reference",
@@ -99717,7 +99717,7 @@
       "stage19_change": "inventoried"
     },
     {
-      "file": "docs/project-audit/lexframe-project-audit-2026-05-06 — копия.md",
+      "file": "docs/project-audit/lexframe-project-audit-2026-05-06 вЂ” РєРѕРїРёСЏ.md",
       "line": 1003,
       "excerpt": "- [ ] Confirm latest git commit and branch.",
       "persistence_path": "existing_or_reference",
@@ -99730,7 +99730,7 @@
     {
       "file": "docs/project-audit/lexframe-project-audit-2026-05-06.md",
       "line": 7,
-      "excerpt": "Git context: `main`, `3b6e77b Обновлена дизайн-конвергенция Stage 17`",
+      "excerpt": "Git context: `main`, `3b6e77b РћР±РЅРѕРІР»РµРЅР° РґРёР·Р°Р№РЅ-РєРѕРЅРІРµСЂРіРµРЅС†РёСЏ Stage 17`",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -99741,7 +99741,7 @@
     {
       "file": "docs/project-audit/lexframe-project-audit-2026-05-06.md",
       "line": 13,
-      "excerpt": "LexFrame - это платформа для юридической автоматизации, построенная вокруг рабочих пространств, проектов, документов, юридических источников, AI/RAG-сценариев, canvas/workflow-модели, запусков автоматизаций, согласований и доставки результа",
+      "excerpt": "LexFrame - СЌС‚Рѕ РїР»Р°С‚С„РѕСЂРјР° РґР»СЏ СЋСЂРёРґРёС‡РµСЃРєРѕР№ Р°РІС‚РѕРјР°С‚РёР·Р°С†РёРё, РїРѕСЃС‚СЂРѕРµРЅРЅР°СЏ РІРѕРєСЂСѓРі СЂР°Р±РѕС‡РёС… РїСЂРѕСЃС‚СЂР°РЅСЃС‚РІ, РїСЂРѕРµРєС‚РѕРІ, РґРѕРєСѓРјРµРЅС‚РѕРІ, СЋСЂРёРґРёС‡РµСЃРєРёС… РёСЃС‚РѕС‡РЅРёРєРѕРІ, AI/RAG-СЃС†РµРЅР°СЂРёРµРІ, canvas/workflow-РјРѕРґРµР»Рё, Р·Р°РїСѓСЃРєРѕРІ Р°РІС‚РѕРјР°С‚РёР·Р°С†РёР№, СЃРѕРіР»Р°СЃРѕРІР°РЅРёР№ Рё РґРѕСЃС‚Р°РІРєРё СЂРµР·СѓР»СЊС‚Р°",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -99752,7 +99752,7 @@
     {
       "file": "docs/project-audit/lexframe-project-audit-2026-05-06.md",
       "line": 18,
-      "excerpt": "- Работа с документами: загрузка, классификация, шаблоны, генерация, валидация, signed URL/storage readiness.",
+      "excerpt": "- Р Р°Р±РѕС‚Р° СЃ РґРѕРєСѓРјРµРЅС‚Р°РјРё: Р·Р°РіСЂСѓР·РєР°, РєР»Р°СЃСЃРёС„РёРєР°С†РёСЏ, С€Р°Р±Р»РѕРЅС‹, РіРµРЅРµСЂР°С†РёСЏ, РІР°Р»РёРґР°С†РёСЏ, signed URL/storage readiness.",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -99763,7 +99763,7 @@
     {
       "file": "docs/project-audit/lexframe-project-audit-2026-05-06.md",
       "line": 19,
-      "excerpt": "- Юридический поиск, источники и RAG-анализ.",
+      "excerpt": "- Р®СЂРёРґРёС‡РµСЃРєРёР№ РїРѕРёСЃРє, РёСЃС‚РѕС‡РЅРёРєРё Рё RAG-Р°РЅР°Р»РёР·.",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -99774,7 +99774,7 @@
     {
       "file": "docs/project-audit/lexframe-project-audit-2026-05-06.md",
       "line": 70,
-      "excerpt": "| `tests/e2e` | Playwright coverage по readiness, documents, Activepieces, security, Stage 17 canvas/design. |",
+      "excerpt": "| `tests/e2e` | Playwright coverage РїРѕ readiness, documents, Activepieces, security, Stage 17 canvas/design. |",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -99785,7 +99785,7 @@
     {
       "file": "docs/project-audit/lexframe-project-audit-2026-05-06.md",
       "line": 71,
-      "excerpt": "| Git context | Последние коммиты Stage 17 и чистый `git status` на момент аудита. |",
+      "excerpt": "| Git context | РџРѕСЃР»РµРґРЅРёРµ РєРѕРјРјРёС‚С‹ Stage 17 Рё С‡РёСЃС‚С‹Р№ `git status` РЅР° РјРѕРјРµРЅС‚ Р°СѓРґРёС‚Р°. |",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -99796,7 +99796,7 @@
     {
       "file": "docs/project-audit/lexframe-project-audit-2026-05-06.md",
       "line": 74,
-      "excerpt": "Дополнительный источник ориентации: codebase-memory graph для проекта `E-Law_frame_main`. Индекс содержит 37 372 nodes и 74 586 edges, включая functions, methods, classes, files, routes, imports, calls и тестовые связи. Граф подтверждает кр",
+      "excerpt": "Р”РѕРїРѕР»РЅРёС‚РµР»СЊРЅС‹Р№ РёСЃС‚РѕС‡РЅРёРє РѕСЂРёРµРЅС‚Р°С†РёРё: codebase-memory graph РґР»СЏ РїСЂРѕРµРєС‚Р° `E-Law_frame_main`. РРЅРґРµРєСЃ СЃРѕРґРµСЂР¶РёС‚ 37 372 nodes Рё 74 586 edges, РІРєР»СЋС‡Р°СЏ functions, methods, classes, files, routes, imports, calls Рё С‚РµСЃС‚РѕРІС‹Рµ СЃРІСЏР·Рё. Р“СЂР°С„ РїРѕРґС‚РІРµСЂР¶РґР°РµС‚ РєСЂ",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -99807,7 +99807,7 @@
     {
       "file": "docs/project-audit/lexframe-project-audit-2026-05-06.md",
       "line": 85,
-      "excerpt": "| Legal source | Юридический источник или материал для поиска/RAG. |",
+      "excerpt": "| Legal source | Р®СЂРёРґРёС‡РµСЃРєРёР№ РёСЃС‚РѕС‡РЅРёРє РёР»Рё РјР°С‚РµСЂРёР°Р» РґР»СЏ РїРѕРёСЃРєР°/RAG. |",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -99818,7 +99818,7 @@
     {
       "file": "docs/project-audit/lexframe-project-audit-2026-05-06.md",
       "line": 91,
-      "excerpt": "| Readiness | Диагностика готовности runtime, storage, AI, Activepieces, delivery и security prerequisites. |",
+      "excerpt": "| Readiness | Р”РёР°РіРЅРѕСЃС‚РёРєР° РіРѕС‚РѕРІРЅРѕСЃС‚Рё runtime, storage, AI, Activepieces, delivery Рё security prerequisites. |",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -99829,7 +99829,7 @@
     {
       "file": "docs/project-audit/lexframe-project-audit-2026-05-06.md",
       "line": 97,
-      "excerpt": "- Пользователь запускает RAG-анализ или AI chat с учетом политики провайдера и безопасности.",
+      "excerpt": "- РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ Р·Р°РїСѓСЃРєР°РµС‚ RAG-Р°РЅР°Р»РёР· РёР»Рё AI chat СЃ СѓС‡РµС‚РѕРј РїРѕР»РёС‚РёРєРё РїСЂРѕРІР°Р№РґРµСЂР° Рё Р±РµР·РѕРїР°СЃРЅРѕСЃС‚Рё.",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -99851,7 +99851,7 @@
     {
       "file": "docs/project-audit/lexframe-project-audit-2026-05-06.md",
       "line": 159,
-      "excerpt": "| `activepieces` | Локальный/вендорный Activepieces runtime context, если используется в Stage 17. | Runtime integration and patch/provision workflow. | LexFrame source, секреты, неописанные ручные патчи. |",
+      "excerpt": "| `activepieces` | Р›РѕРєР°Р»СЊРЅС‹Р№/РІРµРЅРґРѕСЂРЅС‹Р№ Activepieces runtime context, РµСЃР»Рё РёСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ РІ Stage 17. | Runtime integration and patch/provision workflow. | LexFrame source, СЃРµРєСЂРµС‚С‹, РЅРµРѕРїРёСЃР°РЅРЅС‹Рµ СЂСѓС‡РЅС‹Рµ РїР°С‚С‡Рё. |",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -99862,7 +99862,7 @@
     {
       "file": "docs/project-audit/lexframe-project-audit-2026-05-06.md",
       "line": 193,
-      "excerpt": "`apps/backend` - основной NestJS API. Он отвечает за доменную бизнес-логику, HTTP contracts, readiness, storage policies, Activepieces integration, AI gateway, canvas services, security controls и runtime callbacks.",
+      "excerpt": "`apps/backend` - РѕСЃРЅРѕРІРЅРѕР№ NestJS API. РћРЅ РѕС‚РІРµС‡Р°РµС‚ Р·Р° РґРѕРјРµРЅРЅСѓСЋ Р±РёР·РЅРµСЃ-Р»РѕРіРёРєСѓ, HTTP contracts, readiness, storage policies, Activepieces integration, AI gateway, canvas services, security controls Рё runtime callbacks.",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -99895,7 +99895,7 @@
     {
       "file": "docs/project-audit/lexframe-project-audit-2026-05-06.md",
       "line": 220,
-      "excerpt": "`apps/web` - Next.js App Router UI. Это основная пользовательская оболочка LexFrame: рабочие пространства, проекты, документы, автоматизации, builder/canvas, AI chat, recommendations, admin/security.",
+      "excerpt": "`apps/web` - Next.js App Router UI. Р­С‚Рѕ РѕСЃРЅРѕРІРЅР°СЏ РїРѕР»СЊР·РѕРІР°С‚РµР»СЊСЃРєР°СЏ РѕР±РѕР»РѕС‡РєР° LexFrame: СЂР°Р±РѕС‡РёРµ РїСЂРѕСЃС‚СЂР°РЅСЃС‚РІР°, РїСЂРѕРµРєС‚С‹, РґРѕРєСѓРјРµРЅС‚С‹, Р°РІС‚РѕРјР°С‚РёР·Р°С†РёРё, builder/canvas, AI chat, recommendations, admin/security.",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -99906,7 +99906,7 @@
     {
       "file": "docs/project-audit/lexframe-project-audit-2026-05-06.md",
       "line": 229,
-      "excerpt": "- `src/messages`: русская локализация UI.",
+      "excerpt": "- `src/messages`: СЂСѓСЃСЃРєР°СЏ Р»РѕРєР°Р»РёР·Р°С†РёСЏ UI.",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -99928,7 +99928,7 @@
     {
       "file": "docs/project-audit/lexframe-project-audit-2026-05-06.md",
       "line": 298,
-      "excerpt": "| Legal knowledge | `legal-sources`, `legal-search`, `legal-rag`, `legal-indexing`, `legal-modules` | Источники, индексирование, поиск, RAG-анализ, каталог юридических модулей. |",
+      "excerpt": "| Legal knowledge | `legal-sources`, `legal-search`, `legal-rag`, `legal-indexing`, `legal-modules` | РСЃС‚РѕС‡РЅРёРєРё, РёРЅРґРµРєСЃРёСЂРѕРІР°РЅРёРµ, РїРѕРёСЃРє, RAG-Р°РЅР°Р»РёР·, РєР°С‚Р°Р»РѕРі СЋСЂРёРґРёС‡РµСЃРєРёС… РјРѕРґСѓР»РµР№. |",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -100038,7 +100038,7 @@
     {
       "file": "docs/project-audit/lexframe-project-audit-2026-05-06.md",
       "line": 433,
-      "excerpt": "- Создает `ThemeContext`.",
+      "excerpt": "- РЎРѕР·РґР°РµС‚ `ThemeContext`.",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -100049,7 +100049,7 @@
     {
       "file": "docs/project-audit/lexframe-project-audit-2026-05-06.md",
       "line": 434,
-      "excerpt": "- Читает persisted theme из `localStorage`.",
+      "excerpt": "- Р§РёС‚Р°РµС‚ persisted theme РёР· `localStorage`.",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,
@@ -100060,7 +100060,7 @@
     {
       "file": "docs/project-audit/lexframe-project-audit-2026-05-06.md",
       "line": 449,
-      "excerpt": "- Ставит `data-theme`, classes `light`/`dark` and `colorScheme`.",
+      "excerpt": "- РЎС‚Р°РІРёС‚ `data-theme`, classes `light`/`dark` and `colorScheme`.",
       "persistence_path": "existing_or_reference",
       "uses_ai_gateway": false,
       "direct_provider_call_risk": false,

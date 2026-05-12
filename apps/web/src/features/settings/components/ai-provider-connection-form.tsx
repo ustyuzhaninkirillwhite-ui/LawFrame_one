@@ -22,7 +22,7 @@ const providers: readonly AiProviderCode[] = [
 
 const DEFAULT_AI_PROVIDER: AiProviderCode = "cometapi";
 const DEFAULT_AI_BASE_URL = "https://api.cometapi.com/v1";
-const DEFAULT_AI_MODEL_ID = "grok-4-1-fast-non-reasoning";
+const DEFAULT_AI_MODEL_ID = "deepseek-v4-pro";
 const DEFAULT_AI_CAPABILITIES: AiProviderConnectionCapabilities = {
   streaming: true,
   jsonMode: true,

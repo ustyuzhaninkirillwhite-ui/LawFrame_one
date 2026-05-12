@@ -102,6 +102,8 @@ export interface ChatCompletionStreamResponse {
   readonly latencyMs: number;
   readonly contentChunkCount: number;
   readonly reasoningChunkCount: number;
+  readonly attemptCount: number;
+  readonly retryReason: string | null;
   readonly status: number | null;
   readonly errorClass: string | null;
   readonly requestDescriptor: ChatCompletionRequestDescriptor;
@@ -298,17 +300,88 @@ async function requestOpenAiCompatibleChatStream(input: {
   const startedAt = Date.now();
   const endpoint = `${normalizeOpenAiBaseUrl(input.baseUrl)}/chat/completions`;
   const sourceTokenFingerprint = fingerprintProviderSecret(input.apiKey);
-  const descriptor = buildChatCompletionDescriptor({
-    provider: input.provider,
+  let attemptCount = 1;
+  let retryReason: string | null = null;
+
+  const first = await requestOpenAiCompatibleChatStreamAttempt({
+    ...input,
     endpoint,
-    model: input.request.model,
-    secretFingerprint: input.secretFingerprint,
     sourceTokenFingerprint,
-    outgoingHeaderTokenFingerprint: sourceTokenFingerprint,
-    outgoingHeaderLength: input.apiKey.length,
     maxTokens: input.request.maxTokens,
     reasoningEffort: input.request.reasoningEffort,
-    thinkingEnabled: input.request.thinking?.type === 'enabled',
+    thinking: input.request.thinking ?? { type: 'enabled' as const },
+  });
+  let final = first;
+  let contentChunkCount = first.contentChunkCount;
+  let reasoningChunkCount = first.reasoningChunkCount;
+
+  if (
+    !first.ok &&
+    first.status === 200 &&
+    first.errorClass === 'PROVIDER_EMPTY_RESPONSE'
+  ) {
+    retryReason = 'PROVIDER_EMPTY_RESPONSE';
+    attemptCount = 2;
+    const retry = await requestOpenAiCompatibleChatStreamAttempt({
+      ...input,
+      endpoint,
+      sourceTokenFingerprint,
+      maxTokens: 768,
+      reasoningEffort: 'low',
+      thinking: { type: 'disabled' as const },
+    });
+    final = retry;
+    contentChunkCount += retry.contentChunkCount;
+    reasoningChunkCount += retry.reasoningChunkCount;
+  }
+
+  return {
+    ok: final.ok,
+    provider: input.provider,
+    model: input.request.model,
+    text: final.text,
+    latencyMs: Date.now() - startedAt,
+    contentChunkCount,
+    reasoningChunkCount,
+    attemptCount,
+    retryReason,
+    status: final.status,
+    errorClass: final.errorClass,
+    requestDescriptor: final.requestDescriptor,
+  };
+}
+
+async function requestOpenAiCompatibleChatStreamAttempt(input: {
+  readonly provider: AiProvider;
+  readonly apiKey: string;
+  readonly endpoint: string;
+  readonly secretFingerprint: string | null;
+  readonly sourceTokenFingerprint: string;
+  readonly request: ChatCompletionStreamRequest;
+  readonly maxTokens: number;
+  readonly reasoningEffort: string;
+  readonly thinking: { readonly type: 'enabled' | 'disabled' };
+  readonly timeoutMs?: number;
+}): Promise<{
+  readonly ok: boolean;
+  readonly text: string;
+  readonly contentChunkCount: number;
+  readonly reasoningChunkCount: number;
+  readonly status: number | null;
+  readonly errorClass: string | null;
+  readonly requestDescriptor: ChatCompletionRequestDescriptor;
+}> {
+  const descriptor = buildChatCompletionDescriptor({
+    provider: input.provider,
+    endpoint: input.endpoint,
+    model: input.request.model,
+    secretFingerprint: input.secretFingerprint,
+    sourceTokenFingerprint: input.sourceTokenFingerprint,
+    outgoingHeaderTokenFingerprint: input.sourceTokenFingerprint,
+    outgoingHeaderLength: input.apiKey.length,
+    maxTokens: input.maxTokens,
+    reasoningEffort: input.reasoningEffort,
+    thinkingEnabled: input.thinking.type === 'enabled',
   });
   const controller = new AbortController();
   const timeout = setTimeout(
@@ -324,11 +397,11 @@ async function requestOpenAiCompatibleChatStream(input: {
         content: message.content,
       })),
       stream: true,
-      max_tokens: input.request.maxTokens,
-      reasoning_effort: input.request.reasoningEffort,
-      thinking: input.request.thinking ?? { type: 'enabled' as const },
+      max_tokens: input.maxTokens,
+      reasoning_effort: input.reasoningEffort,
+      thinking: input.thinking,
     };
-    const response = await fetch(endpoint, {
+    const response = await fetch(input.endpoint, {
       method: 'POST',
       signal: controller.signal,
       headers: {
@@ -342,10 +415,7 @@ async function requestOpenAiCompatibleChatStream(input: {
       const responseBody = await response.text().catch(() => '');
       return {
         ok: false,
-        provider: input.provider,
-        model: input.request.model,
         text: '',
-        latencyMs: Date.now() - startedAt,
         contentChunkCount: 0,
         reasoningChunkCount: 0,
         status: response.status,
@@ -356,26 +426,21 @@ async function requestOpenAiCompatibleChatStream(input: {
 
     const streamText = await response.text();
     const parsed = parseOpenAiCompatibleSse(streamText);
+    const text = parsed.text.trim();
 
     return {
-      ok: parsed.text.trim().length > 0,
-      provider: input.provider,
-      model: input.request.model,
-      text: parsed.text.trim(),
-      latencyMs: Date.now() - startedAt,
+      ok: text.length > 0,
+      text,
       contentChunkCount: parsed.contentChunkCount,
       reasoningChunkCount: parsed.reasoningChunkCount,
       status: response.status,
-      errorClass: parsed.text.trim().length > 0 ? null : 'PROVIDER_EMPTY_RESPONSE',
+      errorClass: text.length > 0 ? null : 'PROVIDER_EMPTY_RESPONSE',
       requestDescriptor: descriptor,
     };
   } catch {
     return {
       ok: false,
-      provider: input.provider,
-      model: input.request.model,
       text: '',
-      latencyMs: Date.now() - startedAt,
       contentChunkCount: 0,
       reasoningChunkCount: 0,
       status: null,
@@ -461,6 +526,8 @@ function parseOpenAiCompatibleSse(value: string) {
     let payload: {
       readonly choices?: readonly {
         readonly delta?: Record<string, unknown>;
+        readonly message?: { readonly content?: unknown };
+        readonly text?: unknown;
       }[];
     };
 
@@ -472,7 +539,15 @@ function parseOpenAiCompatibleSse(value: string) {
 
     for (const choice of payload.choices ?? []) {
       const delta = choice.delta ?? {};
-      const content = coerceStreamText(delta.content);
+      const content = [
+        delta.content,
+        delta.text,
+        delta.output_text,
+        choice.message?.content,
+        choice.text,
+      ]
+        .map(coerceStreamText)
+        .join('');
       if (content) {
         text += content;
         contentChunkCount += 1;
@@ -588,6 +663,8 @@ export class LocalMockAdapter implements AiProviderAdapter {
       latencyMs: 0,
       contentChunkCount: 0,
       reasoningChunkCount: 0,
+      attemptCount: 0,
+      retryReason: null,
       status: null,
       errorClass: 'PROVIDER_NOT_CONFIGURED',
       requestDescriptor: descriptor,
@@ -715,6 +792,8 @@ export class CometApiAdapter implements AiProviderAdapter {
         latencyMs: 0,
         contentChunkCount: 0,
         reasoningChunkCount: 0,
+        attemptCount: 0,
+        retryReason: null,
         status: null,
         errorClass: 'PROVIDER_NOT_CONFIGURED',
         requestDescriptor: descriptor,

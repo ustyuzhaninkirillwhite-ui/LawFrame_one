@@ -179,6 +179,38 @@ describe("ActivepiecesCanvasWrapper", () => {
       expect(onMounted).toHaveBeenCalledTimes(1);
     });
   });
+
+  it("removes Activepieces browser session tokens when the iframe unmounts", async () => {
+    const configure = vi.fn(async (input: Record<string, unknown>) => {
+      window.sessionStorage.setItem(
+        "token",
+        [
+          "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
+          "eyJpc3MiOiJhY3RpdmVwaWVjZXMiLCJ0eXBlIjoiQUNDRVNTIn0",
+          "signature",
+        ].join("."),
+      );
+      writeIframe(String(input.containerId), "Flow Builder");
+    });
+    window.activepieces = { configure };
+
+    const result = render(
+      <ActivepiecesCanvasWrapper
+        session={session("sess_token_cleanup")}
+        tokenRef={{ current: "runtime_token" }}
+        onMounted={vi.fn()}
+        onAuthFailure={vi.fn()}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(window.sessionStorage.getItem("token")).toContain(".");
+    });
+
+    result.unmount();
+
+    expect(window.sessionStorage.getItem("token")).toBeNull();
+  });
 });
 
 function writeIframe(containerId: string, text: string) {

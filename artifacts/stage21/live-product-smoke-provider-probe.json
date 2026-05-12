@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-10T10:39:02.806Z",
+  "generatedAt": "2026-05-10T11:36:34.146Z",
   "provider": "cometapi",
   "routeGroup": "chat_ai",
   "compatibility": "openai_chat_completions",
@@ -11,7 +11,7 @@
     "used": true,
     "ok": true,
     "status": 200,
-    "latencyMs": 1847,
+    "latencyMs": 1916,
     "errorClass": null,
     "bodyPreview": "{\"data\":[{\"id\":\"abab5.5-chat\",\"object\":\"model\",\"created\":1626777600,\"owned_by\":\"minimax\",\"supported_endpoint_types\":[\"openai\"]},{\"id\":\"abab5.5s-chat\",\"object\":\"model\",\"created\":1626777600,\"owned_by\":\"minimax\",\"supported_endpoint_types\":[\"openai\"]},{\"id\":\"abab6-chat\",\"object\":\"model\",\"created\":1626777600,\"owned_by\":\"minimax\",\"supported_endpoint_types\":[\"openai\"]},{\"id\":\"abab6.5g-chat\",\"object\":\"model\",\"created\":1626777600,\"owned_by\":\"custom\",\"supported_endpoint_types\":[\"openai\"]},{\"id\":\"abab6.5s-"
   },
@@ -20,12 +20,12 @@
     "used": true,
     "ok": true,
     "status": 200,
-    "latencyMs": 11531,
+    "latencyMs": 6811,
     "markerFound": true,
     "answerVerified": true,
-    "visiblePreview": "9.8 is greater than 9.11 because when comparing the",
-    "contentChunkCount": 14,
-    "reasoningChunkCount": 241,
+    "visiblePreview": "9.8 is greater than 9.11.",
+    "contentChunkCount": 11,
+    "reasoningChunkCount": 123,
     "errorClass": null,
     "bodyPreview": null,
     "requestDescriptor": {

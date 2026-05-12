@@ -388,7 +388,7 @@ describe('AiSettingsService provider connections', () => {
     );
   });
 
-  it('uses the saved backend secret when running a live prompt-free connection test', async () => {
+  it('uses the saved backend secret and requires visible chat stream content when testing a connection', async () => {
     process.env.LEXFRAME_AI_SETTINGS_LIVE_TESTS = '1';
     const workspaceId = '00000000-0000-4000-8000-000000000021';
     const connectionId = 'conn_workspace_ai';
@@ -439,7 +439,20 @@ describe('AiSettingsService provider connections', () => {
     };
     const fetchMock = jest
       .spyOn(globalThis, 'fetch')
-      .mockResolvedValue(new Response('{}', { status: 200 }));
+      .mockResolvedValueOnce(new Response('{}', { status: 200 }))
+      .mockResolvedValueOnce(
+        new Response(
+          [
+            'data: {"choices":[{"delta":{"content":"LEXFRAME_CHAT_SMOKE_OK"}}]}',
+            'data: [DONE]',
+            '',
+          ].join('\n\n'),
+          {
+            status: 200,
+            headers: { 'content-type': 'text/event-stream' },
+          },
+        ),
+      );
     const service = new AiSettingsService(
       databaseService as never,
       { record: jest.fn().mockResolvedValue(undefined) } as never,
@@ -492,6 +505,129 @@ describe('AiSettingsService provider connections', () => {
         }),
       }),
     );
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://api.cometapi.com/v1/chat/completions',
+      expect.objectContaining({
+        method: 'POST',
+        headers: expect.objectContaining({
+          authorization: 'Bearer sk-live-provider-key',
+          'content-type': 'application/json',
+        }),
+      }),
+    );
+    const chatProbeBody = JSON.parse(
+      String((fetchMock.mock.calls[1]?.[1] as RequestInit | undefined)?.body),
+    );
+    expect(chatProbeBody).toMatchObject({
+      stream: true,
+      max_tokens: 768,
+      reasoning_effort: 'low',
+      thinking: { type: 'disabled' },
+    });
+    expect(JSON.stringify(databaseService.query.mock.calls)).not.toContain(
+      'sk-live-provider-key',
+    );
+  });
+
+  it('fails the live connection test when models endpoint is healthy but chat stream has no visible content', async () => {
+    process.env.LEXFRAME_AI_SETTINGS_LIVE_TESTS = '1';
+    const workspaceId = '00000000-0000-4000-8000-000000000021';
+    const connectionId = 'conn_workspace_ai';
+    const databaseService = {
+      one: jest.fn().mockResolvedValue({
+        id: connectionId,
+        workspace_id: workspaceId,
+        owner_scope: 'workspace',
+        owner_user_id: null,
+        provider_code: 'cometapi',
+        ui_label: 'CometAPI Grok',
+        display_name: 'CometAPI Grok',
+        base_url: 'https://api.cometapi.com/v1',
+        default_model: 'deepseek-v4-pro',
+        enabled: true,
+        provider_metadata_redacted: {
+          capabilities: { streaming: true },
+        },
+        secret_ref_id: '00000000-0000-4000-8000-000000000099',
+        secret_status: 'active',
+        secret_backend: 'supabase_vault',
+        fingerprint: 'sha256:fingerprint',
+        secret_updated_at: '2026-05-09T00:00:00.000Z',
+        last_test_status: 'not_tested',
+        last_tested_at: null,
+        last_used_at: null,
+        created_at: '2026-05-09T00:00:00.000Z',
+        updated_at: '2026-05-09T00:00:00.000Z',
+      }),
+      query: jest.fn().mockResolvedValue({ rows: [] }),
+    };
+    const aiSecretService = {
+      resolveProviderCallSecret: jest.fn().mockResolvedValue({
+        providerConnectionId: connectionId,
+        providerCode: 'cometapi',
+        baseUrl: 'https://api.cometapi.com/v1',
+        modelId: 'deepseek-v4-pro',
+        secretRefId: '00000000-0000-4000-8000-000000000099',
+        fingerprint: 'sha256:fingerprint',
+        apiKey: new SecretString('sk-live-provider-key'),
+      }),
+      createOrRotateSecret: jest.fn(),
+    };
+    jest
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(new Response('{}', { status: 200 }))
+      .mockResolvedValueOnce(
+        new Response(
+          [
+            'data: {"choices":[{"delta":{"reasoning_content":"hidden only"}}]}',
+            'data: [DONE]',
+            '',
+          ].join('\n\n'),
+          {
+            status: 200,
+            headers: { 'content-type': 'text/event-stream' },
+          },
+        ),
+      );
+    const service = new AiSettingsService(
+      databaseService as never,
+      { record: jest.fn().mockResolvedValue(undefined) } as never,
+      aiSecretService as never,
+      { resolveEffectivePolicy: jest.fn() } as never,
+    );
+
+    const result = await service.testConnection({
+      actor: {
+        id: '00000000-0000-4000-8000-000000000031',
+        email: 'owner@example.test',
+        fullName: 'Owner',
+        emailConfirmedAt: '2026-05-09T00:00:00.000Z',
+        assuranceLevel: 'aal1',
+        accessToken: 'dev-token',
+        sessionId: 'session_001',
+      },
+      access: {
+        activeWorkspace: {
+          id: workspaceId,
+          slug: 'workspace',
+          name: 'Workspace',
+          role: 'owner',
+        },
+        roles: ['owner'],
+        permissions: [
+          'settings.ai.connection.test',
+          'settings.ai.manage_workspace',
+        ],
+      } as never,
+      connectionId,
+      requestId: 'request_001',
+      traceId: 'trace_001',
+    });
+
+    expect(result).toMatchObject({
+      status: 'failed',
+      errorCode: 'AI_PROVIDER_EMPTY_RESPONSE',
+    });
     expect(JSON.stringify(databaseService.query.mock.calls)).not.toContain(
       'sk-live-provider-key',
     );
