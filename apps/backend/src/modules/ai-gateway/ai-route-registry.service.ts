@@ -11,6 +11,7 @@ import { Injectable } from '@nestjs/common';
 const NOW_PLACEHOLDER = '1970-01-01T00:00:00.000Z';
 const DEFAULT_MODEL = 'deepseek-v4-pro';
 const DEFAULT_PROVIDER_CONNECTION_ID = 'owner_default_ai';
+export const DEEPSEEK_V4_MAX_OUTPUT_TOKENS = 384_000;
 
 @Injectable()
 export class AiProviderConnectionRegistryService {
@@ -208,7 +209,7 @@ export function defaultValves(routeCode: AiRouteCode): readonly AiRouteValve[] {
       routeCode,
       'max_output_tokens',
       'number',
-      4096,
+      DEEPSEEK_V4_MAX_OUTPUT_TOKENS,
       'Maximum provider output tokens.',
     ),
     valve(

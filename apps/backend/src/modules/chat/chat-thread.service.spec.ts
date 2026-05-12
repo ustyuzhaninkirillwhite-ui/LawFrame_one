@@ -125,7 +125,7 @@ describe('ChatThreadService project chat streaming', () => {
             hasAuthorizationHeader: true,
             secretFingerprint: 'sha256:abcdef1234567890',
             stream: true,
-            maxTokens: 4096,
+            maxTokens: 384_000,
             reasoningEffort: 'high',
             thinkingEnabled: true,
           },
@@ -174,7 +174,7 @@ describe('ChatThreadService project chat streaming', () => {
     expect(aiGatewayService.streamChatCompletion).toHaveBeenCalledWith(
       expect.objectContaining({
         route: 'default_chat',
-        maxTokens: 4096,
+        maxTokens: 384_000,
         reasoningEffort: 'high',
         thinking: { type: 'enabled' },
       }),
@@ -271,7 +271,7 @@ describe('ChatThreadService project chat streaming', () => {
             hasAuthorizationHeader: true,
             secretFingerprint: 'sha256:abcdef1234567890',
             stream: true,
-            maxTokens: 4096,
+            maxTokens: 384_000,
             reasoningEffort: 'high',
             thinkingEnabled: true,
           },

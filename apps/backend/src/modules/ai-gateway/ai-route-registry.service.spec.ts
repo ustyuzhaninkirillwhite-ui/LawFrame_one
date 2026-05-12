@@ -68,5 +68,10 @@ describe('AiModelRouteRegistryService Stage 18 defaults', () => {
     expect(
       registry.listValves('default_chat').filter((valve) => valve.secret),
     ).toEqual([]);
+    expect(
+      registry
+        .listValves('default_chat')
+        .find((valve) => valve.key === 'max_output_tokens')?.defaultValue,
+    ).toBe(384_000);
   });
 });

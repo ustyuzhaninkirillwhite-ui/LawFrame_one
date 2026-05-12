@@ -28,12 +28,12 @@ import { AppHttpException } from '../../common/errors/app-http.exception';
 import { AIGatewayService } from '../ai-gateway/ai-gateway.service';
 import type { ChatCompletionRequestDescriptor } from '../ai-gateway/ai-provider.adapters';
 import { AiRouteGroupResolverService } from '../ai-gateway/ai-route-group-resolver.service';
+import { DEEPSEEK_V4_MAX_OUTPUT_TOKENS } from '../ai-gateway/ai-route-registry.service';
 import { AuditService } from '../audit/audit.service';
 import { DatabaseService } from '../database/database.service';
 import { ChatStreamService } from './chat-stream.service';
 
 const DEFAULT_STAGE19_PROJECT_ID = 'project_claim_001';
-const PROJECT_CHAT_MAX_OUTPUT_TOKENS = 4096;
 
 interface RequestMeta {
   readonly requestId: string | null;
@@ -544,7 +544,7 @@ export class ChatThreadService {
         taskType: 'clarification',
         hasDocuments: (input.attachments?.length ?? 0) > 0,
         messages: buildProjectChatMessages(input.text),
-        maxTokens: PROJECT_CHAT_MAX_OUTPUT_TOKENS,
+        maxTokens: DEEPSEEK_V4_MAX_OUTPUT_TOKENS,
         reasoningEffort: 'high',
         thinking: { type: 'enabled' },
         route: effectivePolicy.routeCode,
