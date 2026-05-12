@@ -125,7 +125,7 @@ describe('ChatThreadService project chat streaming', () => {
             hasAuthorizationHeader: true,
             secretFingerprint: 'sha256:abcdef1234567890',
             stream: true,
-            maxTokens: 256,
+            maxTokens: 4096,
             reasoningEffort: 'high',
             thinkingEnabled: true,
           },
@@ -174,7 +174,7 @@ describe('ChatThreadService project chat streaming', () => {
     expect(aiGatewayService.streamChatCompletion).toHaveBeenCalledWith(
       expect.objectContaining({
         route: 'default_chat',
-        maxTokens: 256,
+        maxTokens: 4096,
         reasoningEffort: 'high',
         thinking: { type: 'enabled' },
       }),
@@ -190,8 +190,9 @@ describe('ChatThreadService project chat streaming', () => {
       (message) => message.role === 'system',
     );
     expect(systemMessage?.content).toContain(
-      'You are a project test assistant.',
+      'Return a complete answer at the level of detail requested by the user.',
     );
+    expect(systemMessage?.content).not.toContain('Answer briefly');
     expect(systemMessage?.content).toContain('LEXFRAME_CHAT_SMOKE_OK');
     expect(systemMessage?.content).toContain('Do not reveal API keys');
     expect(snapshot.status).toBe('completed');
@@ -270,7 +271,7 @@ describe('ChatThreadService project chat streaming', () => {
             hasAuthorizationHeader: true,
             secretFingerprint: 'sha256:abcdef1234567890',
             stream: true,
-            maxTokens: 256,
+            maxTokens: 4096,
             reasoningEffort: 'high',
             thinkingEnabled: true,
           },
