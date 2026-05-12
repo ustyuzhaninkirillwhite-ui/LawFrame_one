@@ -221,7 +221,7 @@ describe('CometApiAdapter', () => {
     expect((init?.headers as Record<string, string>).authorization).toBe(
       'Bearer sk-workspace-runtime-key',
     );
-    const body = JSON.parse(String(init?.body)) as Record<string, unknown>;
+    const body = parseRequestJsonBody(init);
     expect(body).toMatchObject({
       model: 'deepseek-v4-pro',
       stream: true,
@@ -323,12 +323,12 @@ describe('CometApiAdapter', () => {
     });
 
     expect(fetchMock).toHaveBeenCalledTimes(2);
-    const firstBody = JSON.parse(
-      String((fetchMock.mock.calls[0]?.[1] as RequestInit | undefined)?.body),
-    ) as Record<string, unknown>;
-    const retryBody = JSON.parse(
-      String((fetchMock.mock.calls[1]?.[1] as RequestInit | undefined)?.body),
-    ) as Record<string, unknown>;
+    const firstBody = parseRequestJsonBody(
+      fetchMock.mock.calls[0]?.[1] as RequestInit | undefined,
+    );
+    const retryBody = parseRequestJsonBody(
+      fetchMock.mock.calls[1]?.[1] as RequestInit | undefined,
+    );
 
     expect(firstBody).toMatchObject({
       max_tokens: 256,
@@ -430,4 +430,11 @@ function restoreEnv(
   }
 
   process.env[key] = value;
+}
+
+function parseRequestJsonBody(init: RequestInit | undefined) {
+  if (typeof init?.body !== 'string') {
+    throw new Error('Expected JSON request body.');
+  }
+  return JSON.parse(init.body) as Record<string, unknown>;
 }

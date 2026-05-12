@@ -134,7 +134,7 @@ describe('ActivepiecesSessionService', () => {
             message: null,
           }),
         ),
-        toOpenCheck: jest.fn((readiness) => readiness),
+        toOpenCheck: jest.fn((readiness: unknown) => readiness),
       } as never,
       {
         issue: jest.fn(() =>

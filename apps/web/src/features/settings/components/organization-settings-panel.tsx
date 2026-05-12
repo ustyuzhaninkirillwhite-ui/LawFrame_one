@@ -9,6 +9,36 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { SettingsSaveBar } from "./settings-save-bar";
 
+interface OrganizationFormState {
+  readonly organizationDisplayName: string;
+  readonly organizationLegalName: string;
+}
+
+type OrganizationFormAction =
+  | { readonly type: "reset"; readonly form: OrganizationFormState }
+  | { readonly type: "patch"; readonly patch: Partial<OrganizationFormState> };
+
+function buildOrganizationForm(
+  organization: SettingsOrganizationDto | null,
+): OrganizationFormState {
+  return {
+    organizationDisplayName: organization?.organizationDisplayName ?? "",
+    organizationLegalName: organization?.organizationLegalName ?? "",
+  };
+}
+
+function organizationFormReducer(
+  state: OrganizationFormState,
+  action: OrganizationFormAction,
+): OrganizationFormState {
+  switch (action.type) {
+    case "reset":
+      return action.form;
+    case "patch":
+      return { ...state, ...action.patch };
+  }
+}
+
 export function OrganizationSettingsPanel({
   isSaving,
   organization,
@@ -18,16 +48,14 @@ export function OrganizationSettingsPanel({
   readonly organization: SettingsOrganizationDto | null;
   readonly onSave: (input: UpdateOrganizationSettingsRequest) => Promise<void>;
 }) {
-  const [form, setForm] = React.useState({
-    organizationDisplayName: organization?.organizationDisplayName ?? "",
-    organizationLegalName: organization?.organizationLegalName ?? "",
-  });
+  const [form, dispatchForm] = React.useReducer(
+    organizationFormReducer,
+    organization,
+    buildOrganizationForm,
+  );
 
   React.useEffect(() => {
-    setForm({
-      organizationDisplayName: organization?.organizationDisplayName ?? "",
-      organizationLegalName: organization?.organizationLegalName ?? "",
-    });
+    dispatchForm({ type: "reset", form: buildOrganizationForm(organization) });
   }, [organization]);
 
   if (!organization) {
@@ -55,10 +83,10 @@ export function OrganizationSettingsPanel({
             value={form.organizationDisplayName}
             disabled={disabled}
             onChange={(event) =>
-              setForm((current) => ({
-                ...current,
-                organizationDisplayName: event.target.value,
-              }))
+              dispatchForm({
+                type: "patch",
+                patch: { organizationDisplayName: event.target.value },
+              })
             }
           />
         </Field>
@@ -68,10 +96,10 @@ export function OrganizationSettingsPanel({
             value={form.organizationLegalName}
             disabled={disabled}
             onChange={(event) =>
-              setForm((current) => ({
-                ...current,
-                organizationLegalName: event.target.value,
-              }))
+              dispatchForm({
+                type: "patch",
+                patch: { organizationLegalName: event.target.value },
+              })
             }
           />
         </Field>

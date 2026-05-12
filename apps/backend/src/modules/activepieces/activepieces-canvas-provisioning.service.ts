@@ -1462,9 +1462,10 @@ export class ActivepiecesCanvasProvisioningService implements OnModuleDestroy {
       [externalProjectId, STAGE17_PLATFORM_ID],
     );
     const existingProjectId = project.rows[0]?.id ?? null;
-    const resolvedProjectId = isValidActivepiecesId(existingProjectId)
-      ? existingProjectId
-      : input.ids.projectId;
+    const resolvedProjectId =
+      existingProjectId && isValidActivepiecesId(existingProjectId)
+        ? existingProjectId
+        : input.ids.projectId;
     const flow = await client.query<{ readonly id: string }>(
       `
         select id
@@ -1476,9 +1477,10 @@ export class ActivepiecesCanvasProvisioningService implements OnModuleDestroy {
       [input.automationId],
     );
     const existingFlowId = flow.rows[0]?.id ?? null;
-    const resolvedFlowId = isValidActivepiecesId(existingFlowId)
-      ? existingFlowId
-      : input.ids.flowId;
+    const resolvedFlowId =
+      existingFlowId && isValidActivepiecesId(existingFlowId)
+        ? existingFlowId
+        : input.ids.flowId;
     const flowVersion = await client.query<{ readonly id: string }>(
       `
         select id
@@ -1501,11 +1503,15 @@ export class ActivepiecesCanvasProvisioningService implements OnModuleDestroy {
     );
 
     const existingUser = user.rows[0] ?? null;
-    const resolvedUserId = isValidActivepiecesId(existingUser?.id)
-      ? existingUser.id
-      : input.ids.userId;
+    const existingUserId = existingUser?.id ?? null;
+    const resolvedUserId =
+      existingUserId && isValidActivepiecesId(existingUserId)
+        ? existingUserId
+        : input.ids.userId;
     const resolvedIdentityId =
-      isValidActivepiecesId(existingUser?.id) && existingUser?.identityId
+      existingUserId &&
+      isValidActivepiecesId(existingUserId) &&
+      existingUser?.identityId
         ? existingUser.identityId
         : input.ids.identityId;
 
@@ -1625,7 +1631,7 @@ export function redactActivepiecesProvisioningError(error: unknown) {
 }
 
 function classifyActivepiecesProvisioningError(error: unknown) {
-  const message = error instanceof Error ? error.message : String(error ?? '');
+  const message = coerceProvisioningErrorMessage(error);
   if (/duplicate key|unique constraint/i.test(message)) {
     return 'AP_PROVISIONING_CONFLICT';
   }
@@ -1633,6 +1639,23 @@ function classifyActivepiecesProvisioningError(error: unknown) {
     return 'AP_RUNTIME_UNREACHABLE';
   }
   return 'AP_PROVISIONING_FAILED';
+}
+
+function coerceProvisioningErrorMessage(error: unknown) {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  if (typeof error === 'string') {
+    return error;
+  }
+  if (
+    typeof error === 'number' ||
+    typeof error === 'boolean' ||
+    typeof error === 'bigint'
+  ) {
+    return String(error);
+  }
+  return '';
 }
 
 interface ActivepiecesIds {
@@ -1666,7 +1689,7 @@ function idFrom(prefix: string, value: string) {
   );
 }
 
-function isValidActivepiecesId(value: string | null | undefined): value is string {
+function isValidActivepiecesId(value: string | null | undefined): boolean {
   return (
     typeof value === 'string' &&
     /^[0-9a-zA-Z]{21}$/.test(value) &&
@@ -1728,7 +1751,11 @@ async function detachLegacyExternalIds(
         where id = $1
           and "externalId" = $3
       `,
-      [input.flowId, `${input.automationId}:legacy:${input.flowId}`, input.automationId],
+      [
+        input.flowId,
+        `${input.automationId}:legacy:${input.flowId}`,
+        input.automationId,
+      ],
     );
   }
 }

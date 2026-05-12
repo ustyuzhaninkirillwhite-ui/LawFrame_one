@@ -195,7 +195,9 @@ export class ActivepiecesIdentityBridge implements OnModuleDestroy {
         externalUserId: input.userBinding.externalUserId,
       });
       const platformId =
-        project.platformId ?? user.platformId ?? STAGE17_ACTIVEPIECES_PLATFORM_ID;
+        project.platformId ??
+        user.platformId ??
+        STAGE17_ACTIVEPIECES_PLATFORM_ID;
       const projectRoleId = await this.resolveProjectRoleId(client, {
         platformId,
         role: input.role,
@@ -236,12 +238,7 @@ export class ActivepiecesIdentityBridge implements OnModuleDestroy {
           where workspace_id = $1
             and id = $2
         `,
-        [
-          input.workspaceId,
-          input.projectBinding.id,
-          project.id,
-          input.traceId,
-        ],
+        [input.workspaceId, input.projectBinding.id, project.id, input.traceId],
       );
       await this.databaseService.query(
         `

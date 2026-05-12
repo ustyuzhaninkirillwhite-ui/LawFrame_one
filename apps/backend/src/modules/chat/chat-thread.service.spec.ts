@@ -52,7 +52,7 @@ describe('ChatThreadService project chat streaming', () => {
         archived_at: null,
         deleted_at: null,
       }),
-      query: jest.fn(async () => ({ rows: [] })),
+      query: jest.fn(() => Promise.resolve({ rows: [] })),
       transaction: jest.fn(),
     };
     const auditService = { record: jest.fn().mockResolvedValue(undefined) };
@@ -79,8 +79,10 @@ describe('ChatThreadService project chat streaming', () => {
   });
 
   it('persists the assistant message from a live backend AI gateway stream instead of a canned route notice', async () => {
-    const persistedParts: Array<{ readonly role: string; readonly text: string }> =
-      [];
+    const persistedParts: Array<{
+      readonly role: string;
+      readonly text: string;
+    }> = [];
     const databaseService = createDatabaseServiceMock(persistedParts);
     const auditService = { record: jest.fn().mockResolvedValue(undefined) };
     const aiGatewayService = {
@@ -97,8 +99,7 @@ describe('ChatThreadService project chat streaming', () => {
         response: {
           provider: 'cometapi',
           model: 'deepseek-v4-pro',
-          text:
-              'LEXFRAME_CHAT_SMOKE_OK Подключение проектного чата работает.',
+          text: 'LEXFRAME_CHAT_SMOKE_OK Подключение проектного чата работает.',
           ok: true,
           latencyMs: 123,
           contentChunkCount: 1,
@@ -208,8 +209,10 @@ describe('ChatThreadService project chat streaming', () => {
   });
 
   it('audits a safe stream failure when the backend provider route falls back', async () => {
-    const persistedParts: Array<{ readonly role: string; readonly text: string }> =
-      [];
+    const persistedParts: Array<{
+      readonly role: string;
+      readonly text: string;
+    }> = [];
     const persistedStreamJobs: Array<{
       readonly status: string;
       readonly messageId: unknown;
@@ -319,7 +322,9 @@ describe('ChatThreadService project chat streaming', () => {
       role: 'user',
       text: 'Проверь подключение чата. Верни маркер LEXFRAME_CHAT_SMOKE_OK.',
     });
-    expect(persistedParts.some((part) => part.role === 'assistant')).toBe(false);
+    expect(persistedParts.some((part) => part.role === 'assistant')).toBe(
+      false,
+    );
     expect(persistedStreamJobs).toContainEqual({
       status: 'failed',
       messageId: '00000000-0000-0000-0000-000000000302',
@@ -335,7 +340,14 @@ describe('ChatThreadService project chat streaming', () => {
     );
 
     const failedAudit = auditService.record.mock.calls
-      .map(([event]) => event)
+      .map(
+        ([event]) =>
+          event as {
+            readonly action: string;
+            readonly result: string;
+            readonly metadata: Record<string, unknown>;
+          },
+      )
       .find((event) => event.action === 'chat.message.stream_failed');
 
     expect(failedAudit).toMatchObject({
@@ -393,11 +405,11 @@ function createDatabaseServiceMock(
   };
 
   const client = {
-    query: jest.fn(async (sql: string, values: readonly unknown[] = []) => {
+    query: jest.fn((sql: string, values: readonly unknown[] = []) => {
       if (sql.includes('insert into app.chat_messages')) {
         messageSequence += 1;
         lastInsertedRole = String(values[3]);
-        return {
+        return Promise.resolve({
           rows: [
             {
               id: `00000000-0000-0000-0000-00000000030${messageSequence + 1}`,
@@ -414,13 +426,13 @@ function createDatabaseServiceMock(
               updated_at: '2026-05-09T00:00:00.000Z',
             },
           ],
-        };
+        });
       }
 
       if (sql.includes('insert into app.chat_message_parts')) {
         const text = String(values[4]);
         persistedParts.push({ role: lastInsertedRole, text });
-        return {
+        return Promise.resolve({
           rows: [
             {
               id: `part-${persistedParts.length}`,
@@ -431,7 +443,7 @@ function createDatabaseServiceMock(
               sequence: 0,
             },
           ],
-        };
+        });
       }
 
       if (sql.includes('insert into app.chat_stream_jobs')) {
@@ -439,7 +451,7 @@ function createDatabaseServiceMock(
           messageId: values[3],
           status: String(values[4]),
         });
-        return { rows: [] };
+        return Promise.resolve({ rows: [] });
       }
 
       if (sql.includes('insert into app.chat_stream_events')) {
@@ -447,23 +459,23 @@ function createDatabaseServiceMock(
           eventType: String(values[3]),
           payload: String(values[4]),
         });
-        return { rows: [] };
+        return Promise.resolve({ rows: [] });
       }
 
-      return { rows: [] };
+      return Promise.resolve({ rows: [] });
     }),
   };
 
   return {
-    one: jest.fn(async (sql: string) => {
+    one: jest.fn((sql: string) => {
       if (sql.includes('from app.chat_threads')) {
-        return thread;
+        return Promise.resolve(thread);
       }
-      return null;
+      return Promise.resolve(null);
     }),
-    query: jest.fn(async () => ({ rows: [] })),
-    transaction: jest.fn(async (callback: (tx: typeof client) => unknown) =>
-      callback(client),
+    query: jest.fn(() => Promise.resolve({ rows: [] })),
+    transaction: jest.fn((callback: (tx: typeof client) => unknown) =>
+      Promise.resolve(callback(client)),
     ),
   };
 }

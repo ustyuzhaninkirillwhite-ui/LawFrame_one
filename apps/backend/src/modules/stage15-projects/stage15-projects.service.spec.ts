@@ -87,36 +87,47 @@ function createService() {
     createProjectChatForStage15: jest.fn(),
   };
 
-  databaseService.one.mockImplementation((sql: string, values: readonly unknown[]) => {
-    if (sql.includes('insert into app.projects') && values[1] === 'project_claim_001') {
-      return Promise.resolve(defaultProjectRow);
-    }
+  databaseService.one.mockImplementation(
+    (sql: string, values: readonly unknown[]) => {
+      if (
+        sql.includes('insert into app.projects') &&
+        values[1] === 'project_claim_001'
+      ) {
+        return Promise.resolve(defaultProjectRow);
+      }
 
-    if (sql.includes('insert into app.projects')) {
-      return Promise.resolve({
-        ...secondProjectRow,
-        id: 'project_generated_001',
-        name: values[1],
-        description: values[2] ?? '',
-        icon: values[3] ?? 'P',
-        color: values[4] ?? '#3B82F6',
-      });
-    }
+      if (sql.includes('insert into app.projects')) {
+        return Promise.resolve({
+          ...secondProjectRow,
+          id: 'project_generated_001',
+          name: values[1],
+          description: values[2] ?? '',
+          icon: values[3] ?? 'P',
+          color: values[4] ?? '#3B82F6',
+        });
+      }
 
-    if (sql.includes('from app.projects') && values[1] === 'project_due_diligence') {
-      return Promise.resolve(secondProjectRow);
-    }
+      if (
+        sql.includes('from app.projects') &&
+        values[1] === 'project_due_diligence'
+      ) {
+        return Promise.resolve(secondProjectRow);
+      }
 
-    if (sql.includes('from app.projects') && values[1] === 'project_claim_001') {
-      return Promise.resolve(defaultProjectRow);
-    }
+      if (
+        sql.includes('from app.projects') &&
+        values[1] === 'project_claim_001'
+      ) {
+        return Promise.resolve(defaultProjectRow);
+      }
 
-    if (sql.includes('count(*)::text')) {
-      return Promise.resolve({ count: '0' });
-    }
+      if (sql.includes('count(*)::text')) {
+        return Promise.resolve({ count: '0' });
+      }
 
-    return Promise.resolve(null);
-  });
+      return Promise.resolve(null);
+    },
+  );
 
   databaseService.query.mockImplementation((sql: string) => {
     if (sql.includes('from app.projects')) {

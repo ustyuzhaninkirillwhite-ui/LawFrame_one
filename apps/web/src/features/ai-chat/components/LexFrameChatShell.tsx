@@ -81,7 +81,6 @@ export function LexFrameChatShell({
   }, [initialThreadId]);
 
   React.useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     void loadMessages(activeThreadId);
   }, [activeThreadId, loadMessages]);
 

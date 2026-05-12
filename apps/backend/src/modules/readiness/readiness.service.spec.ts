@@ -323,6 +323,7 @@ describe('ReadinessService', () => {
     const result = createService({
       COMETAPI_API_KEY: 'stage0_comet_api_key',
       COMETAPI_API_KEYS: '',
+      LEXFRAME_AI_DEFAULT_MODEL: 'deepseek-v4-flash',
     });
     const { service } = result;
 

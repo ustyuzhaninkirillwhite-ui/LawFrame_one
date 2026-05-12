@@ -3717,7 +3717,9 @@ export class AIGatewayService {
       ProviderDecision,
       'provider' | 'providerConnectionId'
     >;
-  }): Promise<NonNullable<StructuredAiRequest<unknown>['runtimeConnection']> | null> {
+  }): Promise<NonNullable<
+    StructuredAiRequest<unknown>['runtimeConnection']
+  > | null> {
     if (
       input.providerDecision.provider === 'local' ||
       !input.providerDecision.providerConnectionId ||
@@ -4781,7 +4783,9 @@ function findForbiddenRuntimePayloadPath(
   return null;
 }
 
-function mapPreferenceProviderCode(providerCode: AiProviderCode): AiProvider | null {
+function mapPreferenceProviderCode(
+  providerCode: AiProviderCode,
+): AiProvider | null {
   if (providerCode === 'cometapi' || providerCode === 'openai_compatible') {
     return 'cometapi';
   }

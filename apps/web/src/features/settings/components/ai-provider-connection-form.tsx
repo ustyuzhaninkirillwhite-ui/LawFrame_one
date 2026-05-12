@@ -38,6 +38,35 @@ export interface AiProviderConnectionFormValue {
   readonly capabilities: AiProviderConnectionCapabilities;
 }
 
+function buildConnectionFormValue(
+  connection: AiProviderConnectionDto | null,
+): AiProviderConnectionFormValue {
+  return {
+    providerCode: connection?.providerCode ?? DEFAULT_AI_PROVIDER,
+    baseUrl: connection?.baseUrl ?? DEFAULT_AI_BASE_URL,
+    modelId: connection?.modelId ?? DEFAULT_AI_MODEL_ID,
+    apiKey: "",
+    capabilities: {
+      streaming:
+        connection?.capabilities.streaming ?? DEFAULT_AI_CAPABILITIES.streaming,
+      jsonMode:
+        connection?.capabilities.jsonMode ?? DEFAULT_AI_CAPABILITIES.jsonMode,
+      structuredJsonSchema:
+        connection?.capabilities.structuredJsonSchema ??
+        DEFAULT_AI_CAPABILITIES.structuredJsonSchema,
+      toolCalls:
+        connection?.capabilities.toolCalls ?? DEFAULT_AI_CAPABILITIES.toolCalls,
+    },
+  };
+}
+
+function formValueReducer(
+  _state: AiProviderConnectionFormValue,
+  next: AiProviderConnectionFormValue,
+) {
+  return next;
+}
+
 export function AiProviderConnectionForm({
   connection,
   disabled,
@@ -59,45 +88,15 @@ export function AiProviderConnectionForm({
   readonly onChange: (value: AiProviderConnectionFormValue) => void;
   readonly onTest: () => void;
 }) {
-  const [value, setValue] = React.useState<AiProviderConnectionFormValue>(() => ({
-    providerCode: connection?.providerCode ?? DEFAULT_AI_PROVIDER,
-    baseUrl: connection?.baseUrl ?? DEFAULT_AI_BASE_URL,
-    modelId: connection?.modelId ?? DEFAULT_AI_MODEL_ID,
-    apiKey: "",
-    capabilities: {
-      streaming:
-        connection?.capabilities.streaming ?? DEFAULT_AI_CAPABILITIES.streaming,
-      jsonMode:
-        connection?.capabilities.jsonMode ?? DEFAULT_AI_CAPABILITIES.jsonMode,
-      structuredJsonSchema:
-        connection?.capabilities.structuredJsonSchema ??
-        DEFAULT_AI_CAPABILITIES.structuredJsonSchema,
-      toolCalls:
-        connection?.capabilities.toolCalls ?? DEFAULT_AI_CAPABILITIES.toolCalls,
-    },
-  }));
+  const [value, dispatchValue] = React.useReducer(
+    formValueReducer,
+    connection,
+    buildConnectionFormValue,
+  );
 
   React.useEffect(() => {
-    const next = {
-      providerCode: connection?.providerCode ?? DEFAULT_AI_PROVIDER,
-      baseUrl: connection?.baseUrl ?? DEFAULT_AI_BASE_URL,
-      modelId: connection?.modelId ?? DEFAULT_AI_MODEL_ID,
-      apiKey: "",
-      capabilities: {
-        streaming:
-          connection?.capabilities.streaming ??
-          DEFAULT_AI_CAPABILITIES.streaming,
-        jsonMode:
-          connection?.capabilities.jsonMode ?? DEFAULT_AI_CAPABILITIES.jsonMode,
-        structuredJsonSchema:
-          connection?.capabilities.structuredJsonSchema ??
-          DEFAULT_AI_CAPABILITIES.structuredJsonSchema,
-        toolCalls:
-          connection?.capabilities.toolCalls ??
-          DEFAULT_AI_CAPABILITIES.toolCalls,
-      },
-    };
-    setValue(next);
+    const next = buildConnectionFormValue(connection);
+    dispatchValue(next);
     onChange(next);
   }, [connection, onChange, routeGroup]);
 
@@ -115,14 +114,14 @@ export function AiProviderConnectionForm({
 
     if (value.apiKey) {
       const next = { ...value, apiKey: "" };
-      setValue(next);
+      dispatchValue(next);
       onChange(next);
     }
   }, [onChange, resetSensitiveInputVersion, value]);
 
   const update = (patch: Partial<AiProviderConnectionFormValue>) => {
     const next = { ...value, ...patch };
-    setValue(next);
+    dispatchValue(next);
     onChange(next);
   };
 

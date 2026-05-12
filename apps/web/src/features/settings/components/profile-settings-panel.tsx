@@ -8,6 +8,40 @@ import * as React from "react";
 import { Input } from "@/components/ui/input";
 import { SettingsSaveBar } from "./settings-save-bar";
 
+interface ProfileFormState {
+  readonly firstName: string;
+  readonly lastName: string;
+  readonly displayName: string;
+  readonly locale: string;
+  readonly timezone: string;
+}
+
+type ProfileFormAction =
+  | { readonly type: "reset"; readonly form: ProfileFormState }
+  | { readonly type: "patch"; readonly patch: Partial<ProfileFormState> };
+
+function buildProfileForm(profile: SettingsProfileDto): ProfileFormState {
+  return {
+    firstName: profile.firstName ?? "",
+    lastName: profile.lastName ?? "",
+    displayName: profile.displayName ?? "",
+    locale: profile.locale,
+    timezone: profile.timezone,
+  };
+}
+
+function profileFormReducer(
+  state: ProfileFormState,
+  action: ProfileFormAction,
+): ProfileFormState {
+  switch (action.type) {
+    case "reset":
+      return action.form;
+    case "patch":
+      return { ...state, ...action.patch };
+  }
+}
+
 export function ProfileSettingsPanel({
   isSaving,
   profile,
@@ -17,22 +51,14 @@ export function ProfileSettingsPanel({
   readonly profile: SettingsProfileDto;
   readonly onSave: (input: UpdateProfileSettingsRequest) => Promise<void>;
 }) {
-  const [form, setForm] = React.useState({
-    firstName: profile.firstName ?? "",
-    lastName: profile.lastName ?? "",
-    displayName: profile.displayName ?? "",
-    locale: profile.locale,
-    timezone: profile.timezone,
-  });
+  const [form, dispatchForm] = React.useReducer(
+    profileFormReducer,
+    profile,
+    buildProfileForm,
+  );
 
   React.useEffect(() => {
-    setForm({
-      firstName: profile.firstName ?? "",
-      lastName: profile.lastName ?? "",
-      displayName: profile.displayName ?? "",
-      locale: profile.locale,
-      timezone: profile.timezone,
-    });
+    dispatchForm({ type: "reset", form: buildProfileForm(profile) });
   }, [profile]);
 
   return (
@@ -52,10 +78,10 @@ export function ProfileSettingsPanel({
             data-testid="settings-profile-display-name"
             value={form.displayName}
             onChange={(event) =>
-              setForm((current) => ({
-                ...current,
-                displayName: event.target.value,
-              }))
+              dispatchForm({
+                type: "patch",
+                patch: { displayName: event.target.value },
+              })
             }
           />
         </Field>
@@ -64,10 +90,10 @@ export function ProfileSettingsPanel({
             data-testid="settings-profile-first-name"
             value={form.firstName}
             onChange={(event) =>
-              setForm((current) => ({
-                ...current,
-                firstName: event.target.value,
-              }))
+              dispatchForm({
+                type: "patch",
+                patch: { firstName: event.target.value },
+              })
             }
           />
         </Field>
@@ -76,10 +102,10 @@ export function ProfileSettingsPanel({
             data-testid="settings-profile-last-name"
             value={form.lastName}
             onChange={(event) =>
-              setForm((current) => ({
-                ...current,
-                lastName: event.target.value,
-              }))
+              dispatchForm({
+                type: "patch",
+                patch: { lastName: event.target.value },
+              })
             }
           />
         </Field>
@@ -87,7 +113,10 @@ export function ProfileSettingsPanel({
           <Input
             value={form.locale}
             onChange={(event) =>
-              setForm((current) => ({ ...current, locale: event.target.value }))
+              dispatchForm({
+                type: "patch",
+                patch: { locale: event.target.value },
+              })
             }
           />
         </Field>
@@ -95,10 +124,10 @@ export function ProfileSettingsPanel({
           <Input
             value={form.timezone}
             onChange={(event) =>
-              setForm((current) => ({
-                ...current,
-                timezone: event.target.value,
-              }))
+              dispatchForm({
+                type: "patch",
+                patch: { timezone: event.target.value },
+              })
             }
           />
         </Field>

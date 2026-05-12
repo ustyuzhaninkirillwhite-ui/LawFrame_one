@@ -17,13 +17,8 @@ export function AiKeyWriteOnlyField({
   readonly value: string;
   readonly onChange: (value: string) => void;
 }) {
-  const [replacing, setReplacing] = React.useState(!secret.hasSecret);
-
-  React.useEffect(() => {
-    if (!secret.hasSecret) {
-      setReplacing(true);
-    }
-  }, [secret.hasSecret]);
+  const [userReplacing, setUserReplacing] = React.useState(false);
+  const replacing = !secret.hasSecret || userReplacing;
 
   if (secret.hasSecret && !replacing) {
     return (
@@ -50,7 +45,7 @@ export function AiKeyWriteOnlyField({
             disabled={disabled}
             onClick={() => {
               onChange("");
-              setReplacing(true);
+              setUserReplacing(true);
             }}
           >
             Заменить ключ
@@ -86,7 +81,7 @@ export function AiKeyWriteOnlyField({
           className="w-fit"
           onClick={() => {
             onChange("");
-            setReplacing(false);
+            setUserReplacing(false);
           }}
         >
           Оставить сохранённый ключ

@@ -544,9 +544,7 @@ export class ChatThreadService {
       );
     }
 
-    const assistantText = normalizeAssistantText(
-      providerResult.response.text,
-    );
+    const assistantText = normalizeAssistantText(providerResult.response.text);
     const assistantMessage = await this.insertMessage({
       workspaceId: userMessage.workspaceId,
       projectId: userMessage.projectId,
@@ -981,17 +979,14 @@ export class ChatThreadService {
           input.effectivePolicy?.policyDecisionId ??
           null,
         provider_stream_ok: input.providerResult?.response.ok ?? null,
-        provider_error_class:
-          input.providerResult?.response.errorClass ?? null,
+        provider_error_class: input.providerResult?.response.errorClass ?? null,
         provider_status: input.providerResult?.response.status ?? null,
         content_chunk_count:
           input.providerResult?.response.contentChunkCount ?? null,
         reasoning_chunk_count:
           input.providerResult?.response.reasoningChunkCount ?? null,
-        attempt_count:
-          input.providerResult?.response.attemptCount ?? null,
-        retry_reason:
-          input.providerResult?.response.retryReason ?? null,
+        attempt_count: input.providerResult?.response.attemptCount ?? null,
+        retry_reason: input.providerResult?.response.retryReason ?? null,
         latency_ms: input.providerResult?.response.latencyMs ?? null,
         error_code: safeErrorCode(input.error),
         error_status: safeErrorStatus(input.error),
@@ -1244,16 +1239,6 @@ function mapMessageRow(
 function normalizeTitle(value: string | null | undefined) {
   const title = value?.trim();
   return title && title.length > 0 ? title : null;
-}
-
-function buildProjectChatPrompt(userMessage: string) {
-  return [
-    'System:',
-    PROJECT_CHAT_SYSTEM_PROMPT,
-    '',
-    'User:',
-    userMessage,
-  ].join('\n');
 }
 
 function buildProjectChatMessages(userMessage: string) {

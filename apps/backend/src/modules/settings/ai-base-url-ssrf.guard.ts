@@ -35,7 +35,10 @@ export async function validateAiProviderBaseUrl(
     );
   }
 
-  if (parsed.protocol !== 'https:' && (options.production || parsed.protocol !== 'http:')) {
+  if (
+    parsed.protocol !== 'https:' &&
+    (options.production || parsed.protocol !== 'http:')
+  ) {
     throw new AiBaseUrlGuardError(
       parsed.protocol === 'http:'
         ? 'AI_BASE_URL_HTTPS_REQUIRED'
@@ -52,7 +55,9 @@ export async function validateAiProviderBaseUrl(
   }
 
   if (options.allowlist?.length) {
-    const allowed = new Set(options.allowlist.map((host) => host.toLowerCase()));
+    const allowed = new Set(
+      options.allowlist.map((host) => host.toLowerCase()),
+    );
     if (!allowed.has(parsed.hostname.toLowerCase())) {
       throw new AiBaseUrlGuardError(
         'AI_BASE_URL_NOT_ALLOWLISTED',
@@ -98,12 +103,17 @@ async function assertPublicHost(
     );
   }
 
-  if (addresses.length === 0 || addresses.some((address) => isPrivateIp(address))) {
+  if (
+    addresses.length === 0 ||
+    addresses.some((address) => isPrivateIp(address))
+  ) {
     throwBlocked();
   }
 }
 
-async function defaultResolveHost(hostname: string): Promise<readonly string[]> {
+async function defaultResolveHost(
+  hostname: string,
+): Promise<readonly string[]> {
   const records = await dns.lookup(hostname, { all: true, verbatim: true });
   return records.map((record) => record.address);
 }

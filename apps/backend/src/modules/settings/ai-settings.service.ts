@@ -86,7 +86,11 @@ export class AiSettingsService {
       await Promise.all([
         this.listProviderConnections(workspaceId, input.actor.id),
         this.listRouteGroupPreferences(workspaceId, input.actor.id),
-        this.resolveEffectivePolicies(input.access, input.actor.id, input.traceId),
+        this.resolveEffectivePolicies(
+          input.access,
+          input.actor.id,
+          input.traceId,
+        ),
       ]);
 
     return {
@@ -104,11 +108,21 @@ export class AiSettingsService {
     readonly traceId: string | null;
   }): Promise<AiProviderConnectionDto> {
     const workspaceId = requireWorkspace(input.access);
-    const ownerScope = resolveOwnerScope(input.access, input.request.ownerScope);
+    const ownerScope = resolveOwnerScope(
+      input.access,
+      input.request.ownerScope,
+    );
     assertManagePermission(input.access, ownerScope);
-    assertSecretCreatePermission(input.access, ownerScope, input.request.apiKey);
+    assertSecretCreatePermission(
+      input.access,
+      ownerScope,
+      input.request.apiKey,
+    );
     assertRouteGroup(input.request.routeGroup);
-    assertAutomationCapabilities(input.request.routeGroup, input.request.capabilities);
+    assertAutomationCapabilities(
+      input.request.routeGroup,
+      input.request.capabilities,
+    );
 
     const baseUrl = await validateConfiguredAiProviderBaseUrl(
       input.request.baseUrl,
@@ -221,7 +235,11 @@ export class AiSettingsService {
       });
     }
 
-    return this.getProviderConnectionOrThrow(workspaceId, input.actor.id, connectionId);
+    return this.getProviderConnectionOrThrow(
+      workspaceId,
+      input.actor.id,
+      connectionId,
+    );
   }
 
   async updateProviderConnection(input: {
@@ -233,7 +251,10 @@ export class AiSettingsService {
     readonly traceId: string | null;
   }): Promise<AiProviderConnectionDto> {
     const workspaceId = requireWorkspace(input.access);
-    const current = await this.getRawConnection(workspaceId, input.connectionId);
+    const current = await this.getRawConnection(
+      workspaceId,
+      input.connectionId,
+    );
     assertManagePermission(input.access, current.owner_scope);
     const baseUrl = input.request.baseUrl
       ? await validateConfiguredAiProviderBaseUrl(input.request.baseUrl)
@@ -300,7 +321,10 @@ export class AiSettingsService {
     readonly traceId: string | null;
   }): Promise<AiProviderConnectionDto> {
     const workspaceId = requireWorkspace(input.access);
-    const current = await this.getRawConnection(workspaceId, input.connectionId);
+    const current = await this.getRawConnection(
+      workspaceId,
+      input.connectionId,
+    );
     assertManagePermission(input.access, current.owner_scope);
     assertSecretRotatePermission(input.access, current.owner_scope);
     const secret = await this.aiSecretService.createOrRotateSecret({
@@ -368,7 +392,10 @@ export class AiSettingsService {
       );
     }
 
-    const current = await this.getRawConnection(workspaceId, input.connectionId);
+    const current = await this.getRawConnection(
+      workspaceId,
+      input.connectionId,
+    );
     await this.audit({
       actor: input.actor,
       workspaceId,
@@ -630,7 +657,10 @@ export class AiSettingsService {
     actorUserId: string,
     connectionId: string,
   ): Promise<AiProviderConnectionDto> {
-    const connections = await this.listProviderConnections(workspaceId, actorUserId);
+    const connections = await this.listProviderConnections(
+      workspaceId,
+      actorUserId,
+    );
     const connection = connections.find((item) => item.id === connectionId);
 
     if (!connection) {
@@ -864,7 +894,9 @@ export class AiSettingsService {
       return {
         status: 'failed',
         errorCode: 'PROVIDER_HEALTH_CHECK_FAILED',
-        message: redactText(error instanceof Error ? error.message : String(error)),
+        message: redactText(
+          error instanceof Error ? error.message : String(error),
+        ),
       };
     }
   }
@@ -878,13 +910,15 @@ export class AiSettingsService {
     readonly traceId: string | null;
     readonly metadata: Record<string, unknown>;
   }) {
+    const connectionId = input.metadata.connection_id;
     return this.auditService.record({
       actorUserId: input.actor.id,
       actorEmail: input.actor.email,
       workspaceId: input.workspaceId,
       action: input.action,
       entityType: 'ai_settings',
-      entityId: String(input.metadata.connection_id ?? input.workspaceId),
+      entityId:
+        typeof connectionId === 'string' ? connectionId : input.workspaceId,
       result: input.result,
       requestId: input.requestId,
       traceId: input.traceId,
@@ -895,7 +929,9 @@ export class AiSettingsService {
   }
 }
 
-function mapProviderConnection(row: ProviderConnectionRow): AiProviderConnectionDto {
+function mapProviderConnection(
+  row: ProviderConnectionRow,
+): AiProviderConnectionDto {
   const capabilities = toCapabilities(
     row.provider_metadata_redacted?.capabilities as
       | Record<string, unknown>
@@ -917,7 +953,8 @@ function mapProviderConnection(row: ProviderConnectionRow): AiProviderConnection
       secretStatus: row.fingerprint ? 'active' : 'missing',
       fingerprint: row.fingerprint,
       lastUpdatedAt: row.secret_updated_at,
-      backend: row.secret_backend as AiProviderConnectionDto['secret']['backend'],
+      backend:
+        row.secret_backend as AiProviderConnectionDto['secret']['backend'],
     },
     capabilities,
     lastTestStatus: row.last_test_status ?? 'not_tested',
@@ -1022,7 +1059,9 @@ function assertSecretRotatePermission(
   }
 }
 
-function assertRouteGroup(routeGroup: string): asserts routeGroup is AiRouteGroup {
+function assertRouteGroup(
+  routeGroup: string,
+): asserts routeGroup is AiRouteGroup {
   if (routeGroup !== 'chat_ai' && routeGroup !== 'automation_ai') {
     throw new AppHttpException(
       'AI_ROUTE_GROUP_UNKNOWN',
@@ -1049,7 +1088,9 @@ function assertAutomationCapabilities(
   }
 }
 
-function parseAllowlist(value: string | undefined): readonly string[] | undefined {
+function parseAllowlist(
+  value: string | undefined,
+): readonly string[] | undefined {
   const items = value
     ?.split(',')
     .map((item) => item.trim())
@@ -1131,14 +1172,13 @@ function coerceVisibleStreamPart(value: unknown): string {
 
   if (Array.isArray(value)) {
     return value
-      .map((part) =>
-        typeof part === 'object' &&
-        part !== null &&
-        'text' in part &&
-        typeof part.text === 'string'
-          ? part.text
-          : '',
-      )
+      .map((part) => {
+        if (typeof part !== 'object' || part === null) {
+          return '';
+        }
+        const record = part as { readonly text?: unknown };
+        return typeof record.text === 'string' ? record.text : '';
+      })
       .join('');
   }
 

@@ -156,7 +156,9 @@ export class ActivepiecesCanvasReadinessService implements OnModuleDestroy {
       );
 
       const platformId =
-        project?.platformId ?? user?.platformId ?? STAGE17_ACTIVEPIECES_PLATFORM_ID;
+        project?.platformId ??
+        user?.platformId ??
+        STAGE17_ACTIVEPIECES_PLATFORM_ID;
       const membership =
         project && user
           ? await client
@@ -298,9 +300,7 @@ export class ActivepiecesCanvasReadinessService implements OnModuleDestroy {
         checks,
         canonical_replacement_route: input.canonicalReplacementRoute ?? null,
         message:
-          reasonCode === 'READY'
-            ? null
-            : messageForReadinessCode(reasonCode),
+          reasonCode === 'READY' ? null : messageForReadinessCode(reasonCode),
       };
     } finally {
       client.release();
@@ -348,7 +348,10 @@ export class ActivepiecesCanvasReadinessService implements OnModuleDestroy {
     try {
       if (url.startsWith('ws://') || url.startsWith('wss://')) {
         await probeWebsocket(url, 2_000);
-        return pass('ap.websocket', 'ActivePieces websocket endpoint upgrades successfully.');
+        return pass(
+          'ap.websocket',
+          'ActivePieces websocket endpoint upgrades successfully.',
+        );
       }
 
       const response = await fetch(url, {
@@ -358,7 +361,10 @@ export class ActivepiecesCanvasReadinessService implements OnModuleDestroy {
         },
       });
       if (response.ok) {
-        return pass('ap.websocket', 'ActivePieces websocket endpoint responds.');
+        return pass(
+          'ap.websocket',
+          'ActivePieces websocket endpoint responds.',
+        );
       }
       return warn(
         'ap.websocket',
@@ -510,8 +516,9 @@ function buildActivepiecesInitialRoute(runtimeFlowId: string | null) {
 }
 
 function probeWebsocket(url: string, timeoutMs: number): Promise<void> {
-  const WebSocketCtor = (globalThis as typeof globalThis & { WebSocket?: WebSocketProbeConstructor })
-    .WebSocket;
+  const WebSocketCtor = (
+    globalThis as typeof globalThis & { WebSocket?: WebSocketProbeConstructor }
+  ).WebSocket;
   if (!WebSocketCtor) {
     return Promise.reject(new Error('global WebSocket is not available'));
   }
@@ -564,7 +571,9 @@ function normalizeOptionalVersion(value: string | null | undefined) {
 }
 
 function extractSdkVersion(value: string | null | undefined) {
-  const match = value?.match(/embed-sdk-(\d+\.\d+\.\d+)\.js|\/(\d+\.\d+\.\d+)\.js/);
+  const match = value?.match(
+    /embed-sdk-(\d+\.\d+\.\d+)\.js|\/(\d+\.\d+\.\d+)\.js/,
+  );
   return match?.[1] ?? match?.[2] ?? null;
 }
 

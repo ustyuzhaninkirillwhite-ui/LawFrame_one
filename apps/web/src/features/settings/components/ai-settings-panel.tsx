@@ -85,7 +85,7 @@ export function AiSettingsPanel({
           format: "manual_form",
           scopeType: ownerScope,
           providerConnectionId: persistedConnection.id,
-          modelId: input.form.modelId,
+          modelId: persistedConnection.modelId,
           enabled: true,
           capabilitiesConfirmed: input.form.capabilities,
         }),

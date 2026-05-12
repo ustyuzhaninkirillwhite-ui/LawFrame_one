@@ -208,9 +208,9 @@ describe('AiSecretService provider-call resolution', () => {
     expect(() => JSON.stringify(result.apiKey)).toThrow(
       'SECRET_SERIALIZATION_FORBIDDEN',
     );
-    expect(JSON.stringify({ ...result, apiKey: String(result.apiKey) })).not.toContain(
-      'sk-live-provider-key',
-    );
+    expect(
+      JSON.stringify({ ...result, apiKey: String(result.apiKey) }),
+    ).not.toContain('sk-live-provider-key');
   });
 
   it('resolves a dev mock secret from backend-only env when fingerprint matches', async () => {

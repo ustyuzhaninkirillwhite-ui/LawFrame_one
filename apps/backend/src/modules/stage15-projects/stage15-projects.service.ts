@@ -335,7 +335,9 @@ export class Stage15ProjectsService {
     return row;
   }
 
-  private async listProjectRows(access: AccessContext): Promise<readonly ProjectRow[]> {
+  private async listProjectRows(
+    access: AccessContext,
+  ): Promise<readonly ProjectRow[]> {
     const workspace = this.requireWorkspace(access);
     const result = await this.databaseService.query<ProjectRow>(
       `

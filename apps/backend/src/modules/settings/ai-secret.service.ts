@@ -365,7 +365,9 @@ function isSupabaseVaultUnavailable(error: unknown): boolean {
   );
 }
 
-function resolveDevMockProviderSecret(row: ProviderCallSecretRow): string | null {
+function resolveDevMockProviderSecret(
+  row: ProviderCallSecretRow,
+): string | null {
   if (process.env.AI_PROVIDER_MODE !== 'controlled-real') {
     return null;
   }
@@ -376,8 +378,9 @@ function resolveDevMockProviderSecret(row: ProviderCallSecretRow): string | null
   }
 
   return (
-    candidates.find((candidate) => fingerprintSecret(candidate) === row.fingerprint) ??
-    null
+    candidates.find(
+      (candidate) => fingerprintSecret(candidate) === row.fingerprint,
+    ) ?? null
   );
 }
 

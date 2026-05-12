@@ -54,7 +54,7 @@ describe("AiSettingsPanel", () => {
           ownerScope: "workspace",
           providerCode: "cometapi",
           baseUrl: "https://api.cometapi.com/v1",
-          modelId: "grok-4-1-fast-non-reasoning",
+          modelId: "deepseek-v4-pro",
         }),
       );
       expect(apiClient.updateAiRouteGroupPreference).toHaveBeenCalledTimes(2);

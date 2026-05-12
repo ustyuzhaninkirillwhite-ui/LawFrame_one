@@ -196,17 +196,21 @@ export class ActivepiecesSessionService {
         cachedResponse = this.readCachedSession(cacheKey, requestHash);
       }
 
-      const [workspaceSecurity, resolvedAutomation, runtimeStatus, localKeysStatus] =
-        await Promise.all([
-          this.getWorkspaceSecurity(workspaceId),
-          this.resolveInstalledAutomationForRoute(
-            workspaceId,
-            input.automationId,
-            input.projectId,
-          ),
-          this.getRuntimeStatus(),
-          Promise.resolve(this.localOwnerKeyVaultService.getSafeStatus()),
-        ]);
+      const [
+        workspaceSecurity,
+        resolvedAutomation,
+        runtimeStatus,
+        localKeysStatus,
+      ] = await Promise.all([
+        this.getWorkspaceSecurity(workspaceId),
+        this.resolveInstalledAutomationForRoute(
+          workspaceId,
+          input.automationId,
+          input.projectId,
+        ),
+        this.getRuntimeStatus(),
+        Promise.resolve(this.localOwnerKeyVaultService.getSafeStatus()),
+      ]);
       const initialAutomation = resolvedAutomation.automation;
       const automation = await this.ensureAutomationUsesCanonicalRuntimeIds({
         actor,
@@ -1033,7 +1037,10 @@ export class ActivepiecesSessionService {
     automationId: string,
     routeProjectId: string,
   ): Promise<ResolvedAutomationForSession> {
-    const exact = await this.getInstalledAutomationRow(workspaceId, automationId);
+    const exact = await this.getInstalledAutomationRow(
+      workspaceId,
+      automationId,
+    );
     if (exact) {
       return {
         automation: exact,

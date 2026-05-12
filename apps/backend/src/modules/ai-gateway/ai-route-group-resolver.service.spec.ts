@@ -98,8 +98,8 @@ describe('Stage 21 AI route group resolver', () => {
       supports_tool_calls: true,
     };
     const databaseService = {
-      one: jest.fn(async (_sql: string, params: readonly unknown[]) =>
-        params[1] === 'workspace' ? workspacePreference : null,
+      one: jest.fn((_sql: string, params: readonly unknown[]) =>
+        Promise.resolve(params[1] === 'workspace' ? workspacePreference : null),
       ),
       query: jest.fn().mockResolvedValue({ rows: [] }),
     };

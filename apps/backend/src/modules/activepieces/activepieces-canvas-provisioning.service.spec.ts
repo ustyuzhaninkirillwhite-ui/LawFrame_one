@@ -13,6 +13,8 @@ describe('ActivepiecesCanvasProvisioningService redaction', () => {
       safeToShow: true,
     });
     expect(JSON.stringify(details)).not.toContain('duplicate key');
-    expect(JSON.stringify(details)).not.toContain('UQ_7ad44f9fcbfc95e0a8436bbb029');
+    expect(JSON.stringify(details)).not.toContain(
+      'UQ_7ad44f9fcbfc95e0a8436bbb029',
+    );
   });
 });

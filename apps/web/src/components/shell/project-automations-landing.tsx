@@ -22,6 +22,54 @@ import { ProjectAutomations } from "./project-automations";
 
 const ENSURE_TIMEOUT_MS = 20_000;
 
+type ReadinessState =
+  | { readonly status: "idle"; readonly failure: null }
+  | { readonly status: "loading"; readonly failure: null }
+  | {
+      readonly status: "failed";
+      readonly failure: { readonly code: string; readonly message: string };
+    };
+
+type ReadinessAction =
+  | { readonly type: "idle" }
+  | { readonly type: "loading" }
+  | {
+      readonly type: "failed";
+      readonly failure: { readonly code: string; readonly message: string };
+    };
+
+const initialReadinessState: ReadinessState = {
+  status: "idle",
+  failure: null,
+};
+
+function readinessReducer(
+  state: ReadinessState,
+  action: ReadinessAction,
+): ReadinessState {
+  switch (action.type) {
+    case "idle":
+      if (state.status === "idle") {
+        return state;
+      }
+      return initialReadinessState;
+    case "loading":
+      if (state.status === "loading") {
+        return state;
+      }
+      return { status: "loading", failure: null };
+    case "failed":
+      if (
+        state.status === "failed" &&
+        state.failure.code === action.failure.code &&
+        state.failure.message === action.failure.message
+      ) {
+        return state;
+      }
+      return { status: "failed", failure: action.failure };
+  }
+}
+
 export function ProjectAutomationsLanding({
   projectId,
 }: {
@@ -33,11 +81,10 @@ export function ProjectAutomationsLanding({
   const ensureCanvas = useEnsureStage17CanvasAutomation(projectId);
   const ensureRequestedRef = React.useRef(false);
   const [ensureTimedOut, setEnsureTimedOut] = React.useState(false);
-  const [readinessFailure, setReadinessFailure] = React.useState<{
-    readonly code: string;
-    readonly message: string;
-  } | null>(null);
-  const [readinessLoading, setReadinessLoading] = React.useState(false);
+  const [readinessState, dispatchReadiness] = React.useReducer(
+    readinessReducer,
+    initialReadinessState,
+  );
   const items = React.useMemo(() => automations.data ?? [], [automations.data]);
   const automationToOpen = React.useMemo(() => {
     const activepiecesReady = items.find(
@@ -66,8 +113,7 @@ export function ProjectAutomationsLanding({
     let cancelled = false;
 
     if (automationToOpen) {
-      setReadinessFailure(null);
-      setReadinessLoading(true);
+      dispatchReadiness({ type: "loading" });
       void apiClient
         .getActivepiecesCanvasReadiness({
           projectId,
@@ -86,29 +132,30 @@ export function ProjectAutomationsLanding({
             );
             return;
           }
-          setReadinessFailure({
-            code: readiness.readinessCode,
-            message:
-              readiness.message ??
-              "Конструктор автоматизаций временно недоступен.",
+          dispatchReadiness({
+            type: "failed",
+            failure: {
+              code: readiness.readinessCode,
+              message:
+                readiness.message ??
+                "Конструктор автоматизаций временно недоступен.",
+            },
           });
         })
         .catch((error) => {
           if (cancelled) {
             return;
           }
-          setReadinessFailure({
-            code: "READINESS_CHECK_FAILED",
-            message:
-              error instanceof Error
-                ? error.message
-                : "Не удалось проверить готовность конструктора.",
+          dispatchReadiness({
+            type: "failed",
+            failure: {
+              code: "READINESS_CHECK_FAILED",
+              message:
+                error instanceof Error
+                  ? error.message
+                  : "Не удалось проверить готовность конструктора.",
+            },
           });
-        })
-        .finally(() => {
-          if (!cancelled) {
-            setReadinessLoading(false);
-          }
         });
       return () => {
         cancelled = true;
@@ -116,8 +163,7 @@ export function ProjectAutomationsLanding({
     }
 
     if (!automationToOpen) {
-      setReadinessFailure(null);
-      setReadinessLoading(false);
+      dispatchReadiness({ type: "idle" });
     }
 
     if (automationToOpen) {
@@ -156,13 +202,13 @@ export function ProjectAutomationsLanding({
 
   if (
     automations.isLoading ||
-    readinessLoading ||
+    readinessState.status === "loading" ||
     (ensureCanvas.isPending && !ensureTimedOut)
   ) {
     return (
       <QueryState
         title="Открываем конструктор автоматизаций"
-        description="Готовим сценарий Stage 17 и сразу откроем рабочее поле автоматизаций."
+        description="Готовим сценарий Stage 21 и сразу откроем рабочее поле автоматизаций."
       />
     );
   }
@@ -175,7 +221,7 @@ export function ProjectAutomationsLanding({
           <CardTitle>Не удалось открыть конструктор автоматизаций</CardTitle>
           <CardDescription>
             Старый canvas не используется как запасной режим. Проверьте runtime
-            автоматизаций и повторите подготовку сценария Stage 17.
+            автоматизаций и повторите подготовку сценария Stage 21.
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-wrap gap-3">
@@ -208,18 +254,18 @@ export function ProjectAutomationsLanding({
     );
   }
 
-  if (readinessFailure) {
+  if (readinessState.failure) {
     return (
       <Card>
         <CardHeader>
           <Badge variant="danger">недоступно</Badge>
           <CardTitle>Конструктор автоматизаций временно недоступен</CardTitle>
-          <CardDescription>{readinessFailure.message}</CardDescription>
+          <CardDescription>{readinessState.failure.message}</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-wrap gap-3">
           <Button
             onClick={() => {
-              setReadinessFailure(null);
+              dispatchReadiness({ type: "idle" });
               void automations.refetch();
             }}
           >
@@ -228,7 +274,7 @@ export function ProjectAutomationsLanding({
           </Button>
           <div className="flex items-center gap-2 text-sm text-[color:var(--muted-strong)]">
             <AlertCircle className="size-4" aria-hidden="true" />
-            {readinessFailure.code}
+            {readinessState.failure.code}
           </div>
         </CardContent>
       </Card>
@@ -239,7 +285,7 @@ export function ProjectAutomationsLanding({
     return (
       <QueryState
         title="Открываем конструктор автоматизаций"
-        description="В проекте один сценарий Stage 17, перенаправляем прямо в рабочее поле."
+        description="В проекте один сценарий Stage 21, перенаправляем прямо в рабочее поле."
       />
     );
   }
@@ -254,7 +300,7 @@ export function ProjectAutomationsLanding({
         <div className="flex size-10 items-center justify-center rounded-[8px] border border-[color:var(--line)] bg-[color:var(--panel-muted)] text-[color:var(--accent)]">
           <Workflow className="size-5" aria-hidden="true" />
         </div>
-        <Badge variant="muted">Stage 17</Badge>
+        <Badge variant="muted">Stage 21</Badge>
         <CardTitle>Подготавливаем конструктор автоматизаций</CardTitle>
         <CardDescription>
           Создаём недостающие runtime-привязки. Старый canvas не используется.

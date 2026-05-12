@@ -568,14 +568,13 @@ function coerceStreamText(value: unknown): string {
 
   if (Array.isArray(value)) {
     return value
-      .map((part) =>
-        typeof part === 'object' &&
-        part !== null &&
-        'text' in part &&
-        typeof part.text === 'string'
-          ? part.text
-          : '',
-      )
+      .map((part) => {
+        if (typeof part !== 'object' || part === null) {
+          return '';
+        }
+        const record = part as { readonly text?: unknown };
+        return typeof record.text === 'string' ? record.text : '';
+      })
       .join('');
   }
 
@@ -603,7 +602,11 @@ function coerceReasoningText(delta: Record<string, unknown>) {
 
 function classifyProviderError(status: number, body: string) {
   const text = body.toLowerCase();
-  if (status === 401 || text.includes('invalid token') || text.includes('unauthorized')) {
+  if (
+    status === 401 ||
+    text.includes('invalid token') ||
+    text.includes('unauthorized')
+  ) {
     return 'PROVIDER_AUTH_INVALID_TOKEN';
   }
   if (status === 403) {
@@ -769,7 +772,9 @@ export class CometApiAdapter implements AiProviderAdapter {
     const baseUrl =
       runtimeConnection?.baseUrl ?? env.LEXFRAME_COMETAPI_BASE_URL;
     const fingerprint =
-      runtimeConnection?.fingerprint ?? request.localOwnerKey?.fingerprint ?? null;
+      runtimeConnection?.fingerprint ??
+      request.localOwnerKey?.fingerprint ??
+      null;
 
     if (!apiKey) {
       const descriptor = buildChatCompletionDescriptor({

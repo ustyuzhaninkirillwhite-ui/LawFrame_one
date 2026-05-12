@@ -263,13 +263,14 @@ export class AutomationBuilderService {
     const workspaceId = requireWorkspace(access);
     const intent = mapIntent(await this.loadIntentRow(access, intentId));
     const plannerRunId = randomUUID();
-    const effectivePolicy = await this.routeGroupResolver.resolveEffectivePolicy({
-      workspaceId,
-      actorUserId: actor.id,
-      routeGroup: 'automation_ai',
-      permissions: access.permissions,
-      traceId: meta.traceId,
-    });
+    const effectivePolicy =
+      await this.routeGroupResolver.resolveEffectivePolicy({
+        workspaceId,
+        actorUserId: actor.id,
+        routeGroup: 'automation_ai',
+        permissions: access.permissions,
+        traceId: meta.traceId,
+      });
     const routeSnapshot = {
       route: effectivePolicy.routeCode,
       provider: effectivePolicy.providerCode,

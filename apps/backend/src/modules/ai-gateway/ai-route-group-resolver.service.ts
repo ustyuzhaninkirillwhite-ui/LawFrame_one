@@ -85,7 +85,9 @@ export class AiRouteGroupResolverService {
   }
 
   static defaultRouteForGroup(routeGroup: AiRouteGroup): AiRouteCode {
-    return routeGroup === 'chat_ai' ? 'default_chat' : 'automation_planner_high';
+    return routeGroup === 'chat_ai'
+      ? 'default_chat'
+      : 'automation_planner_high';
   }
 
   async resolveEffectivePolicy(
@@ -97,7 +99,8 @@ export class AiRouteGroupResolverService {
         input.routeGroup ?? 'chat_ai',
       );
     const routeGroup =
-      input.routeGroup ?? AiRouteGroupResolverService.routeGroupForRoute(routeCode);
+      input.routeGroup ??
+      AiRouteGroupResolverService.routeGroupForRoute(routeCode);
 
     const preference = await this.findEffectivePreference({
       ...input,
@@ -106,7 +109,10 @@ export class AiRouteGroupResolverService {
 
     if (preference) {
       const policy = this.mapPreference(preference, routeCode);
-      this.assertAutomationCapability(policy, preference.capabilities_confirmed);
+      this.assertAutomationCapability(
+        policy,
+        preference.capabilities_confirmed,
+      );
       await this.persistSnapshot(input.workspaceId, input.actorUserId, policy);
       return policy;
     }
@@ -174,7 +180,8 @@ export class AiRouteGroupResolverService {
     }
 
     const canUseRuntimeRoute =
-      (input.routeGroup === 'chat_ai' && input.permissions.includes('ai.chat.use')) ||
+      (input.routeGroup === 'chat_ai' &&
+        input.permissions.includes('ai.chat.use')) ||
       (input.routeGroup === 'automation_ai' &&
         input.permissions.includes('canvas.ai.use'));
     const canViewSettingsPolicy =
@@ -191,7 +198,10 @@ export class AiRouteGroupResolverService {
       canViewSettingsPolicy;
 
     const candidates: Array<{
-      readonly source: 'user_preference' | 'workspace_preference' | 'system_default';
+      readonly source:
+        | 'user_preference'
+        | 'workspace_preference'
+        | 'system_default';
       readonly scopeType: AiPreferenceScopeType;
       readonly userId: string | null;
       readonly allowed: boolean;
@@ -426,7 +436,9 @@ function isMissingStage21Schema(error: unknown): boolean {
   );
 }
 
-function runtimePolicyMetadata(savedConnection: boolean): Pick<
+function runtimePolicyMetadata(
+  savedConnection: boolean,
+): Pick<
   AiEffectivePolicyDto,
   'runtimeMode' | 'runtimeNotice' | 'runtimeUsesSavedConnection'
 > {
@@ -445,7 +457,11 @@ function runtimePolicyMetadata(savedConnection: boolean): Pick<
 function normalizeAiProviderMode(
   value: string | undefined,
 ): AiEffectivePolicyDto['runtimeMode'] {
-  if (value === 'mock' || value === 'controlled-real' || value === 'env-secret') {
+  if (
+    value === 'mock' ||
+    value === 'controlled-real' ||
+    value === 'env-secret'
+  ) {
     return value;
   }
 

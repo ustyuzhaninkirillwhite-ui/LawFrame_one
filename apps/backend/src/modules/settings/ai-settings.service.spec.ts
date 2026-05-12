@@ -57,16 +57,16 @@ describe('AiSettingsService provider connections', () => {
     let insertSql = '';
     let insertParams: readonly unknown[] = [];
     const databaseService = {
-      query: jest.fn(async (sql: string, params: readonly unknown[]) => {
+      query: jest.fn((sql: string, params: readonly unknown[]) => {
         if (sql.includes('insert into app.ai_provider_connections')) {
           insertedConnectionId = String(params[0]);
           insertSql = sql;
           insertParams = params;
-          return { rows: [] };
+          return Promise.resolve({ rows: [] });
         }
 
         if (sql.includes('from app.ai_provider_connections c')) {
-          return {
+          return Promise.resolve({
             rows: [
               {
                 id: insertedConnectionId,
@@ -99,10 +99,10 @@ describe('AiSettingsService provider connections', () => {
                 updated_at: '2026-05-09T00:00:00.000Z',
               },
             ],
-          };
+          });
         }
 
-        return { rows: [] };
+        return Promise.resolve({ rows: [] });
       }),
     };
     const service = new AiSettingsService(
@@ -176,14 +176,14 @@ describe('AiSettingsService provider connections', () => {
     } as never;
     let insertedConnectionId: string | null = null;
     const databaseService = {
-      query: jest.fn(async (sql: string, params: readonly unknown[]) => {
+      query: jest.fn((sql: string, params: readonly unknown[]) => {
         if (sql.includes('insert into app.ai_provider_connections')) {
           insertedConnectionId = String(params[0]);
-          return { rows: [] };
+          return Promise.resolve({ rows: [] });
         }
 
         if (sql.includes('from app.ai_provider_connections c')) {
-          return {
+          return Promise.resolve({
             rows: [
               {
                 id: insertedConnectionId,
@@ -209,10 +209,10 @@ describe('AiSettingsService provider connections', () => {
                 updated_at: '2026-05-09T00:00:00.000Z',
               },
             ],
-          };
+          });
         }
 
-        return { rows: [] };
+        return Promise.resolve({ rows: [] });
       }),
     };
     const service = new AiSettingsService(
@@ -270,20 +270,20 @@ describe('AiSettingsService provider connections', () => {
     let insertParams: readonly unknown[] = [];
     let secretUpdateParams: readonly unknown[] = [];
     const databaseService = {
-      query: jest.fn(async (sql: string, params: readonly unknown[]) => {
+      query: jest.fn((sql: string, params: readonly unknown[]) => {
         if (sql.includes('insert into app.ai_provider_connections')) {
           insertedConnectionId = String(params[0]);
           insertParams = params;
-          return { rows: [] };
+          return Promise.resolve({ rows: [] });
         }
 
         if (sql.includes('set secret_ref_id = $3::uuid')) {
           secretUpdateParams = params;
-          return { rows: [] };
+          return Promise.resolve({ rows: [] });
         }
 
         if (sql.includes('from app.ai_provider_connections c')) {
-          return {
+          return Promise.resolve({
             rows: [
               {
                 id: insertedConnectionId,
@@ -316,10 +316,10 @@ describe('AiSettingsService provider connections', () => {
                 updated_at: '2026-05-09T00:00:00.000Z',
               },
             ],
-          };
+          });
         }
 
-        return { rows: [] };
+        return Promise.resolve({ rows: [] });
       }),
     };
     const aiSecretService = {
@@ -515,8 +515,8 @@ describe('AiSettingsService provider connections', () => {
         }),
       }),
     );
-    const chatProbeBody = JSON.parse(
-      String((fetchMock.mock.calls[1]?.[1] as RequestInit | undefined)?.body),
+    const chatProbeBody = parseRequestJsonBody(
+      fetchMock.mock.calls[1]?.[1] as RequestInit | undefined,
     );
     expect(chatProbeBody).toMatchObject({
       stream: true,
@@ -633,6 +633,13 @@ describe('AiSettingsService provider connections', () => {
     );
   });
 });
+
+function parseRequestJsonBody(init: RequestInit | undefined) {
+  if (typeof init?.body !== 'string') {
+    throw new Error('Expected JSON request body.');
+  }
+  return JSON.parse(init.body) as Record<string, unknown>;
+}
 
 function firstCallOrder(mock: jest.Mock): number {
   const order = mock.mock.invocationCallOrder[0];

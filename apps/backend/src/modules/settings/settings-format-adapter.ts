@@ -6,21 +6,19 @@ export interface SettingsFormatAdapter<T> {
   parse(body: unknown): T;
 }
 
-export class ManualFormSettingsFormatAdapter<T>
-  implements SettingsFormatAdapter<T>
-{
+export class ManualFormSettingsFormatAdapter<
+  T,
+> implements SettingsFormatAdapter<T> {
   readonly code = 'manual_form' as const;
 
-  constructor(private readonly parseManual: (body: Record<string, unknown>) => T) {}
+  constructor(
+    private readonly parseManual: (body: Record<string, unknown>) => T,
+  ) {}
 
   parse(body: unknown): T {
     const record = requireRecord(body);
     const format = record.format;
-    if (
-      format !== undefined &&
-      format !== null &&
-      format !== 'manual_form'
-    ) {
+    if (format !== undefined && format !== null && format !== 'manual_form') {
       throw new AppHttpException(
         'VALIDATION_ERROR',
         400,
@@ -33,9 +31,7 @@ export class ManualFormSettingsFormatAdapter<T>
   }
 }
 
-export class FutureUserFormatSettingsAdapter
-  implements SettingsFormatAdapter<never>
-{
+export class FutureUserFormatSettingsAdapter implements SettingsFormatAdapter<never> {
   readonly code = 'future_user_format' as const;
 
   parse(): never {
