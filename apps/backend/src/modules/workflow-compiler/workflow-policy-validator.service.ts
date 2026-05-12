@@ -288,8 +288,8 @@ export class WorkflowPolicyValidator {
           select piece_name, piece_version, status
           from app.activepieces_piece_registry
           where (piece_name, piece_version) in (
-            select *
-            from unnest($1::text[], $2::text[])
+            select required.piece_name, required.piece_version
+            from unnest($1::text[], $2::text[]) as required(piece_name, piece_version)
           )
         `,
         [

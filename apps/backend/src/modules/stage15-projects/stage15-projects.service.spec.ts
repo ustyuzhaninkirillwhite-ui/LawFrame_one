@@ -145,7 +145,10 @@ function createService() {
       databaseService as never,
       chatThreadService as never,
     ),
+    automationLibraryService,
+    dashboardService,
     databaseService,
+    chatThreadService,
   };
 }
 
@@ -196,5 +199,20 @@ describe('Stage15ProjectsService project registry', () => {
 
     expect(project.id).toBe('project_claim_001');
     expect(project.name).toBe('LexFrame Workspace');
+  });
+
+  it('loads project detail expensive dependencies once', async () => {
+    const {
+      service,
+      automationLibraryService,
+      dashboardService,
+      chatThreadService,
+    } = createService();
+
+    await service.getProject(context, 'project_claim_001');
+
+    expect(automationLibraryService.listInstalled).toHaveBeenCalledTimes(1);
+    expect(dashboardService.getSnapshot).toHaveBeenCalledTimes(1);
+    expect(chatThreadService.listProjectThreads).toHaveBeenCalledTimes(1);
   });
 });

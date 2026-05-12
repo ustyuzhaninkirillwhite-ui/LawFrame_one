@@ -30,6 +30,21 @@ interface ProjectKnowledgeRow {
   readonly updated_at: string;
 }
 
+const PROJECT_KNOWLEDGE_COLUMNS = [
+  'id',
+  'workspace_id',
+  'project_id',
+  'source_type',
+  'source_id',
+  'mode',
+  'classification',
+  'pinned',
+  'enabled_for_chat',
+  'citation_required',
+  'created_at',
+  'updated_at',
+].join(', ');
+
 @Injectable()
 export class ProjectKnowledgeService {
   constructor(
@@ -46,7 +61,7 @@ export class ProjectKnowledgeService {
     const workspaceId = this.requireWorkspace(access).id;
     const result = await this.databaseService.query<ProjectKnowledgeRow>(
       `
-        select *
+        select ${PROJECT_KNOWLEDGE_COLUMNS}
         from app.project_knowledge_items
         where workspace_id = $1
           and project_id = $2
@@ -82,7 +97,7 @@ export class ProjectKnowledgeService {
           created_by
         )
         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-        returning *
+        returning ${PROJECT_KNOWLEDGE_COLUMNS}
       `,
       [
         workspaceId,
@@ -147,7 +162,7 @@ export class ProjectKnowledgeService {
         where id = $1
           and workspace_id = $2
           and project_id = $3
-        returning *
+        returning ${PROJECT_KNOWLEDGE_COLUMNS}
       `,
       [
         itemId,

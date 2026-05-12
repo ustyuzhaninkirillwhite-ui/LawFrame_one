@@ -104,6 +104,64 @@ interface ProjectChatProviderResult {
   };
 }
 
+const CHAT_THREAD_COLUMNS = [
+  'id',
+  'workspace_id',
+  'project_id',
+  'kind',
+  'visibility',
+  'status',
+  'title',
+  'last_message_preview',
+  'current_branch_id',
+  'created_by',
+  'created_at',
+  'updated_at',
+  'archived_at',
+  'deleted_at',
+].join(', ');
+
+const CHAT_THREAD_COLUMNS_WITH_ALIAS = [
+  't.id',
+  't.workspace_id',
+  't.project_id',
+  't.kind',
+  't.visibility',
+  't.status',
+  't.title',
+  't.last_message_preview',
+  't.current_branch_id',
+  't.created_by',
+  't.created_at',
+  't.updated_at',
+  't.archived_at',
+  't.deleted_at',
+].join(', ');
+
+const CHAT_MESSAGE_COLUMNS = [
+  'id',
+  'thread_id',
+  'workspace_id',
+  'project_id',
+  'role',
+  'status',
+  'parent_message_id',
+  'created_by',
+  'request_id',
+  'trace_id',
+  'created_at',
+  'updated_at',
+].join(', ');
+
+const CHAT_MESSAGE_PART_COLUMNS = [
+  'id',
+  'message_id',
+  'type',
+  'text',
+  'payload',
+  'sequence',
+].join(', ');
+
 @Injectable()
 export class ChatThreadService {
   constructor(
@@ -123,7 +181,7 @@ export class ChatThreadService {
     const workspaceId = this.requireWorkspace(access).id;
     const result = await this.databaseService.query<ThreadRow>(
       `
-        select *
+        select ${CHAT_THREAD_COLUMNS}
         from app.chat_threads
         where workspace_id = $1
           and project_id = $2
@@ -162,7 +220,7 @@ export class ChatThreadService {
           trace_id
         )
         values ($1, $2, $3, 'project', 'active', $4, $5, $5, $6)
-        returning *
+        returning ${CHAT_THREAD_COLUMNS}
       `,
       [workspaceId, projectId, kind, title, actor.id, meta.traceId],
     );
@@ -263,7 +321,7 @@ export class ChatThreadService {
           updated_at = timezone('utc', now())
         where id = $1
           and workspace_id = $2
-        returning *
+        returning ${CHAT_THREAD_COLUMNS}
       `,
       [
         threadId,
@@ -381,7 +439,7 @@ export class ChatThreadService {
     await this.getThreadRow(workspaceId, threadId);
     const messages = await this.databaseService.query<MessageRow>(
       `
-        select *
+        select ${CHAT_MESSAGE_COLUMNS}
         from app.chat_messages
         where workspace_id = $1
           and thread_id = $2
@@ -395,7 +453,7 @@ export class ChatThreadService {
     const parts = messageIds.length
       ? await this.databaseService.query<MessagePartRow>(
           `
-            select *
+            select ${CHAT_MESSAGE_PART_COLUMNS}
             from app.chat_message_parts
             where message_id = any($1::uuid[])
             order by sequence asc
@@ -680,7 +738,7 @@ export class ChatThreadService {
     >(
       `
         select
-          t.*,
+          ${CHAT_THREAD_COLUMNS_WITH_ALIAS},
           null::uuid as message_id,
           ts_headline('simple', coalesce(t.title, ''), plainto_tsquery('simple', $2)) as snippet,
           null::text as classification
@@ -729,7 +787,7 @@ export class ChatThreadService {
           updated_at = timezone('utc', now())
         where id = $1
           and workspace_id = $2
-        returning *
+        returning ${CHAT_THREAD_COLUMNS}
       `,
       [threadId, workspaceId, status, actor.id],
     );
@@ -762,7 +820,7 @@ export class ChatThreadService {
   ): Promise<ThreadRow> {
     const row = await this.databaseService.one<ThreadRow>(
       `
-        select *
+        select ${CHAT_THREAD_COLUMNS}
         from app.chat_threads
         where id = $1
           and workspace_id = $2
@@ -820,7 +878,7 @@ export class ChatThreadService {
             trace_id
           )
           values ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-          returning *
+          returning ${CHAT_MESSAGE_COLUMNS}
         `,
         [
           input.threadId,
@@ -854,7 +912,7 @@ export class ChatThreadService {
             sequence
           )
           values ($1, $2, $3, $4, $5, '{}'::jsonb, 0)
-          returning *
+          returning ${CHAT_MESSAGE_PART_COLUMNS}
         `,
         [
           message.id,

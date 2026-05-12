@@ -42,6 +42,19 @@ interface ProjectRow {
   readonly updated_at: string;
 }
 
+const PROJECT_COLUMNS = [
+  'id',
+  'workspace_id',
+  'name',
+  'description',
+  'icon',
+  'color',
+  'status',
+  'owner_user_id',
+  'created_at',
+  'updated_at',
+].join(', ');
+
 @Injectable()
 export class Stage15ProjectsService {
   constructor(
@@ -110,7 +123,7 @@ export class Stage15ProjectsService {
           $6,
           $6
         )
-        returning *
+        returning ${PROJECT_COLUMNS}
       `,
       [workspace.id, name, description, icon, color, actor.id],
     );
@@ -134,13 +147,25 @@ export class Stage15ProjectsService {
   ): Promise<Stage15ProjectDetail> {
     const { actor, access } = this.requireContext(context);
     const row = await this.requireProjectRow(actor, access, projectId);
+    const workspace = this.requireWorkspace(access);
 
-    const [project, automations, snapshot, chats] = await Promise.all([
-      this.buildProjectSummary(row, actor, access),
-      this.automationLibraryService.listInstalled(access),
-      this.dashboardService.getSnapshot(actor, access),
-      this.listProjectChats(context, projectId),
-    ]);
+    const [automations, snapshot, documentsCount, chatThreads] =
+      await Promise.all([
+        this.automationLibraryService.listInstalled(access),
+        this.dashboardService.getSnapshot(actor, access),
+        this.countDocuments(workspace.id),
+        this.chatThreadService.listProjectThreads({ actor, access }, projectId),
+      ]);
+    const chats = chatThreads.items.map(mapStage15ProjectChat);
+    const project = this.buildProjectSummaryFromData(
+      row,
+      actor,
+      access,
+      automations,
+      snapshot,
+      documentsCount,
+      chats,
+    );
 
     return {
       ...project,
@@ -160,13 +185,25 @@ export class Stage15ProjectsService {
   ): Promise<Stage15ProjectSnapshot> {
     const { actor, access } = this.requireContext(context);
     const row = await this.requireProjectRow(actor, access, projectId);
+    const workspace = this.requireWorkspace(access);
 
-    const [project, automations, snapshot, chats] = await Promise.all([
-      this.buildProjectSummary(row, actor, access),
-      this.automationLibraryService.listInstalled(access),
-      this.dashboardService.getSnapshot(actor, access),
-      this.listProjectChats(context, projectId),
-    ]);
+    const [automations, snapshot, documentsCount, chatThreads] =
+      await Promise.all([
+        this.automationLibraryService.listInstalled(access),
+        this.dashboardService.getSnapshot(actor, access),
+        this.countDocuments(workspace.id),
+        this.chatThreadService.listProjectThreads({ actor, access }, projectId),
+      ]);
+    const chats = chatThreads.items.map(mapStage15ProjectChat);
+    const project = this.buildProjectSummaryFromData(
+      row,
+      actor,
+      access,
+      automations,
+      snapshot,
+      documentsCount,
+      chats,
+    );
 
     return {
       ...snapshot,
@@ -241,14 +278,37 @@ export class Stage15ProjectsService {
     access: AccessContext,
   ): Promise<Stage15ProjectSummary> {
     const workspace = this.requireWorkspace(access);
-    const [automations, snapshot, documentsCount, chats] = await Promise.all([
-      this.automationLibraryService.listInstalled(access),
-      this.dashboardService.getSnapshot(actor, access),
-      this.countDocuments(workspace.id),
-      this.chatThreadService
-        .listProjectThreads({ actor, access }, row.id)
-        .catch(() => ({ items: [] })),
-    ]);
+    const [automations, snapshot, documentsCount, chatThreads] =
+      await Promise.all([
+        this.automationLibraryService.listInstalled(access),
+        this.dashboardService.getSnapshot(actor, access),
+        this.countDocuments(workspace.id),
+        this.chatThreadService
+          .listProjectThreads({ actor, access }, row.id)
+          .catch(() => ({ items: [] })),
+      ]);
+
+    return this.buildProjectSummaryFromData(
+      row,
+      actor,
+      access,
+      automations,
+      snapshot,
+      documentsCount,
+      chatThreads.items.map(mapStage15ProjectChat),
+    );
+  }
+
+  private buildProjectSummaryFromData(
+    row: ProjectRow,
+    actor: AuthenticatedActor,
+    access: AccessContext,
+    automations: readonly InstalledAutomationDetail[],
+    snapshot: Awaited<ReturnType<DashboardService['getSnapshot']>>,
+    documentsCount: number,
+    chats: readonly Stage15ProjectChatSummary[],
+  ): Stage15ProjectSummary {
+    const workspace = this.requireWorkspace(access);
 
     return {
       id: row.id,
@@ -261,7 +321,7 @@ export class Stage15ProjectsService {
       ownerUserId: row.owner_user_id ?? actor.id,
       role: mapProjectRole(access),
       counters: {
-        chats: chats.items.length,
+        chats: chats.length,
         automations: automations.length,
         documents: documentsCount,
         activeRuns: snapshot.activeRuns.length,
@@ -311,7 +371,7 @@ export class Stage15ProjectsService {
         )
         on conflict (workspace_id, id) do update
         set updated_at = app.projects.updated_at
-        returning *
+        returning ${PROJECT_COLUMNS}
       `,
       [
         workspace.id,
@@ -341,7 +401,7 @@ export class Stage15ProjectsService {
     const workspace = this.requireWorkspace(access);
     const result = await this.databaseService.query<ProjectRow>(
       `
-        select *
+        select ${PROJECT_COLUMNS}
         from app.projects
         where workspace_id = $1
           and status <> 'archived'
@@ -382,7 +442,7 @@ export class Stage15ProjectsService {
 
     return this.databaseService.one<ProjectRow>(
       `
-        select *
+        select ${PROJECT_COLUMNS}
         from app.projects
         where workspace_id = $1
           and id = $2
