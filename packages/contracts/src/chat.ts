@@ -51,7 +51,8 @@ export type ProjectKnowledgeSourceType =
   | "run_artifact"
   | "chat_summary"
   | "manual_note"
-  | "profile_snapshot";
+  | "profile_snapshot"
+  | "web_search_result";
 
 export type ChatDataClassification =
   | "public"
@@ -64,6 +65,7 @@ export type ChatDataClassification =
 
 export type ChatStreamEventType =
   | "message_start"
+  | "run_status"
   | "text_delta"
   | "tool_call_start"
   | "tool_call_delta"
@@ -94,6 +96,45 @@ export interface ChatStreamEvent {
   readonly payload: Record<string, unknown>;
 }
 
+export type ChatRunStatus =
+  | "started"
+  | "queued"
+  | "thinking"
+  | "streaming"
+  | "completed"
+  | "failed"
+  | "cancelled"
+  | "recovering";
+
+export type ChatAttachmentStatus =
+  | "pending_upload"
+  | "uploaded"
+  | "attached"
+  | "deleted"
+  | "failed";
+
+export interface ChatRunSummary {
+  readonly runId: string;
+  readonly streamId: string;
+  readonly threadId: string;
+  readonly messageId: string | null;
+  readonly status: ChatRunStatus;
+  readonly retryable: boolean;
+  readonly errorCode?: string | null;
+  readonly errorMessage?: string | null;
+  readonly createdAt?: string | null;
+  readonly updatedAt?: string | null;
+  readonly completedAt?: string | null;
+}
+
+export interface ChatBranchInfo {
+  readonly branchId: string | null;
+  readonly activeBranchId: string | null;
+  readonly ordinal: number;
+  readonly total: number;
+  readonly canSwitch: boolean;
+}
+
 export interface ChatThreadSummary {
   readonly id: string;
   readonly workspaceId: string;
@@ -121,11 +162,17 @@ export interface ChatMessagePartDto {
 
 export interface ChatMessageAttachmentDto {
   readonly id: string;
-  readonly sourceType: ProjectKnowledgeSourceType;
+  readonly sourceType: ProjectKnowledgeSourceType | "uploaded_file";
   readonly sourceId: string;
   readonly mode: ChatAttachmentMode;
   readonly classification: ChatDataClassification;
   readonly citationRequired: boolean;
+  readonly originalFilename?: string | null;
+  readonly mimeType?: string | null;
+  readonly sizeBytes?: number | null;
+  readonly status?: ChatAttachmentStatus;
+  readonly downloadPath?: string | null;
+  readonly storageKey?: string | null;
   readonly metadata: Record<string, unknown>;
 }
 
@@ -137,6 +184,10 @@ export interface ChatMessageDto {
   readonly role: ChatMessageRole;
   readonly status: ChatMessageStatus;
   readonly parentMessageId: string | null;
+  readonly clientMessageId?: string | null;
+  readonly branchId?: string | null;
+  readonly branchInfo?: ChatBranchInfo | null;
+  readonly run?: ChatRunSummary | null;
   readonly createdBy: string | null;
   readonly requestId: string | null;
   readonly traceId: string | null;
@@ -152,6 +203,9 @@ export interface ProjectKnowledgeItem {
   readonly projectId: string;
   readonly sourceType: ProjectKnowledgeSourceType;
   readonly sourceId: string;
+  readonly title?: string | null;
+  readonly summary?: string | null;
+  readonly url?: string | null;
   readonly mode: ChatAttachmentMode;
   readonly classification: ChatDataClassification;
   readonly pinned: boolean;
@@ -173,6 +227,33 @@ export interface UpsertProjectKnowledgeItemRequest {
   readonly pinned?: boolean;
   readonly enabledForChat?: boolean;
   readonly citationRequired?: boolean;
+}
+
+export interface ProjectWebSearchRequest {
+  readonly query: string;
+  readonly saveResults?: boolean;
+  readonly maxResults?: number;
+}
+
+export interface ProjectWebSearchResult {
+  readonly id: string;
+  readonly title: string;
+  readonly url: string;
+  readonly snippet: string;
+  readonly sourceType: "web_search_result";
+  readonly score?: number | null;
+  readonly knowledgeItemId?: string | null;
+  readonly createdAt?: string | null;
+}
+
+export interface ProjectWebSearchResponse {
+  readonly provider: "tavily";
+  readonly status: "ok" | "unconfigured" | "failed";
+  readonly items: readonly ProjectWebSearchResult[];
+  readonly error?: {
+    readonly code: "provider_unconfigured" | "provider_failed" | "invalid_query";
+    readonly message: string;
+  } | null;
 }
 
 export interface ResourceAccessPolicy {
@@ -230,6 +311,11 @@ export interface CreateChatThreadRequest {
   readonly kind?: ChatThreadKind;
 }
 
+export interface ChatThreadListQuery {
+  readonly scope?: "global" | "project";
+  readonly projectId?: string | null;
+}
+
 export interface UpdateChatThreadRequest {
   readonly title?: string | null;
   readonly status?: ChatThreadStatus;
@@ -238,6 +324,9 @@ export interface UpdateChatThreadRequest {
 export interface CreateChatMessageRequest {
   readonly text: string;
   readonly parentMessageId?: string | null;
+  readonly clientMessageId?: string | null;
+  readonly branchId?: string | null;
+  readonly attachmentIds?: readonly string[];
   readonly attachments?: readonly {
     readonly sourceType: ProjectKnowledgeSourceType;
     readonly sourceId: string;
@@ -255,6 +344,7 @@ export interface ChatThreadListResponse {
 
 export interface ChatMessagesResponse {
   readonly items: readonly ChatMessageDto[];
+  readonly latestRun?: ChatRunSummary | null;
 }
 
 export interface ChatStreamSnapshot {
@@ -262,8 +352,77 @@ export interface ChatStreamSnapshot {
   readonly workspaceId: string;
   readonly threadId: string;
   readonly messageId: string;
-  readonly status: "started" | "completed" | "failed" | "cancelled";
+  readonly status: ChatRunStatus;
+  readonly clientMessageId?: string | null;
+  readonly userMessage?: ChatMessageDto | null;
+  readonly assistantMessage?: ChatMessageDto | null;
+  readonly run?: ChatRunSummary | null;
   readonly events: readonly ChatStreamEvent[];
+}
+
+export interface ChatAttachmentValidationError {
+  readonly code:
+    | "empty_file"
+    | "unsupported_mime_type"
+    | "unsupported_extension"
+    | "file_too_large"
+    | "unsafe_filename"
+    | "duplicate_file";
+  readonly message: string;
+}
+
+export interface ChatAttachmentUploadIntentRequest {
+  readonly threadId: string;
+  readonly files: readonly {
+    readonly clientAttachmentId?: string | null;
+    readonly filename: string;
+    readonly mimeType: string;
+    readonly sizeBytes: number;
+    readonly sha256?: string | null;
+  }[];
+}
+
+export interface ChatAttachmentUploadIntent {
+  readonly id: string;
+  readonly clientAttachmentId?: string | null;
+  readonly uploadUrl: string;
+  readonly method: "PUT";
+  readonly headers: Record<string, string>;
+  readonly expiresAt: string;
+  readonly attachment: ChatMessageAttachmentDto;
+}
+
+export interface ChatAttachmentUploadIntentResponse {
+  readonly items: readonly ChatAttachmentUploadIntent[];
+  readonly errors: readonly (ChatAttachmentValidationError & {
+    readonly clientAttachmentId?: string | null;
+    readonly filename?: string | null;
+  })[];
+}
+
+export interface ChatAttachmentCompleteRequest {
+  readonly threadId: string;
+  readonly messageId?: string | null;
+  readonly runId?: string | null;
+  readonly sha256?: string | null;
+}
+
+export interface ChatAttachmentResponse {
+  readonly attachment: ChatMessageAttachmentDto;
+}
+
+export interface ChatAttachmentDeleteResponse {
+  readonly id: string;
+  readonly status: "deleted";
+}
+
+export interface ChatAttachmentDownloadResponse {
+  readonly id: string;
+  readonly downloadUrl: string;
+  readonly filename: string;
+  readonly mimeType: string;
+  readonly sizeBytes: number;
+  readonly expiresAt: string;
 }
 
 export interface ChatSearchResult {

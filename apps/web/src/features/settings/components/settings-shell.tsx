@@ -83,7 +83,7 @@ export function SettingsShell({
   const permissions = new Set(bootstrap?.permissions ?? sessionContext.permissions);
 
   return (
-    <div className={mode === "dialog" ? "w-[min(960px,calc(100vw-2rem))]" : ""}>
+    <div className={mode === "dialog" ? "w-[min(900px,calc(100vw-2rem))]" : ""}>
       <div className="mb-5 flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold">Настройки</h1>
@@ -105,7 +105,7 @@ export function SettingsShell({
         ) : null}
       </div>
 
-      <div className="grid gap-5 md:grid-cols-[220px_1fr]">
+      <div className="grid gap-4 md:grid-cols-[168px_1fr]">
         <SettingsSidebarNav activeTab={activeTab} onSelect={selectTab} />
         <main className="min-h-[460px] min-w-0">
           {bootstrapQuery.isLoading ? <SettingsSkeleton /> : null}

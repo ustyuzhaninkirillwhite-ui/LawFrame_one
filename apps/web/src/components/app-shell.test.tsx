@@ -41,6 +41,7 @@ describe("AppShell", () => {
     );
 
     expect(screen.getByText("Global floating composer")).toBeInTheDocument();
+    expect(screen.getByTestId("app-shell-panel")).toBeInTheDocument();
   });
 
   it("hides the global floating composer on project chat routes", () => {
@@ -53,6 +54,22 @@ describe("AppShell", () => {
     );
 
     expect(screen.queryByText("Global floating composer")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("app-shell-panel")).not.toBeInTheDocument();
+  });
+
+  it("renders project workspace routes without the legacy dashboard panel shell", () => {
+    navigation.pathname = "/app/projects/project_claim_001";
+
+    render(
+      <AppShell>
+        <div>Project workspace</div>
+      </AppShell>,
+    );
+
+    expect(screen.getByText("Project workspace")).toBeInTheDocument();
+    expect(screen.queryByText("System status")).not.toBeInTheDocument();
+    expect(screen.queryByText("Global floating composer")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("app-shell-panel")).not.toBeInTheDocument();
   });
 
   it("clears stale Activepieces browser tokens outside the embed route", () => {

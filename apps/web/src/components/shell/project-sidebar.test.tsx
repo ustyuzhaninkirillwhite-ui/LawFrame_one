@@ -4,6 +4,10 @@ import { ProjectSidebar } from "./project-sidebar";
 
 const push = vi.fn();
 const searchChats = vi.fn();
+const listChatThreads = vi.fn();
+const createChatThread = vi.fn();
+const updateChatThread = vi.fn();
+const updateProject = vi.fn();
 let projectChats: readonly {
   readonly id: string;
   readonly projectId: string;
@@ -24,7 +28,11 @@ vi.mock("next/navigation", () => ({
 vi.mock("@/providers/session-provider", () => ({
   useSessionBridge: () => ({
     apiClient: {
+      createChatThread,
+      listChatThreads,
       searchChats,
+      updateChatThread,
+      updateProject,
     },
     signOut: vi.fn(),
     sessionContext: {
@@ -101,6 +109,10 @@ describe("ProjectSidebar", () => {
   beforeEach(() => {
     push.mockReset();
     searchChats.mockReset();
+    listChatThreads.mockReset();
+    createChatThread.mockReset();
+    updateChatThread.mockReset();
+    updateProject.mockReset();
     createChat.mockClear();
     pathname = "/app/connectors";
     projectChats = [
@@ -141,6 +153,92 @@ describe("ProjectSidebar", () => {
       ],
       nextCursor: null,
     });
+    listChatThreads.mockResolvedValue({
+      items: [
+        {
+          id: "chat_global_recent",
+          workspaceId: "ws_1",
+          projectId: null,
+          kind: "general",
+          visibility: "private",
+          status: "active",
+          title: "Global chat from DB",
+          lastMessagePreview: "General workspace conversation",
+          currentBranchId: null,
+          createdBy: "user_1",
+          createdAt: "2026-05-07T12:00:00.000Z",
+          updatedAt: "2026-05-07T12:30:00.000Z",
+          archivedAt: null,
+          deletedAt: null,
+        },
+      ],
+    });
+    createChatThread.mockResolvedValue({
+      thread: {
+        id: "chat_global_created",
+        projectId: null,
+        title: "Новый чат",
+      },
+    });
+    updateChatThread.mockResolvedValue({
+      thread: {
+        id: "chat_global_recent",
+        title: "Renamed global chat",
+      },
+    });
+    updateProject.mockResolvedValue({
+      project: {
+        id: "project_claim_001",
+        name: "Renamed project",
+      },
+    });
+  });
+
+  it("shows global chat history on /chat without leaking project chats", async () => {
+    pathname = "/chat";
+
+    render(<ProjectSidebar />);
+
+    expect(await screen.findByText("Global chat from DB")).toBeInTheDocument();
+    expect(screen.queryByText("Проектный чат из DB")).not.toBeInTheDocument();
+    expect(listChatThreads).toHaveBeenCalledWith({ scope: "global" });
+  });
+
+  it("creates a global chat from /chat instead of creating a project chat", async () => {
+    pathname = "/chat";
+
+    render(<ProjectSidebar />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Новый чат" }));
+
+    await waitFor(() => {
+      expect(createChatThread).toHaveBeenCalledWith({
+        kind: "general",
+        title: null,
+      });
+      expect(createChat).not.toHaveBeenCalled();
+      expect(push).toHaveBeenCalledWith("/chat/chat_global_created");
+    });
+  });
+
+  it("renames a project from the sidebar without navigating away", async () => {
+    pathname = "/app/projects/project_claim_001";
+
+    render(<ProjectSidebar />);
+
+    fireEvent.click(await screen.findByRole("button", { name: "Переименовать проект Orlov & Partners" }));
+    fireEvent.change(screen.getByRole("textbox", { name: "Название проекта" }), {
+      target: { value: "Renamed project" },
+    });
+    fireEvent.keyDown(screen.getByRole("textbox", { name: "Название проекта" }), {
+      key: "Enter",
+    });
+
+    await waitFor(() => {
+      expect(updateProject).toHaveBeenCalledWith("project_claim_001", {
+        name: "Renamed project",
+      });
+    });
   });
 
   it("renders compact navigation without workspace subtitle or active project cards", async () => {
@@ -156,9 +254,8 @@ describe("ProjectSidebar", () => {
 
     expect(screen.getByRole("button", { name: "Новый чат" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Поиск в чатах" })).toBeInTheDocument();
-    expect(
-      await screen.findByRole("link", { name: "Проектный чат из DB" }),
-    ).toBeInTheDocument();
+    expect(await screen.findByRole("link", { name: "Global chat from DB" })).toBeInTheDocument();
+    expect(screen.queryByText("Проектный чат из DB")).not.toBeInTheDocument();
     expect(searchChats).not.toHaveBeenCalled();
   });
 
@@ -196,6 +293,8 @@ describe("ProjectSidebar", () => {
   });
 
   it("opens a recent chat from the project-scoped chat list", async () => {
+    pathname = "/app/projects/project_claim_001/chats";
+
     render(<ProjectSidebar />);
 
     fireEvent.click(

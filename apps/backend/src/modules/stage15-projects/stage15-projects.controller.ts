@@ -7,6 +7,10 @@ import type {
   Stage15ProjectDetail,
   Stage15ProjectListResponse,
   Stage15ProjectSnapshot,
+  Stage15ProjectUpdatedResponse,
+  Stage15UpdateProjectRequest,
+  ProjectWebSearchRequest,
+  ProjectWebSearchResponse,
 } from '@lexframe/contracts';
 import type { LexframeRequest } from '../../common/types/lexframe-request';
 import {
@@ -15,6 +19,7 @@ import {
   Get,
   HttpCode,
   Param,
+  Patch,
   Post,
   Req,
   UseGuards,
@@ -24,6 +29,7 @@ import { RequiredPermissions } from '../../common/decorators/required-permission
 import { AuthGuard } from '../../common/guards/auth.guard';
 import { PermissionGuard } from '../../common/guards/permission.guard';
 import { WorkspaceContextGuard } from '../../common/guards/workspace-context.guard';
+import { ProjectWebSearchService } from './project-web-search.service';
 import { Stage15ProjectsService } from './stage15-projects.service';
 
 @Controller('projects')
@@ -31,6 +37,7 @@ import { Stage15ProjectsService } from './stage15-projects.service';
 export class Stage15ProjectsController {
   constructor(
     private readonly stage15ProjectsService: Stage15ProjectsService,
+    private readonly projectWebSearchService: ProjectWebSearchService,
   ) {}
 
   @Get()
@@ -58,6 +65,16 @@ export class Stage15ProjectsController {
     @Param('projectId') projectId: string,
   ): Promise<Stage15ProjectDetail> {
     return this.stage15ProjectsService.getProject(context, projectId);
+  }
+
+  @Patch(':projectId')
+  @RequiredPermissions('workspace.update')
+  updateProject(
+    @LexframeRequestContext() context: LexframeRequest['lexframe'],
+    @Param('projectId') projectId: string,
+    @Body() body: Stage15UpdateProjectRequest,
+  ): Promise<Stage15ProjectUpdatedResponse> {
+    return this.stage15ProjectsService.updateProject(context, projectId, body);
   }
 
   @Get(':projectId/snapshot')
@@ -91,6 +108,17 @@ export class Stage15ProjectsController {
       projectId,
       body,
     );
+  }
+
+  @Post(':projectId/web-search')
+  @HttpCode(200)
+  @RequiredPermissions('chat.manage_project_context')
+  searchProjectWeb(
+    @LexframeRequestContext() context: LexframeRequest['lexframe'],
+    @Param('projectId') projectId: string,
+    @Body() body: ProjectWebSearchRequest,
+  ): Promise<ProjectWebSearchResponse> {
+    return this.projectWebSearchService.search(context, projectId, body);
   }
 
   @Get(':projectId/automations')

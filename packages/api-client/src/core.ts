@@ -25,7 +25,7 @@ export interface FetchOptions {
   readonly getReauthToken?: () => MaybePromise<string | null | undefined>;
 }
 
-async function resolveHeaders(
+export async function resolveHeaders(
   options: FetchOptions,
   init?: RequestInit,
 ): Promise<HeadersInit> {

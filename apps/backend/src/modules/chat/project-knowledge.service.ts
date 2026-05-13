@@ -13,14 +13,15 @@ import { AppHttpException } from '../../common/errors/app-http.exception';
 import { AuditService } from '../audit/audit.service';
 import { DatabaseService } from '../database/database.service';
 
-const DEFAULT_PROJECT_ID = 'project_claim_001';
-
 interface ProjectKnowledgeRow {
   readonly id: string;
   readonly workspace_id: string;
   readonly project_id: string;
   readonly source_type: ProjectKnowledgeItem['sourceType'];
   readonly source_id: string;
+  readonly title: string | null;
+  readonly summary: string | null;
+  readonly url: string | null;
   readonly mode: ProjectKnowledgeItem['mode'];
   readonly classification: ProjectKnowledgeItem['classification'];
   readonly pinned: boolean;
@@ -36,6 +37,9 @@ const PROJECT_KNOWLEDGE_COLUMNS = [
   'project_id',
   'source_type',
   'source_id',
+  'null::text as title',
+  'null::text as summary',
+  'null::text as url',
   'mode',
   'classification',
   'pinned',
@@ -57,15 +61,35 @@ export class ProjectKnowledgeService {
     projectId: string,
   ): Promise<ProjectKnowledgeListResponse> {
     const { access } = this.requireContext(context);
-    this.assertProjectId(access, projectId);
     const workspaceId = this.requireWorkspace(access).id;
+    await this.assertProjectExists(access, projectId);
     const result = await this.databaseService.query<ProjectKnowledgeRow>(
       `
-        select ${PROJECT_KNOWLEDGE_COLUMNS}
-        from app.project_knowledge_items
-        where workspace_id = $1
-          and project_id = $2
-        order by pinned desc, updated_at desc
+        select
+          item.id,
+          item.workspace_id,
+          item.project_id,
+          item.source_type,
+          item.source_id,
+          coalesce(nullif(item.metadata->>'title', ''), web_result.title) as title,
+          coalesce(nullif(item.metadata->>'summary', ''), web_result.snippet) as summary,
+          coalesce(nullif(item.metadata->>'url', ''), web_result.url) as url,
+          item.mode,
+          item.classification,
+          item.pinned,
+          item.enabled_for_chat,
+          item.citation_required,
+          item.created_at,
+          item.updated_at
+        from app.project_knowledge_items item
+        left join app.project_web_search_results web_result
+          on item.source_type = 'web_search_result'
+          and item.source_id = web_result.id::text
+          and item.workspace_id = web_result.workspace_id
+          and item.project_id = web_result.project_id
+        where item.workspace_id = $1
+          and item.project_id = $2
+        order by item.pinned desc, item.updated_at desc
         limit 100
       `,
       [workspaceId, projectId],
@@ -80,8 +104,8 @@ export class ProjectKnowledgeService {
     input: UpsertProjectKnowledgeItemRequest,
   ): Promise<ProjectKnowledgeItem> {
     const { actor, access } = this.requireContext(context);
-    this.assertProjectId(access, projectId);
     const workspaceId = this.requireWorkspace(access).id;
+    await this.assertProjectExists(access, projectId);
     const row = await this.databaseService.one<ProjectKnowledgeRow>(
       `
         insert into app.project_knowledge_items (
@@ -148,8 +172,8 @@ export class ProjectKnowledgeService {
     input: Partial<UpsertProjectKnowledgeItemRequest>,
   ): Promise<ProjectKnowledgeItem> {
     const { access } = this.requireContext(context);
-    this.assertProjectId(access, projectId);
     const workspaceId = this.requireWorkspace(access).id;
+    await this.assertProjectExists(access, projectId);
     const row = await this.databaseService.one<ProjectKnowledgeRow>(
       `
         update app.project_knowledge_items
@@ -192,8 +216,8 @@ export class ProjectKnowledgeService {
     itemId: string,
   ) {
     const { actor, access } = this.requireContext(context);
-    this.assertProjectId(access, projectId);
     const workspaceId = this.requireWorkspace(access).id;
+    await this.assertProjectExists(access, projectId);
     await this.databaseService.query(
       `
         delete from app.project_knowledge_items
@@ -243,16 +267,29 @@ export class ProjectKnowledgeService {
     return access.activeWorkspace;
   }
 
-  private assertProjectId(access: AccessContext, projectId: string) {
-    const allowedIds = new Set([DEFAULT_PROJECT_ID]);
-    if (!allowedIds.has(projectId)) {
+  private async assertProjectExists(
+    access: AccessContext,
+    projectId: string,
+  ): Promise<void> {
+    const workspace = this.requireWorkspace(access);
+    const row = await this.databaseService.one<{ readonly id: string }>(
+      `
+        select id
+        from app.projects
+        where workspace_id = $1
+          and id = $2
+          and status <> 'archived'
+      `,
+      [workspace.id, projectId],
+    );
+
+    if (!row) {
       throw new AppHttpException(
         'WORKSPACE_ACCESS_DENIED',
         404,
         'Project is not available in the active workspace.',
       );
     }
-    this.requireWorkspace(access);
   }
 }
 
@@ -265,6 +302,9 @@ function mapProjectKnowledgeRow(
     projectId: row.project_id,
     sourceType: row.source_type,
     sourceId: row.source_id,
+    title: row.title,
+    summary: row.summary,
+    url: row.url,
     mode: row.mode,
     classification: row.classification,
     pinned: row.pinned,

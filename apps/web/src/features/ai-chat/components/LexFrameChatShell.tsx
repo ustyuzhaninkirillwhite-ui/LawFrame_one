@@ -1,26 +1,42 @@
 "use client";
 
-import type { ChatMessageDto, ChatStreamSnapshot } from "@lexframe/contracts";
+import type {
+  ChatMessageDto,
+  ChatStreamEvent,
+  ChatStreamSnapshot,
+} from "@lexframe/contracts";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import * as React from "react";
 import { useSessionBridge } from "@/providers/session-provider";
 import { createLexFrameChatApi } from "../api/chatApi";
 import { getChatMessageText } from "../domain/chatMappers";
+import {
+  chatRuntimeReducer,
+  initialChatRuntimeState,
+} from "../domain/chatStateMachine";
 import { LexFrameThread } from "./LexFrameThread";
 
 export function LexFrameChatShell({
   projectId,
   initialThreadId,
 }: {
-  readonly projectId: string;
+  readonly projectId: string | null;
   readonly initialThreadId: string | null;
 }) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { apiClient, sessionContext } = useSessionBridge();
   const chatApi = React.useMemo(() => createLexFrameChatApi(apiClient), [apiClient]);
-  const [messages, setMessages] = React.useState<ChatMessageDto[]>([]);
+  const chatThreadsQueryKey = React.useMemo(
+    () => ["chatThreads", projectId ?? "global"] as const,
+    [projectId],
+  );
+  const [runtime, dispatchRuntime] = React.useReducer(
+    chatRuntimeReducer,
+    initialChatRuntimeState,
+  );
+  const messages = runtime.messages;
   const [threadOverride, setThreadOverride] = React.useState<{
     readonly routeThreadId: string | null;
     readonly activeThreadId: string | null;
@@ -38,15 +54,16 @@ export function LexFrameChatShell({
     },
     [initialThreadId],
   );
-  const [isRunning, setIsRunning] = React.useState(false);
-  const [activeStreamId, setActiveStreamId] = React.useState<string | null>(null);
-  const [streamErrorMessage, setStreamErrorMessage] = React.useState<string | null>(
-    null,
-  );
   const messageLoadRequestId = React.useRef(0);
+  const abortControllerRef = React.useRef<AbortController | null>(null);
   const canSend = sessionContext.permissions.includes("chat.create");
-  const canCreateAutomation = sessionContext.permissions.includes(
-    "automation_builder.create_intent",
+  const canCreateAutomation =
+    Boolean(projectId) &&
+    sessionContext.permissions.includes("automation_builder.create_intent");
+  const chatRouteForThread = React.useCallback(
+    (threadId: string) =>
+      projectId ? `/app/projects/${projectId}/chats/${threadId}` : `/chat/${threadId}`,
+    [projectId],
   );
   const invalidateProjectChatSurfaces = React.useCallback(() => {
     const workspaceId = sessionContext.activeWorkspace?.id;
@@ -64,8 +81,11 @@ export function LexFrameChatShell({
       queryClient.invalidateQueries({
         queryKey: ["stage15-projects", workspaceId],
       }),
+      queryClient.invalidateQueries({
+        queryKey: chatThreadsQueryKey,
+      }),
     ]);
-  }, [projectId, queryClient, sessionContext.activeWorkspace?.id]);
+  }, [chatThreadsQueryKey, projectId, queryClient, sessionContext.activeWorkspace?.id]);
 
   const loadMessages = React.useCallback(
     async (threadId: string | null) => {
@@ -74,19 +94,28 @@ export function LexFrameChatShell({
 
       if (!threadId) {
         if (requestId === messageLoadRequestId.current) {
-          setMessages([]);
+          dispatchRuntime({ type: "hydrate", messages: [] });
         }
         return [];
       }
 
-      const response = await chatApi.listMessages(threadId);
+      const response = await queryClient.fetchQuery({
+        queryKey: chatMessagesQueryKey(threadId),
+        queryFn: () => chatApi.listMessages(threadId),
+      });
       const nextMessages = [...response.items];
       if (requestId === messageLoadRequestId.current) {
-        setMessages(nextMessages);
+        dispatchRuntime({ type: "hydrate", messages: nextMessages });
+        if (response.latestRun?.status === "recovering") {
+          dispatchRuntime({
+            type: "recovering",
+            streamId: response.latestRun.streamId,
+          });
+        }
       }
       return nextMessages;
     },
-    [chatApi],
+    [chatApi, queryClient],
   );
 
   React.useEffect(() => {
@@ -94,74 +123,161 @@ export function LexFrameChatShell({
   }, [activeThreadId, loadMessages]);
 
   const sendMessage = React.useCallback(
-    async (text: string) => {
+    async (text: string, files: readonly File[] = []) => {
       let threadId = activeThreadId;
       let createdThread = false;
 
       if (!threadId) {
-        const created = await chatApi.createProjectThread(projectId, {
-          title: text.slice(0, 80),
-          source: "project_chat",
-        });
-        threadId = created.chat.id;
+        if (projectId) {
+          const created = await chatApi.createProjectThread(projectId, {
+            title: text.slice(0, 80),
+            source: "project_chat",
+          });
+          threadId = created.chat.id;
+        } else {
+          const created = await chatApi.createGlobalThread({
+            title: text.slice(0, 80),
+            kind: "general",
+          });
+          threadId = created.thread.id;
+        }
         createdThread = true;
         setActiveThreadId(threadId);
       }
 
-      setStreamErrorMessage(null);
-      setActiveStreamId(null);
-      setIsRunning(true);
+      const clientMessageId = createClientMessageId();
+      const optimisticStreamId = `client-stream-${clientMessageId}`;
+      const createdAt = new Date().toISOString();
+      dispatchRuntime({
+        type: "send_started",
+        streamId: optimisticStreamId,
+        userMessage: createOptimisticMessage({
+          id: `client-message-${clientMessageId}`,
+          threadId,
+          projectId,
+          workspaceId: sessionContext.activeWorkspace?.id ?? "",
+          role: "user",
+          status: "completed",
+          text,
+          clientMessageId,
+          createdAt,
+          attachments: createOptimisticAttachments(files),
+        }),
+        assistantMessage: createOptimisticMessage({
+          id: `assistant-placeholder-${clientMessageId}`,
+          threadId,
+          projectId,
+          workspaceId: sessionContext.activeWorkspace?.id ?? "",
+          role: "assistant",
+          status: "streaming",
+          text: "",
+          clientMessageId: null,
+          createdAt,
+          attachments: [],
+        }),
+      });
+      abortControllerRef.current?.abort();
+      abortControllerRef.current = new AbortController();
       try {
-        const snapshot = await chatApi.streamMessage(threadId, { text });
-        setActiveStreamId(snapshot.streamId);
+        const attachmentIds = files.length
+          ? await uploadChatAttachments(chatApi, threadId, files)
+          : [];
+        const snapshot = await chatApi.streamMessageEvents(
+          threadId,
+          { text, clientMessageId, attachmentIds },
+          {
+            signal: abortControllerRef.current.signal,
+            onEvent: (event) => {
+              if (event.type !== "done") {
+                dispatchRuntime({
+                  type: "stream_event",
+                  event: event as ChatStreamEvent,
+                });
+              }
+            },
+          },
+        );
+        dispatchRuntime({
+          type: "server_reconciled",
+          clientMessageId,
+          userMessage: snapshot.userMessage ?? null,
+          assistantMessage: snapshot.assistantMessage ?? null,
+        });
         const snapshotMessage = createAssistantMessageFromSnapshot(snapshot, projectId);
         if (snapshotMessage) {
-          setMessages((current) => upsertChatMessage(current, snapshotMessage));
+          dispatchRuntime({
+            type: "completed",
+            assistantMessage: snapshot.assistantMessage ?? snapshotMessage,
+          });
         }
         const persistedMessages = await loadMessages(threadId);
         if (
           snapshotMessage &&
           !persistedMessages.some((message) => message.id === snapshotMessage.id)
         ) {
-          setMessages((current) => upsertChatMessage(current, snapshotMessage));
+          dispatchRuntime({
+            type: "completed",
+            assistantMessage: snapshot.assistantMessage ?? snapshotMessage,
+          });
         }
 
         if (createdThread) {
-          router.push(`/app/projects/${projectId}/chats/${threadId}`);
+          router.push(chatRouteForThread(threadId));
         }
       } catch (error) {
         await loadMessages(threadId).catch(() => undefined);
-        setStreamErrorMessage(formatChatStreamError(error));
+        dispatchRuntime({
+          type: "failed",
+          errorMessage: formatChatStreamError(error),
+        });
 
         if (createdThread) {
-          router.push(`/app/projects/${projectId}/chats/${threadId}`);
+          router.push(chatRouteForThread(threadId));
         }
       } finally {
-        setIsRunning(false);
+        if (threadId) {
+          void queryClient.invalidateQueries({
+            queryKey: chatMessagesQueryKey(threadId),
+          });
+          void queryClient.invalidateQueries({
+            queryKey: chatThreadQueryKey(threadId),
+          });
+        }
+        if (runtime.activeStreamId) {
+          void queryClient.invalidateQueries({
+            queryKey: chatRunQueryKey(runtime.activeStreamId),
+          });
+        }
+        abortControllerRef.current = null;
         invalidateProjectChatSurfaces();
       }
     },
     [
       activeThreadId,
       chatApi,
+      chatRouteForThread,
       invalidateProjectChatSurfaces,
       loadMessages,
       projectId,
+      queryClient,
       router,
+      runtime.activeStreamId,
+      sessionContext.activeWorkspace?.id,
       setActiveThreadId,
     ],
   );
 
   const cancelStream = React.useCallback(() => {
-    if (!activeThreadId || !activeStreamId) {
-      setIsRunning(false);
+    abortControllerRef.current?.abort();
+    if (!activeThreadId || !runtime.activeStreamId) {
+      dispatchRuntime({ type: "cancelled" });
       return;
     }
 
-    void chatApi.cancelStream(activeThreadId, activeStreamId).finally(() => {
-      setIsRunning(false);
+    void chatApi.cancelStream(activeThreadId, runtime.activeStreamId).finally(() => {
+      dispatchRuntime({ type: "cancelled" });
     });
-  }, [activeStreamId, activeThreadId, chatApi]);
+  }, [activeThreadId, chatApi, runtime.activeStreamId]);
 
   const branch = React.useCallback(
     async (messageId: string) => {
@@ -171,9 +287,9 @@ export function LexFrameChatShell({
 
       const response = await chatApi.branchThread(activeThreadId, messageId);
       setActiveThreadId(response.thread.id);
-      router.push(`/app/projects/${projectId}/chats/${response.thread.id}`);
+      router.push(chatRouteForThread(response.thread.id));
     },
-    [activeThreadId, chatApi, projectId, router, setActiveThreadId],
+    [activeThreadId, chatApi, chatRouteForThread, router, setActiveThreadId],
   );
 
   const regenerate = React.useCallback(
@@ -182,17 +298,21 @@ export function LexFrameChatShell({
         return;
       }
 
-      setIsRunning(true);
-      setStreamErrorMessage(null);
       try {
         const snapshot = await chatApi.regenerate(activeThreadId, messageId);
-        setActiveStreamId(snapshot.streamId);
+        if (snapshot.assistantMessage) {
+          dispatchRuntime({
+            type: "completed",
+            assistantMessage: snapshot.assistantMessage,
+          });
+        }
         await loadMessages(activeThreadId);
       } catch (error) {
         await loadMessages(activeThreadId).catch(() => undefined);
-        setStreamErrorMessage(formatChatStreamError(error));
-      } finally {
-        setIsRunning(false);
+        dispatchRuntime({
+          type: "failed",
+          errorMessage: formatChatStreamError(error),
+        });
       }
     },
     [activeThreadId, chatApi, loadMessages],
@@ -200,7 +320,7 @@ export function LexFrameChatShell({
 
   const createAutomationFromMessage = React.useCallback(
     async (messageId: string) => {
-      if (!activeThreadId) {
+      if (!activeThreadId || !projectId) {
         return;
       }
 
@@ -226,29 +346,176 @@ export function LexFrameChatShell({
   );
 
   return (
-    <section className="flex min-h-[calc(100vh-9rem)] flex-1 flex-col overflow-hidden bg-[color:var(--lf-bg-panel)]">
-      <header className="flex shrink-0 items-center justify-between border-b border-[color:var(--lf-border)] px-4 py-3">
-        <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[color:var(--lf-text-muted)]">
-          LexFrame AI
-        </div>
-      </header>
-      <LexFrameThread
-        messages={messages}
-        isRunning={isRunning}
-        streamErrorMessage={streamErrorMessage}
-        disabled={!canSend}
-        onSend={sendMessage}
-        onCancel={cancelStream}
-        onRegenerate={(messageId) => void regenerate(messageId)}
-        onBranch={(messageId) => void branch(messageId)}
-        onCreateAutomation={
-          canCreateAutomation
-            ? (messageId) => void createAutomationFromMessage(messageId)
-            : undefined
-        }
-      />
+    <section className="flex h-full min-h-0 flex-1 overflow-hidden bg-[color:var(--lf-bg-panel)]">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+        <header className="flex shrink-0 items-center justify-between border-b border-[color:var(--lf-border)] px-4 py-3">
+          <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[color:var(--lf-text-muted)]">
+            LexFrame AI
+          </div>
+        </header>
+        <LexFrameThread
+          messages={messages}
+          isRunning={isChatRunning(runtime.status)}
+          runStatus={runtime.status}
+          streamErrorMessage={runtime.errorMessage}
+          disabled={!canSend}
+          onSend={sendMessage}
+          onCancel={cancelStream}
+          onRegenerate={(messageId) => void regenerate(messageId)}
+          onBranch={(messageId) => void branch(messageId)}
+          onCreateAutomation={
+            canCreateAutomation
+              ? (messageId) => void createAutomationFromMessage(messageId)
+              : undefined
+          }
+        />
+      </div>
     </section>
   );
+}
+
+function isChatRunning(status: string) {
+  return (
+    status === "uploading" ||
+    status === "sending" ||
+    status === "queued" ||
+    status === "thinking" ||
+    status === "streaming" ||
+    status === "recovering"
+  );
+}
+
+function chatMessagesQueryKey(threadId: string) {
+  return ["chatMessages", threadId] as const;
+}
+
+function chatThreadQueryKey(threadId: string) {
+  return ["chatThread", threadId] as const;
+}
+
+function chatRunQueryKey(runId: string) {
+  return ["chatRun", runId] as const;
+}
+
+function createClientMessageId() {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return crypto.randomUUID();
+  }
+
+  return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function createOptimisticMessage(input: {
+  readonly id: string;
+  readonly threadId: string;
+  readonly workspaceId: string;
+  readonly projectId: string | null;
+  readonly role: "user" | "assistant";
+  readonly status: ChatMessageDto["status"];
+  readonly text: string;
+  readonly clientMessageId: string | null;
+  readonly createdAt: string;
+  readonly attachments?: ChatMessageDto["attachments"];
+}): ChatMessageDto {
+  return {
+    id: input.id,
+    threadId: input.threadId,
+    workspaceId: input.workspaceId,
+    projectId: input.projectId,
+    role: input.role,
+    status: input.status,
+    parentMessageId: null,
+    clientMessageId: input.clientMessageId,
+    branchId: null,
+    branchInfo: null,
+    run: null,
+    createdBy: null,
+    requestId: null,
+    traceId: null,
+    parts: [
+      {
+        id: `${input.id}_part`,
+        type: input.role === "assistant" ? "markdown" : "text",
+        text: input.text,
+        payload: {},
+        sequence: 0,
+      },
+    ],
+    attachments: input.attachments ?? [],
+    createdAt: input.createdAt,
+    updatedAt: input.createdAt,
+  };
+}
+
+function createOptimisticAttachments(files: readonly File[]): ChatMessageDto["attachments"] {
+  return files.map((file, index) => ({
+    id: `client-attachment-${index}-${file.name}`,
+    sourceType: "uploaded_file",
+    sourceId: `client-attachment-${index}-${file.name}`,
+    mode: "thread_attachment",
+    classification: "workspace_internal",
+    citationRequired: false,
+    originalFilename: file.name,
+    mimeType: file.type,
+    sizeBytes: file.size,
+    status: "pending_upload",
+    downloadPath: null,
+    storageKey: null,
+    metadata: {},
+  }));
+}
+
+async function uploadChatAttachments(
+  chatApi: ReturnType<typeof createLexFrameChatApi>,
+  threadId: string,
+  files: readonly File[],
+) {
+  const filesWithIds = files.map((file, index) => ({
+    file,
+    clientAttachmentId: `client-attachment-${index}`,
+  }));
+  const intents = await chatApi.createAttachmentUploadIntents({
+    threadId,
+    files: filesWithIds.map(({ file, clientAttachmentId }) => ({
+      clientAttachmentId,
+      filename: file.name,
+      mimeType: file.type || "application/octet-stream",
+      sizeBytes: file.size,
+    })),
+  });
+
+  if (intents.errors.length > 0) {
+    const code = intents.errors[0]?.code ?? "CHAT_ATTACHMENT_INVALID";
+    throw Object.assign(new Error(code), { code });
+  }
+
+  const uploadedIds: string[] = [];
+  for (const item of intents.items) {
+    const file = filesWithIds.find(
+      (entry) => entry.clientAttachmentId === item.clientAttachmentId,
+    )?.file;
+
+    if (!file) {
+      continue;
+    }
+
+    const response = await fetch(item.uploadUrl, {
+      method: item.method,
+      headers: item.headers,
+      body: file,
+    });
+
+    if (!response.ok) {
+      throw Object.assign(new Error("CHAT_ATTACHMENT_UPLOAD_FAILED"), {
+        code: "CHAT_ATTACHMENT_UPLOAD_FAILED",
+      });
+    }
+
+    await chatApi.completeAttachmentUpload(item.id, { threadId });
+    uploadedIds.push(item.id);
+  }
+
+  return uploadedIds;
 }
 
 function formatChatStreamError(error: unknown): string {
@@ -277,7 +544,7 @@ function getSafeErrorCode(error: unknown): string | null {
 
 function createAssistantMessageFromSnapshot(
   snapshot: ChatStreamSnapshot,
-  projectId: string,
+  projectId: string | null,
 ): ChatMessageDto | null {
   const text = snapshot.events
     .filter((event) => event.type === "text_delta")
@@ -316,16 +583,4 @@ function createAssistantMessageFromSnapshot(
     createdAt: timestamp,
     updatedAt: timestamp,
   };
-}
-
-function upsertChatMessage(
-  messages: readonly ChatMessageDto[],
-  message: ChatMessageDto,
-) {
-  const existingIndex = messages.findIndex((item) => item.id === message.id);
-  if (existingIndex === -1) {
-    return [...messages, message];
-  }
-
-  return messages.map((item, index) => (index === existingIndex ? message : item));
 }

@@ -12,6 +12,7 @@ import { LexFrameMessage } from "./LexFrameMessage";
 export function LexFrameThread({
   messages,
   isRunning,
+  runStatus,
   streamErrorMessage,
   disabled,
   onSend,
@@ -22,9 +23,10 @@ export function LexFrameThread({
 }: {
   readonly messages: readonly ChatMessageDto[];
   readonly isRunning: boolean;
+  readonly runStatus: string;
   readonly streamErrorMessage?: string | null;
   readonly disabled: boolean;
-  readonly onSend: (text: string) => Promise<void>;
+  readonly onSend: (text: string, files: readonly File[]) => Promise<void>;
   readonly onCancel: () => void;
   readonly onRegenerate: (messageId: string) => void;
   readonly onBranch: (messageId: string) => void;
@@ -33,7 +35,7 @@ export function LexFrameThread({
   const runtime = useLexFrameExternalStoreRuntime({
     messages,
     isRunning,
-    onSend,
+    onSend: (text) => onSend(text, []),
   });
   const visibleMessages = messages.filter(
     (message) => message.role === "user" || message.role === "assistant",
@@ -79,10 +81,10 @@ export function LexFrameThread({
               {isRunning ? (
                 <div
                   className="flex justify-start"
-                  aria-label="LexFrame готовит ответ"
+                  aria-label="LexFrame обрабатывает ответ"
                 >
                   <div className="rounded-[var(--lf-radius-card)] border border-[color:var(--lf-border)] bg-[color:var(--lf-bg-muted)] px-4 py-3 text-sm text-[color:var(--lf-text-muted)]">
-                    LexFrame готовит ответ...
+                    {formatRunStatus(runStatus)}
                   </div>
                 </div>
               ) : null}
@@ -102,10 +104,26 @@ export function LexFrameThread({
         <LexFrameComposer
           disabled={disabled}
           isRunning={isRunning}
-          onSend={(text) => void onSend(text)}
+          onSend={(text, files) => void onSend(text, files)}
           onCancel={onCancel}
         />
       </div>
     </AssistantRuntimeProvider>
   );
+}
+
+function formatRunStatus(status: string) {
+  if (status === "recovering") {
+    return "LexFrame восстанавливает незавершенный ответ...";
+  }
+
+  if (status === "streaming") {
+    return "LexFrame генерирует ответ...";
+  }
+
+  if (status === "failed") {
+    return "LexFrame не смог завершить ответ.";
+  }
+
+  return "LexFrame обрабатывает запрос...";
 }

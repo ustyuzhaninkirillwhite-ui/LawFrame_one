@@ -9,6 +9,8 @@ import type {
   Stage15ProjectListResponse,
   Stage15ProjectSnapshot,
   Stage15ProjectSummary,
+  Stage15ProjectUpdatedResponse,
+  Stage15UpdateProjectRequest,
 } from '@lexframe/contracts';
 import type {
   AccessContext,
@@ -133,6 +135,67 @@ export class Stage15ProjectsService {
         'INVALID_REQUEST',
         500,
         'Project could not be created.',
+      );
+    }
+
+    return {
+      project: await this.buildProjectSummary(row, actor, access),
+    };
+  }
+
+  async updateProject(
+    context: LexframeRequestState | undefined,
+    projectId: string,
+    input: Stage15UpdateProjectRequest,
+  ): Promise<Stage15ProjectUpdatedResponse> {
+    const { actor, access } = this.requireContext(context);
+    const workspace = this.requireWorkspace(access);
+    await this.requireProjectRow(actor, access, projectId);
+
+    const name =
+      input.name === undefined || input.name === null
+        ? null
+        : input.name.trim();
+    if (input.name !== undefined && !name) {
+      throw new AppHttpException(
+        'VALIDATION_ERROR',
+        400,
+        'Project name is required.',
+      );
+    }
+
+    const description =
+      input.description === undefined || input.description === null
+        ? null
+        : input.description.trim();
+    const color =
+      input.color === undefined || input.color === null
+        ? null
+        : normalizeProjectColor(input.color);
+    const icon = name ? projectIconFor(name) : null;
+    const row = await this.databaseService.one<ProjectRow>(
+      `
+        update app.projects
+        set
+          name = coalesce($3, name),
+          description = coalesce($4, description),
+          color = coalesce($5, color),
+          icon = coalesce($6, icon),
+          updated_by = $7,
+          updated_at = timezone('utc', now())
+        where workspace_id = $1
+          and id = $2
+          and status <> 'archived'
+        returning ${PROJECT_COLUMNS}
+      `,
+      [workspace.id, projectId, name, description, color, icon, actor.id],
+    );
+
+    if (!row) {
+      throw new AppHttpException(
+        'WORKSPACE_ACCESS_DENIED',
+        404,
+        'Project is not available in the active workspace.',
       );
     }
 

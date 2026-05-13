@@ -22,14 +22,14 @@ export function SettingsSidebarNav({
   readonly onSelect: (tab: SettingsTab) => void;
 }) {
   return (
-    <nav className="grid gap-1">
+    <nav className="grid gap-1 sm:grid-cols-2 md:grid-cols-1">
       {tabs.map((tab) => (
         <button
           key={tab.id}
           type="button"
           data-testid={`settings-tab-${tab.id}`}
           className={cn(
-            "flex items-center gap-2 rounded-[var(--lf-radius-control)] px-3 py-2 text-left text-sm transition",
+            "flex items-center gap-2 rounded-[var(--lf-radius-control)] px-2.5 py-1.5 text-left text-xs transition",
             activeTab === tab.id
               ? "bg-[color:var(--lf-state-active)] text-[color:var(--lf-text-primary)]"
               : "text-[color:var(--lf-text-muted)] hover:bg-[color:var(--lf-state-hover)] hover:text-[color:var(--lf-text-primary)]",
@@ -37,7 +37,7 @@ export function SettingsSidebarNav({
           onClick={() => onSelect(tab.id)}
         >
           {tab.icon}
-          <span>{tab.label}</span>
+          <span className="truncate">{tab.label}</span>
         </button>
       ))}
     </nav>

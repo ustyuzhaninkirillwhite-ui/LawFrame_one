@@ -108,6 +108,20 @@ function createService() {
       }
 
       if (
+        sql.includes('update app.projects') &&
+        values[1] === 'project_due_diligence'
+      ) {
+        return Promise.resolve({
+          ...secondProjectRow,
+          name: values[2] ?? secondProjectRow.name,
+          description: values[3] ?? secondProjectRow.description,
+          color: values[4] ?? secondProjectRow.color,
+          icon: values[5] ?? secondProjectRow.icon,
+          updated_at: '2026-05-08T08:20:00.000Z',
+        });
+      }
+
+      if (
         sql.includes('from app.projects') &&
         values[1] === 'project_due_diligence'
       ) {
@@ -190,6 +204,40 @@ describe('Stage15ProjectsService project registry', () => {
         actor.id,
       ]),
     );
+  });
+
+  it('renames a project in the active workspace', async () => {
+    const { service, databaseService } = createService();
+
+    const response = await service.updateProject(
+      context,
+      'project_due_diligence',
+      {
+        name: 'Renamed diligence',
+      },
+    );
+
+    expect(response.project).toMatchObject({
+      id: 'project_due_diligence',
+      name: 'Renamed diligence',
+    });
+    expect(databaseService.one).toHaveBeenCalledWith(
+      expect.stringContaining('update app.projects'),
+      expect.arrayContaining([
+        access.activeWorkspace!.id,
+        'project_due_diligence',
+        'Renamed diligence',
+        actor.id,
+      ]),
+    );
+  });
+
+  it('rejects blank project names when renaming', async () => {
+    const { service } = createService();
+
+    await expect(
+      service.updateProject(context, 'project_due_diligence', { name: '   ' }),
+    ).rejects.toMatchObject({ code: 'VALIDATION_ERROR' });
   });
 
   it('keeps project_claim_001 available for legacy Stage 17-21 routes', async () => {

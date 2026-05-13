@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
+import { GlobalChatWorkspace } from "@/components/chat/global-chat-workspace";
 
 export default function ChatPage() {
-  redirect("/app/projects/project_claim_001/chats/chat_project_claim_001");
+  return <GlobalChatWorkspace chatId={null} />;
 }

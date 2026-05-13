@@ -180,7 +180,7 @@ describe("ActivepiecesCanvasWrapper", () => {
     });
   });
 
-  it("removes Activepieces browser session tokens when the iframe unmounts", async () => {
+  it("keeps Activepieces browser session tokens on iframe unmount for route cache reuse", async () => {
     const configure = vi.fn(async (input: Record<string, unknown>) => {
       window.sessionStorage.setItem(
         "token",
@@ -209,7 +209,7 @@ describe("ActivepiecesCanvasWrapper", () => {
 
     result.unmount();
 
-    expect(window.sessionStorage.getItem("token")).toBeNull();
+    expect(window.sessionStorage.getItem("token")).toContain(".");
   });
 });
 

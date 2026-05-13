@@ -34,6 +34,104 @@ const access: AccessContext = {
 };
 
 describe('ChatThreadService project chat streaming', () => {
+  it('lists global chat threads without returning project-scoped chats', async () => {
+    const databaseService = {
+      one: jest.fn(),
+      query: jest.fn().mockResolvedValue({
+        rows: [
+          {
+            id: '00000000-0000-0000-0000-000000000501',
+            workspace_id: workspaceId,
+            project_id: null,
+            kind: 'general',
+            visibility: 'private',
+            status: 'active',
+            title: 'Global chat',
+            last_message_preview: 'General question',
+            current_branch_id: null,
+            created_by: actor.id,
+            created_at: '2026-05-09T00:00:00.000Z',
+            updated_at: '2026-05-09T00:00:00.000Z',
+            archived_at: null,
+            deleted_at: null,
+          },
+        ],
+      }),
+      transaction: jest.fn(),
+    };
+    const service = new ChatThreadService(
+      databaseService as never,
+      { record: jest.fn() } as never,
+      {} as never,
+      {} as never,
+      new ChatStreamService(),
+    );
+
+    const result = await service.listGlobalThreads({ actor, access });
+
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]).toMatchObject({
+      projectId: null,
+      kind: 'general',
+      title: 'Global chat',
+    });
+    expect(databaseService.query).toHaveBeenCalledWith(
+      expect.stringContaining('project_id is null'),
+      expect.arrayContaining([workspaceId]),
+    );
+  });
+
+  it('creates a global chat thread without project ownership', async () => {
+    const databaseService = {
+      one: jest.fn().mockResolvedValue({
+        id: '00000000-0000-0000-0000-000000000502',
+        workspace_id: workspaceId,
+        project_id: null,
+        kind: 'general',
+        visibility: 'private',
+        status: 'active',
+        title: 'General workspace chat',
+        last_message_preview: null,
+        current_branch_id: null,
+        created_by: actor.id,
+        created_at: '2026-05-09T00:00:00.000Z',
+        updated_at: '2026-05-09T00:00:00.000Z',
+        archived_at: null,
+        deleted_at: null,
+      }),
+      query: jest.fn(() => Promise.resolve({ rows: [] })),
+      transaction: jest.fn(),
+    };
+    const service = new ChatThreadService(
+      databaseService as never,
+      { record: jest.fn().mockResolvedValue(undefined) } as never,
+      {} as never,
+      {} as never,
+      new ChatStreamService(),
+    );
+
+    const result = await service.createGlobalThread(
+      { actor, access },
+      { title: 'General workspace chat' },
+      { requestId: 'request-1', traceId: 'trace-1' },
+    );
+
+    expect(result.thread).toMatchObject({
+      projectId: null,
+      kind: 'general',
+      visibility: 'private',
+      title: 'General workspace chat',
+    });
+    expect(databaseService.one).toHaveBeenCalledWith(
+      expect.stringContaining('insert into app.chat_threads'),
+      expect.arrayContaining([
+        workspaceId,
+        'general',
+        'General workspace chat',
+      ]),
+    );
+  });
+
   it('creates project chat threads in the caller-provided non-default project context', async () => {
     const databaseService = {
       one: jest.fn().mockResolvedValue({
@@ -323,13 +421,10 @@ describe('ChatThreadService project chat streaming', () => {
       role: 'user',
       text: 'Проверь подключение чата. Верни маркер LEXFRAME_CHAT_SMOKE_OK.',
     });
-    expect(persistedParts.some((part) => part.role === 'assistant')).toBe(
-      false,
+    expect(persistedParts.some((part) => part.role === 'assistant')).toBe(true);
+    expect(persistedStreamJobs).toContainEqual(
+      expect.objectContaining({ status: 'failed' }),
     );
-    expect(persistedStreamJobs).toContainEqual({
-      status: 'failed',
-      messageId: '00000000-0000-0000-0000-000000000302',
-    });
     expect(persistedStreamEvents).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ eventType: 'route_snapshot' }),
@@ -371,6 +466,45 @@ describe('ChatThreadService project chat streaming', () => {
       }),
     });
     expect(JSON.stringify(failedAudit)).not.toContain('abcdef1234567890');
+  });
+
+  it('rejects unsafe chat attachment upload intents before signing storage URLs', async () => {
+    const databaseService = createDatabaseServiceMock([]);
+    const auditService = { record: jest.fn().mockResolvedValue(undefined) };
+    const service = new ChatThreadService(
+      databaseService as never,
+      auditService as never,
+      {} as never,
+      {} as never,
+      new ChatStreamService(),
+    );
+
+    const result = await service.createAttachmentUploadIntents(
+      { actor, access },
+      {
+        threadId: '00000000-0000-0000-0000-000000000301',
+        files: [
+          {
+            clientAttachmentId: 'client-1',
+            filename: '../payload.exe',
+            mimeType: 'application/x-msdownload',
+            sizeBytes: 12,
+          },
+        ],
+      },
+    );
+
+    expect(result.items).toEqual([]);
+    expect(result.errors).toContainEqual(
+      expect.objectContaining({
+        clientAttachmentId: 'client-1',
+        code: 'unsafe_filename',
+      }),
+    );
+    expect(databaseService.query).not.toHaveBeenCalledWith(
+      expect.stringContaining('insert into app.chat_attachments'),
+      expect.any(Array),
+    );
   });
 });
 
@@ -420,9 +554,12 @@ function createDatabaseServiceMock(
               role: values[3],
               status: values[4],
               parent_message_id: values[5],
-              created_by: values[6],
-              request_id: values[7],
-              trace_id: values[8],
+              client_message_id: values[6],
+              branch_id: values[7],
+              run_id: values[8],
+              created_by: values[9],
+              request_id: values[10],
+              trace_id: values[11],
               created_at: '2026-05-09T00:00:00.000Z',
               updated_at: '2026-05-09T00:00:00.000Z',
             },
@@ -447,10 +584,66 @@ function createDatabaseServiceMock(
         });
       }
 
+      if (sql.includes('update app.chat_messages')) {
+        return Promise.resolve({
+          rows: [
+            {
+              id: values[0],
+              thread_id: values[2],
+              workspace_id: values[1],
+              project_id: 'project_claim_001',
+              role: 'assistant',
+              status: values[3],
+              parent_message_id: '00000000-0000-0000-0000-000000000302',
+              client_message_id: null,
+              branch_id: null,
+              run_id: null,
+              created_by: actor.id,
+              request_id: 'request-1',
+              trace_id: 'trace-1',
+              created_at: '2026-05-09T00:00:00.000Z',
+              updated_at: '2026-05-09T00:00:00.000Z',
+            },
+          ],
+        });
+      }
+
+      if (sql.includes('update app.chat_message_parts')) {
+        const text = String(values[3]);
+        const assistantPart = [...persistedParts]
+          .reverse()
+          .find((part) => part.role === 'assistant');
+        if (assistantPart) {
+          (assistantPart as { role: string; text: string }).text = text;
+        }
+        return Promise.resolve({
+          rows: [
+            {
+              id: `part-${persistedParts.length}`,
+              message_id: values[0],
+              type: 'markdown',
+              text,
+              payload: {},
+              sequence: 0,
+            },
+          ],
+        });
+      }
+
       if (sql.includes('insert into app.chat_stream_jobs')) {
         persistedStreamJobs.push({
-          messageId: values[3],
-          status: String(values[4]),
+          messageId: sql.includes('assistant_message_id')
+            ? values[4]
+            : values[3],
+          status: sql.includes("'thinking'") ? 'thinking' : String(values[4]),
+        });
+        return Promise.resolve({ rows: [] });
+      }
+
+      if (sql.includes('update app.chat_stream_jobs')) {
+        persistedStreamJobs.push({
+          messageId: values[0],
+          status: String(values[3]),
         });
         return Promise.resolve({ rows: [] });
       }
@@ -474,7 +667,15 @@ function createDatabaseServiceMock(
       }
       return Promise.resolve(null);
     }),
-    query: jest.fn(() => Promise.resolve({ rows: [] })),
+    query: jest.fn((sql: string, values: readonly unknown[] = []) => {
+      if (sql.includes('update app.chat_stream_jobs')) {
+        persistedStreamJobs.push({
+          messageId: values[0],
+          status: String(values[3]),
+        });
+      }
+      return Promise.resolve({ rows: [] });
+    }),
     transaction: jest.fn((callback: (tx: typeof client) => unknown) =>
       Promise.resolve(callback(client)),
     ),

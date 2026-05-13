@@ -115,13 +115,24 @@ import type {
   CanvasValidateRequest,
   CanvasValidationIssueExplanation,
   CanvasValidationResult,
+  ChatAttachmentCompleteRequest,
+  ChatAttachmentDeleteResponse,
+  ChatAttachmentDownloadResponse,
+  ChatAttachmentResponse,
+  ChatAttachmentUploadIntentRequest,
+  ChatAttachmentUploadIntentResponse,
   ChatMessagesResponse,
   ChatSearchResponse,
   ChatStreamSnapshot,
+  ChatThreadListQuery,
+  ChatThreadListResponse,
   ChatThreadResponse,
   CreateChatMessageRequest,
+  CreateChatThreadRequest,
   ProjectKnowledgeItem,
   ProjectKnowledgeListResponse,
+  ProjectWebSearchRequest,
+  ProjectWebSearchResponse,
   UpdateChatThreadRequest,
   UpsertProjectKnowledgeItemRequest,
   NoCodeSuggestion,
@@ -300,6 +311,8 @@ import type {
   Stage15ProjectDetail,
   Stage15ProjectListResponse,
   Stage15ProjectSnapshot,
+  Stage15ProjectUpdatedResponse,
+  Stage15UpdateProjectRequest,
   Stage17CanvasEnsureResponse,
   Stage15WorkflowDraftMaterializeRequest,
   Stage15WorkflowDraftMaterializeResponse,
@@ -905,6 +918,10 @@ export interface ApiClient extends SettingsApi {
   createProject(
     input: Stage15CreateProjectRequest,
   ): Promise<Stage15ProjectCreatedResponse>;
+  updateProject(
+    projectId: string,
+    input: Stage15UpdateProjectRequest,
+  ): Promise<Stage15ProjectUpdatedResponse>;
   getProject(projectId: string): Promise<Stage15ProjectDetail>;
   getProjectDashboardSnapshot(
     projectId: string,
@@ -1299,6 +1316,8 @@ export interface ApiClient extends SettingsApi {
     draftId: string,
     input: Stage15WorkflowDraftMaterializeRequest,
   ): Promise<Stage15WorkflowDraftMaterializeResponse>;
+  listChatThreads(input?: ChatThreadListQuery): Promise<ChatThreadListResponse>;
+  createChatThread(input?: CreateChatThreadRequest): Promise<ChatThreadResponse>;
   getChatThread(threadId: string): Promise<ChatThreadResponse>;
   updateChatThread(
     threadId: string,
@@ -1313,6 +1332,10 @@ export interface ApiClient extends SettingsApi {
       readonly branchMode?: "project" | "document_review" | "automation_builder";
     },
   ): Promise<ChatThreadResponse>;
+  switchChatBranch(
+    threadId: string,
+    branchId: string,
+  ): Promise<ChatThreadResponse>;
   listChatMessages(threadId: string): Promise<ChatMessagesResponse>;
   createChatMessage(
     threadId: string,
@@ -1322,15 +1345,15 @@ export interface ApiClient extends SettingsApi {
     threadId: string,
     input: CreateChatMessageRequest,
   ): Promise<ChatStreamSnapshot>;
+  streamChatMessageEvents(
+    threadId: string,
+    input: CreateChatMessageRequest,
+    handlers?: import("./chat-client").ChatStreamHandlers,
+  ): Promise<ChatStreamSnapshot>;
   resumeChatStream(
     threadId: string,
     streamId: string,
-  ): Promise<{
-    readonly streamId: string;
-    readonly threadId: string;
-    readonly status: "completed";
-    readonly events: readonly unknown[];
-  }>;
+  ): Promise<ChatStreamSnapshot>;
   cancelChatStream(
     threadId: string,
     streamId: string,
@@ -1348,8 +1371,22 @@ export interface ApiClient extends SettingsApi {
     messageId: string,
     input: CreateChatMessageRequest,
   ): Promise<ChatStreamSnapshot>;
+  createChatAttachmentUploadIntents(
+    input: ChatAttachmentUploadIntentRequest,
+  ): Promise<ChatAttachmentUploadIntentResponse>;
+  completeChatAttachmentUpload(
+    attachmentId: string,
+    input: ChatAttachmentCompleteRequest,
+  ): Promise<ChatAttachmentResponse>;
+  deleteChatAttachment(
+    attachmentId: string,
+  ): Promise<ChatAttachmentDeleteResponse>;
+  downloadChatAttachment(
+    attachmentId: string,
+  ): Promise<ChatAttachmentDownloadResponse>;
   searchChats(input: {
     readonly q: string;
+    readonly scope?: ChatThreadListQuery["scope"];
     readonly projectId?: string | null;
   }): Promise<ChatSearchResponse>;
   exportChatThread(threadId: string): Promise<{
@@ -1358,6 +1395,10 @@ export interface ApiClient extends SettingsApi {
     readonly status: string;
   }>;
   listProjectKnowledge(projectId: string): Promise<ProjectKnowledgeListResponse>;
+  searchProjectWeb(
+    projectId: string,
+    input: ProjectWebSearchRequest,
+  ): Promise<ProjectWebSearchResponse>;
   createProjectKnowledge(
     projectId: string,
     input: UpsertProjectKnowledgeItemRequest,

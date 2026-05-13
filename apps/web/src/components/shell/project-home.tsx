@@ -1,601 +1,999 @@
 "use client";
 
-import type { Stage15ProjectChatSummary } from "@lexframe/contracts";
-import { panelRecipe } from "@lexframe/design-system-activepieces-bridge/recipes";
+import type {
+  InstalledAutomationDetail,
+  ProjectKnowledgeItem,
+  ProjectWebSearchResult,
+  Stage15ProjectChatSummary,
+} from "@lexframe/contracts";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  Clock3,
+  Bot,
+  Check,
   FileText,
-  MessageSquare,
+  FolderOpen,
+  Globe2,
+  ImageIcon,
+  Mic,
   Paperclip,
+  Pencil,
   Plus,
-  Send,
-  Sparkles,
-  Upload,
+  Search,
+  SendHorizontal,
   Workflow,
   X,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import * as React from "react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import {
   useCreateStage15ProjectChat,
+  useStage15ProjectAutomations,
+  useStage15ProjectChats,
   useStage15ProjectSnapshot,
 } from "@/hooks/domain/stage15";
-import { formatStatus } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
+import { useSessionBridge } from "@/providers/session-provider";
 
-type WorkspaceContextItemType = "document" | "automation" | "topic";
+type ProjectWorkspaceTab = "chats" | "sources" | "automations";
+type PlusMenuMode = "closed" | "menu" | "automations" | "webSearch";
 
-interface ProjectWorkspaceContextItem {
+interface LocalComposerFile {
   readonly id: string;
-  readonly title: string;
-  readonly type: WorkspaceContextItemType;
+  readonly file: File;
+  readonly kind: "image" | "file";
+  readonly error?: string | null;
 }
 
-interface ProjectWorkspaceContext {
-  readonly selectedDocumentIds: readonly string[];
-  readonly selectedAutomationIds: readonly string[];
-  readonly selectedQuickTopic: string | null;
-}
-
-const quickTopics = [
-  "Проверить позицию по делу",
-  "Подготовить претензию",
-  "Найти судебную практику",
-  "Собрать автоматизацию",
-] as const;
+const emptyKnowledgeResponse = { items: [] } as const;
 
 export function ProjectHome({ projectId }: { readonly projectId: string }) {
   const router = useRouter();
+  const queryClient = useQueryClient();
+  const { apiClient } = useSessionBridge();
   const snapshot = useStage15ProjectSnapshot(projectId);
+  const projectChats = useStage15ProjectChats(projectId);
+  const automations = useStage15ProjectAutomations(projectId);
   const createChat = useCreateStage15ProjectChat(projectId);
-  const [context, setContext] = React.useState<ProjectWorkspaceContext>({
-    selectedAutomationIds: [],
-    selectedDocumentIds: [],
-    selectedQuickTopic: null,
-  });
+  const [activeTab, setActiveTab] = React.useState<ProjectWorkspaceTab>("chats");
+  const [menuMode, setMenuMode] = React.useState<PlusMenuMode>("closed");
   const [prompt, setPrompt] = React.useState("");
-  const [localFiles, setLocalFiles] = React.useState<readonly string[]>([]);
+  const [files, setFiles] = React.useState<readonly LocalComposerFile[]>([]);
+  const [selectedAutomation, setSelectedAutomation] =
+    React.useState<InstalledAutomationDetail | null>(null);
+  const [webQuery, setWebQuery] = React.useState("");
+  const [webResults, setWebResults] = React.useState<readonly ProjectWebSearchResult[]>([]);
+  const [webSearchError, setWebSearchError] = React.useState<string | null>(null);
+  const [webSearching, setWebSearching] = React.useState(false);
+  const [submitting, setSubmitting] = React.useState(false);
+  const [renamingProject, setRenamingProject] = React.useState(false);
+  const [projectNameDraft, setProjectNameDraft] = React.useState("");
+  const [projectRenameSaving, setProjectRenameSaving] = React.useState(false);
+  const imageInputRef = React.useRef<HTMLInputElement | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
-  const fallbackSnapshot = React.useMemo(
-    () => ({
-      snapshotVersion: 1501,
-      generatedAt: "2026-04-23T09:00:00.000Z",
-      project: {
-        id: projectId,
-        workspaceId: "ws_demo",
-        name: "Досудебная претензия А40-101/2026",
-        description: "Чат, источники и автоматизации проекта.",
-        icon: "P",
-        color: "#C7A46A",
-        status: "active" as const,
-        ownerUserId: null,
-        role: "owner",
-        counters: {
-          chats: 2,
-          automations: 1,
-          documents: 2,
-          activeRuns: 1,
-          pendingApprovals: 1,
-          recommendations: 2,
-          missingConnections: 0,
-        },
-        lastActivityAt: "2026-04-23T09:00:00.000Z",
-      },
-      recentChats: [
-        {
-          id: "chat_project_claim_001",
-          projectId,
-          title: "Претензия к поставщику",
-          status: "active" as const,
-          lastMessagePreview: "Собрать позицию, документы и сценарий отправки.",
-          selectedDocumentIds: ["doc_project_claim"],
-          linkedAutomationId: "automation_claim_review",
-          updatedAt: "2026-04-23T08:45:00.000Z",
-        },
-        {
-          id: "chat_project_claim_002",
-          projectId,
-          title: "Проверка рисков",
-          status: "active" as const,
-          lastMessagePreview: "Отметить внешние действия и согласования.",
-          selectedDocumentIds: [],
-          linkedAutomationId: null,
-          updatedAt: "2026-04-23T07:20:00.000Z",
-        },
-      ],
-      projectAutomations: [
-        {
-          id: "automation_claim_review",
-          title: "Претензия: анализ, генерация, согласование",
-          canRun: true,
-          nextGate: "ready_to_run",
-        },
-      ],
-      projectDocuments: [
-        {
-          id: "doc_project_claim",
-          title: "Договор поставки и переписка",
-          status: "ready",
-        },
-        {
-          id: "doc_project_evidence",
-          title: "Акты, счета и подтверждение просрочки",
-          status: "ready",
-        },
-      ],
-      activeRuns: [
-        {
-          id: "run_project_claim",
-          title: "Проверка комплекта документов",
-          status: "waiting_approval",
-          progressPercent: 68,
-        },
-      ],
-      failedRuns: [],
-      pendingApprovals: [],
-      recentArtifacts: [],
-      recommendations: [],
-      unreadNotificationsCount: 0,
-      systemStatus: null,
-    }),
-    [projectId],
+
+  const project = snapshot.data?.project ?? {
+    id: projectId,
+    workspaceId: "",
+    name: "LexFrame",
+    description: "",
+    icon: "L",
+    color: "#3B82F6",
+    status: "active" as const,
+    ownerUserId: null,
+    role: "owner" as const,
+    counters: {
+      chats: 0,
+      automations: 0,
+      documents: 0,
+      activeRuns: 0,
+      pendingApprovals: 0,
+      recommendations: 0,
+      missingConnections: 0,
+    },
+    lastActivityAt: new Date(0).toISOString(),
+  };
+
+  const knowledge = useQuery({
+    queryKey: ["projectKnowledge", projectId],
+    queryFn: () => apiClient.listProjectKnowledge(projectId),
+    enabled: Boolean(projectId),
+    initialData: emptyKnowledgeResponse,
+  });
+
+  const chats = React.useMemo(
+    () => [...(projectChats.data ?? [])].sort(sortChatsNewestFirst),
+    [projectChats.data],
   );
-  const snapshotData = snapshot.data ?? fallbackSnapshot;
+  const sources = knowledge.data.items;
+  const currentAutomations = automations.data ?? [];
+  const canSend =
+    Boolean(prompt.trim()) || files.length > 0 || Boolean(selectedAutomation);
 
-  const project = snapshotData.project;
-  const documents = snapshotData.projectDocuments;
-  const automations = snapshotData.projectAutomations;
-  const recentChats = snapshotData.recentChats;
-  const recentMaterials = [
-    ...documents.slice(0, 3).map((document) => ({
-      href: `/documents/${document.id}`,
-      id: document.id,
-      meta: formatStatus(document.status),
-      title: document.title,
-      type: "Документ",
-    })),
-    ...snapshotData.activeRuns.slice(0, 2).map((run) => ({
-      href: `/app/runs/${run.id}`,
-      id: run.id,
-      meta: `${formatStatus(run.status)} / ${run.progressPercent}%`,
-      title: run.title,
-      type: "Запуск",
-    })),
-  ];
-  const selectedContextItems: ProjectWorkspaceContextItem[] = [
-    ...documents
-      .filter((document) => context.selectedDocumentIds.includes(document.id))
-      .map((document) => ({
-        id: document.id,
-        title: document.title,
-        type: "document" as const,
-      })),
-    ...automations
-      .filter((automation) => context.selectedAutomationIds.includes(automation.id))
-      .map((automation) => ({
-        id: automation.id,
-        title: automation.title,
-        type: "automation" as const,
-      })),
-    ...(context.selectedQuickTopic
-      ? [
-          {
-            id: context.selectedQuickTopic,
-            title: context.selectedQuickTopic,
-            type: "topic" as const,
-          },
-        ]
-      : []),
-  ];
+  const handleFiles = React.useCallback(
+    (incomingFiles: FileList | readonly File[], kind: LocalComposerFile["kind"]) => {
+      const existingKeys = new Set(files.map((item) => fileKey(item.file)));
+      const nextFiles: LocalComposerFile[] = [];
 
-  async function createProjectChat() {
-    const response = await createChat.mutateAsync({
-      currentAutomationId: context.selectedAutomationIds[0] ?? null,
-      selectedDocumentIds: context.selectedDocumentIds,
-      source: "project_chat",
-      title: context.selectedQuickTopic,
-    });
-    router.push(`/app/projects/${projectId}/chats/${response.chat.id}`);
-  }
+      Array.from(incomingFiles).forEach((file) => {
+        const key = fileKey(file);
+        if (existingKeys.has(key)) {
+          nextFiles.push({
+            id: crypto.randomUUID(),
+            file,
+            kind,
+            error: "Файл уже прикреплён.",
+          });
+          return;
+        }
+        existingKeys.add(key);
+        nextFiles.push({
+          id: crypto.randomUUID(),
+          file,
+          kind,
+          error: validateComposerFile(file, kind),
+        });
+      });
 
-  async function submitPrompt() {
-    if (!prompt.trim() && selectedContextItems.length === 0) {
+      setFiles((current) => [...current, ...nextFiles]);
+      setMenuMode("closed");
+    },
+    [files],
+  );
+
+  const handleDrop = React.useCallback(
+    (event: React.DragEvent<HTMLDivElement>) => {
+      event.preventDefault();
+      if (event.dataTransfer.files.length > 0) {
+        handleFiles(event.dataTransfer.files, "file");
+      }
+    },
+    [handleFiles],
+  );
+
+  const handlePaste = React.useCallback(
+    (event: React.ClipboardEvent<HTMLTextAreaElement>) => {
+      const clipboardFiles = Array.from(event.clipboardData.files);
+      if (clipboardFiles.length > 0) {
+        handleFiles(clipboardFiles, "file");
+      }
+    },
+    [handleFiles],
+  );
+
+  async function handleSubmit() {
+    if (!canSend || submitting) {
       return;
     }
 
-    await createProjectChat();
+    const validFiles = files.filter((item) => !item.error);
+    const messageText =
+      prompt.trim() || selectedAutomation?.title || "Новый чат проекта";
+    setSubmitting(true);
+
+    try {
+      const response = await createChat.mutateAsync({
+        currentAutomationId: selectedAutomation?.id ?? null,
+        selectedDocumentIds: [],
+        source: "project_chat",
+        title: messageText,
+      });
+      const chatId = response.chat.id;
+      const attachmentIds = await uploadComposerFiles(chatId, validFiles);
+      await apiClient.streamChatMessage(chatId, {
+        text: messageText,
+        attachmentIds,
+        attachments: selectedAutomation
+          ? [
+              {
+                mode: "reference_only",
+                sourceId: selectedAutomation.id,
+                sourceType: "automation_snapshot",
+              },
+            ]
+          : [],
+      });
+      router.push(`/app/projects/${projectId}/chats/${chatId}`);
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function uploadComposerFiles(
+    threadId: string,
+    localFiles: readonly LocalComposerFile[],
+  ): Promise<readonly string[]> {
+    if (localFiles.length === 0) {
+      return [];
+    }
+
+    const response = await apiClient.createChatAttachmentUploadIntents({
+      threadId,
+      files: localFiles.map((item) => ({
+        clientAttachmentId: item.id,
+        filename: item.file.name,
+        mimeType: item.file.type || "application/octet-stream",
+        sizeBytes: item.file.size,
+      })),
+    });
+    const uploadedIds: string[] = [];
+
+    await Promise.all(
+      response.items.map(async (intent) => {
+        const localFile = localFiles.find(
+          (item) => item.id === intent.clientAttachmentId,
+        );
+        if (!localFile) {
+          return;
+        }
+
+        await fetch(intent.uploadUrl, {
+          method: intent.method,
+          headers: intent.headers,
+          body: localFile.file,
+        });
+        await apiClient.completeChatAttachmentUpload(intent.id, { threadId });
+        uploadedIds.push(intent.id);
+      }),
+    );
+
+    return uploadedIds;
+  }
+
+  async function handleWebSearch(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const query = webQuery.trim();
+    if (!query || webSearching) {
+      return;
+    }
+
+    setWebSearching(true);
+    setWebSearchError(null);
+    try {
+      const response = await apiClient.searchProjectWeb(projectId, {
+        query,
+        saveResults: true,
+      });
+      setWebResults(response.items);
+      await queryClient.invalidateQueries({ queryKey: ["projectKnowledge", projectId] });
+      if (response.status === "ok") {
+        setMenuMode("closed");
+      } else {
+        setWebSearchError(response.error?.message ?? "Поиск временно недоступен.");
+      }
+    } catch {
+      setWebSearchError("Поиск временно недоступен.");
+    } finally {
+      setWebSearching(false);
+    }
+  }
+
+  async function saveProjectName() {
+    const name = projectNameDraft.trim();
+    if (!name || projectRenameSaving) {
+      return;
+    }
+
+    setProjectRenameSaving(true);
+    try {
+      await apiClient.updateProject(projectId, { name });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["stage15-projects"] }),
+        queryClient.invalidateQueries({ queryKey: ["stage15-project-snapshot"] }),
+        queryClient.invalidateQueries({ queryKey: ["stage15-project"] }),
+      ]);
+      setRenamingProject(false);
+    } finally {
+      setProjectRenameSaving(false);
+    }
+  }
+
+  async function handleProjectRename(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    await saveProjectName();
   }
 
   return (
     <section
-      data-testid="project-workspace"
-      className="grid min-h-[calc(100vh-96px)] gap-5 xl:grid-cols-[280px_minmax(0,1fr)_320px]"
+      data-testid="project-workspace-shell"
+      className="mx-auto flex min-h-[calc(100vh-112px)] w-full max-w-[960px] flex-col px-3 py-10 sm:px-6"
+      onDragOver={(event) => event.preventDefault()}
+      onDrop={handleDrop}
     >
-      <aside className="grid content-start gap-4">
-        <div className={cn(panelRecipe.muted, "p-4")}>
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[16px] border border-[color:var(--accent)]/40 bg-[color:var(--accent)]/10 font-[family-name:var(--font-display)] text-xl text-[color:var(--accent-strong)]">
-              {project.icon}
-            </div>
-            <div className="min-w-0">
-              <h1 className="truncate font-[family-name:var(--font-display)] text-2xl leading-none">
-                {project.name}
-              </h1>
-              <div className="mt-1 flex items-center gap-2">
-                <Badge variant={project.status === "active" ? "success" : "muted"}>
-                  {formatStatus(project.status)}
-                </Badge>
-                {project.counters.missingConnections > 0 ? (
-                  <Badge variant="danger">connections</Badge>
-                ) : null}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <ContextSection
-          action={
-            <button
-              type="button"
-              className="flex h-8 w-8 items-center justify-center rounded-full text-[color:var(--muted)] hover:bg-white/6 hover:text-[color:var(--foreground)]"
-              onClick={() => {
-                const firstDocument = documents[0];
-                if (firstDocument) {
-                  toggleDocument(firstDocument.id);
+      <header className="mb-10 flex items-center gap-3">
+        <FolderOpen className="h-7 w-7 text-[color:var(--lf-text-secondary)]" />
+        {renamingProject ? (
+          <form className="flex min-w-0 flex-1 items-center gap-2" onSubmit={handleProjectRename}>
+            <input
+              aria-label="Название проекта"
+              className="min-w-0 flex-1 rounded-[var(--lf-radius-control)] border border-[color:var(--lf-border)] bg-[color:var(--lf-bg-panel)] px-3 py-2 text-2xl font-semibold outline-none focus:border-[color:var(--lf-primary)]"
+              autoFocus
+              value={projectNameDraft}
+              onChange={(event) => setProjectNameDraft(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Escape") {
+                  event.preventDefault();
+                  setProjectNameDraft(project.name);
+                  setRenamingProject(false);
+                } else if (event.key === "Enter") {
+                  event.preventDefault();
+                  void saveProjectName();
                 }
               }}
-              aria-label="Добавить источник"
+            />
+            <button
+              type="submit"
+              aria-label="Сохранить название проекта"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[color:var(--lf-primary)] hover:bg-[color:var(--lf-state-hover)]"
+              disabled={projectRenameSaving || !projectNameDraft.trim()}
             >
-              <Plus className="h-4 w-4" />
+              <Check className="h-5 w-5" />
             </button>
-          }
-          icon={<FileText className="h-4 w-4" />}
-          title="Источники"
-        >
-          {documents.length === 0 ? (
-            <EmptyLine text="Нет источников." />
-          ) : (
-            documents.slice(0, 5).map((document) => (
-              <ContextToggle
-                key={document.id}
-                active={context.selectedDocumentIds.includes(document.id)}
-                meta={formatStatus(document.status)}
-                title={document.title}
-                onClick={() => toggleDocument(document.id)}
-              />
-            ))
-          )}
-          <Button
-            type="button"
-            variant="ghost"
-            className="mt-1 w-full justify-start"
-            onClick={() => fileInputRef.current?.click()}
-          >
-            <Upload className="h-4 w-4" />
-            Добавить источник
-          </Button>
-          <input
-            ref={fileInputRef}
-            className="hidden"
-            type="file"
-            onChange={(event) => {
-              const file = event.target.files?.[0];
-              if (file) {
-                setLocalFiles((current) => [...current, `${file.name} · pending`]);
-              }
-              event.target.value = "";
-            }}
-          />
-          {localFiles.map((file) => (
-            <div
-              key={file}
-              className="rounded-[16px] border border-dashed border-[color:var(--line)] px-3 py-2 text-xs text-[color:var(--muted)]"
+          </form>
+        ) : (
+          <>
+            <h1 className="truncate text-3xl font-semibold tracking-normal text-[color:var(--lf-text-primary)]">
+              {project.name}
+            </h1>
+            <button
+              type="button"
+              aria-label={`Переименовать проект ${project.name}`}
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[color:var(--lf-text-muted)] transition hover:bg-[color:var(--lf-state-hover)] hover:text-[color:var(--lf-text-primary)]"
+              onClick={() => {
+                setProjectNameDraft(project.name);
+                setRenamingProject(true);
+              }}
             >
-              {file}
-            </div>
-          ))}
-        </ContextSection>
+              <Pencil className="h-4 w-4" />
+            </button>
+          </>
+        )}
+      </header>
 
-        <ContextSection icon={<Workflow className="h-4 w-4" />} title="Автоматизации">
-          {automations.length === 0 ? (
-            <EmptyLine text="Нет автоматизаций." />
-          ) : (
-            automations.slice(0, 5).map((automation) => (
-              <ContextToggle
-                key={automation.id}
-                active={context.selectedAutomationIds.includes(automation.id)}
-                meta={automation.canRun ? "готова" : formatStatus(automation.nextGate)}
-                title={automation.title}
-                onClick={() => toggleAutomation(automation.id)}
-              />
-            ))
-          )}
-          <Button asChild variant="ghost" className="mt-1 w-full justify-start">
-            <Link href={`/app/projects/${projectId}/automations`}>
-              <Plus className="h-4 w-4" />
-              Прикрепить автоматизацию
-            </Link>
-          </Button>
-        </ContextSection>
-      </aside>
+      <div className="relative">
+        <div className="rounded-[32px] border border-[color:var(--lf-border)] bg-[color:var(--lf-bg-muted)] px-4 py-3 shadow-sm">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[color:var(--lf-bg-card)] text-[color:var(--lf-text-primary)] transition hover:bg-[color:var(--lf-state-hover)]"
+              aria-label="Добавить контекст"
+              onClick={() => setMenuMode((mode) => (mode === "menu" ? "closed" : "menu"))}
+            >
+              <Plus className="h-5 w-5" />
+            </button>
+            <textarea
+              value={prompt}
+              onChange={(event) => setPrompt(event.target.value)}
+              onPaste={handlePaste}
+              placeholder={`Новый чат в ${project.name}`}
+              rows={1}
+              className="min-h-10 flex-1 resize-none bg-transparent py-2 text-base text-[color:var(--lf-text-primary)] outline-none placeholder:text-[color:var(--lf-text-muted)]"
+            />
+            <button
+              type="button"
+              className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-full text-[color:var(--lf-text-muted)] transition hover:bg-[color:var(--lf-state-hover)] hover:text-[color:var(--lf-text-primary)] sm:flex"
+              aria-label="Голосовой ввод"
+            >
+              <Mic className="h-5 w-5" />
+            </button>
+            <button
+              type="button"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[color:var(--lf-primary)] text-[color:var(--lf-primary-fg)] transition hover:bg-[color:var(--lf-primary-hover)] disabled:cursor-not-allowed disabled:opacity-50"
+              aria-label="Отправить сообщение"
+              disabled={!canSend || submitting}
+              onClick={() => void handleSubmit()}
+            >
+              <SendHorizontal className="h-5 w-5" />
+            </button>
+          </div>
 
-      <main className="flex min-h-[680px] flex-col rounded-[var(--lf-radius-panel)] border border-[color:var(--lf-border)] bg-[color:var(--lf-bg-card)]">
-        <div className="border-b border-[color:var(--lf-border)] px-5 py-4">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex flex-wrap items-center gap-2">
-              {quickTopics.map((topic) => (
-                <button
-                  key={topic}
-                  type="button"
-                  className={cn(
-                    "rounded-[var(--lf-radius-control)] border px-3 py-1.5 text-sm transition-colors",
-                    context.selectedQuickTopic === topic
-                      ? "border-[color:var(--lf-primary)]/40 bg-[color:var(--lf-state-active)] text-[color:var(--lf-text-primary)]"
-                      : "border-[color:var(--lf-border)] text-[color:var(--lf-text-muted)] hover:bg-[color:var(--lf-state-hover)] hover:text-[color:var(--lf-text-primary)]",
-                  )}
-                  onClick={() =>
-                    setContext((current) => ({
-                      ...current,
-                      selectedQuickTopic: current.selectedQuickTopic === topic ? null : topic,
-                    }))
+          {selectedAutomation || files.length > 0 ? (
+            <div className="mt-3 flex flex-wrap gap-2 pl-1">
+              {selectedAutomation ? (
+                <AutomationChip
+                  automation={selectedAutomation}
+                  projectId={projectId}
+                  onRemove={() => setSelectedAutomation(null)}
+                />
+              ) : null}
+              {files.map((item) => (
+                <FileChip
+                  key={item.id}
+                  item={item}
+                  onRemove={() =>
+                    setFiles((current) => current.filter((file) => file.id !== item.id))
                   }
-                >
-                  {topic}
-                </button>
+                />
               ))}
             </div>
-            <Button
-              type="button"
-              data-testid="project-new-chat-button"
-              disabled={createChat.isPending}
-              onClick={() => void createProjectChat()}
-            >
-              <MessageSquare className="h-4 w-4" />
-              Новый чат
-            </Button>
-          </div>
+          ) : null}
         </div>
 
-        <div className="flex flex-1 flex-col justify-end gap-5 p-5">
-          <div className="mx-auto grid w-full max-w-3xl gap-4">
-            <div className={cn(panelRecipe.muted, "p-4")}>
-              <div className="flex items-center gap-2 text-sm font-semibold">
-                <Sparkles className="h-4 w-4 text-[color:var(--accent-strong)]" />
-                LexFrame
-              </div>
-              <div className="mt-3 text-sm leading-6 text-[color:var(--muted-strong)]">
-                {project.description}
-              </div>
-            </div>
+        {menuMode === "menu" ? (
+          <PlusMenu
+            onImages={() => imageInputRef.current?.click()}
+            onFiles={() => fileInputRef.current?.click()}
+            onAutomations={() => setMenuMode("automations")}
+            onWebSearch={() => {
+              setActiveTab("sources");
+              setMenuMode("webSearch");
+            }}
+          />
+        ) : null}
 
-            {selectedContextItems.length > 0 ? (
-              <div className="flex flex-wrap gap-2">
-                {selectedContextItems.map((item) => (
-                  <button
-                    key={`${item.type}_${item.id}`}
-                    type="button"
-                    className="flex max-w-[260px] items-center gap-2 rounded-full border border-[color:var(--line)] bg-white/4 px-3 py-1.5 text-xs text-[color:var(--muted-strong)]"
-                    onClick={() => removeContextItem(item)}
-                  >
-                    <span className="truncate">{item.title}</span>
-                    <X className="h-3.5 w-3.5 shrink-0" />
-                  </button>
-                ))}
-              </div>
-            ) : null}
+        {menuMode === "automations" ? (
+          <AutomationPicker
+            automations={currentAutomations}
+            loading={automations.isLoading}
+            onSelect={(automation) => {
+              setSelectedAutomation(automation);
+              setMenuMode("closed");
+            }}
+          />
+        ) : null}
 
-            <div className="rounded-[var(--lf-radius-panel)] border border-[color:var(--lf-border)] bg-[color:var(--lf-bg-panel)] p-2">
-              <div className="flex items-end gap-2">
-                <button
-                  type="button"
-                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[var(--lf-radius-control)] border border-[color:var(--lf-border)] text-[color:var(--lf-text-muted)] hover:border-[color:var(--lf-primary)] hover:text-[color:var(--lf-primary-hover)]"
-                  onClick={() => fileInputRef.current?.click()}
-                  aria-label="Прикрепить файл"
-                >
-                  <Paperclip className="h-5 w-5" />
-                </button>
-                <Textarea
-                  data-testid="project-chat-input"
-                  value={prompt}
-                  onChange={(event) => setPrompt(event.target.value)}
-                  placeholder="Спросите по проекту или попросите собрать автоматизацию"
-                  rows={2}
-                  className="min-h-[52px] resize-none border-0 bg-transparent px-1 py-2 shadow-none focus-visible:ring-0"
-                />
-                <button
-                  type="button"
-                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[var(--lf-radius-control)] bg-[color:var(--lf-primary)] text-[color:var(--lf-primary-fg)] hover:bg-[color:var(--lf-primary-hover)]"
-                  onClick={() => void submitPrompt()}
-                  aria-label="Отправить"
-                >
-                  <Send className="h-5 w-5" />
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </main>
+        {menuMode === "webSearch" ? (
+          <WebSearchPanel
+            error={webSearchError}
+            query={webQuery}
+            results={webResults}
+            searching={webSearching}
+            onClose={() => setMenuMode("closed")}
+            onQueryChange={setWebQuery}
+            onSubmit={handleWebSearch}
+          />
+        ) : null}
+      </div>
 
-      <aside className="grid content-start gap-4">
-        <ContextSection icon={<MessageSquare className="h-4 w-4" />} title="Чаты">
-          {recentChats.length === 0 ? (
-            <EmptyLine text="Нет чатов." />
-          ) : (
-            recentChats.slice(0, 5).map((chat) => (
-              <ChatLink key={chat.id} chat={chat} projectId={projectId} />
-            ))
-          )}
-        </ContextSection>
+      <input
+        ref={imageInputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        className="hidden"
+        onChange={(event) => {
+          if (event.target.files) {
+            handleFiles(event.target.files, "image");
+          }
+          event.target.value = "";
+        }}
+      />
+      <input
+        ref={fileInputRef}
+        type="file"
+        multiple
+        className="hidden"
+        onChange={(event) => {
+          if (event.target.files) {
+            handleFiles(event.target.files, "file");
+          }
+          event.target.value = "";
+        }}
+      />
 
-        <ContextSection icon={<Clock3 className="h-4 w-4" />} title="Последние материалы">
-          {recentMaterials.length === 0 ? (
-            <EmptyLine text="Нет материалов." />
-          ) : (
-            recentMaterials.map((item) => (
-              <Link
-                key={`${item.type}_${item.id}`}
-                href={item.href}
-                className="rounded-[16px] border border-[color:var(--line)] bg-black/16 px-3 py-3 transition hover:border-[color:var(--accent)]"
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <div className="min-w-0 truncate text-sm font-medium">{item.title}</div>
-                  <Badge variant="muted">{item.type}</Badge>
-                </div>
-                <div className="mt-2 text-xs text-[color:var(--muted)]">{item.meta}</div>
-              </Link>
-            ))
-          )}
-        </ContextSection>
+      <div className="mt-9 flex items-center gap-2">
+        <TabButton active={activeTab === "chats"} onClick={() => setActiveTab("chats")}>
+          Чаты
+        </TabButton>
+        <TabButton active={activeTab === "sources"} onClick={() => setActiveTab("sources")}>
+          Источники
+        </TabButton>
+        <TabButton
+          active={activeTab === "automations"}
+          onClick={() => setActiveTab("automations")}
+        >
+          Автоматизации
+        </TabButton>
+      </div>
 
-        <div className={cn(panelRecipe.muted, "p-4")}>
-          <div className="grid grid-cols-3 gap-3 text-center">
-            <MiniMetric label="Чаты" value={project.counters.chats} />
-            <MiniMetric label="Источники" value={project.counters.documents} />
-            <MiniMetric label="Авто" value={project.counters.automations} />
-          </div>
-        </div>
-      </aside>
+      <div className="mt-6 min-h-[360px]">
+        {activeTab === "chats" ? (
+          <ProjectChatList
+            chats={chats}
+            loading={projectChats.isLoading}
+            projectId={projectId}
+          />
+        ) : null}
+        {activeTab === "sources" ? (
+          <ProjectSourceList
+            loading={knowledge.isLoading}
+            sources={sources}
+            webResults={webResults}
+          />
+        ) : null}
+        {activeTab === "automations" ? (
+          <ProjectAutomationList
+            automations={currentAutomations}
+            loading={automations.isLoading}
+            projectId={projectId}
+          />
+        ) : null}
+      </div>
     </section>
   );
-
-  function toggleDocument(documentId: string) {
-    setContext((current) => ({
-      ...current,
-      selectedDocumentIds: current.selectedDocumentIds.includes(documentId)
-        ? current.selectedDocumentIds.filter((id) => id !== documentId)
-        : [...current.selectedDocumentIds, documentId],
-    }));
-  }
-
-  function toggleAutomation(automationId: string) {
-    setContext((current) => ({
-      ...current,
-      selectedAutomationIds: current.selectedAutomationIds.includes(automationId)
-        ? current.selectedAutomationIds.filter((id) => id !== automationId)
-        : [...current.selectedAutomationIds, automationId],
-    }));
-  }
-
-  function removeContextItem(item: ProjectWorkspaceContextItem) {
-    if (item.type === "document") {
-      toggleDocument(item.id);
-      return;
-    }
-
-    if (item.type === "automation") {
-      toggleAutomation(item.id);
-      return;
-    }
-
-    setContext((current) => ({
-      ...current,
-      selectedQuickTopic: null,
-    }));
-  }
 }
 
-function ContextSection({
-  action,
-  children,
-  icon,
-  title,
+function PlusMenu({
+  onAutomations,
+  onFiles,
+  onImages,
+  onWebSearch,
 }: {
-  readonly action?: React.ReactNode;
-  readonly children: React.ReactNode;
-  readonly icon: React.ReactNode;
-  readonly title: string;
+  readonly onAutomations: () => void;
+  readonly onFiles: () => void;
+  readonly onImages: () => void;
+  readonly onWebSearch: () => void;
 }) {
   return (
-    <section className={cn(panelRecipe.muted, "grid gap-3 p-4")}>
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2 text-sm font-semibold">
-          <span className="text-[color:var(--accent-strong)]">{icon}</span>
-          {title}
-        </div>
-        {action}
-      </div>
-      <div className="grid gap-2">{children}</div>
-    </section>
+    <div
+      data-testid="project-plus-menu"
+      className="absolute left-1 top-[64px] z-20 grid w-[322px] gap-1 rounded-[20px] border border-[color:var(--lf-border)] bg-[color:var(--lf-bg-panel)] p-2 shadow-[var(--lf-shadow-popover)]"
+    >
+      <MenuButton icon={<ImageIcon className="h-5 w-5" />} onClick={onImages}>
+        Добавить фото
+      </MenuButton>
+      <MenuButton icon={<Paperclip className="h-5 w-5" />} onClick={onFiles}>
+        Фото или файлы
+      </MenuButton>
+      <MenuButton icon={<Globe2 className="h-5 w-5" />} onClick={onWebSearch}>
+        Поиск по сети
+      </MenuButton>
+      <MenuButton icon={<Workflow className="h-5 w-5" />} onClick={onAutomations}>
+        Автоматизации
+      </MenuButton>
+    </div>
   );
 }
 
-function ContextToggle({
-  active,
-  meta,
+function MenuButton({
+  children,
+  icon,
   onClick,
-  title,
 }: {
-  readonly active: boolean;
-  readonly meta: string;
+  readonly children: React.ReactNode;
+  readonly icon: React.ReactNode;
   readonly onClick: () => void;
-  readonly title: string;
 }) {
   return (
     <button
       type="button"
-      className={cn(
-        "rounded-[var(--lf-radius-card)] border px-3 py-3 text-left transition-colors",
-        active
-          ? "border-[color:var(--lf-primary)]/40 bg-[color:var(--lf-state-active)]"
-          : "border-[color:var(--lf-border)] bg-[color:var(--lf-bg-card)] hover:border-[color:var(--lf-primary)]",
-      )}
+      className="flex min-h-11 items-center gap-3 rounded-[14px] px-3 text-left text-sm font-medium text-[color:var(--lf-text-primary)] transition hover:bg-[color:var(--lf-state-hover)]"
       onClick={onClick}
     >
-      <div className="truncate text-sm font-medium">{title}</div>
-      <div className="mt-2 text-xs text-[color:var(--muted)]">{meta}</div>
+      {icon}
+      {children}
     </button>
   );
 }
 
-function ChatLink({
-  chat,
+function AutomationPicker({
+  automations,
+  loading,
+  onSelect,
+}: {
+  readonly automations: readonly InstalledAutomationDetail[];
+  readonly loading: boolean;
+  readonly onSelect: (automation: InstalledAutomationDetail) => void;
+}) {
+  return (
+    <div className="absolute left-1 top-[64px] z-20 grid w-[360px] gap-2 rounded-[20px] border border-[color:var(--lf-border)] bg-[color:var(--lf-bg-panel)] p-3 shadow-[var(--lf-shadow-popover)]">
+      <div className="px-2 text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--lf-text-muted)]">
+        Автоматизации проекта
+      </div>
+      {loading ? <MutedLine text="Загружаю автоматизации..." /> : null}
+      {!loading && automations.length === 0 ? (
+        <MutedLine text="Автоматизаций пока нет." />
+      ) : null}
+      {automations.map((automation) => (
+        <button
+          key={automation.id}
+          type="button"
+          aria-label={`Прикрепить ${automation.title}`}
+          className="grid rounded-[14px] px-3 py-2 text-left transition hover:bg-[color:var(--lf-state-hover)]"
+          onClick={() => onSelect(automation)}
+        >
+          <span className="truncate text-sm font-semibold text-[color:var(--lf-text-primary)]">
+            {automation.title}
+          </span>
+          <span className="mt-1 text-xs text-[color:var(--lf-text-muted)]">
+            {automation.canRun ? "готова" : automation.nextGate}
+          </span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function WebSearchPanel({
+  error,
+  onClose,
+  onQueryChange,
+  onSubmit,
+  query,
+  results,
+  searching,
+}: {
+  readonly error: string | null;
+  readonly onClose: () => void;
+  readonly onQueryChange: (query: string) => void;
+  readonly onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
+  readonly query: string;
+  readonly results: readonly ProjectWebSearchResult[];
+  readonly searching: boolean;
+}) {
+  return (
+    <form
+      className="absolute left-1 top-[64px] z-20 grid w-[420px] max-w-[calc(100vw-48px)] gap-3 rounded-[20px] border border-[color:var(--lf-border)] bg-[color:var(--lf-bg-panel)] p-4 shadow-[var(--lf-shadow-popover)]"
+      onSubmit={onSubmit}
+    >
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2 text-sm font-semibold">
+          <Search className="h-4 w-4" />
+          Поиск по сети
+        </div>
+        <button
+          type="button"
+          aria-label="Закрыть поиск"
+          className="flex h-8 w-8 items-center justify-center rounded-full text-[color:var(--lf-text-muted)] hover:bg-[color:var(--lf-state-hover)]"
+          onClick={onClose}
+        >
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+      <label className="grid gap-1 text-sm font-medium">
+        Запрос для поиска по сети
+        <input
+          value={query}
+          onChange={(event) => onQueryChange(event.target.value)}
+          className="h-10 rounded-[var(--lf-radius-control)] border border-[color:var(--lf-border)] bg-[color:var(--lf-bg-card)] px-3 text-sm outline-none focus:border-[color:var(--lf-primary)]"
+          placeholder="Например, практика по договору поставки"
+        />
+      </label>
+      <button
+        type="submit"
+        disabled={!query.trim() || searching}
+        className="h-10 rounded-[var(--lf-radius-control)] bg-[color:var(--lf-primary)] px-4 text-sm font-semibold text-[color:var(--lf-primary-fg)] disabled:opacity-50"
+      >
+        Найти
+      </button>
+      {error ? <MutedLine text={error} /> : null}
+      {results.length > 0 ? (
+        <div className="grid gap-2">
+          {results.map((result) => (
+            <SourceRow key={result.id} source={result} />
+          ))}
+        </div>
+      ) : null}
+    </form>
+  );
+}
+
+function TabButton({
+  active,
+  children,
+  onClick,
+}: {
+  readonly active: boolean;
+  readonly children: React.ReactNode;
+  readonly onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      role="tab"
+      aria-selected={active}
+      className={cn(
+        "rounded-full px-5 py-3 text-sm font-semibold transition",
+        active
+          ? "bg-[color:var(--lf-state-active)] text-[color:var(--lf-text-primary)]"
+          : "text-[color:var(--lf-text-muted)] hover:bg-[color:var(--lf-state-hover)] hover:text-[color:var(--lf-text-primary)]",
+      )}
+      onClick={onClick}
+    >
+      {children}
+    </button>
+  );
+}
+
+function ProjectChatList({
+  chats,
+  loading,
   projectId,
 }: {
-  readonly chat: Stage15ProjectChatSummary;
+  readonly chats: readonly Stage15ProjectChatSummary[];
+  readonly loading: boolean;
+  readonly projectId: string;
+}) {
+  if (loading && chats.length === 0) {
+    return <SkeletonRows />;
+  }
+
+  if (chats.length === 0) {
+    return <EmptyState text="У этого проекта пока нет чатов." />;
+  }
+
+  return (
+    <div className="grid min-w-0 gap-0">
+      {chats.map((chat) => (
+        <Link
+          key={chat.id}
+          href={`/app/projects/${projectId}/chats/${chat.id}`}
+          className="grid min-w-0 border-b border-[color:var(--lf-border)] px-4 py-4 transition hover:bg-[color:var(--lf-state-hover)]"
+        >
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0">
+              <div className="truncate text-sm font-semibold text-[color:var(--lf-text-primary)]">
+                {chat.title}
+              </div>
+              <div className="mt-1 truncate text-sm text-[color:var(--lf-text-secondary)]">
+                {chat.lastMessagePreview ?? "Без сообщений"}
+              </div>
+            </div>
+            <time className="shrink-0 text-sm text-[color:var(--lf-text-muted)]">
+              {formatShortDate(chat.updatedAt)}
+            </time>
+          </div>
+        </Link>
+      ))}
+    </div>
+  );
+}
+
+function ProjectSourceList({
+  loading,
+  sources,
+  webResults,
+}: {
+  readonly loading: boolean;
+  readonly sources: readonly ProjectKnowledgeItem[];
+  readonly webResults: readonly ProjectWebSearchResult[];
+}) {
+  const mergedSources = React.useMemo(() => {
+    const seen = new Set(sources.map((source) => source.url ?? source.sourceId));
+    const transientSources = webResults.filter((result) => !seen.has(result.url));
+    return { sources, transientSources };
+  }, [sources, webResults]);
+
+  if (loading && sources.length === 0) {
+    return <SkeletonRows />;
+  }
+
+  if (sources.length === 0 && webResults.length === 0) {
+    return <EmptyState text="Источников пока нет. Используйте плюс, чтобы добавить файлы или поиск по сети." />;
+  }
+
+  return (
+    <div className="grid min-w-0 gap-0">
+      {mergedSources.sources.map((source) => (
+        <SourceRow key={source.id} source={source} />
+      ))}
+      {mergedSources.transientSources.map((source) => (
+        <SourceRow key={source.id} source={source} />
+      ))}
+    </div>
+  );
+}
+
+function ProjectAutomationList({
+  automations,
+  loading,
+  projectId,
+}: {
+  readonly automations: readonly InstalledAutomationDetail[];
+  readonly loading: boolean;
+  readonly projectId: string;
+}) {
+  if (loading && automations.length === 0) {
+    return <SkeletonRows />;
+  }
+
+  if (automations.length === 0) {
+    return (
+      <EmptyState text="Автоматизаций пока нет. Используйте плюс, чтобы прикрепить автоматизацию к новому чату." />
+    );
+  }
+
+  return (
+    <div className="grid min-w-0 gap-0">
+      {automations.map((automation) => (
+        <Link
+          key={automation.id}
+          href={`/app/projects/${projectId}/automations/${automation.id}/automation`}
+          aria-label={automation.title}
+          className="grid min-w-0 border-b border-[color:var(--lf-border)] px-4 py-4 transition hover:bg-[color:var(--lf-state-hover)]"
+        >
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0">
+              <div className="truncate text-sm font-semibold text-[color:var(--lf-text-primary)]">
+                {automation.title}
+              </div>
+              <div className="mt-1 text-sm text-[color:var(--lf-text-secondary)]">
+                {automation.canRun ? "готова к запуску" : automation.nextGate}
+              </div>
+            </div>
+            <span className="shrink-0 text-sm text-[color:var(--lf-primary)]">
+              Редактировать
+            </span>
+          </div>
+        </Link>
+      ))}
+    </div>
+  );
+}
+
+function AutomationChip({
+  automation,
+  onRemove,
+  projectId,
+}: {
+  readonly automation: InstalledAutomationDetail;
+  readonly onRemove: () => void;
   readonly projectId: string;
 }) {
   return (
-    <Link
-      href={`/app/projects/${projectId}/chats/${chat.id}`}
-      className="rounded-[var(--lf-radius-card)] border border-[color:var(--lf-border)] bg-[color:var(--lf-bg-card)] px-3 py-3 transition-colors hover:border-[color:var(--lf-primary)]"
+    <div
+      data-testid="selected-automation-chip"
+      className="flex max-w-full items-center gap-2 rounded-full border border-[color:var(--lf-border)] bg-[color:var(--lf-bg-card)] px-3 py-1.5 text-sm"
     >
-      <div className="flex items-center gap-2">
-        <Badge variant={chat.status === "active" ? "success" : "muted"}>
-          {formatStatus(chat.status)}
-        </Badge>
-        {chat.linkedAutomationId ? <Badge variant="accent">workflow</Badge> : null}
-      </div>
-      <div className="mt-3 truncate text-sm font-medium">{chat.title}</div>
-      <div className="mt-2 line-clamp-2 text-xs leading-5 text-[color:var(--muted)]">
-        {chat.lastMessagePreview}
-      </div>
-    </Link>
-  );
-}
-
-function MiniMetric({
-  label,
-  value,
-}: {
-  readonly label: string;
-  readonly value: number;
-}) {
-  return (
-    <div>
-      <div className="font-[family-name:var(--font-display)] text-2xl">{value}</div>
-      <div className="mt-1 text-[11px] text-[color:var(--muted)]">{label}</div>
+      <Workflow className="h-4 w-4 shrink-0 text-[color:var(--lf-primary)]" />
+      <span className="max-w-[260px] truncate font-medium">{automation.title}</span>
+      <Link
+        href={`/app/projects/${projectId}/automations/${automation.id}/automation`}
+        className="text-[color:var(--lf-primary)] hover:underline"
+      >
+        Редактировать
+      </Link>
+      <button
+        type="button"
+        className="flex h-6 w-6 items-center justify-center rounded-full text-[color:var(--lf-text-muted)] hover:bg-[color:var(--lf-state-hover)]"
+        aria-label="Убрать автоматизацию"
+        onClick={onRemove}
+      >
+        <X className="h-3.5 w-3.5" />
+      </button>
     </div>
   );
 }
 
-function EmptyLine({ text }: { readonly text: string }) {
+function FileChip({
+  item,
+  onRemove,
+}: {
+  readonly item: LocalComposerFile;
+  readonly onRemove: () => void;
+}) {
   return (
-    <div className={cn(panelRecipe.empty, "px-3 py-3 text-sm text-[color:var(--lf-text-muted)]")}>
+    <div
+      className={cn(
+        "flex max-w-full items-center gap-2 rounded-full border px-3 py-1.5 text-sm",
+        item.error
+          ? "border-[color:var(--lf-danger)]/40 bg-[color:var(--lf-danger)]/10"
+          : "border-[color:var(--lf-border)] bg-[color:var(--lf-bg-card)]",
+      )}
+    >
+      <Paperclip className="h-4 w-4 shrink-0" />
+      <span className="max-w-[240px] truncate">{item.file.name}</span>
+      {item.error ? (
+        <span className="text-xs text-[color:var(--lf-danger)]">{item.error}</span>
+      ) : null}
+      <button
+        type="button"
+        className="flex h-6 w-6 items-center justify-center rounded-full text-[color:var(--lf-text-muted)] hover:bg-[color:var(--lf-state-hover)]"
+        aria-label="Убрать файл"
+        onClick={onRemove}
+      >
+        <X className="h-3.5 w-3.5" />
+      </button>
+    </div>
+  );
+}
+
+function SourceRow({
+  source,
+}: {
+  readonly source: ProjectKnowledgeItem | ProjectWebSearchResult;
+}) {
+  const title =
+    "title" in source && source.title ? source.title : "Источник проекта";
+  const summary =
+    "summary" in source
+      ? source.summary
+      : "snippet" in source
+        ? source.snippet
+        : null;
+  const url = "url" in source ? source.url : null;
+
+  return (
+    <div className="grid min-w-0 border-b border-[color:var(--lf-border)] px-4 py-4">
+      <div className="flex items-start gap-3">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] bg-[color:var(--lf-primary)] text-[color:var(--lf-primary-fg)]">
+          <FileText className="h-5 w-5" />
+        </div>
+        <div className="min-w-0">
+          <div className="truncate text-sm font-semibold text-[color:var(--lf-text-primary)]">
+            {title}
+          </div>
+          {summary ? (
+            <div className="mt-1 line-clamp-2 text-sm text-[color:var(--lf-text-secondary)]">
+              {summary}
+            </div>
+          ) : null}
+          {url ? (
+            <div className="mt-1 truncate text-xs text-[color:var(--lf-text-muted)]">
+              {url}
+            </div>
+          ) : null}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SkeletonRows() {
+  return (
+    <div className="grid gap-3 px-4 py-3">
+      {[0, 1, 2].map((item) => (
+        <div
+          key={item}
+          className="h-16 animate-pulse rounded-[var(--lf-radius-control)] bg-[color:var(--lf-bg-muted)]"
+        />
+      ))}
+    </div>
+  );
+}
+
+function EmptyState({ text }: { readonly text: string }) {
+  return (
+    <div className="rounded-[var(--lf-radius-control)] border border-dashed border-[color:var(--lf-border)] px-4 py-8 text-center text-sm text-[color:var(--lf-text-muted)]">
+      <Bot className="mx-auto mb-3 h-6 w-6" />
       {text}
     </div>
   );
+}
+
+function MutedLine({ text }: { readonly text: string }) {
+  return (
+    <div className="rounded-[var(--lf-radius-control)] bg-[color:var(--lf-bg-muted)] px-3 py-2 text-sm text-[color:var(--lf-text-muted)]">
+      {text}
+    </div>
+  );
+}
+
+function sortChatsNewestFirst(
+  left: Stage15ProjectChatSummary,
+  right: Stage15ProjectChatSummary,
+) {
+  return Date.parse(right.updatedAt) - Date.parse(left.updatedAt);
+}
+
+function formatShortDate(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  return new Intl.DateTimeFormat("ru-RU", {
+    day: "numeric",
+    month: "short",
+  }).format(date);
+}
+
+function fileKey(file: File) {
+  return `${file.name}:${file.size}:${file.lastModified}`;
+}
+
+function validateComposerFile(file: File, kind: LocalComposerFile["kind"]) {
+  if (file.size === 0) {
+    return "Пустой файл.";
+  }
+
+  if (file.name.includes("/") || file.name.includes("\\")) {
+    return "Некорректное имя файла.";
+  }
+
+  if (kind === "image" && !file.type.startsWith("image/")) {
+    return "Нужен файл изображения.";
+  }
+
+  return null;
 }

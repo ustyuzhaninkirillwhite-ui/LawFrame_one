@@ -2,6 +2,7 @@
 
 import type {
   ChatSearchResult,
+  ChatThreadSummary,
   Stage15ProjectChatSummary,
   Stage15ProjectSummary,
 } from "@lexframe/contracts";
@@ -9,6 +10,7 @@ import {
   Cable,
   ChevronDown,
   ChevronRight,
+  Check,
   FolderOpen,
   Library,
   LogOut,
@@ -16,6 +18,7 @@ import {
   MessageSquarePlus,
   Moon,
   PanelLeftClose,
+  Pencil,
   Plus,
   Search,
   Sparkles,
@@ -36,6 +39,7 @@ import {
   useStage15Projects,
 } from "@/hooks/domain/stage15";
 import { useNotifications } from "@/hooks/use-stage0-data";
+import { isProjectWorkspaceRoute } from "@/lib/automation-canvas-route";
 import { cn } from "@/lib/utils";
 import { useSessionBridge } from "@/providers/session-provider";
 import { useTheme } from "@/providers/theme-provider";
@@ -64,6 +68,25 @@ export function ProjectSidebar({
   const [searching, setSearching] = React.useState(false);
   const [searchError, setSearchError] = React.useState<string | null>(null);
   const [toolsOpen, setToolsOpen] = React.useState(false);
+  const [globalChatCreating, setGlobalChatCreating] = React.useState(false);
+  const [globalThreads, setGlobalThreads] = React.useState<readonly ChatThreadSummary[]>([]);
+  const [globalThreadsLoading, setGlobalThreadsLoading] = React.useState(false);
+  const [globalThreadsError, setGlobalThreadsError] = React.useState<unknown>(null);
+  const [renamedProjectNames, setRenamedProjectNames] = React.useState<
+    Record<string, string>
+  >({});
+  const [renamedChatTitles, setRenamedChatTitles] = React.useState<
+    Record<string, string>
+  >({});
+  const projectWorkspaceMode = isProjectWorkspaceRoute(pathname);
+  const projectChatMode = Boolean(
+    pathname?.match(/^\/app\/projects\/[^/]+\/chats(?:\/[^/]+)?\/?$/),
+  );
+  const chatHistoryMode = projectWorkspaceMode
+    ? "hidden"
+    : projectChatMode
+      ? "project"
+      : "global";
 
   const projectsQuery = useStage15Projects();
   const projects = projectsQuery.data?.items ?? [];
@@ -92,21 +115,50 @@ export function ProjectSidebar({
   );
   const createChat = useCreateStage15ProjectChat(activeProjectId);
   const projectChatsQuery = useStage15ProjectChats(activeProjectId);
-  const recentChats = React.useMemo(
-    () =>
-      canSearchChats
-        ? (projectChatsQuery.data ?? []).map((chat) =>
-            mapProjectChatToSearchResult(
-              chat,
-              sessionContext.activeWorkspace?.id ?? "",
-            ),
-          )
-        : [],
-    [canSearchChats, projectChatsQuery.data, sessionContext.activeWorkspace?.id],
-  );
-  const recentChatsError = projectChatsQuery.error
+  const workspaceId = sessionContext.activeWorkspace?.id ?? "";
+  const recentChats = React.useMemo(() => {
+    if (!canSearchChats || chatHistoryMode === "hidden") {
+      return [];
+    }
+
+    if (chatHistoryMode === "global") {
+      return globalThreads.map((thread) =>
+        mapThreadToSearchResult({
+          ...thread,
+          title: renamedChatTitles[thread.id] ?? thread.title,
+        }),
+      );
+    }
+
+    return (projectChatsQuery.data ?? []).map((chat) =>
+      mapProjectChatToSearchResult(
+        {
+          ...chat,
+          title: renamedChatTitles[chat.id] ?? chat.title,
+        },
+        workspaceId,
+      ),
+    );
+  }, [
+    canSearchChats,
+    chatHistoryMode,
+    globalThreads,
+    projectChatsQuery.data,
+    renamedChatTitles,
+    workspaceId,
+  ]);
+  const recentChatsError = (
+    chatHistoryMode === "global" ? globalThreadsError : projectChatsQuery.error
+  )
     ? "Чаты временно недоступны."
     : null;
+  const recentChatsLoading =
+    canSearchChats &&
+    (chatHistoryMode === "global"
+      ? globalThreadsLoading
+      : projectChatsQuery.isLoading);
+  const createChatPending =
+    chatHistoryMode === "global" ? globalChatCreating : createChat.isPending;
   const createProject = useCreateStage15Project();
   const themeToggleLabel =
     theme === "dark" ? "Включить светлую тему" : "Включить тёмную тему";
@@ -119,6 +171,38 @@ export function ProjectSidebar({
   }, [activeProjectId, setActiveProjectId]);
 
   React.useEffect(() => {
+    if (!canSearchChats || chatHistoryMode !== "global" || !workspaceId) {
+      return;
+    }
+
+    let cancelled = false;
+    const loadGlobalThreads = async () => {
+      setGlobalThreadsLoading(true);
+      setGlobalThreadsError(null);
+      try {
+        const response = await apiClient.listChatThreads({ scope: "global" });
+        if (!cancelled) {
+          setGlobalThreads(response.items);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setGlobalThreadsError(error);
+        }
+      } finally {
+        if (!cancelled) {
+          setGlobalThreadsLoading(false);
+        }
+      }
+    };
+
+    void loadGlobalThreads();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [apiClient, canSearchChats, chatHistoryMode, workspaceId]);
+
+  React.useEffect(() => {
     const timeoutId = window.setTimeout(() => {
       setRailPreviewOpen(false);
     }, 0);
@@ -127,6 +211,21 @@ export function ProjectSidebar({
   }, [pathname]);
 
   const handleCreateChat = async () => {
+    if (chatHistoryMode === "global") {
+      setGlobalChatCreating(true);
+      try {
+        const response = await apiClient.createChatThread({
+          kind: "general",
+          title: null,
+        });
+        setGlobalThreads((current) => [response.thread, ...current]);
+        router.push(`/chat/${response.thread.id}`);
+      } finally {
+        setGlobalChatCreating(false);
+      }
+      return;
+    }
+
     if (!activeProjectId) {
       return;
     }
@@ -164,7 +263,8 @@ export function ProjectSidebar({
     try {
       const response = await apiClient.searchChats({
         q: searchQuery.trim(),
-        projectId: activeProjectId,
+        scope: chatHistoryMode === "global" ? "global" : "project",
+        projectId: chatHistoryMode === "global" ? null : activeProjectId,
       });
       setSearchResults(response.items);
     } catch {
@@ -175,8 +275,27 @@ export function ProjectSidebar({
   };
 
   const openChatResult = (result: ChatSearchResult) => {
-    const projectId = result.thread.projectId ?? activeProjectId;
-    router.push(`/app/projects/${projectId}/chats/${result.thread.id}`);
+    if (result.thread.projectId) {
+      router.push(`/app/projects/${result.thread.projectId}/chats/${result.thread.id}`);
+      return;
+    }
+
+    router.push(`/chat/${result.thread.id}`);
+  };
+
+  const handleRenameProject = async (projectId: string, name: string) => {
+    await apiClient.updateProject(projectId, { name });
+    setRenamedProjectNames((current) => ({ ...current, [projectId]: name }));
+  };
+
+  const handleRenameChat = async (threadId: string, title: string) => {
+    await apiClient.updateChatThread(threadId, { title });
+    setRenamedChatTitles((current) => ({ ...current, [threadId]: title }));
+    setGlobalThreads((current) =>
+      current.map((thread) =>
+        thread.id === threadId ? { ...thread, title } : thread,
+      ),
+    );
   };
 
   const sidebarBody = (
@@ -193,7 +312,7 @@ export function ProjectSidebar({
         <Button
           type="button"
           onClick={() => void handleCreateChat()}
-          disabled={createChat.isPending || !activeProjectId}
+          disabled={createChatPending || (chatHistoryMode !== "global" && !activeProjectId)}
           className="h-10 w-full justify-start"
           aria-label="Новый чат"
         >
@@ -228,15 +347,18 @@ export function ProjectSidebar({
       </section>
 
       <nav className="flex flex-1 flex-col gap-5 overflow-y-auto pr-1">
-        <SidebarSection title="Чаты">
-          <RecentChatsList
-            activeProjectId={activeProjectId}
-            chats={recentChats}
-            error={recentChatsError}
-            loading={canSearchChats && projectChatsQuery.isLoading}
-            onOpenChat={openChatResult}
-          />
-        </SidebarSection>
+        {chatHistoryMode === "hidden" ? null : (
+          <SidebarSection title="Чаты">
+            <RecentChatsList
+              activeProjectId={activeProjectId}
+              chats={recentChats}
+              error={recentChatsError}
+              loading={recentChatsLoading}
+              onOpenChat={openChatResult}
+              onRenameChat={handleRenameChat}
+            />
+          </SidebarSection>
+        )}
 
         <CollapsibleSidebarSection
           title="Инструменты"
@@ -318,8 +440,12 @@ export function ProjectSidebar({
             {projects.map((project) => (
               <ProjectLink
                 key={project.id}
-                project={project}
+                project={{
+                  ...project,
+                  name: renamedProjectNames[project.id] ?? project.name,
+                }}
                 active={activeProjectId === project.id}
+                onRename={handleRenameProject}
               />
             ))}
           </div>
@@ -380,7 +506,7 @@ export function ProjectSidebar({
                 label="Новый чат"
                 onClick={() => void handleCreateChat()}
                 primary
-                disabled={createChat.isPending || !activeProjectId}
+                disabled={createChatPending || (chatHistoryMode !== "global" && !activeProjectId)}
               >
                 <Plus size={20} />
               </RailButton>
@@ -600,12 +726,14 @@ function RecentChatsList({
   error,
   loading,
   onOpenChat,
+  onRenameChat,
 }: {
   readonly activeProjectId: string;
   readonly chats: readonly ChatSearchResult[];
   readonly error: string | null;
   readonly loading: boolean;
   readonly onOpenChat: (result: ChatSearchResult) => void;
+  readonly onRenameChat: (threadId: string, title: string) => Promise<void>;
 }) {
   if (loading && chats.length === 0) {
     return <CompactMuted text="Загружаю чаты..." />;
@@ -627,6 +755,7 @@ function RecentChatsList({
           activeProjectId={activeProjectId}
           result={result}
           onOpenChat={onOpenChat}
+          onRenameChat={onRenameChat}
         />
       ))}
     </div>
@@ -660,57 +789,216 @@ function mapProjectChatToSearchResult(
   };
 }
 
+function mapThreadToSearchResult(thread: ChatThreadSummary): ChatSearchResult {
+  return {
+    thread,
+    messageId: null,
+    snippet: thread.lastMessagePreview,
+    classification: null,
+  };
+}
+
 function RecentChatLink({
   activeProjectId,
   onOpenChat,
+  onRenameChat,
   result,
 }: {
   readonly activeProjectId: string;
   readonly onOpenChat: (result: ChatSearchResult) => void;
+  readonly onRenameChat: (threadId: string, title: string) => Promise<void>;
   readonly result: ChatSearchResult;
 }) {
   const projectId = result.thread.projectId ?? activeProjectId;
+  const href = result.thread.projectId
+    ? `/app/projects/${projectId}/chats/${result.thread.id}`
+    : `/chat/${result.thread.id}`;
   const preview = result.snippet ?? result.thread.lastMessagePreview;
+  const [editing, setEditing] = React.useState(false);
+  const [title, setTitle] = React.useState(result.thread.title);
+  const [saving, setSaving] = React.useState(false);
+
+  if (editing) {
+    return (
+      <form
+        className="flex min-h-10 items-center gap-2 rounded-[var(--lf-radius-control)] bg-[color:var(--lf-bg-muted)] px-2 py-1"
+        onSubmit={(event) => {
+          event.preventDefault();
+          const nextTitle = title.trim();
+          if (!nextTitle || saving) {
+            return;
+          }
+          setSaving(true);
+          void onRenameChat(result.thread.id, nextTitle).finally(() => {
+            setSaving(false);
+            setEditing(false);
+          });
+        }}
+      >
+        <input
+          aria-label="Название чата"
+          className="min-w-0 flex-1 rounded-[var(--lf-radius-control)] border border-[color:var(--lf-border)] bg-[color:var(--lf-bg-panel)] px-2 py-1 text-sm outline-none focus:border-[color:var(--lf-primary)]"
+          autoFocus
+          value={title}
+          onChange={(event) => setTitle(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Escape") {
+              event.preventDefault();
+              setTitle(result.thread.title);
+              setEditing(false);
+            } else if (event.key === "Enter") {
+              event.preventDefault();
+              const nextTitle = title.trim();
+              if (!nextTitle || saving) {
+                return;
+              }
+              setSaving(true);
+              void onRenameChat(result.thread.id, nextTitle).finally(() => {
+                setSaving(false);
+                setEditing(false);
+              });
+            }
+          }}
+        />
+        <button
+          type="submit"
+          className="flex h-8 w-8 items-center justify-center rounded-full text-[color:var(--lf-primary)] hover:bg-[color:var(--lf-state-hover)]"
+          aria-label="Сохранить название чата"
+          disabled={saving || !title.trim()}
+        >
+          <Check size={15} />
+        </button>
+      </form>
+    );
+  }
 
   return (
-    <Link
-      href={`/app/projects/${projectId}/chats/${result.thread.id}`}
-      aria-label={result.thread.title}
-      className="grid gap-0.5 rounded-[var(--lf-radius-control)] px-3 py-2 text-sm text-[color:var(--lf-text-muted)] transition hover:bg-[color:var(--lf-state-hover)] hover:text-[color:var(--lf-text-primary)]"
-      onClick={(event) => {
-        event.preventDefault();
-        onOpenChat(result);
-      }}
-    >
-      <span className="truncate font-medium">{result.thread.title}</span>
-      {preview ? (
-        <span className="truncate text-xs text-[color:var(--muted)]">{preview}</span>
-      ) : null}
-    </Link>
+    <div className="group flex items-start gap-1 rounded-[var(--lf-radius-control)] hover:bg-[color:var(--lf-state-hover)]">
+      <Link
+        href={href}
+        aria-label={result.thread.title}
+        className="grid min-w-0 flex-1 gap-0.5 px-3 py-2 text-sm text-[color:var(--lf-text-muted)] transition hover:text-[color:var(--lf-text-primary)]"
+        onClick={(event) => {
+          event.preventDefault();
+          onOpenChat(result);
+        }}
+      >
+        <span className="truncate font-medium">{result.thread.title}</span>
+        {preview ? (
+          <span className="truncate text-xs text-[color:var(--muted)]">{preview}</span>
+        ) : null}
+      </Link>
+      <button
+        type="button"
+        aria-label={`Переименовать чат ${result.thread.title}`}
+        className="mt-1.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[color:var(--lf-text-muted)] opacity-0 transition hover:bg-[color:var(--lf-bg-muted)] hover:text-[color:var(--lf-text-primary)] group-hover:opacity-100 focus:opacity-100"
+        onClick={() => {
+          setTitle(result.thread.title);
+          setEditing(true);
+        }}
+      >
+        <Pencil size={13} />
+      </button>
+    </div>
   );
 }
 
 function ProjectLink({
   active,
+  onRename,
   project,
 }: {
   readonly active: boolean;
+  readonly onRename: (projectId: string, name: string) => Promise<void>;
   readonly project: Stage15ProjectSummary;
 }) {
+  const [editing, setEditing] = React.useState(false);
+  const [name, setName] = React.useState(project.name);
+  const [saving, setSaving] = React.useState(false);
+
+  if (editing) {
+    return (
+      <form
+        className="flex min-h-9 items-center gap-2 rounded-[var(--lf-radius-control)] bg-[color:var(--lf-bg-muted)] px-2 py-1"
+        onSubmit={(event) => {
+          event.preventDefault();
+          const nextName = name.trim();
+          if (!nextName || saving) {
+            return;
+          }
+          setSaving(true);
+          void onRename(project.id, nextName).finally(() => {
+            setSaving(false);
+            setEditing(false);
+          });
+        }}
+      >
+        <input
+          aria-label="Название проекта"
+          className="min-w-0 flex-1 rounded-[var(--lf-radius-control)] border border-[color:var(--lf-border)] bg-[color:var(--lf-bg-panel)] px-2 py-1 text-sm outline-none focus:border-[color:var(--lf-primary)]"
+          autoFocus
+          value={name}
+          onChange={(event) => setName(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Escape") {
+              event.preventDefault();
+              setName(project.name);
+              setEditing(false);
+            } else if (event.key === "Enter") {
+              event.preventDefault();
+              const nextName = name.trim();
+              if (!nextName || saving) {
+                return;
+              }
+              setSaving(true);
+              void onRename(project.id, nextName).finally(() => {
+                setSaving(false);
+                setEditing(false);
+              });
+            }
+          }}
+        />
+        <button
+          type="submit"
+          aria-label="Сохранить название проекта"
+          className="flex h-8 w-8 items-center justify-center rounded-full text-[color:var(--lf-primary)] hover:bg-[color:var(--lf-state-hover)]"
+          disabled={saving || !name.trim()}
+        >
+          <Check size={15} />
+        </button>
+      </form>
+    );
+  }
+
   return (
-    <Link
-      href={`/app/projects/${project.id}`}
-      aria-label={project.name}
+    <div
       className={cn(
-        "flex min-h-9 items-center gap-2 rounded-[var(--lf-radius-control)] px-3 py-2 text-sm transition",
+        "group flex min-h-9 items-center gap-1 rounded-[var(--lf-radius-control)] text-sm transition",
         active
           ? "bg-[color:var(--lf-state-active)] text-[color:var(--lf-text-primary)]"
           : "text-[color:var(--lf-text-muted)] hover:bg-[color:var(--lf-state-hover)] hover:text-[color:var(--lf-text-primary)]",
       )}
     >
-      <FolderOpen size={15} />
-      <span className="min-w-0 flex-1 truncate font-medium">{project.name}</span>
-    </Link>
+      <Link
+        href={`/app/projects/${project.id}`}
+        aria-label={project.name}
+        className="flex min-w-0 flex-1 items-center gap-2 px-3 py-2"
+      >
+        <FolderOpen size={15} />
+        <span className="min-w-0 flex-1 truncate font-medium">{project.name}</span>
+      </Link>
+      <button
+        type="button"
+        aria-label={`Переименовать проект ${project.name}`}
+        className="mr-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full opacity-0 transition hover:bg-[color:var(--lf-bg-muted)] group-hover:opacity-100 focus:opacity-100"
+        onClick={() => {
+          setName(project.name);
+          setEditing(true);
+        }}
+      >
+        <Pencil size={13} />
+      </button>
+    </div>
   );
 }
 

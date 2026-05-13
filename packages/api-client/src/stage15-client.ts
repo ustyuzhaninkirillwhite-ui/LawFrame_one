@@ -8,6 +8,8 @@ import type {
   Stage15ProjectDetail,
   Stage15ProjectListResponse,
   Stage15ProjectSnapshot,
+  Stage15ProjectUpdatedResponse,
+  Stage15UpdateProjectRequest,
   Stage17CanvasEnsureResponse,
   Stage17CanvasEnsureWireResponse,
 } from "@lexframe/contracts";
@@ -18,6 +20,10 @@ export interface Stage15Api {
   createProject(
     input: Stage15CreateProjectRequest,
   ): Promise<Stage15ProjectCreatedResponse>;
+  updateProject(
+    projectId: string,
+    input: Stage15UpdateProjectRequest,
+  ): Promise<Stage15ProjectUpdatedResponse>;
   getProject(projectId: string): Promise<Stage15ProjectDetail>;
   getProjectDashboardSnapshot(
     projectId: string,
@@ -42,6 +48,12 @@ export function createStage15Client(options: FetchOptions): Stage15Api {
     listProjects: () => requestJson(options, "/projects"),
     createProject: (input) =>
       requestJson(options, "/projects", withJsonBody(input, { method: "POST" })),
+    updateProject: (projectId, input) =>
+      requestJson(
+        options,
+        `/projects/${projectId}`,
+        withJsonBody(input, { method: "PATCH" }),
+      ),
     getProject: (projectId) => requestJson(options, `/projects/${projectId}`),
     getProjectDashboardSnapshot: (projectId) =>
       requestJson(options, `/projects/${projectId}/snapshot`),

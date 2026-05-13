@@ -3,7 +3,6 @@
 import * as React from "react";
 import { getPublicEnv } from "@/lib/browser-auth";
 import { useTheme } from "@/providers/theme-provider";
-import { clearActivepiecesBrowserSessionTokens } from "./activepieces-browser-session";
 import type { SafeActivepiecesSession } from "./use-activepieces-session";
 
 type ActivepiecesEmbedSdk = {
@@ -250,7 +249,6 @@ export function ActivepiecesCanvasWrapper({
       disposed = true;
       disposeLocalizationOverlay?.();
       disposeHealthMonitor?.();
-      clearActivepiecesBrowserSessionTokens();
     };
   }, [
     containerId,

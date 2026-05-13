@@ -6,6 +6,7 @@ Branch: `codex/safe-cleanup-refactor`
 ## Current Architecture
 
 - Frontend project chat entrypoints are `apps/web/src/app/(app)/app/projects/[projectId]/chats/page.tsx`, `apps/web/src/app/(app)/app/projects/[projectId]/chats/[chatId]/page.tsx`, and `apps/web/src/components/chat/project-chat-workspace.tsx`.
+- The project workspace entrypoint is `apps/web/src/app/(app)/app/projects/[projectId]/page.tsx`, which renders `apps/web/src/components/shell/project-home.tsx` inside `AppShell`.
 - The active UI implementation lives under `apps/web/src/features/ai-chat`. `LexFrameChatShell` owns message state locally, calls `createLexFrameChatApi`, and renders `LexFrameThread`, `LexFrameComposer`, `LexFrameMessage`, actions, attachment tiles, and the hidden `assistant-ui` runtime adapter.
 - Frontend chat API is split between `apps/web/src/features/ai-chat/api/chatApi.ts` and `packages/api-client/src/chat-client.ts`. It already exposes list/create thread, list messages, `messages:stream`, resume, cancel, regenerate, edit, branch, search, and project knowledge.
 - Backend chat entrypoints are `apps/backend/src/modules/chat/chat.controller.ts`, `chat-thread.service.ts`, `chat-stream.service.ts`, `project-knowledge.controller.ts`, and `chat-context-assembler.service.ts`.
@@ -16,9 +17,17 @@ Branch: `codex/safe-cleanup-refactor`
 - Attachments exist in contracts and DB as metadata (`ChatMessageAttachmentDto`, `app.chat_message_attachments`) but there is no chat file upload lifecycle, no protected chat download route, and no composer upload UI.
 - The current UI has no dedicated in-chat sidebar. Project sidebar contains chat links elsewhere, while `LexFrameChatShell` renders only a header and central thread.
 
+## Runtime Visibility Finding
+
+- The in-app browser URL `http://127.0.0.1:3100/...` is served by the Stage 21 Docker runtime through the reverse proxy and image `lexframe-web:stage21-local`, not by a Windows `next dev` process.
+- A source-only frontend change is therefore invisible to the user until the web image is rebuilt and containers are recreated.
+- Stage 22 visual acceptance must include `corepack pnpm stage21-up rebuild-web` followed by a browser/DOM check against `http://127.0.0.1:3100/app/projects/project_claim_001`.
+- The project page must specifically reject the old dashboard DOM: no `section.grid.gap-5`, no `Последние материалы`, no metrics card with `Чаты/Источники/Авто`, no side cards for `Источники` or `Автоматизации`, and no quick chips such as `Проверить позицию по делу`.
+
 ## Defects And Root Causes
 
 - Sent messages can visually appear late or vanish because `LexFrameChatShell` waits for `streamMessage` and then reloads persisted messages. There is no immediate optimistic user append.
+- Earlier project workspace changes appeared missing because the Docker-served web image was stale. The correct recovery path is rebuild/recreate the web image, then verify the live page in the browser.
 - The assistant pending state is a generic `isRunning` block, not a message placeholder. It is not reconciled with the eventual server message and can disappear during route switches/reloads.
 - Race protection is partial. `messageLoadRequestId` prevents stale initial loads, but there is no reducer-level state machine for double send, cancel during request, reload recovery, or quick thread switching.
 - Reload during an active or failed run cannot recover accurately because the backend does not expose latest run status with `listMessages`, and `resumeStream` ignores persisted stream events.
@@ -45,6 +54,7 @@ Branch: `codex/safe-cleanup-refactor`
 - Implement private chat attachment upload intent/complete/delete/download routes with backend ownership validation.
 - Replace local ad hoc UI state with reducer + TanStack Query cache updates and optimistic reconciliation.
 - Rebuild the chat UI in LexFrame light style with sidebar, message list, composer, attachments, run status, branch switcher, loading/error/empty states, and reduced-motion CSS.
+- Replace `/app/projects/:projectId` with a single central workspace: title, large composer, and bottom tabs `Чаты`, `Источники`, `Автоматизации`; remove the three-column dashboard entirely.
 - Add tests before each behavior block and keep changes chat-scoped.
 
 ## Risks

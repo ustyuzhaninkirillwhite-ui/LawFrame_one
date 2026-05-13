@@ -1,6 +1,7 @@
 import type { ChatMessageDto } from "@lexframe/contracts";
 import { cn } from "@/lib/utils";
 import { getChatMessageText } from "../domain/chatMappers";
+import { BranchSwitcher } from "./BranchSwitcher";
 import { EvidencePanel } from "./EvidencePanel";
 import { LexFrameAttachmentTile } from "./LexFrameAttachmentTile";
 import { LexFrameMessageActions } from "./LexFrameMessageActions";
@@ -44,7 +45,15 @@ export function LexFrameMessage({
         >
           {isUser ? "Вы" : "LexFrame"}
         </div>
-        <div className="whitespace-pre-wrap">{getChatMessageText(message)}</div>
+        {message.branchInfo?.canSwitch ? (
+          <BranchSwitcher
+            ordinal={message.branchInfo.ordinal}
+            total={message.branchInfo.total}
+          />
+        ) : null}
+        <div className="whitespace-pre-wrap">
+          {getChatMessageText(message) || formatMessageStatus(message.status)}
+        </div>
         {message.attachments.length > 0 ? (
           <div className="mt-2 flex flex-wrap gap-2">
             {message.attachments.map((attachment) => (
@@ -64,4 +73,20 @@ export function LexFrameMessage({
       </div>
     </article>
   );
+}
+
+function formatMessageStatus(status: ChatMessageDto["status"]) {
+  if (status === "streaming" || status === "pending") {
+    return "Генерируется...";
+  }
+
+  if (status === "failed") {
+    return "Ответ не был завершен.";
+  }
+
+  if (status === "cancelled") {
+    return "Генерация остановлена.";
+  }
+
+  return "";
 }

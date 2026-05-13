@@ -417,7 +417,8 @@ export function useStage15ProjectAutomations(projectId?: string | null) {
     queryKey: ["stage15-project-automations", workspaceId, projectId],
     queryFn: () => apiClient.listProjectAutomations(projectId!),
     enabled: enabled && Boolean(projectId),
-    staleTime: 10_000,
+    staleTime: 5 * 60_000,
+    gcTime: 30 * 60_000,
   });
 }
 

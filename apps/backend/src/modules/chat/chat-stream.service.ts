@@ -7,17 +7,22 @@ import { randomUUID } from 'node:crypto';
 import { Injectable } from '@nestjs/common';
 
 export interface CreateStreamSnapshotInput {
+  readonly streamId?: string;
   readonly workspaceId: string;
   readonly threadId: string;
   readonly messageId: string;
   readonly routeSnapshot: ChatRouteSnapshot;
   readonly text: string;
+  readonly status?: ChatStreamSnapshot['status'];
+  readonly clientMessageId?: string | null;
+  readonly userMessage?: ChatStreamSnapshot['userMessage'];
+  readonly assistantMessage?: ChatStreamSnapshot['assistantMessage'];
 }
 
 @Injectable()
 export class ChatStreamService {
   createStreamSnapshot(input: CreateStreamSnapshotInput): ChatStreamSnapshot {
-    const streamId = randomUUID();
+    const streamId = input.streamId ?? randomUUID();
     const safeRoute = redactRouteSnapshot(input.routeSnapshot);
     const events: ChatStreamEvent[] = [
       {
@@ -27,6 +32,15 @@ export class ChatStreamService {
           threadId: input.threadId,
           messageId: input.messageId,
           traceId: input.routeSnapshot.traceId,
+        },
+      },
+      {
+        type: 'run_status',
+        payload: {
+          streamId,
+          threadId: input.threadId,
+          messageId: input.messageId,
+          status: input.status ?? 'completed',
         },
       },
       {
@@ -62,7 +76,18 @@ export class ChatStreamService {
       workspaceId: input.workspaceId,
       threadId: input.threadId,
       messageId: input.messageId,
-      status: 'completed',
+      status: input.status ?? 'completed',
+      clientMessageId: input.clientMessageId ?? null,
+      userMessage: input.userMessage ?? null,
+      assistantMessage: input.assistantMessage ?? null,
+      run: {
+        runId: streamId,
+        streamId,
+        threadId: input.threadId,
+        messageId: input.messageId,
+        status: input.status ?? 'completed',
+        retryable: input.status === 'failed',
+      },
       events,
     };
   }

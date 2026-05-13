@@ -22,12 +22,13 @@ describe('ChatStreamService', () => {
     expect(stream.status).toBe('completed');
     expect(stream.events.map((event) => event.type)).toEqual([
       'message_start',
+      'run_status',
       'route_snapshot',
       'text_delta',
       'usage',
       'message_done',
     ]);
-    expect(stream.events[1]?.payload).toMatchObject({
+    expect(stream.events[2]?.payload).toMatchObject({
       route: 'default_chat',
       provider: 'cometapi',
       model: 'deepseek-v4-flash',

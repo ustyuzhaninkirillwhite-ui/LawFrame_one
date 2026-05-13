@@ -16,39 +16,55 @@ import { SystemStatusBanner } from "./system-status-banner";
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const canvasMode = isAutomationCanvasRoute(pathname);
-  const activepiecesEmbedMode = Boolean(
-    pathname?.match(
-      /^\/app\/projects\/[^/]+\/automations\/[^/]+\/automation\/?$/,
-    ),
+  const automationRouteFamilyMode = Boolean(
+    pathname?.match(/^\/app\/projects\/[^/]+\/automations\/[^/]+(?:\/.*)?$/),
   );
   const projectChatMode = isProjectChatRoute(pathname);
+  const globalChatMode = Boolean(pathname?.match(/^\/chat(?:\/[^/]+)?\/?$/));
   const projectWorkspaceMode = isProjectWorkspaceRoute(pathname);
+  const immersiveProjectMode = projectWorkspaceMode || projectChatMode || globalChatMode;
 
   React.useEffect(() => {
-    if (!activepiecesEmbedMode) {
+    if (!automationRouteFamilyMode) {
       clearActivepiecesBrowserSessionTokens();
     }
-  }, [activepiecesEmbedMode, pathname]);
+  }, [automationRouteFamilyMode, pathname]);
 
   return (
-    <div className="flex min-h-screen bg-[color:var(--lf-bg-app)]">
+    <div
+      className={cn(
+        "flex bg-[color:var(--lf-bg-app)]",
+        canvasMode || immersiveProjectMode
+          ? "h-screen overflow-hidden"
+          : "min-h-screen",
+      )}
+    >
       <ProjectSidebar forceCollapsed={false} />
       <main
         className={cn(
           "min-w-0 flex-1",
-          canvasMode ? "h-screen overflow-hidden" : "px-4 py-4 lg:px-7 lg:py-7",
+          canvasMode || projectChatMode || globalChatMode
+            ? "h-screen overflow-hidden"
+            : projectWorkspaceMode
+              ? "h-screen overflow-y-auto"
+              : "px-4 py-4 lg:px-7 lg:py-7",
         )}
       >
-        {canvasMode ? (
+        {canvasMode || immersiveProjectMode ? (
           children
         ) : (
-          <div className="mx-auto flex min-h-[calc(100vh-32px)] max-w-[1520px] flex-col gap-6 rounded-[var(--lf-radius-panel)] border border-[color:var(--lf-border)] bg-[color:var(--lf-bg-panel)] p-5 shadow-[var(--lf-shadow-panel)] lg:p-6">
-            {projectWorkspaceMode || projectChatMode ? null : <SystemStatusBanner />}
+          <div
+            data-testid="app-shell-panel"
+            className="mx-auto flex min-h-[calc(100vh-32px)] max-w-[1520px] flex-col gap-6 rounded-[var(--lf-radius-panel)] border border-[color:var(--lf-border)] bg-[color:var(--lf-bg-panel)] p-5 shadow-[var(--lf-shadow-panel)] lg:p-6"
+          >
+            <SystemStatusBanner />
             {children}
           </div>
         )}
       </main>
-      {projectChatMode ? null : <FloatingAiComposer canvasMode={canvasMode} />}
+      {immersiveProjectMode ? null : (
+        <FloatingAiComposer canvasMode={canvasMode} />
+      )}
     </div>
   );
 }
