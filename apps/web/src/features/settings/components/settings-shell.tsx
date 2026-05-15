@@ -1,5 +1,6 @@
 "use client";
 
+import { ApiClientError } from "@lexframe/api-client";
 import type { SettingsTab } from "@lexframe/contracts";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { X } from "lucide-react";
@@ -37,6 +38,10 @@ export function SettingsShell({
   const [dialogTab, setDialogTab] = React.useState<SettingsTab>(
     tabFromQuery ?? "profile",
   );
+  const [profileError, setProfileError] = React.useState<string | null>(null);
+  const [organizationError, setOrganizationError] = React.useState<string | null>(
+    null,
+  );
   const activeTab = mode === "page" ? tabFromQuery ?? "profile" : dialogTab;
 
   const bootstrapQuery = useQuery({
@@ -51,20 +56,42 @@ export function SettingsShell({
 
   const profileMutation = useMutation({
     mutationFn: apiClient.updateSettingsProfile,
+    onMutate: () => {
+      setProfileError(null);
+    },
     onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["settings", "bootstrap"] }),
         refreshSessionContext(),
       ]);
     },
+    onError: (error) => {
+      setProfileError(
+        formatSettingsSaveError(
+          error,
+          "Profile settings were not saved. Try again.",
+        ),
+      );
+    },
   });
   const organizationMutation = useMutation({
     mutationFn: apiClient.updateSettingsOrganization,
+    onMutate: () => {
+      setOrganizationError(null);
+    },
     onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["settings", "bootstrap"] }),
         refreshSessionContext(),
       ]);
+    },
+    onError: (error) => {
+      setOrganizationError(
+        formatSettingsSaveError(
+          error,
+          "Organization settings were not saved. Try again.",
+        ),
+      );
     },
   });
 
@@ -120,24 +147,50 @@ export function SettingsShell({
           ) : null}
           {bootstrap ? (
             <>
-              {activeTab === "profile" ? (
+              <div hidden={activeTab !== "profile"}>
+                {profileError ? (
+                  <div className="mb-4">
+                    <SettingsErrorState
+                      title="Profile settings were not saved"
+                      message={profileError}
+                    />
+                  </div>
+                ) : null}
                 <ProfileSettingsPanel
                   profile={bootstrap.profile}
                   isSaving={profileMutation.isPending}
+                  saveButtonTestId={
+                    activeTab === "profile"
+                      ? "settings-save-button"
+                      : "settings-profile-save-button"
+                  }
                   onSave={async (input) => {
                     await profileMutation.mutateAsync(input);
                   }}
                 />
-              ) : null}
-              {activeTab === "organization" ? (
+              </div>
+              <div hidden={activeTab !== "organization"}>
+                {organizationError ? (
+                  <div className="mb-4">
+                    <SettingsErrorState
+                      title="Organization settings were not saved"
+                      message={organizationError}
+                    />
+                  </div>
+                ) : null}
                 <OrganizationSettingsPanel
                   organization={bootstrap.organization}
                   isSaving={organizationMutation.isPending}
+                  saveButtonTestId={
+                    activeTab === "organization"
+                      ? "settings-save-button"
+                      : "settings-organization-save-button"
+                  }
                   onSave={async (input) => {
                     await organizationMutation.mutateAsync(input);
                   }}
                 />
-              ) : null}
+              </div>
               {activeTab === "ai" ? (
                 aiQuery.isLoading ? (
                   <SettingsSkeleton />
@@ -203,4 +256,22 @@ function DiagnosticsPanel({
 
 function readTab(value: string | null): SettingsTab | null {
   return validTabs.includes(value as SettingsTab) ? (value as SettingsTab) : null;
+}
+
+function formatSettingsSaveError(error: unknown, fallback: string) {
+  if (error instanceof ApiClientError) {
+    return isSafeUiErrorMessage(error.message) ? error.message : fallback;
+  }
+
+  return fallback;
+}
+
+function isSafeUiErrorMessage(message: string) {
+  return (
+    message.length > 0 &&
+    message.length <= 220 &&
+    !/stack trace|authorization|bearer|sk-[A-Za-z0-9_-]{8,}|BEGIN PRIVATE KEY|HTTP\s+5\d\d/i.test(
+      message,
+    )
+  );
 }

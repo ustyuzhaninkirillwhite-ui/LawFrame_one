@@ -81,6 +81,7 @@ export function LexFrameThread({
               {isRunning ? (
                 <div
                   className="flex justify-start"
+                  data-testid="chat-running-status"
                   aria-label="LexFrame обрабатывает ответ"
                 >
                   <div className="rounded-[var(--lf-radius-card)] border border-[color:var(--lf-border)] bg-[color:var(--lf-bg-muted)] px-4 py-3 text-sm text-[color:var(--lf-text-muted)]">
@@ -104,7 +105,7 @@ export function LexFrameThread({
         <LexFrameComposer
           disabled={disabled}
           isRunning={isRunning}
-          onSend={(text, files) => void onSend(text, files)}
+          onSend={onSend}
           onCancel={onCancel}
         />
       </div>

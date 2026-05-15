@@ -165,6 +165,88 @@ describe('ProjectWebSearchService', () => {
     );
   });
 
+  it('reuses the existing project knowledge row when the same web result is saved again', async () => {
+    let knowledgeExists = false;
+    const databaseService = {
+      query: jest.fn(),
+      one: jest.fn((sql: string, values: readonly unknown[]) => {
+        if (sql.includes('from app.projects')) {
+          return Promise.resolve({ id: values[1] });
+        }
+
+        if (sql.includes('insert into app.project_web_search_results')) {
+          return Promise.resolve({
+            id: 'web_result_1',
+            workspace_id: access.activeWorkspace!.id,
+            project_id: 'project_due_diligence',
+            title: 'Result title',
+            url: 'https://example.test/result',
+            snippet: 'Short result summary',
+            provider: 'tavily',
+            score: 0.72,
+            created_at: '2026-05-11T10:00:00.000Z',
+          });
+        }
+
+        if (sql.includes('from app.project_knowledge_items')) {
+          return Promise.resolve(
+            knowledgeExists ? { id: 'knowledge_1' } : null,
+          );
+        }
+
+        if (sql.includes('insert into app.project_knowledge_items')) {
+          knowledgeExists = true;
+          return Promise.resolve({ id: 'knowledge_1' });
+        }
+
+        return Promise.resolve(null);
+      }),
+    };
+    const auditService = {
+      record: jest.fn().mockResolvedValue(undefined),
+    };
+    const service = new ProjectWebSearchService(
+      databaseService as never,
+      auditService as never,
+    );
+    const payload = {
+      results: [
+        {
+          title: 'Result title',
+          url: 'https://example.test/result',
+          content: 'Short result summary',
+          score: 0.72,
+        },
+      ],
+    };
+    jest
+      .spyOn(global, 'fetch')
+      .mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(payload),
+      } as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(payload),
+      } as Response);
+
+    const first = await service.search(context, 'project_due_diligence', {
+      query: 'contract dispute',
+      saveResults: true,
+    });
+    const second = await service.search(context, 'project_due_diligence', {
+      query: 'contract dispute',
+      saveResults: true,
+    });
+
+    const knowledgeInserts = databaseService.one.mock.calls.filter(([sql]) =>
+      String(sql).includes('insert into app.project_knowledge_items'),
+    );
+    expect(first.items[0]?.knowledgeItemId).toBe('knowledge_1');
+    expect(second.items[0]?.knowledgeItemId).toBe('knowledge_1');
+    expect(knowledgeInserts).toHaveLength(1);
+  });
+
   it('returns a safe unavailable response when Tavily is not configured', async () => {
     const { service } = createService();
     const fetchSpy = jest.spyOn(global, 'fetch');

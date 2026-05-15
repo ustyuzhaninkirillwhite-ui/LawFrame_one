@@ -1,0 +1,298 @@
+{
+  "config": {
+    "configFile": "E:\\Law_frame_main\\tests\\e2e\\playwright.config.ts",
+    "rootDir": "E:/Law_frame_main/tests/e2e",
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "E:/Law_frame_main/tests/e2e/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "default",
+        "name": "default",
+        "testDir": "E:/Law_frame_main/tests/e2e",
+        "testIgnore": [
+          "/stage16-live-audit\\/.*\\.spec\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      },
+      {
+        "outputDir": "E:/Law_frame_main/tests/e2e/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "stage16-live-audit",
+        "name": "stage16-live-audit",
+        "testDir": "E:/Law_frame_main/tests/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "/stage16-live-audit\\/.*\\.spec\\.ts/"
+        ],
+        "timeout": 60000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "html",
+        {
+          "outputFolder": "playwright-report",
+          "open": "never"
+        }
+      ],
+      [
+        "json",
+        {
+          "outputFile": "playwright-report/results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.59.1",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "frontend-multitab-shell-state.spec.ts",
+      "file": "frontend-multitab-shell-state.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "@block1 multitab shell state",
+          "file": "frontend-multitab-shell-state.spec.ts",
+          "line": 25,
+          "column": 6,
+          "specs": [
+            {
+              "title": "keeps sidebar and theme persistence from corrupting navigation across tabs",
+              "ok": true,
+              "tags": [
+                "block1"
+              ],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "default",
+                  "projectName": "default",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 51505,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-13T19:45:54.218Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "multitab-shell-state-network",
+                          "contentType": "application/json",
+                          "body": "[REDACTED_ATTACHMENT_BODY:1fdf6806fe6b137d438e4cbf78ba648154d9e65ac9177dc03cd12e2b54f40c1c]"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "35b03477fde03a811b2a-a48b10415cbe9f50c0c7",
+              "file": "frontend-multitab-shell-state.spec.ts",
+              "line": 26,
+              "column": 7
+            },
+            {
+              "title": "cleans Activepieces browser tokens after leaving automation route family",
+              "ok": true,
+              "tags": [
+                "block1"
+              ],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "default",
+                  "projectName": "default",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 17819,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-13T19:46:45.872Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "automation-token-cleanup-storage",
+                          "contentType": "application/json",
+                          "body": "[REDACTED_ATTACHMENT_BODY:06aa9501ab371822b5c08577d3e0884f8d51f2e0311a92cfb28ec5140ad43210]"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "35b03477fde03a811b2a-7b260973720586da29a6",
+              "file": "frontend-multitab-shell-state.spec.ts",
+              "line": 99,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "frontend-settings-shell-state.spec.ts",
+      "file": "frontend-settings-shell-state.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "@block1 settings shell state",
+          "file": "frontend-settings-shell-state.spec.ts",
+          "line": 22,
+          "column": 6,
+          "specs": [
+            {
+              "title": "opens and closes settings from expanded and collapsed sidebar without leaving a blocking overlay",
+              "ok": true,
+              "tags": [
+                "block1"
+              ],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "default",
+                  "projectName": "default",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 9185,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-13T19:47:03.741Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "settings-dialog-click-metrics",
+                          "contentType": "application/json",
+                          "body": "[REDACTED_ATTACHMENT_BODY:f746301ce8d81a81dbc8004e60a72b582f652b3a03822d16011ad1f3b4dce693]"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2517e87999dfb1499960-ec7616ed7899ed3f8005",
+              "file": "frontend-settings-shell-state.spec.ts",
+              "line": 28,
+              "column": 7
+            },
+            {
+              "title": "keeps independent shell controls usable while settings bootstrap is delayed and recovers from fail-once",
+              "ok": true,
+              "tags": [
+                "block1"
+              ],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "default",
+                  "projectName": "default",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 8161,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-13T19:47:12.956Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "settings-delayed-fail-once-network",
+                          "contentType": "application/json",
+                          "body": "[REDACTED_ATTACHMENT_BODY:c094831c37ca9d37e36b5e1af33d341e68d13f4183ad0a5c6adf36b4754c9277]"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2517e87999dfb1499960-856300ffd18a175ad5e7",
+              "file": "frontend-settings-shell-state.spec.ts",
+              "line": 75,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-05-13T19:45:21.393Z",
+    "duration": 120492.51400000001,
+    "expected": 4,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

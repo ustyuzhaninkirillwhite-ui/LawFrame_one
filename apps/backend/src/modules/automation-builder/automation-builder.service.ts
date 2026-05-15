@@ -271,13 +271,7 @@ export class AutomationBuilderService {
         permissions: access.permissions,
         traceId: meta.traceId,
       });
-    const routeSnapshot = {
-      route: effectivePolicy.routeCode,
-      provider: effectivePolicy.providerCode,
-      model: effectivePolicy.modelId,
-      keyFingerprint: effectivePolicy.fingerprint,
-      policyDecision: effectivePolicy.policyDecisionId,
-    };
+    const routeSnapshot = buildSafeAutomationRouteSnapshot(effectivePolicy);
     const context = this.contextAssembler.assemble({
       workspaceId,
       projectId: intent.projectId,
@@ -1252,6 +1246,22 @@ export class AutomationBuilderService {
       metadata: input.metadata ?? {},
     });
   }
+}
+
+export function buildSafeAutomationRouteSnapshot(input: {
+  readonly routeCode: string;
+  readonly providerCode: string;
+  readonly modelId: string;
+  readonly fingerprint: string | null;
+  readonly policyDecisionId: string | null;
+}): AutomationBlueprint['routeSnapshot'] {
+  return {
+    route: input.routeCode,
+    provider: input.providerCode,
+    model: input.modelId,
+    keyFingerprint: input.fingerprint ?? 'server_route_ref',
+    policyDecision: input.policyDecisionId,
+  };
 }
 
 function buildBlueprintFromIntent(input: {

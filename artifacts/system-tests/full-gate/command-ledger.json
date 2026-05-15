@@ -1,0 +1,128 @@
+[
+  {
+    "name": "full-preflight",
+    "command": "node scripts/stage16-e2e-preflight.mjs --scope=full --json --fail-on-required",
+    "status": "pass",
+    "exitCode": 0,
+    "signal": null,
+    "durationMs": 1284,
+    "logPath": "artifacts/system-tests/full-gate/logs/full-preflight.log"
+  },
+  {
+    "name": "contracts-typecheck",
+    "command": "corepack pnpm --filter @lexframe/contracts typecheck",
+    "status": "pass",
+    "exitCode": 0,
+    "signal": null,
+    "durationMs": 2976,
+    "logPath": "artifacts/system-tests/full-gate/logs/contracts-typecheck.log"
+  },
+  {
+    "name": "api-client-typecheck",
+    "command": "corepack pnpm --filter @lexframe/api-client typecheck",
+    "status": "pass",
+    "exitCode": 0,
+    "signal": null,
+    "durationMs": 2583,
+    "logPath": "artifacts/system-tests/full-gate/logs/api-client-typecheck.log"
+  },
+  {
+    "name": "backend-typecheck",
+    "command": "corepack pnpm --filter @lexframe/backend typecheck",
+    "status": "pass",
+    "exitCode": 0,
+    "signal": null,
+    "durationMs": 20293,
+    "logPath": "artifacts/system-tests/full-gate/logs/backend-typecheck.log"
+  },
+  {
+    "name": "backend-lint",
+    "command": "corepack pnpm --filter @lexframe/backend lint",
+    "status": "pass",
+    "exitCode": 0,
+    "signal": null,
+    "durationMs": 44919,
+    "logPath": "artifacts/system-tests/full-gate/logs/backend-lint.log"
+  },
+  {
+    "name": "backend-cross-domain-tests",
+    "command": "corepack pnpm --filter @lexframe/backend test -- chat documents settings activepieces automation canvas runs audit authorization legal-search legal-rag legal-sources project-knowledge web-search",
+    "status": "pass",
+    "exitCode": 0,
+    "signal": null,
+    "durationMs": 18145,
+    "logPath": "artifacts/system-tests/full-gate/logs/backend-cross-domain-tests.log"
+  },
+  {
+    "name": "web-typecheck",
+    "command": "corepack pnpm --filter @lexframe/web typecheck",
+    "status": "pass",
+    "exitCode": 0,
+    "signal": null,
+    "durationMs": 20245,
+    "logPath": "artifacts/system-tests/full-gate/logs/web-typecheck.log"
+  },
+  {
+    "name": "web-lint",
+    "command": "corepack pnpm --filter @lexframe/web lint",
+    "status": "pass",
+    "exitCode": 0,
+    "signal": null,
+    "durationMs": 46732,
+    "logPath": "artifacts/system-tests/full-gate/logs/web-lint.log"
+  },
+  {
+    "name": "web-cross-domain-unit-tests",
+    "command": "corepack pnpm --filter @lexframe/web exec vitest run app-shell project-sidebar project-home LexFrameChatShell settings upload-dialog activepieces-canvas",
+    "status": "pass",
+    "exitCode": 0,
+    "signal": null,
+    "durationMs": 36074,
+    "logPath": "artifacts/system-tests/full-gate/logs/web-cross-domain-unit-tests.log"
+  },
+  {
+    "name": "e2e-typecheck",
+    "command": "corepack pnpm --filter @lexframe/e2e typecheck",
+    "status": "pass",
+    "exitCode": 0,
+    "signal": null,
+    "durationMs": 4629,
+    "logPath": "artifacts/system-tests/full-gate/logs/e2e-typecheck.log"
+  },
+  {
+    "name": "e2e-lint",
+    "command": "corepack pnpm --filter @lexframe/e2e lint",
+    "status": "pass",
+    "exitCode": 0,
+    "signal": null,
+    "durationMs": 4692,
+    "logPath": "artifacts/system-tests/full-gate/logs/e2e-lint.log"
+  },
+  {
+    "name": "web-bundle-secret-scan",
+    "command": "corepack pnpm validate:web-bundle-secrets",
+    "status": "pass",
+    "exitCode": 0,
+    "signal": null,
+    "durationMs": 2658,
+    "logPath": "artifacts/system-tests/full-gate/logs/web-bundle-secret-scan.log"
+  },
+  {
+    "name": "repo-secret-scan",
+    "command": "corepack pnpm secret-scan",
+    "status": "pass",
+    "exitCode": 0,
+    "signal": null,
+    "durationMs": 26805,
+    "logPath": "artifacts/system-tests/full-gate/logs/repo-secret-scan.log"
+  },
+  {
+    "name": "backend-backed-cross-domain-e2e",
+    "command": "corepack pnpm --filter @lexframe/e2e exec playwright test frontend-shell-navigation-state.spec.ts project-workspace-tabs-state.spec.ts chat-live-reload-recovery.spec.ts automation-activepieces-canvas-full.spec.ts automation-runtime-dry-run-full.spec.ts documents-upload-download-full.spec.ts settings-ai-route-preferences-live.spec.ts security-browser-storage-network-full.spec.ts stage6-search-integrated.spec.ts search-browser-security-isolation.spec.ts system-release-gate-smoke.spec.ts --reporter=list,json",
+    "status": "pass",
+    "exitCode": 0,
+    "signal": null,
+    "durationMs": 402730,
+    "logPath": "artifacts/system-tests/full-gate/logs/backend-backed-cross-domain-e2e.log"
+  }
+]

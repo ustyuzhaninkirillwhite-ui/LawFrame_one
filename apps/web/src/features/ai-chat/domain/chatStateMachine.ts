@@ -54,8 +54,10 @@ export function chatRuntimeReducer(
   switch (action.type) {
     case "hydrate":
       return {
-        ...state,
-        messages: mergeMessages(state.messages, action.messages),
+        status: "idle",
+        messages: mergeMessages([], action.messages),
+        activeStreamId: null,
+        errorMessage: null,
       };
     case "send_started":
       return {
@@ -121,6 +123,17 @@ export function mergeMessages(
 ) {
   const byId = new Map(current.map((message) => [message.id, message]));
   for (const message of incoming) {
+    if (message.clientMessageId) {
+      for (const [id, existing] of byId) {
+        if (
+          id !== message.id &&
+          existing.clientMessageId === message.clientMessageId
+        ) {
+          byId.delete(id);
+        }
+      }
+    }
+
     byId.set(message.id, { ...byId.get(message.id), ...message });
   }
   return Array.from(byId.values()).sort((a, b) =>

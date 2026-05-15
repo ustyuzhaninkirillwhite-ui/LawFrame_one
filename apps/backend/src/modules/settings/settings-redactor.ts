@@ -14,6 +14,12 @@ const SECRET_KEY_NAMES = new Set([
   'token',
   'providerKey',
   'provider_key',
+  'secretRefId',
+  'secret_ref_id',
+  'backendSecretId',
+  'backend_secret_id',
+  'vaultSecretId',
+  'vault_secret_id',
 ]);
 
 const SECRET_PATTERNS = [

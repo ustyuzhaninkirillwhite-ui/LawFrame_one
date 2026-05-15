@@ -48,6 +48,7 @@ export function TabsList({ className, ...props }: React.HTMLAttributes<HTMLDivEl
 
 export function TabsTrigger({
   className,
+  onKeyDown,
   value,
   ...props
 }: React.ButtonHTMLAttributes<HTMLButtonElement> & { readonly value: string }) {
@@ -62,6 +63,16 @@ export function TabsTrigger({
       data-state={active ? "active" : "inactive"}
       className={cn(tabsRecipe.trigger, className)}
       onClick={() => context.setValue(value)}
+      onKeyDown={(event) => {
+        onKeyDown?.(event);
+        if (event.defaultPrevented) {
+          return;
+        }
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          context.setValue(value);
+        }
+      }}
       {...props}
     />
   );

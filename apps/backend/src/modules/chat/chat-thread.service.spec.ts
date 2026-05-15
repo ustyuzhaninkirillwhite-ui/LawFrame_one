@@ -468,6 +468,37 @@ describe('ChatThreadService project chat streaming', () => {
     expect(JSON.stringify(failedAudit)).not.toContain('abcdef1234567890');
   });
 
+  it('treats optimistic client stream ids as locally cancelled without touching stream jobs', async () => {
+    const databaseService = {
+      one: jest.fn(),
+      query: jest.fn(),
+      transaction: jest.fn(),
+    };
+    const auditService = { record: jest.fn().mockResolvedValue(undefined) };
+    const service = new ChatThreadService(
+      databaseService as never,
+      auditService as never,
+      {} as never,
+      {} as never,
+      new ChatStreamService(),
+    );
+
+    const result = await service.cancelStream(
+      { actor, access },
+      '00000000-0000-0000-0000-000000000301',
+      'client-stream-message-1',
+      { requestId: 'request-1', traceId: 'trace-1' },
+    );
+
+    expect(result).toEqual({
+      streamId: 'client-stream-message-1',
+      threadId: '00000000-0000-0000-0000-000000000301',
+      status: 'cancelled',
+    });
+    expect(databaseService.query).not.toHaveBeenCalled();
+    expect(auditService.record).not.toHaveBeenCalled();
+  });
+
   it('rejects unsafe chat attachment upload intents before signing storage URLs', async () => {
     const databaseService = createDatabaseServiceMock([]);
     const auditService = { record: jest.fn().mockResolvedValue(undefined) };
@@ -504,6 +535,197 @@ describe('ChatThreadService project chat streaming', () => {
     expect(databaseService.query).not.toHaveBeenCalledWith(
       expect.stringContaining('insert into app.chat_attachments'),
       expect.any(Array),
+    );
+  });
+
+  it('validates chat attachment intents for empty, oversized, unsupported, disguised and duplicate files', async () => {
+    const databaseService = createDatabaseServiceMock([]);
+    const auditService = { record: jest.fn().mockResolvedValue(undefined) };
+    const fetchSpy = jest.spyOn(global, 'fetch').mockResolvedValue({
+      ok: true,
+      json: () =>
+        Promise.resolve({
+          signedURL: '/storage/v1/object/upload/sign/chat-attachment',
+        }),
+    } as Response);
+    const service = new ChatThreadService(
+      databaseService as never,
+      auditService as never,
+      {} as never,
+      {} as never,
+      new ChatStreamService(),
+    );
+
+    const result = await service.createAttachmentUploadIntents(
+      { actor, access },
+      {
+        threadId: '00000000-0000-0000-0000-000000000301',
+        files: [
+          {
+            clientAttachmentId: 'valid',
+            filename: 'evidence.pdf',
+            mimeType: 'application/pdf',
+            sizeBytes: 12,
+            sha256:
+              '2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824',
+          },
+          {
+            clientAttachmentId: 'duplicate',
+            filename: 'evidence.pdf',
+            mimeType: 'application/pdf',
+            sizeBytes: 12,
+          },
+          {
+            clientAttachmentId: 'empty',
+            filename: 'empty.txt',
+            mimeType: 'text/plain',
+            sizeBytes: 0,
+          },
+          {
+            clientAttachmentId: 'oversize',
+            filename: 'oversize.pdf',
+            mimeType: 'application/pdf',
+            sizeBytes: 26 * 1024 * 1024,
+          },
+          {
+            clientAttachmentId: 'unsupported-mime',
+            filename: 'payload.bin',
+            mimeType: 'application/octet-stream',
+            sizeBytes: 10,
+          },
+          {
+            clientAttachmentId: 'disguised',
+            filename: 'payload.exe',
+            mimeType: 'application/pdf',
+            sizeBytes: 10,
+          },
+        ],
+      },
+    );
+
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]).toMatchObject({
+      clientAttachmentId: 'valid',
+      method: 'PUT',
+      headers: { 'content-type': 'application/pdf' },
+      attachment: expect.objectContaining({
+        originalFilename: 'evidence.pdf',
+        mimeType: 'application/pdf',
+        sizeBytes: 12,
+        status: 'pending_upload',
+      }),
+    });
+    expect(result.errors.map((error) => error.code)).toEqual([
+      'duplicate_file',
+      'empty_file',
+      'file_too_large',
+      'unsupported_mime_type',
+      'unsupported_extension',
+    ]);
+    expect(databaseService.query).toHaveBeenCalledWith(
+      expect.stringContaining('insert into app.chat_attachments'),
+      expect.arrayContaining([
+        workspaceId,
+        '00000000-0000-0000-0000-000000000301',
+        actor.id,
+        'evidence.pdf',
+      ]),
+    );
+    expect(JSON.stringify(result)).not.toContain('2cf24dba5fb0a30e');
+
+    fetchSpy.mockRestore();
+  });
+
+  it('blocks completing an attachment for a different thread before storage verification', async () => {
+    const databaseService = {
+      one: jest.fn().mockResolvedValue({
+        id: '00000000-0000-0000-0000-000000000701',
+        workspace_id: workspaceId,
+        thread_id: '00000000-0000-0000-0000-000000000399',
+        message_id: null,
+        run_id: null,
+        original_filename: 'evidence.pdf',
+        safe_filename: 'evidence.pdf',
+        mime_type: 'application/pdf',
+        size_bytes: 12,
+        sha256: null,
+        storage_bucket: 'chat-attachments-private',
+        storage_path: 'workspaces/ws/chat/thread/evidence.pdf',
+        status: 'pending_upload',
+        metadata: {},
+      }),
+      query: jest.fn(),
+      transaction: jest.fn(),
+    };
+    const service = new ChatThreadService(
+      databaseService as never,
+      { record: jest.fn() } as never,
+      {} as never,
+      {} as never,
+      new ChatStreamService(),
+    );
+
+    await expect(
+      service.completeAttachmentUpload(
+        { actor, access },
+        '00000000-0000-0000-0000-000000000701',
+        {
+          threadId: '00000000-0000-0000-0000-000000000301',
+        },
+      ),
+    ).rejects.toMatchObject({ code: 'CHAT_ATTACHMENT_BLOCKED' });
+
+    expect(databaseService.one).toHaveBeenCalledTimes(1);
+    expect(databaseService.query).not.toHaveBeenCalled();
+  });
+
+  it('searches only inside the requested project or global scope', async () => {
+    const databaseService = {
+      one: jest.fn(),
+      query: jest.fn().mockResolvedValue({
+        rows: [
+          {
+            id: '00000000-0000-0000-0000-000000000501',
+            workspace_id: workspaceId,
+            project_id: 'project_claim_001',
+            kind: 'project',
+            visibility: 'project',
+            status: 'active',
+            title: 'Project scoped chat',
+            last_message_preview: null,
+            current_branch_id: null,
+            created_by: actor.id,
+            created_at: '2026-05-09T00:00:00.000Z',
+            updated_at: '2026-05-09T00:00:00.000Z',
+            archived_at: null,
+            deleted_at: null,
+            message_id: null,
+            snippet: 'Project scoped chat',
+            classification: null,
+          },
+        ],
+      }),
+      transaction: jest.fn(),
+    };
+    const service = new ChatThreadService(
+      databaseService as never,
+      { record: jest.fn() } as never,
+      {} as never,
+      {} as never,
+      new ChatStreamService(),
+    );
+
+    const result = await service.search(
+      { actor, access },
+      'project',
+      'project_claim_001',
+      'project',
+    );
+
+    expect(result.items[0]?.thread.projectId).toBe('project_claim_001');
+    expect(databaseService.query).toHaveBeenCalledWith(
+      expect.stringContaining("$4::text = 'project'"),
+      [workspaceId, 'project', 'project_claim_001', 'project'],
     );
   });
 });

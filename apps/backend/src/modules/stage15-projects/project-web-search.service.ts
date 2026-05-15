@@ -222,40 +222,12 @@ export class ProjectWebSearchService {
         continue;
       }
 
-      const knowledgeRow = await this.databaseService.one<{
-        readonly id: string;
-      }>(
-        `
-          insert into app.project_knowledge_items (
-            workspace_id,
-            project_id,
-            source_type,
-            source_id,
-            mode,
-            classification,
-            pinned,
-            enabled_for_chat,
-            citation_required,
-            metadata,
-            created_by
-          )
-          values ($1, $2, 'web_search_result', $3, 'reference_only', 'public', false, true, true, $4, $5)
-          on conflict do nothing
-          returning id
-        `,
-        [
-          input.workspaceId,
-          input.projectId,
-          row.id,
-          {
-            title: row.title,
-            summary: row.snippet,
-            url: row.url,
-            provider: 'tavily',
-          },
-          input.actor.id,
-        ],
-      );
+      const knowledgeRow = await this.ensureProjectKnowledgeItem({
+        actorId: input.actor.id,
+        projectId: input.projectId,
+        result: row,
+        workspaceId: input.workspaceId,
+      });
 
       savedItems.push({
         id: row.id,
@@ -288,6 +260,62 @@ export class ProjectWebSearchService {
     }
 
     return savedItems;
+  }
+
+  private async ensureProjectKnowledgeItem(input: {
+    readonly actorId: string;
+    readonly workspaceId: string;
+    readonly projectId: string;
+    readonly result: WebSearchResultRow;
+  }): Promise<{ readonly id: string } | null> {
+    const existing = await this.databaseService.one<{ readonly id: string }>(
+      `
+        select id
+        from app.project_knowledge_items
+        where workspace_id = $1
+          and project_id = $2
+          and source_type = 'web_search_result'
+          and source_id = $3
+        limit 1
+      `,
+      [input.workspaceId, input.projectId, input.result.id],
+    );
+
+    if (existing) {
+      return existing;
+    }
+
+    return this.databaseService.one<{ readonly id: string }>(
+      `
+        insert into app.project_knowledge_items (
+          workspace_id,
+          project_id,
+          source_type,
+          source_id,
+          mode,
+          classification,
+          pinned,
+          enabled_for_chat,
+          citation_required,
+          metadata,
+          created_by
+        )
+        values ($1, $2, 'web_search_result', $3, 'reference_only', 'public', false, true, true, $4, $5)
+        returning id
+      `,
+      [
+        input.workspaceId,
+        input.projectId,
+        input.result.id,
+        {
+          title: input.result.title,
+          summary: input.result.snippet,
+          url: input.result.url,
+          provider: 'tavily',
+        },
+        input.actorId,
+      ],
+    );
   }
 
   private requireContext(context: LexframeRequestState | undefined): {

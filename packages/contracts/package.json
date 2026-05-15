@@ -24,7 +24,7 @@
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "eslint \"src/**/*.ts\"",
-    "test": "node -e \"console.log('contracts: no runtime tests')\""
+    "test": "tsc -p tsconfig.json && node dist/security-invariants.test.js"
   },
   "devDependencies": {
     "typescript": "^5.9.3"

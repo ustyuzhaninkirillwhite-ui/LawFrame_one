@@ -23,6 +23,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const globalChatMode = Boolean(pathname?.match(/^\/chat(?:\/[^/]+)?\/?$/));
   const projectWorkspaceMode = isProjectWorkspaceRoute(pathname);
   const immersiveProjectMode = projectWorkspaceMode || projectChatMode || globalChatMode;
+  const shellMode = canvasMode
+    ? "canvas"
+    : immersiveProjectMode
+      ? "immersive"
+      : "panel";
+  const routeMode = canvasMode
+    ? "automation-canvas"
+    : projectChatMode
+      ? "project-chat"
+      : globalChatMode
+        ? "global-chat"
+        : projectWorkspaceMode
+          ? "project-workspace"
+          : "panel";
 
   React.useEffect(() => {
     if (!automationRouteFamilyMode) {
@@ -32,6 +46,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div
+      data-testid="app-shell-root"
+      data-shell-mode={shellMode}
       className={cn(
         "flex bg-[color:var(--lf-bg-app)]",
         canvasMode || immersiveProjectMode
@@ -41,6 +57,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     >
       <ProjectSidebar forceCollapsed={false} />
       <main
+        data-testid="app-shell-main"
+        data-route-mode={routeMode}
         className={cn(
           "min-w-0 flex-1",
           canvasMode || projectChatMode || globalChatMode
@@ -62,7 +80,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         )}
       </main>
-      {immersiveProjectMode ? null : (
+      {canvasMode || immersiveProjectMode ? null : (
         <FloatingAiComposer canvasMode={canvasMode} />
       )}
     </div>

@@ -28,6 +28,7 @@ import { AuthGuard } from '../../common/guards/auth.guard';
 import { PermissionGuard } from '../../common/guards/permission.guard';
 import { WorkspaceContextGuard } from '../../common/guards/workspace-context.guard';
 import { ChatThreadService } from './chat-thread.service';
+import { buildSseResponseHeaders } from './chat-sse-headers';
 
 @Controller('chat')
 @UseGuards(AuthGuard, WorkspaceContextGuard, PermissionGuard)
@@ -174,6 +175,7 @@ export class ChatController {
     @Body() body: CreateChatMessageRequest,
     @Req() request: LexframeRequest,
     @Headers('accept') accept: string | undefined,
+    @Headers('origin') origin: string | undefined,
     @Res() reply: SseReply,
   ) {
     const meta = {
@@ -187,7 +189,14 @@ export class ChatController {
         .then((snapshot) => reply.send(snapshot));
     }
 
-    return this.streamMessageAsSse(context, threadId, body, meta, reply);
+    return this.streamMessageAsSse(
+      context,
+      threadId,
+      body,
+      meta,
+      reply,
+      origin,
+    );
   }
 
   @Post('threads/:threadId/streams/:streamId/resume')
@@ -356,13 +365,9 @@ export class ChatController {
       readonly traceId: string | null;
     },
     reply: SseReply,
+    origin: string | undefined,
   ) {
-    reply.raw.writeHead(200, {
-      'content-type': 'text/event-stream; charset=utf-8',
-      'cache-control': 'no-cache, no-transform',
-      connection: 'keep-alive',
-      'x-accel-buffering': 'no',
-    });
+    reply.raw.writeHead(200, buildSseResponseHeaders(origin));
 
     const writeEvent = (event: {
       readonly type: string;

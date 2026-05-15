@@ -25,6 +25,7 @@ const host = "127.0.0.1";
 const baseURL = `http://${host}:${port}`;
 const apiBaseURL = `http://${host}:${apiPort}`;
 const useMsw = process.env.LEXFRAME_E2E_USE_MSW === "1";
+const frontendApiBaseURL = useMsw ? baseURL : apiBaseURL;
 const readinessProfile =
   process.env.LEXFRAME_READINESS_PROFILE ??
   (useMsw ? "local-basic" : "local-integrated");
@@ -57,6 +58,24 @@ const prepareSearchIndexCommand =
   process.env.LEXFRAME_E2E_SKIP_SEARCH_INDEX === "1"
     ? ""
     : "node ../../scripts/prepare-stage14-search-index.mjs && ";
+const runtimePreflightEnabled = process.env.LEXFRAME_E2E_PREFLIGHT !== "0";
+const runtimePreflightMode = useMsw ? "msw-shell" : "backend-shell";
+const runtimePreflightScope =
+  process.env.LEXFRAME_E2E_SCOPE ?? inferRuntimePreflightScope(process.argv);
+const beforeBuildPreflightCommand = runtimePreflightEnabled
+  ? `node ../../scripts/stage16-e2e-preflight.mjs --mode=${runtimePreflightMode} --scope=${runtimePreflightScope} --phase=before-build && `
+  : "";
+const afterBuildPreflightCommand = runtimePreflightEnabled
+  ? `node ../../scripts/stage16-e2e-preflight.mjs --mode=${runtimePreflightMode} --scope=${runtimePreflightScope} --phase=after-build && `
+  : "";
+const beforeWebDevPreflightCommand = runtimePreflightEnabled
+  ? `node ../../scripts/stage16-e2e-preflight.mjs --mode=${runtimePreflightMode} --scope=${runtimePreflightScope} --phase=before-web-dev && `
+  : "";
+const nextDevBundlerFlag =
+  process.env.LEXFRAME_E2E_NEXT_DEV_BUNDLER === "turbo" ||
+  process.env.LEXFRAME_E2E_NEXT_DEV_BUNDLER === "turbopack"
+    ? "--turbopack"
+    : "--webpack";
 process.env.LEXFRAME_DELIVERY_TRANSPORT ??= deliveryTransport;
 process.env.LEXFRAME_DELIVERY_WEBHOOK_URL ??= deliveryWebhookUrl;
 process.env.LEXFRAME_DELIVERY_WEBHOOK_TOKEN ??= deliveryWebhookToken;
@@ -107,8 +126,12 @@ export default defineConfig({
     ? `${playwrightArtifactDir}/test-results`
     : "test-results",
   webServer: [
-    {
-      command: `corepack pnpm --dir ../.. stage16:build:backend-runtime && ${prepareSearchIndexCommand}node ../../scripts/stage16-start-backend-runtime.mjs`,
+    ...(
+      useMsw
+        ? []
+        : [
+            {
+      command: `${beforeBuildPreflightCommand}corepack pnpm --dir ../.. stage16:build:backend-runtime && ${afterBuildPreflightCommand}${prepareSearchIndexCommand}node ../../scripts/stage16-start-backend-runtime.mjs`,
       url: `${apiBaseURL}/health/live`,
       timeout: 240_000,
       reuseExistingServer,
@@ -161,16 +184,18 @@ export default defineConfig({
         OPENSEARCH_SEARCH_PIPELINE:
           process.env.OPENSEARCH_SEARCH_PIPELINE ?? "legal-hybrid-pipeline",
       },
-    },
+            },
+          ]
+    ),
     {
-      command: `corepack pnpm --dir ../.. stage16:build:web-runtime && corepack pnpm --dir ../../apps/web exec next dev --hostname ${host} --port ${port}`,
+      command: `${useMsw ? beforeBuildPreflightCommand : ""}corepack pnpm --dir ../.. stage16:build:web-runtime && ${beforeWebDevPreflightCommand}corepack pnpm --dir ../../apps/web exec next dev ${nextDevBundlerFlag} --hostname ${host} --port ${port}`,
       url: baseURL,
       timeout: 180_000,
       reuseExistingServer,
       env: {
         ...frontendServerEnv,
         NEXT_PUBLIC_ENABLE_MSW: useMsw ? "1" : "0",
-        NEXT_PUBLIC_API_BASE_URL: apiBaseURL,
+        NEXT_PUBLIC_API_BASE_URL: frontendApiBaseURL,
         NEXT_PUBLIC_SUPABASE_URL:
           process.env.NEXT_PUBLIC_SUPABASE_URL ?? "http://127.0.0.1:54321",
         NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:
@@ -234,4 +259,32 @@ function stripServerOnlySecrets(
   }
 
   return result;
+}
+
+function inferRuntimePreflightScope(argv: readonly string[]) {
+  const selected = argv.join(" ").toLowerCase();
+
+  if (/automation|activepieces|canvas/.test(selected)) {
+    return "automation";
+  }
+  if (/document|upload-download|storage/.test(selected)) {
+    return "documents";
+  }
+  if (/search|rag/.test(selected)) {
+    return "search";
+  }
+  if (/chat/.test(selected)) {
+    return "chat";
+  }
+  if (/project-workspace|project-home|project-sidebar-route-cache/.test(selected)) {
+    return "project-workspace";
+  }
+  if (/settings|profile|organization|route-preferences|secret-write-only|ssrf/.test(selected)) {
+    return "settings";
+  }
+  if (/security|rbac|audit|forced-route|cross-workspace|permission/.test(selected)) {
+    return "security";
+  }
+
+  return "shell";
 }

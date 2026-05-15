@@ -209,6 +209,10 @@ export function normalizeDataSource(value: unknown): DataSource | null {
             stringValue(value.document_version_id) ??
             stringValue(value.documentVersionId) ??
             undefined,
+          workspace_id:
+            stringValue(value.workspace_id) ??
+            stringValue(value.workspaceId) ??
+            undefined,
           access_mode:
             value.access_mode === 'runtime_scoped_token'
               ? 'runtime_scoped_token'

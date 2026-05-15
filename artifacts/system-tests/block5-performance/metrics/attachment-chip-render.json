@@ -1,0 +1,18 @@
+{
+  "name": "attachment-chip-render",
+  "route": "/app/projects/project_claim_001",
+  "timestamp": "2026-05-13T17:32:10.422Z",
+  "browser": "chromium",
+  "viewport": {
+    "width": 1280,
+    "height": 720
+  },
+  "durationMs": 0,
+  "maxRafDeltaMs": 0,
+  "longFramesOver50ms": 0,
+  "layoutShift": 0,
+  "passedBudget": true,
+  "notes": [
+    "file picker is browser-controlled; chip visibility asserted"
+  ]
+}

@@ -84,7 +84,11 @@ describe('ActivepiecesService', () => {
     ],
   };
 
-  function createService() {
+  function createService(overrides?: {
+    readonly runtimeScopedTokenService?: {
+      readonly issue: jest.Mock;
+    };
+  }) {
     const databaseService = {
       one: jest.fn(),
       query: jest.fn(),
@@ -121,9 +125,11 @@ describe('ActivepiecesService', () => {
         undefined,
         undefined,
         activepiecesSessionService as never,
+        overrides?.runtimeScopedTokenService as never,
       ),
       databaseService,
       auditService,
+      liveEventsService,
       activepiecesSessionService,
     };
   }
@@ -563,5 +569,214 @@ describe('ActivepiecesService', () => {
         entityId: result.runId,
       }),
     );
+  });
+
+  it('stores runtime-scoped token hash and JTI evidence without audit token leakage', async () => {
+    const runtimeScopedTokenService = {
+      issue: jest.fn(() => ({
+        token: 'runtime.jwt.value',
+        tokenHash: 'runtime_token_hash_block4',
+        jtiHash: 'runtime_jti_hash_block4',
+        expiresAt: '2026-05-13T12:15:00.000Z',
+        claims: {
+          step_name: 'test_ai_gateway_route',
+          purpose: 'activepieces_ai_gateway_action',
+          scope: [
+            'runtime.ai.invoke',
+            'runtime.callback.write',
+            'artifact.create',
+          ],
+        },
+      })),
+    };
+    const { service, databaseService, auditService } = createService({
+      runtimeScopedTokenService,
+    });
+    const client = {
+      query: jest.fn(),
+    };
+    databaseService.transaction.mockImplementation(
+      async (callback: (clientArg: unknown) => Promise<void>) =>
+        callback(client),
+    );
+    databaseService.one
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({
+        id: 'binding_block4',
+        installed_automation_id: 'aut_block4',
+        automation_version_id: null,
+        runtime_projection_id: 'projection_block4',
+        external_project_id: 'ap_project_block4',
+        external_flow_id: 'ap_flow_block4',
+        activepieces_flow_version_id: 'ap_version_block4',
+        sync_hash: 'hash_block4',
+        status: 'synced',
+        last_synced_at: '2026-05-13T12:00:00.000Z',
+      })
+      .mockResolvedValueOnce({
+        status: 'queued',
+        trace_id: 'trace_block4_run',
+      });
+    jest.spyOn(service, 'getAutomationRuntimeRequirements').mockResolvedValue({
+      automationId: 'aut_block4',
+      canOpenBuilder: true,
+      canRun: true,
+      builderState: 'ready',
+      syncState: 'synced',
+      runtimeProjectId: 'ap_project_block4',
+      runtimeFlowId: 'ap_flow_block4',
+      missingConnections: [],
+      availableConnections: [],
+      requiredPieces: [],
+      warnings: [],
+    });
+    jest.spyOn(service as any, 'getInstalledAutomation').mockResolvedValue({
+      id: 'aut_block4',
+      workspace_id: access.activeWorkspace!.id,
+      template_id: 'tpl_block4',
+      source_template_version_id: 'tpv_block4',
+      title: 'Block4 automation',
+      version: 'v1',
+      workflow_state: 'compiled',
+      builder_state: 'ready',
+      sync_state: 'synced',
+      compatibility_status: 'compatible',
+      available: true,
+      disabled_reason: null,
+      required_inputs: [],
+      requirements: [],
+      workflow: {
+        steps: [
+          {
+            id: 'test_ai_gateway_route',
+            moduleCode: '@lexframe/piece-ai-gateway',
+          },
+        ],
+      },
+      next_gate: 'ready',
+      active_canvas_version_id: null,
+      runtime_project_id: 'ap_project_block4',
+      runtime_flow_id: 'ap_flow_block4',
+      sync_hash: 'hash_block4',
+      last_synced_at: '2026-05-13T12:00:00.000Z',
+    });
+    jest
+      .spyOn(service as any, 'assertRealDispatchReady')
+      .mockResolvedValue(undefined);
+
+    const result = await service.startRun(
+      actor,
+      access,
+      'aut_block4',
+      {
+        mode: 'dry_run',
+        idempotencyKey: 'block4-dry-run',
+      },
+      {
+        requestId: 'req_block4_run',
+        traceId: 'trace_block4_run',
+      },
+    );
+
+    expect(result.status).toBe('queued');
+    expect(runtimeScopedTokenService.issue).toHaveBeenCalledWith(
+      expect.objectContaining({
+        workspaceId: access.activeWorkspace!.id,
+        automationId: 'aut_block4',
+        apProjectId: 'ap_project_block4',
+        apFlowId: 'ap_flow_block4',
+        purpose: 'activepieces_ai_gateway_action',
+        scope: [
+          'runtime.ai.invoke',
+          'runtime.callback.write',
+          'artifact.create',
+        ],
+      }),
+    );
+    const runtimeTokenInsert = client.query.mock.calls.find((call) =>
+      String(call[0]).includes('insert into app.activepieces_runtime_tokens'),
+    );
+    expect(runtimeTokenInsert).toBeTruthy();
+    expect(runtimeTokenInsert?.[1]).toEqual(
+      expect.arrayContaining([
+        'runtime_jti_hash_block4',
+        'runtime_token_hash_block4',
+      ]),
+    );
+    expect(JSON.stringify(client.query.mock.calls)).not.toContain(
+      'runtime.jwt.value',
+    );
+    expect(JSON.stringify(auditService.record.mock.calls)).not.toContain(
+      'runtime.jwt.value',
+    );
+  });
+
+  it('returns an existing workflow run for a repeated dry-run idempotency key', async () => {
+    const { service, databaseService, auditService } = createService();
+    databaseService.one.mockResolvedValueOnce({
+      id: 'run_block4_existing',
+      status: 'queued',
+      trace_id: 'trace_block4_existing',
+      external_run_id: 'ap_run_block4_existing',
+    });
+    const requirements = jest.spyOn(
+      service,
+      'getAutomationRuntimeRequirements',
+    );
+
+    const result = await service.startRun(
+      actor,
+      access,
+      'aut_block4',
+      {
+        mode: 'dry_run',
+        idempotencyKey: 'block4-repeat-run',
+      },
+      {
+        requestId: 'req_block4_repeat',
+        traceId: 'trace_block4_repeat',
+      },
+    );
+
+    expect(result).toEqual({
+      runId: 'run_block4_existing',
+      status: 'queued',
+      traceId: 'trace_block4_existing',
+      externalRunId: 'ap_run_block4_existing',
+    });
+    expect(requirements).not.toHaveBeenCalled();
+    expect(databaseService.transaction).not.toHaveBeenCalled();
+    expect(auditService.record).not.toHaveBeenCalledWith(
+      expect.objectContaining({ action: 'activepieces.run.started' }),
+    );
+  });
+
+  it('rejects Activepieces runtime callbacks with an invalid bearer token before writing receipts', async () => {
+    const { service, databaseService } = createService();
+    databaseService.one.mockResolvedValueOnce({
+      workflow_run_id: 'run_block4',
+      workspace_id: access.activeWorkspace!.id,
+      callback_token_hash: 'expected_callback_hash',
+    });
+
+    await expect(
+      service.handleRunEvent(
+        {
+          runId: 'run_block4',
+          eventType: 'failed',
+          externalRunId: 'ap_run_block4',
+          occurredAt: '2026-05-13T12:00:00.000Z',
+          idempotencyKey: 'run_block4:failed',
+          error: {
+            code: 'RUNTIME_MAPPING_MISSING',
+            message: 'Runtime mapping is missing.',
+          },
+        },
+        'Bearer wrong-callback-token',
+      ),
+    ).rejects.toMatchObject({
+      code: 'WORKSPACE_ACCESS_DENIED',
+    });
+    expect(databaseService.query).not.toHaveBeenCalled();
   });
 });

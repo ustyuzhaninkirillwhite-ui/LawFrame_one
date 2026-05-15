@@ -81,6 +81,8 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     buildUnauthenticatedContext(),
   );
   const activeWorkspaceId = sessionContext.activeWorkspace?.id ?? null;
+  const loadGenerationRef = React.useRef(0);
+  const demoRecoveryAttemptsRef = React.useRef(0);
 
   const createScopedApiClient = React.useCallback(
     (token: string | null | undefined, workspaceId: string | null | undefined) =>
@@ -107,8 +109,10 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
 
   const loadSessionContext = React.useCallback(
     async (token: string | null, workspaceId: string | null) => {
+      const generation = (loadGenerationRef.current += 1);
       if (!token) {
         resetToUnauthenticated();
+        setAuthPending(false);
         return;
       }
 
@@ -118,11 +122,20 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       try {
         await scopedApiClient.bootstrapAuth();
         const nextContext = await scopedApiClient.getSessionContext();
+        if (generation !== loadGenerationRef.current) {
+          return;
+        }
         setSessionContext(nextContext);
+        demoRecoveryAttemptsRef.current = 0;
       } catch {
+        if (generation !== loadGenerationRef.current) {
+          return;
+        }
         resetToUnauthenticated();
       } finally {
-        setAuthPending(false);
+        if (generation === loadGenerationRef.current) {
+          setAuthPending(false);
+        }
       }
     },
     [createScopedApiClient, resetToUnauthenticated],
@@ -200,6 +213,49 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       cleanup?.();
     };
   }, [authMode, hydrateFromSupabaseSession, loadSessionContext]);
+
+  React.useEffect(() => {
+    if (authMode !== "demo") {
+      return;
+    }
+
+    const recoverStoredDemoSession = () => {
+      const storedToken = readStoredDevAccessToken();
+      if (!storedToken) {
+        return;
+      }
+      if (!authPending && sessionContext.state !== "unauthenticated") {
+        return;
+      }
+      if (demoRecoveryAttemptsRef.current >= 3) {
+        return;
+      }
+
+      demoRecoveryAttemptsRef.current += 1;
+      setAccessToken(storedToken);
+      void loadSessionContext(storedToken, activeWorkspaceId);
+    };
+
+    const watchdogId = authPending
+      ? window.setTimeout(recoverStoredDemoSession, 1500)
+      : null;
+    window.addEventListener("pageshow", recoverStoredDemoSession);
+    window.addEventListener("popstate", recoverStoredDemoSession);
+
+    return () => {
+      if (watchdogId !== null) {
+        window.clearTimeout(watchdogId);
+      }
+      window.removeEventListener("pageshow", recoverStoredDemoSession);
+      window.removeEventListener("popstate", recoverStoredDemoSession);
+    };
+  }, [
+    activeWorkspaceId,
+    authMode,
+    authPending,
+    loadSessionContext,
+    sessionContext.state,
+  ]);
 
   const signIn = React.useCallback<SessionBridge["signIn"]>(
     async (input) => {

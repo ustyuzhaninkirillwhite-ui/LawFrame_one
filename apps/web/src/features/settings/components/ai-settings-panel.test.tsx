@@ -27,7 +27,7 @@ describe("AiSettingsPanel", () => {
     vi.clearAllMocks();
   });
 
-  it("creates one workspace connection and applies it to chat and automation route groups", async () => {
+  it("saves only the edited AI route group so chat and automation preferences stay independent", async () => {
     const connection = buildConnection("conn_workspace_ai");
     apiClient = {
       createAiProviderConnection: vi.fn().mockResolvedValue(connection),
@@ -51,16 +51,16 @@ describe("AiSettingsPanel", () => {
     await waitFor(() => {
       expect(apiClient.createAiProviderConnection).toHaveBeenCalledWith(
         expect.objectContaining({
+          routeGroup: "chat_ai",
           ownerScope: "workspace",
           providerCode: "cometapi",
           baseUrl: "https://api.cometapi.com/v1",
           modelId: "deepseek-v4-pro",
         }),
       );
-      expect(apiClient.updateAiRouteGroupPreference).toHaveBeenCalledTimes(2);
+      expect(apiClient.updateAiRouteGroupPreference).toHaveBeenCalledTimes(1);
     });
-    expect(apiClient.updateAiRouteGroupPreference).toHaveBeenNthCalledWith(
-      1,
+    expect(apiClient.updateAiRouteGroupPreference).toHaveBeenCalledWith(
       "chat_ai",
       expect.objectContaining({
         scopeType: "workspace",
@@ -68,14 +68,9 @@ describe("AiSettingsPanel", () => {
         modelId: "grok-4-1-fast-non-reasoning",
       }),
     );
-    expect(apiClient.updateAiRouteGroupPreference).toHaveBeenNthCalledWith(
-      2,
+    expect(apiClient.updateAiRouteGroupPreference).not.toHaveBeenCalledWith(
       "automation_ai",
-      expect.objectContaining({
-        scopeType: "workspace",
-        providerConnectionId: "conn_workspace_ai",
-        modelId: "grok-4-1-fast-non-reasoning",
-      }),
+      expect.anything(),
     );
   });
 
@@ -136,7 +131,13 @@ describe("AiSettingsPanel", () => {
         "conn_workspace_ai",
         { apiKey: "sk-test-user-entered-key" },
       );
-      expect(apiClient.updateAiRouteGroupPreference).toHaveBeenCalledTimes(2);
+      expect(apiClient.updateAiRouteGroupPreference).toHaveBeenCalledTimes(1);
+      expect(apiClient.updateAiRouteGroupPreference).toHaveBeenCalledWith(
+        "chat_ai",
+        expect.objectContaining({
+          providerConnectionId: "conn_workspace_ai",
+        }),
+      );
       expect(apiClient.testAiProviderConnection).toHaveBeenCalledWith(
         "conn_workspace_ai",
       );
@@ -145,6 +146,66 @@ describe("AiSettingsPanel", () => {
       .toBeLessThan(firstCallOrder(apiClient.testAiProviderConnection));
     await waitFor(() => {
       expect(keyInput).toHaveValue("");
+    });
+  });
+
+  it("does not reuse a chat connection as the implicit automation route connection", async () => {
+    const chatConnection = buildConnection("conn_chat_ai");
+    const automationConnection = {
+      ...buildConnection("conn_automation_ai"),
+      modelId: "automation-route-model",
+    };
+    apiClient = {
+      createAiProviderConnection: vi.fn().mockResolvedValue(automationConnection),
+      updateAiProviderConnection: vi.fn().mockResolvedValue(chatConnection),
+      replaceAiProviderConnectionSecret: vi.fn(),
+      updateAiRouteGroupPreference: vi.fn().mockResolvedValue({}),
+      testAiProviderConnection: vi.fn(),
+    };
+
+    renderWithQueryClient(
+      <AiSettingsPanel
+        canManageSelf={true}
+        canManageWorkspace={true}
+        connections={[chatConnection]}
+        preferences={[
+          {
+            routeGroup: "chat_ai",
+            scopeType: "workspace",
+            workspaceId: "00000000-0000-4000-8000-000000000021",
+            userId: null,
+            providerConnectionId: "conn_chat_ai",
+            providerCode: "cometapi",
+            modelId: "chat-route-model",
+            enabled: true,
+            capabilitiesConfirmed: chatConnection.capabilities,
+            updatedAt: "2026-05-09T00:00:00.000Z",
+          },
+        ]}
+      />,
+    );
+
+    const automationModelInput = screen.getByTestId("settings-ai-model-id-automation_ai");
+    fireEvent.change(automationModelInput, {
+      target: { value: "automation-route-model" },
+    });
+    fireEvent.click(screen.getByTestId("settings-ai-save-automation_ai"));
+
+    await waitFor(() => {
+      expect(apiClient.createAiProviderConnection).toHaveBeenCalledWith(
+        expect.objectContaining({
+          routeGroup: "automation_ai",
+          modelId: "automation-route-model",
+        }),
+      );
+      expect(apiClient.updateAiProviderConnection).not.toHaveBeenCalled();
+      expect(apiClient.updateAiRouteGroupPreference).toHaveBeenCalledWith(
+        "automation_ai",
+        expect.objectContaining({
+          providerConnectionId: "conn_automation_ai",
+          modelId: "automation-route-model",
+        }),
+      );
     });
   });
 
@@ -171,7 +232,20 @@ describe("AiSettingsPanel", () => {
         canManageSelf={true}
         canManageWorkspace={true}
         connections={[connection]}
-        preferences={[]}
+        preferences={[
+          {
+            routeGroup: "chat_ai",
+            scopeType: "workspace",
+            workspaceId: "00000000-0000-4000-8000-000000000021",
+            userId: null,
+            providerConnectionId: "conn_workspace_ai",
+            providerCode: "cometapi",
+            modelId: "grok-4-1-fast-non-reasoning",
+            enabled: true,
+            capabilitiesConfirmed: connection.capabilities,
+            updatedAt: "2026-05-09T00:00:00.000Z",
+          },
+        ]}
       />,
     );
 

@@ -46,10 +46,12 @@ export function ProfileSettingsPanel({
   isSaving,
   profile,
   onSave,
+  saveButtonTestId,
 }: {
   readonly isSaving?: boolean;
   readonly profile: SettingsProfileDto;
   readonly onSave: (input: UpdateProfileSettingsRequest) => Promise<void>;
+  readonly saveButtonTestId?: string;
 }) {
   const [form, dispatchForm] = React.useReducer(
     profileFormReducer,
@@ -134,6 +136,7 @@ export function ProfileSettingsPanel({
       </div>
       <SettingsSaveBar
         isSaving={isSaving}
+        testId={saveButtonTestId}
         onSave={() =>
           onSave({
             format: "manual_form",

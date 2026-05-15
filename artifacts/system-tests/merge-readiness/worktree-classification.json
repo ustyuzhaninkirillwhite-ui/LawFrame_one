@@ -1,0 +1,3628 @@
+{
+  "generatedAt": "2026-05-15T05:01:28.800Z",
+  "branch": "main",
+  "commit": "bc6f48becb02369e53d2c110f3033981547e8f75",
+  "git": {
+    "statusShort": [
+      {
+        "status": " M",
+        "path": "apps/backend/src/modules/activepieces/activepieces-jwt-signer.spec.ts"
+      },
+      {
+        "status": " M",
+        "path": "apps/backend/src/modules/activepieces/activepieces.controller.ts"
+      },
+      {
+        "status": " M",
+        "path": "apps/backend/src/modules/activepieces/activepieces.service.spec.ts"
+      },
+      {
+        "status": " M",
+        "path": "apps/backend/src/modules/activepieces/activepieces.service.ts"
+      },
+      {
+        "status": " M",
+        "path": "apps/backend/src/modules/audit/audit.service.ts"
+      },
+      {
+        "status": " M",
+        "path": "apps/backend/src/modules/automation-builder/automation-builder.service.ts"
+      },
+      {
+        "status": " M",
+        "path": "apps/backend/src/modules/canvas/canvas-io-utils.ts"
+      },
+      {
+        "status": " M",
+        "path": "apps/backend/src/modules/canvas/canvas-validation.service.spec.ts"
+      },
+      {
+        "status": " M",
+        "path": "apps/backend/src/modules/chat/chat-thread.service.spec.ts"
+      },
+      {
+        "status": " M",
+        "path": "apps/backend/src/modules/chat/chat-thread.service.ts"
+      },
+      {
+        "status": " M",
+        "path": "apps/backend/src/modules/chat/chat.controller.ts"
+      },
+      {
+        "status": " M",
+        "path": "apps/backend/src/modules/documents/documents.service.spec.ts"
+      },
+      {
+        "status": " M",
+        "path": "apps/backend/src/modules/documents/documents.service.ts"
+      },
+      {
+        "status": " M",
+        "path": "apps/backend/src/modules/legal-search/legal-search.service.ts"
+      },
+      {
+        "status": " M",
+        "path": "apps/backend/src/modules/settings/ai-base-url-ssrf.guard.spec.ts"
+      },
+      {
+        "status": " M",
+        "path": "apps/backend/src/modules/settings/ai-base-url-ssrf.guard.ts"
+      },
+      {
+        "status": " M",
+        "path": "apps/backend/src/modules/settings/settings-redactor.spec.ts"
+      },
+      {
+        "status": " M",
+        "path": "apps/backend/src/modules/settings/settings-redactor.ts"
+      },
+      {
+        "status": " M",
+        "path": "apps/backend/src/modules/stage15-projects/project-web-search.service.spec.ts"
+      },
+      {
+        "status": " M",
+        "path": "apps/backend/src/modules/stage15-projects/project-web-search.service.ts"
+      },
+      {
+        "status": " M",
+        "path": "apps/web/next-env.d.ts"
+      },
+      {
+        "status": " M",
+        "path": "apps/web/src/app/(auth)/onboarding/workspace/page.tsx"
+      },
+      {
+        "status": " M",
+        "path": "apps/web/src/app/(auth)/sign-in/page.tsx"
+      },
+      {
+        "status": " M",
+        "path": "apps/web/src/components/app-shell.test.tsx"
+      },
+      {
+        "status": " M",
+        "path": "apps/web/src/components/app-shell.tsx"
+      },
+      {
+        "status": " M",
+        "path": "apps/web/src/components/legal/legal-research-workspace.tsx"
+      },
+      {
+        "status": " M",
+        "path": "apps/web/src/components/preview-panel.test.tsx"
+      },
+      {
+        "status": " M",
+        "path": "apps/web/src/components/preview-panel.tsx"
+      },
+      {
+        "status": " M",
+        "path": "apps/web/src/components/shell/project-home.test.tsx"
+      },
+      {
+        "status": " M",
+        "path": "apps/web/src/components/shell/project-home.tsx"
+      },
+      {
+        "status": " M",
+        "path": "apps/web/src/components/shell/project-sidebar.test.tsx"
+      },
+      {
+        "status": " M",
+        "path": "apps/web/src/components/shell/project-sidebar.tsx"
+      },
+      {
+        "status": " M",
+        "path": "apps/web/src/components/ui/dialog.tsx"
+      },
+      {
+        "status": " M",
+        "path": "apps/web/src/components/ui/tabs.tsx"
+      },
+      {
+        "status": " M",
+        "path": "apps/web/src/features/ai-chat/components/LexFrameChatShell.test.tsx"
+      },
+      {
+        "status": " M",
+        "path": "apps/web/src/features/ai-chat/components/LexFrameChatShell.tsx"
+      },
+      {
+        "status": " M",
+        "path": "apps/web/src/features/ai-chat/components/LexFrameComposer.tsx"
+      },
+      {
+        "status": " M",
+        "path": "apps/web/src/features/ai-chat/components/LexFrameThread.tsx"
+      },
+      {
+        "status": " M",
+        "path": "apps/web/src/features/ai-chat/domain/chatStateMachine.test.ts"
+      },
+      {
+        "status": " M",
+        "path": "apps/web/src/features/ai-chat/domain/chatStateMachine.ts"
+      },
+      {
+        "status": " M",
+        "path": "apps/web/src/features/automation-canvas/activepieces-canvas-route.test.tsx"
+      },
+      {
+        "status": " M",
+        "path": "apps/web/src/features/automation-canvas/activepieces-canvas-route.tsx"
+      },
+      {
+        "status": " M",
+        "path": "apps/web/src/features/automation-canvas/activepieces-canvas-wrapper.test.tsx"
+      },
+      {
+        "status": " M",
+        "path": "apps/web/src/features/automation-canvas/use-activepieces-session.test.tsx"
+      },
+      {
+        "status": " M",
+        "path": "apps/web/src/features/automation-canvas/use-activepieces-session.ts"
+      },
+      {
+        "status": " M",
+        "path": "apps/web/src/features/settings/components/ai-connection-test-button.tsx"
+      },
+      {
+        "status": " M",
+        "path": "apps/web/src/features/settings/components/ai-key-write-only-field.tsx"
+      },
+      {
+        "status": " M",
+        "path": "apps/web/src/features/settings/components/ai-provider-connection-form.tsx"
+      },
+      {
+        "status": " M",
+        "path": "apps/web/src/features/settings/components/ai-route-group-card.tsx"
+      },
+      {
+        "status": " M",
+        "path": "apps/web/src/features/settings/components/ai-settings-panel.test.tsx"
+      },
+      {
+        "status": " M",
+        "path": "apps/web/src/features/settings/components/ai-settings-panel.tsx"
+      },
+      {
+        "status": " M",
+        "path": "apps/web/src/features/settings/components/organization-settings-panel.tsx"
+      },
+      {
+        "status": " M",
+        "path": "apps/web/src/features/settings/components/profile-settings-panel.tsx"
+      },
+      {
+        "status": " M",
+        "path": "apps/web/src/features/settings/components/settings-button.test.tsx"
+      },
+      {
+        "status": " M",
+        "path": "apps/web/src/features/settings/components/settings-button.tsx"
+      },
+      {
+        "status": " M",
+        "path": "apps/web/src/features/settings/components/settings-dialog.tsx"
+      },
+      {
+        "status": " M",
+        "path": "apps/web/src/features/settings/components/settings-save-bar.tsx"
+      },
+      {
+        "status": " M",
+        "path": "apps/web/src/features/settings/components/settings-shell.tsx"
+      },
+      {
+        "status": " M",
+        "path": "apps/web/src/hooks/use-stage0-data.ts"
+      },
+      {
+        "status": " M",
+        "path": "apps/web/src/mocks/handlers.ts"
+      },
+      {
+        "status": " M",
+        "path": "apps/web/src/mocks/stage15-handlers.ts"
+      },
+      {
+        "status": " M",
+        "path": "apps/web/src/providers/session-provider.tsx"
+      },
+      {
+        "status": " M",
+        "path": "package.json"
+      },
+      {
+        "status": " M",
+        "path": "packages/ai-gateway/package.json"
+      },
+      {
+        "status": " M",
+        "path": "packages/api-client/package.json"
+      },
+      {
+        "status": " M",
+        "path": "packages/contracts/package.json"
+      },
+      {
+        "status": " M",
+        "path": "packages/contracts/src/canvas.ts"
+      },
+      {
+        "status": " M",
+        "path": "packages/contracts/src/errors/error-codes.ts"
+      },
+      {
+        "status": " M",
+        "path": "scripts/stage16-build-backend-runtime.mjs"
+      },
+      {
+        "status": " M",
+        "path": "scripts/stage16-db-apply-local.mjs"
+      },
+      {
+        "status": " M",
+        "path": "tests/e2e/documents-storage.spec.ts"
+      },
+      {
+        "status": " M",
+        "path": "tests/e2e/helpers/api.ts"
+      },
+      {
+        "status": " M",
+        "path": "tests/e2e/helpers/auth.ts"
+      },
+      {
+        "status": " M",
+        "path": "tests/e2e/playwright.config.ts"
+      },
+      {
+        "status": " M",
+        "path": "tests/e2e/stage2-storage-integrated.spec.ts"
+      },
+      {
+        "status": "??",
+        "path": ".codex-dev-logs/"
+      },
+      {
+        "status": "??",
+        "path": "apps/backend/src/modules/activepieces/activepieces-audit-writer.spec.ts"
+      },
+      {
+        "status": "??",
+        "path": "apps/backend/src/modules/audit/audit-redaction.ts"
+      },
+      {
+        "status": "??",
+        "path": "apps/backend/src/modules/audit/audit.service.spec.ts"
+      },
+      {
+        "status": "??",
+        "path": "apps/backend/src/modules/authorization/authorization.service.spec.ts"
+      },
+      {
+        "status": "??",
+        "path": "apps/backend/src/modules/automation-builder/automation-builder.service.spec.ts"
+      },
+      {
+        "status": "??",
+        "path": "apps/backend/src/modules/chat/chat-sse-headers.ts"
+      },
+      {
+        "status": "??",
+        "path": "apps/backend/src/modules/chat/chat.controller.spec.ts"
+      },
+      {
+        "status": "??",
+        "path": "apps/backend/src/modules/legal-rag/legal-rag.service.spec.ts"
+      },
+      {
+        "status": "??",
+        "path": "apps/backend/src/modules/legal-search/legal-search.service.spec.ts"
+      },
+      {
+        "status": "??",
+        "path": "apps/backend/src/modules/legal-sources/legal-sources.service.spec.ts"
+      },
+      {
+        "status": "??",
+        "path": "apps/backend/src/modules/runs/run-preflight.service.spec.ts"
+      },
+      {
+        "status": "??",
+        "path": "apps/web/src/components/ui/ui-primitives.test.tsx"
+      },
+      {
+        "status": "??",
+        "path": "apps/web/src/features/ai-chat/components/LexFrameAttachmentTile.test.tsx"
+      },
+      {
+        "status": "??",
+        "path": "apps/web/src/features/ai-chat/components/LexFrameComposer.test.tsx"
+      },
+      {
+        "status": "??",
+        "path": "apps/web/src/features/settings/components/settings-shell.test.tsx"
+      },
+      {
+        "status": "??",
+        "path": "apps/web/src/mocks/e2e-control.ts"
+      },
+      {
+        "status": "??",
+        "path": "apps/web/src/providers/session-provider.test.tsx"
+      },
+      {
+        "status": "??",
+        "path": "artifacts/system-tests/"
+      },
+      {
+        "status": "??",
+        "path": "docs/testing/LexFrame_system_tests_chat_report_2026-05-13.docx"
+      },
+      {
+        "status": "??",
+        "path": "docs/testing/accessibility-keyboard-plan.md"
+      },
+      {
+        "status": "??",
+        "path": "docs/testing/activepieces-session-security-checklist.md"
+      },
+      {
+        "status": "??",
+        "path": "docs/testing/automation-activepieces-runtime-inventory.md"
+      },
+      {
+        "status": "??",
+        "path": "docs/testing/automation-activepieces-runtime-test-plan.md"
+      },
+      {
+        "status": "??",
+        "path": "docs/testing/automation-canvas-security-matrix.md"
+      },
+      {
+        "status": "??",
+        "path": "docs/testing/backend-contract-db-security-inventory.md"
+      },
+      {
+        "status": "??",
+        "path": "docs/testing/backend-contract-db-security-test-plan.md"
+      },
+      {
+        "status": "??",
+        "path": "docs/testing/browser-security-scan-plan.md"
+      },
+      {
+        "status": "??",
+        "path": "docs/testing/chat-runtime-scenario-matrix.md"
+      },
+      {
+        "status": "??",
+        "path": "docs/testing/clean-runtime-rc-plan.md"
+      },
+      {
+        "status": "??",
+        "path": "docs/testing/clickability-matrix.md"
+      },
+      {
+        "status": "??",
+        "path": "docs/testing/coverage-matrix.md"
+      },
+      {
+        "status": "??",
+        "path": "docs/testing/detected-defects.md"
+      },
+      {
+        "status": "??",
+        "path": "docs/testing/documents-upload-test-matrix.md"
+      },
+      {
+        "status": "??",
+        "path": "docs/testing/evidence-manifest-spec.md"
+      },
+      {
+        "status": "??",
+        "path": "docs/testing/frontend-clickability-defects.md"
+      },
+      {
+        "status": "??",
+        "path": "docs/testing/frontend-clickability-inventory.md"
+      },
+      {
+        "status": "??",
+        "path": "docs/testing/merge-readiness-report.md"
+      },
+      {
+        "status": "??",
+        "path": "docs/testing/part2-project-workspace-bug-hunt.md"
+      },
+      {
+        "status": "??",
+        "path": "docs/testing/part3-chat-runtime-bug-hunt.md"
+      },
+      {
+        "status": "??",
+        "path": "docs/testing/part4-automation-runtime-bug-hunt.md"
+      },
+      {
+        "status": "??",
+        "path": "docs/testing/part5-documents-storage-bug-hunt.md"
+      },
+      {
+        "status": "??",
+        "path": "docs/testing/part6-settings-security-bug-hunt.md"
+      },
+      {
+        "status": "??",
+        "path": "docs/testing/part7-security-rbac-audit-bug-hunt.md"
+      },
+      {
+        "status": "??",
+        "path": "docs/testing/part8-search-rag-sources-bug-hunt.md"
+      },
+      {
+        "status": "??",
+        "path": "docs/testing/part9-full-system-gate.md"
+      },
+      {
+        "status": "??",
+        "path": "docs/testing/performance-animation-budget.md"
+      },
+      {
+        "status": "??",
+        "path": "docs/testing/performance-animation-security-inventory.md"
+      },
+      {
+        "status": "??",
+        "path": "docs/testing/project-chat-documents-inventory.md"
+      },
+      {
+        "status": "??",
+        "path": "docs/testing/project-chat-documents-test-plan.md"
+      },
+      {
+        "status": "??",
+        "path": "docs/testing/project-knowledge-sources-test-matrix.md"
+      },
+      {
+        "status": "??",
+        "path": "docs/testing/run-evidence-matrix.md"
+      },
+      {
+        "status": "??",
+        "path": "docs/testing/system-hardening-cycle-summary.md"
+      },
+      {
+        "status": "??",
+        "path": "docs/testing/system-release-gate.md"
+      },
+      {
+        "status": "??",
+        "path": "docs/testing/system-test-final-report.md"
+      },
+      {
+        "status": "??",
+        "path": "packages/ai-gateway/src/route-assets.test.ts"
+      },
+      {
+        "status": "??",
+        "path": "packages/api-client/src/chat-client.test.ts"
+      },
+      {
+        "status": "??",
+        "path": "packages/api-client/src/settings-client.test.ts"
+      },
+      {
+        "status": "??",
+        "path": "packages/contracts/src/security-invariants.test.ts"
+      },
+      {
+        "status": "??",
+        "path": "scripts/stage16-e2e-preflight.mjs"
+      },
+      {
+        "status": "??",
+        "path": "scripts/stage16-e2e-preflight.test.mjs"
+      },
+      {
+        "status": "??",
+        "path": "scripts/testing/"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/accessibility-keyboard-focus.spec.ts"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/artifacts/playwright-part6-backend-final/"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/artifacts/playwright-part6-backend-rerun/"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/artifacts/playwright-part6-backend/"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/artifacts/playwright-part6-msw-final/"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/artifacts/playwright-part7-backend-final/"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/artifacts/playwright-part7-backend-rerun/"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/artifacts/playwright-part7-backend-security/"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/artifacts/playwright-part7-forced-route-rerun/"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/automation-activepieces-canvas-full.spec.ts"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/automation-activepieces-session-security.spec.ts"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/automation-ai-builder-runtime.spec.ts"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/automation-browser-security-isolation.spec.ts"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/automation-canvas-validation-security.spec.ts"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/automation-cross-scope-access.spec.ts"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/automation-dry-run-idempotency.spec.ts"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/automation-route-cache-cleanup.spec.ts"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/automation-route-family-cache-live.spec.ts"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/automation-runtime-dry-run-full.spec.ts"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/automation-runtime-evidence-live.spec.ts"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/automation-runtime-readiness-live.spec.ts"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/automation-session-refresh-expiry.spec.ts"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/browser-security-isolation-full.spec.ts"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/chat-attachments-branches.spec.ts"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/chat-attachments-failure-lifecycle.spec.ts"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/chat-branch-persistence-live.spec.ts"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/chat-browser-security-isolation.spec.ts"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/chat-live-reload-recovery.spec.ts"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/chat-multitab-consistency.spec.ts"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/chat-runtime-resilience.spec.ts"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/chat-stream-race-conditions.spec.ts"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/documents-cross-scope-access.spec.ts"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/documents-download-security.spec.ts"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/documents-msw-upload-lifecycle.spec.ts"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/documents-upload-download-full.spec.ts"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/documents-upload-failure-lifecycle.spec.ts"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/fixtures/"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/forms-network-errors-full.spec.ts"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/frontend-keyboard-accessibility.spec.ts"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/frontend-multitab-shell-state.spec.ts"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/frontend-route-smoke.spec.ts"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/frontend-route-state-cache.spec.ts"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/frontend-runtime-preflight.spec.ts"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/frontend-settings-shell-state.spec.ts"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/frontend-shell-clickability.spec.ts"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/frontend-shell-navigation-state.spec.ts"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/frontend-sidebar-route-cache.spec.ts"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/frontend-sidebar-settings.spec.ts"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/frontend-visual-invariants.spec.ts"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/global-chat-runtime-full.spec.ts"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/helpers/runtime-preflight.ts"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/project-chat-runtime-full.spec.ts"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/project-composer-context.spec.ts"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/project-rename-navigation-race.spec.ts"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/project-sources-knowledge.spec.ts"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/project-web-search-sources.spec.ts"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/project-workspace-api-resilience.spec.ts"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/project-workspace-composer-context.spec.ts"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/project-workspace-flow.spec.ts"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/project-workspace-tabs-state.spec.ts"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/search-browser-security-isolation.spec.ts"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/search-cross-workspace-scope.spec.ts"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/search-navigation-cache-race.spec.ts"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/search-rag-citations-security.spec.ts"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/search-readiness-degraded-state.spec.ts"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/security-admin-route-guard.spec.ts"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/security-audit-redaction-live.spec.ts"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/security-browser-storage-network-full.spec.ts"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/security-cross-workspace-data-leakage.spec.ts"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/security-forced-route-access.spec.ts"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/settings-ai-route-preferences-live.spec.ts"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/settings-browser-security-isolation.spec.ts"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/settings-multitab-consistency.spec.ts"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/settings-network-failure-resilience.spec.ts"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/settings-profile-organization-live.spec.ts"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/settings-secret-write-only-security.spec.ts"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/settings-ssrf-guard-live.spec.ts"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/system-release-gate-smoke.spec.ts"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/ui-performance-animations-full.spec.ts"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/ui-reduced-motion.spec.ts"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/utils/"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/visual-system-evidence.spec.ts"
+      }
+    ],
+    "diffStat": ".../activepieces/activepieces-jwt-signer.spec.ts   | 103 +++\n .../activepieces/activepieces.controller.ts        |  14 +\n .../activepieces/activepieces.service.spec.ts      | 217 ++++-\n .../modules/activepieces/activepieces.service.ts   |  50 +-\n apps/backend/src/modules/audit/audit.service.ts    |  14 +-\n .../automation-builder.service.ts                  |  24 +-\n apps/backend/src/modules/canvas/canvas-io-utils.ts |   4 +\n .../canvas/canvas-validation.service.spec.ts       |  80 ++\n .../src/modules/chat/chat-thread.service.spec.ts   | 222 +++++\n .../src/modules/chat/chat-thread.service.ts        | 115 +++\n apps/backend/src/modules/chat/chat.controller.ts   |  19 +-\n .../modules/documents/documents.service.spec.ts    | 197 +++++\n .../src/modules/documents/documents.service.ts     | 179 +++-\n .../modules/legal-search/legal-search.service.ts   |  10 +-\n .../settings/ai-base-url-ssrf.guard.spec.ts        |  20 +\n .../src/modules/settings/ai-base-url-ssrf.guard.ts |  20 +\n .../src/modules/settings/settings-redactor.spec.ts |  22 +\n .../src/modules/settings/settings-redactor.ts      |   6 +\n .../project-web-search.service.spec.ts             |  82 ++\n .../stage15-projects/project-web-search.service.ts |  96 ++-\n apps/web/next-env.d.ts                             |   2 +-\n .../src/app/(auth)/onboarding/workspace/page.tsx   |   3 +\n apps/web/src/app/(auth)/sign-in/page.tsx           |   9 +-\n apps/web/src/components/app-shell.test.tsx         |  72 ++\n apps/web/src/components/app-shell.tsx              |  20 +-\n .../components/legal/legal-research-workspace.tsx  |   5 +-\n apps/web/src/components/preview-panel.test.tsx     |  15 +-\n apps/web/src/components/preview-panel.tsx          |  16 +-\n .../web/src/components/shell/project-home.test.tsx | 187 ++++-\n apps/web/src/components/shell/project-home.tsx     | 275 +++++-\n .../src/components/shell/project-sidebar.test.tsx  |  83 +-\n apps/web/src/components/shell/project-sidebar.tsx  |  69 +-\n apps/web/src/components/ui/dialog.tsx              |  16 +-\n apps/web/src/components/ui/tabs.tsx                |  11 +\n .../ai-chat/components/LexFrameChatShell.test.tsx  | 403 ++++++++-\n .../ai-chat/components/LexFrameChatShell.tsx       | 219 +++--\n .../ai-chat/components/LexFrameComposer.tsx        |  27 +-\n .../features/ai-chat/components/LexFrameThread.tsx |   3 +-\n .../ai-chat/domain/chatStateMachine.test.ts        | 172 ++++\n .../features/ai-chat/domain/chatStateMachine.ts    |  17 +-\n .../activepieces-canvas-route.test.tsx             | 208 ++++-\n .../activepieces-canvas-route.tsx                  |   9 +\n .../activepieces-canvas-wrapper.test.tsx           | 125 ++-\n .../use-activepieces-session.test.tsx              |  29 +-\n .../automation-canvas/use-activepieces-session.ts  |  21 +-\n .../components/ai-connection-test-button.tsx       |   3 +\n .../components/ai-key-write-only-field.tsx         |   9 +-\n .../components/ai-provider-connection-form.tsx     |   6 +\n .../settings/components/ai-route-group-card.tsx    |   6 +-\n .../settings/components/ai-settings-panel.test.tsx | 100 ++-\n .../settings/components/ai-settings-panel.tsx      |  45 +-\n .../components/organization-settings-panel.tsx     |   3 +\n .../settings/components/profile-settings-panel.tsx |   3 +\n .../settings/components/settings-button.test.tsx   |  20 +-\n .../settings/components/settings-button.tsx        |   8 +-\n .../settings/components/settings-dialog.tsx        |  63 ++\n .../settings/components/settings-save-bar.tsx      |  32 +-\n .../settings/components/settings-shell.tsx         |  79 +-\n apps/web/src/hooks/use-stage0-data.ts              |   2 +\n apps/web/src/mocks/handlers.ts                     | 257 +++++-\n apps/web/src/mocks/stage15-handlers.ts             | 917 ++++++++++++++++++++-\n apps/web/src/providers/session-provider.tsx        |  58 +-\n package.json                                       |  26 +\n packages/ai-gateway/package.json                   |   2 +-\n packages/api-client/package.json                   |   2 +-\n packages/contracts/package.json                    |   2 +-\n packages/contracts/src/canvas.ts                   |   2 +\n packages/contracts/src/errors/error-codes.ts       |   1 +\n scripts/stage16-build-backend-runtime.mjs          |  26 +-\n scripts/stage16-db-apply-local.mjs                 |   6 +\n tests/e2e/documents-storage.spec.ts                |  63 +-\n tests/e2e/helpers/api.ts                           |   2 +-\n tests/e2e/helpers/auth.ts                          | 113 ++-\n tests/e2e/playwright.config.ts                     |  63 +-\n tests/e2e/stage2-storage-integrated.spec.ts        |  30 +-\n 75 files changed, 5134 insertions(+), 325 deletions(-)",
+    "diffNameStatus": "M\tapps/backend/src/modules/activepieces/activepieces-jwt-signer.spec.ts\nM\tapps/backend/src/modules/activepieces/activepieces.controller.ts\nM\tapps/backend/src/modules/activepieces/activepieces.service.spec.ts\nM\tapps/backend/src/modules/activepieces/activepieces.service.ts\nM\tapps/backend/src/modules/audit/audit.service.ts\nM\tapps/backend/src/modules/automation-builder/automation-builder.service.ts\nM\tapps/backend/src/modules/canvas/canvas-io-utils.ts\nM\tapps/backend/src/modules/canvas/canvas-validation.service.spec.ts\nM\tapps/backend/src/modules/chat/chat-thread.service.spec.ts\nM\tapps/backend/src/modules/chat/chat-thread.service.ts\nM\tapps/backend/src/modules/chat/chat.controller.ts\nM\tapps/backend/src/modules/documents/documents.service.spec.ts\nM\tapps/backend/src/modules/documents/documents.service.ts\nM\tapps/backend/src/modules/legal-search/legal-search.service.ts\nM\tapps/backend/src/modules/settings/ai-base-url-ssrf.guard.spec.ts\nM\tapps/backend/src/modules/settings/ai-base-url-ssrf.guard.ts\nM\tapps/backend/src/modules/settings/settings-redactor.spec.ts\nM\tapps/backend/src/modules/settings/settings-redactor.ts\nM\tapps/backend/src/modules/stage15-projects/project-web-search.service.spec.ts\nM\tapps/backend/src/modules/stage15-projects/project-web-search.service.ts\nM\tapps/web/next-env.d.ts\nM\tapps/web/src/app/(auth)/onboarding/workspace/page.tsx\nM\tapps/web/src/app/(auth)/sign-in/page.tsx\nM\tapps/web/src/components/app-shell.test.tsx\nM\tapps/web/src/components/app-shell.tsx\nM\tapps/web/src/components/legal/legal-research-workspace.tsx\nM\tapps/web/src/components/preview-panel.test.tsx\nM\tapps/web/src/components/preview-panel.tsx\nM\tapps/web/src/components/shell/project-home.test.tsx\nM\tapps/web/src/components/shell/project-home.tsx\nM\tapps/web/src/components/shell/project-sidebar.test.tsx\nM\tapps/web/src/components/shell/project-sidebar.tsx\nM\tapps/web/src/components/ui/dialog.tsx\nM\tapps/web/src/components/ui/tabs.tsx\nM\tapps/web/src/features/ai-chat/components/LexFrameChatShell.test.tsx\nM\tapps/web/src/features/ai-chat/components/LexFrameChatShell.tsx\nM\tapps/web/src/features/ai-chat/components/LexFrameComposer.tsx\nM\tapps/web/src/features/ai-chat/components/LexFrameThread.tsx\nM\tapps/web/src/features/ai-chat/domain/chatStateMachine.test.ts\nM\tapps/web/src/features/ai-chat/domain/chatStateMachine.ts\nM\tapps/web/src/features/automation-canvas/activepieces-canvas-route.test.tsx\nM\tapps/web/src/features/automation-canvas/activepieces-canvas-route.tsx\nM\tapps/web/src/features/automation-canvas/activepieces-canvas-wrapper.test.tsx\nM\tapps/web/src/features/automation-canvas/use-activepieces-session.test.tsx\nM\tapps/web/src/features/automation-canvas/use-activepieces-session.ts\nM\tapps/web/src/features/settings/components/ai-connection-test-button.tsx\nM\tapps/web/src/features/settings/components/ai-key-write-only-field.tsx\nM\tapps/web/src/features/settings/components/ai-provider-connection-form.tsx\nM\tapps/web/src/features/settings/components/ai-route-group-card.tsx\nM\tapps/web/src/features/settings/components/ai-settings-panel.test.tsx\nM\tapps/web/src/features/settings/components/ai-settings-panel.tsx\nM\tapps/web/src/features/settings/components/organization-settings-panel.tsx\nM\tapps/web/src/features/settings/components/profile-settings-panel.tsx\nM\tapps/web/src/features/settings/components/settings-button.test.tsx\nM\tapps/web/src/features/settings/components/settings-button.tsx\nM\tapps/web/src/features/settings/components/settings-dialog.tsx\nM\tapps/web/src/features/settings/components/settings-save-bar.tsx\nM\tapps/web/src/features/settings/components/settings-shell.tsx\nM\tapps/web/src/hooks/use-stage0-data.ts\nM\tapps/web/src/mocks/handlers.ts\nM\tapps/web/src/mocks/stage15-handlers.ts\nM\tapps/web/src/providers/session-provider.tsx\nM\tpackage.json\nM\tpackages/ai-gateway/package.json\nM\tpackages/api-client/package.json\nM\tpackages/contracts/package.json\nM\tpackages/contracts/src/canvas.ts\nM\tpackages/contracts/src/errors/error-codes.ts\nM\tscripts/stage16-build-backend-runtime.mjs\nM\tscripts/stage16-db-apply-local.mjs\nM\ttests/e2e/documents-storage.spec.ts\nM\ttests/e2e/helpers/api.ts\nM\ttests/e2e/helpers/auth.ts\nM\ttests/e2e/playwright.config.ts\nM\ttests/e2e/stage2-storage-integrated.spec.ts",
+    "untracked": [
+      ".codex-dev-logs/block5-backend.pid",
+      ".codex-dev-logs/block5-web.pid",
+      "apps/backend/src/modules/activepieces/activepieces-audit-writer.spec.ts",
+      "apps/backend/src/modules/audit/audit-redaction.ts",
+      "apps/backend/src/modules/audit/audit.service.spec.ts",
+      "apps/backend/src/modules/authorization/authorization.service.spec.ts",
+      "apps/backend/src/modules/automation-builder/automation-builder.service.spec.ts",
+      "apps/backend/src/modules/chat/chat-sse-headers.ts",
+      "apps/backend/src/modules/chat/chat.controller.spec.ts",
+      "apps/backend/src/modules/legal-rag/legal-rag.service.spec.ts",
+      "apps/backend/src/modules/legal-search/legal-search.service.spec.ts",
+      "apps/backend/src/modules/legal-sources/legal-sources.service.spec.ts",
+      "apps/backend/src/modules/runs/run-preflight.service.spec.ts",
+      "apps/web/src/components/ui/ui-primitives.test.tsx",
+      "apps/web/src/features/ai-chat/components/LexFrameAttachmentTile.test.tsx",
+      "apps/web/src/features/ai-chat/components/LexFrameComposer.test.tsx",
+      "apps/web/src/features/settings/components/settings-shell.test.tsx",
+      "apps/web/src/mocks/e2e-control.ts",
+      "apps/web/src/providers/session-provider.test.tsx",
+      "artifacts/system-tests/block1-backend/README.md",
+      "artifacts/system-tests/block1-backend/block1-summary.json",
+      "artifacts/system-tests/block1-results.backend-shell.json",
+      "artifacts/system-tests/block1-results.msw-shell.json",
+      "artifacts/system-tests/block2-frontend/README.md",
+      "artifacts/system-tests/block2-frontend/screenshots/documents-root.png",
+      "artifacts/system-tests/block2-frontend/screenshots/global-chat.png",
+      "artifacts/system-tests/block2-frontend/screenshots/project-workspace.png",
+      "artifacts/system-tests/block2-frontend/screenshots/settings-dialog.png",
+      "artifacts/system-tests/block2-frontend/screenshots/sidebar-collapsed.png",
+      "artifacts/system-tests/block2-frontend/screenshots/sidebar-expanded.png",
+      "artifacts/system-tests/block3-project-chat-documents/README.md",
+      "artifacts/system-tests/block4-automation-activepieces/README.md",
+      "artifacts/system-tests/block4-automation-activepieces/network-scan.json",
+      "artifacts/system-tests/block4-automation-activepieces/run-evidence.json",
+      "artifacts/system-tests/block4-automation-activepieces/screenshots/.gitkeep",
+      "artifacts/system-tests/block4-automation-activepieces/session-scan.json",
+      "artifacts/system-tests/block4-automation-activepieces/traces/.gitkeep",
+      "artifacts/system-tests/block5-network/organization-save-double-click.json",
+      "artifacts/system-tests/block5-network/slow-core-api-request-counts.json",
+      "artifacts/system-tests/block5-performance/README.md",
+      "artifacts/system-tests/block5-performance/metrics/app-boot-project-workspace.json",
+      "artifacts/system-tests/block5-performance/metrics/attachment-chip-render.json",
+      "artifacts/system-tests/block5-performance/metrics/automation-iframe-mount-phases.json",
+      "artifacts/system-tests/block5-performance/metrics/chat-user-message-optimistic-append.json",
+      "artifacts/system-tests/block5-performance/metrics/composer-plus-menu-open.json",
+      "artifacts/system-tests/block5-performance/metrics/pending-live-run.json",
+      "artifacts/system-tests/block5-performance/metrics/project-chat-route-load.json",
+      "artifacts/system-tests/block5-performance/metrics/project-tab-automations.json",
+      "artifacts/system-tests/block5-performance/metrics/project-tab-sources.json",
+      "artifacts/system-tests/block5-performance/metrics/settings-open.json",
+      "artifacts/system-tests/block5-performance/metrics/system-gate-performance-smoke.json",
+      "artifacts/system-tests/block5-release-gate/complete-frontend-journey-network.json",
+      "artifacts/system-tests/block5-security/README.md",
+      "artifacts/system-tests/block5-security/browser-security-scan.json",
+      "artifacts/system-tests/block5-security/file-form-storage-scan.json",
+      "artifacts/system-tests/block5-visual/README.md",
+      "artifacts/system-tests/block5-visual/automation-canvas-ready-or-unavailable.png",
+      "artifacts/system-tests/block5-visual/automations-list.png",
+      "artifacts/system-tests/block5-visual/documents-root.png",
+      "artifacts/system-tests/block5-visual/global-chat.png",
+      "artifacts/system-tests/block5-visual/project-workspace.png",
+      "artifacts/system-tests/block5-visual/sources-root.png",
+      "artifacts/system-tests/bundle-secret-scan.json",
+      "artifacts/system-tests/docx-report-render/page-1.png",
+      "artifacts/system-tests/docx-report-render/page-10.png",
+      "artifacts/system-tests/docx-report-render/page-11.png",
+      "artifacts/system-tests/docx-report-render/page-12.png",
+      "artifacts/system-tests/docx-report-render/page-13.png",
+      "artifacts/system-tests/docx-report-render/page-14.png",
+      "artifacts/system-tests/docx-report-render/page-15.png",
+      "artifacts/system-tests/docx-report-render/page-16.png",
+      "artifacts/system-tests/docx-report-render/page-17.png",
+      "artifacts/system-tests/docx-report-render/page-18.png",
+      "artifacts/system-tests/docx-report-render/page-19.png",
+      "artifacts/system-tests/docx-report-render/page-2.png",
+      "artifacts/system-tests/docx-report-render/page-3.png",
+      "artifacts/system-tests/docx-report-render/page-4.png",
+      "artifacts/system-tests/docx-report-render/page-5.png",
+      "artifacts/system-tests/docx-report-render/page-6.png",
+      "artifacts/system-tests/docx-report-render/page-7.png",
+      "artifacts/system-tests/docx-report-render/page-8.png",
+      "artifacts/system-tests/docx-report-render/page-9.png",
+      "artifacts/system-tests/evidence-manifest.json",
+      "artifacts/system-tests/full-gate-precheck.json",
+      "artifacts/system-tests/full-gate/command-ledger.json",
+      "artifacts/system-tests/full-gate/evidence-summary.json",
+      "artifacts/system-tests/full-gate/full-system-gate.json",
+      "artifacts/system-tests/full-gate/inventory.json",
+      "artifacts/system-tests/full-gate/playwright-results.backend-full-system.json",
+      "artifacts/system-tests/full-gate/preflight.full.json",
+      "artifacts/system-tests/merge-readiness/artifact-hygiene-scan.json",
+      "artifacts/system-tests/merge-readiness/artifact-redaction-log.json",
+      "artifacts/system-tests/merge-readiness/worktree-classification.json",
+      "artifacts/system-tests/part2-results.backend-project-workspace.json",
+      "artifacts/system-tests/part2-results.msw-project-workspace.json",
+      "artifacts/system-tests/part3-results.backend-chat-runtime.json",
+      "artifacts/system-tests/part3-results.msw-chat-runtime.json",
+      "artifacts/system-tests/part4-compose-status.txt",
+      "artifacts/system-tests/part4-preflight.automation.json",
+      "artifacts/system-tests/part4-results.backend-automation-runtime.json",
+      "artifacts/system-tests/part4-results.msw-automation-runtime.json",
+      "artifacts/system-tests/part5-preflight.documents.json",
+      "artifacts/system-tests/part5-results.backend-documents-runtime.json",
+      "artifacts/system-tests/part5-results.msw-documents-runtime.json",
+      "artifacts/system-tests/part6-preflight.settings.json",
+      "artifacts/system-tests/part6-results.backend-settings-runtime.json",
+      "artifacts/system-tests/part6-results.msw-settings-runtime.json",
+      "artifacts/system-tests/part7-preflight.security.json",
+      "artifacts/system-tests/part7-results.backend-security-forced-route-rerun.json",
+      "artifacts/system-tests/part7-results.backend-security-rerun.json",
+      "artifacts/system-tests/part7-results.backend-security-runtime.json",
+      "artifacts/system-tests/part8-preflight.search.json",
+      "artifacts/system-tests/part8-results.backend-search-runtime.json",
+      "artifacts/system-tests/secret-scan.json",
+      "artifacts/system-tests/system-test-report-summary.json",
+      "docs/testing/LexFrame_system_tests_chat_report_2026-05-13.docx",
+      "docs/testing/accessibility-keyboard-plan.md",
+      "docs/testing/activepieces-session-security-checklist.md",
+      "docs/testing/automation-activepieces-runtime-inventory.md",
+      "docs/testing/automation-activepieces-runtime-test-plan.md",
+      "docs/testing/automation-canvas-security-matrix.md",
+      "docs/testing/backend-contract-db-security-inventory.md",
+      "docs/testing/backend-contract-db-security-test-plan.md",
+      "docs/testing/browser-security-scan-plan.md",
+      "docs/testing/chat-runtime-scenario-matrix.md",
+      "docs/testing/clean-runtime-rc-plan.md",
+      "docs/testing/clickability-matrix.md",
+      "docs/testing/coverage-matrix.md",
+      "docs/testing/detected-defects.md",
+      "docs/testing/documents-upload-test-matrix.md",
+      "docs/testing/evidence-manifest-spec.md",
+      "docs/testing/frontend-clickability-defects.md",
+      "docs/testing/frontend-clickability-inventory.md",
+      "docs/testing/merge-readiness-report.md",
+      "docs/testing/part2-project-workspace-bug-hunt.md",
+      "docs/testing/part3-chat-runtime-bug-hunt.md",
+      "docs/testing/part4-automation-runtime-bug-hunt.md",
+      "docs/testing/part5-documents-storage-bug-hunt.md",
+      "docs/testing/part6-settings-security-bug-hunt.md",
+      "docs/testing/part7-security-rbac-audit-bug-hunt.md",
+      "docs/testing/part8-search-rag-sources-bug-hunt.md",
+      "docs/testing/part9-full-system-gate.md",
+      "docs/testing/performance-animation-budget.md",
+      "docs/testing/performance-animation-security-inventory.md",
+      "docs/testing/project-chat-documents-inventory.md",
+      "docs/testing/project-chat-documents-test-plan.md",
+      "docs/testing/project-knowledge-sources-test-matrix.md",
+      "docs/testing/run-evidence-matrix.md",
+      "docs/testing/system-hardening-cycle-summary.md",
+      "docs/testing/system-release-gate.md",
+      "docs/testing/system-test-final-report.md",
+      "packages/ai-gateway/src/route-assets.test.ts",
+      "packages/api-client/src/chat-client.test.ts",
+      "packages/api-client/src/settings-client.test.ts",
+      "packages/contracts/src/security-invariants.test.ts",
+      "scripts/stage16-e2e-preflight.mjs",
+      "scripts/stage16-e2e-preflight.test.mjs",
+      "scripts/testing/check-audit-redaction.mjs",
+      "scripts/testing/check-contract-security-invariants.mjs",
+      "scripts/testing/check-db-secret-like-values.mjs",
+      "scripts/testing/check-system-test-artifacts.mjs",
+      "scripts/testing/collect-system-test-evidence.mjs",
+      "scripts/testing/full-system-gate.mjs",
+      "scripts/testing/merge-readiness.mjs",
+      "scripts/testing/merge-system-test-reports.mjs",
+      "scripts/testing/system-test-gate.mjs",
+      "tests/e2e/accessibility-keyboard-focus.spec.ts",
+      "tests/e2e/artifacts/playwright-part6-backend-final/.last-run.json",
+      "tests/e2e/artifacts/playwright-part6-backend-rerun/.last-run.json",
+      "tests/e2e/artifacts/playwright-part6-backend/.last-run.json",
+      "tests/e2e/artifacts/playwright-part6-backend/settings-ai-route-preferen-d4399-endent-and-backend-resolved-default/error-context.md",
+      "tests/e2e/artifacts/playwright-part6-backend/settings-ai-route-preferen-d4399-endent-and-backend-resolved-default/test-failed-1.png",
+      "tests/e2e/artifacts/playwright-part6-backend/settings-ai-route-preferen-d4399-endent-and-backend-resolved-default/trace.zip",
+      "tests/e2e/artifacts/playwright-part6-backend/settings-ai-route-preferen-d4399-endent-and-backend-resolved-default/video.webm",
+      "tests/e2e/artifacts/playwright-part6-backend/settings-secret-write-only-db390-der-key-after-save-and-test-default/error-context.md",
+      "tests/e2e/artifacts/playwright-part6-backend/settings-secret-write-only-db390-der-key-after-save-and-test-default/test-failed-1.png",
+      "tests/e2e/artifacts/playwright-part6-backend/settings-secret-write-only-db390-der-key-after-save-and-test-default/trace.zip",
+      "tests/e2e/artifacts/playwright-part6-backend/settings-secret-write-only-db390-der-key-after-save-and-test-default/video.webm",
+      "tests/e2e/artifacts/playwright-part6-msw-final/.last-run.json",
+      "tests/e2e/artifacts/playwright-part7-backend-final/.last-run.json",
+      "tests/e2e/artifacts/playwright-part7-backend-rerun/.last-run.json",
+      "tests/e2e/artifacts/playwright-part7-backend-security/.last-run.json",
+      "tests/e2e/artifacts/playwright-part7-backend-security/security-admin-route-guard-9935d-vileged-admin-APIs-directly-default/error-context.md",
+      "tests/e2e/artifacts/playwright-part7-backend-security/security-admin-route-guard-9935d-vileged-admin-APIs-directly-default/test-failed-1.png",
+      "tests/e2e/artifacts/playwright-part7-backend-security/security-admin-route-guard-9935d-vileged-admin-APIs-directly-default/trace.zip",
+      "tests/e2e/artifacts/playwright-part7-backend-security/security-admin-route-guard-9935d-vileged-admin-APIs-directly-default/video.webm",
+      "tests/e2e/artifacts/playwright-part7-backend-security/security-forced-route-acce-4eb83--workspace-do-not-leak-data-default/error-context.md",
+      "tests/e2e/artifacts/playwright-part7-backend-security/security-forced-route-acce-4eb83--workspace-do-not-leak-data-default/test-failed-1.png",
+      "tests/e2e/artifacts/playwright-part7-backend-security/security-forced-route-acce-4eb83--workspace-do-not-leak-data-default/test-failed-2.png",
+      "tests/e2e/artifacts/playwright-part7-backend-security/security-forced-route-acce-4eb83--workspace-do-not-leak-data-default/test-failed-3.png",
+      "tests/e2e/artifacts/playwright-part7-backend-security/security-forced-route-acce-4eb83--workspace-do-not-leak-data-default/trace.zip",
+      "tests/e2e/artifacts/playwright-part7-forced-route-rerun/.last-run.json",
+      "tests/e2e/automation-activepieces-canvas-full.spec.ts",
+      "tests/e2e/automation-activepieces-session-security.spec.ts",
+      "tests/e2e/automation-ai-builder-runtime.spec.ts",
+      "tests/e2e/automation-browser-security-isolation.spec.ts",
+      "tests/e2e/automation-canvas-validation-security.spec.ts",
+      "tests/e2e/automation-cross-scope-access.spec.ts",
+      "tests/e2e/automation-dry-run-idempotency.spec.ts",
+      "tests/e2e/automation-route-cache-cleanup.spec.ts",
+      "tests/e2e/automation-route-family-cache-live.spec.ts",
+      "tests/e2e/automation-runtime-dry-run-full.spec.ts",
+      "tests/e2e/automation-runtime-evidence-live.spec.ts",
+      "tests/e2e/automation-runtime-readiness-live.spec.ts",
+      "tests/e2e/automation-session-refresh-expiry.spec.ts",
+      "tests/e2e/browser-security-isolation-full.spec.ts",
+      "tests/e2e/chat-attachments-branches.spec.ts",
+      "tests/e2e/chat-attachments-failure-lifecycle.spec.ts",
+      "tests/e2e/chat-branch-persistence-live.spec.ts",
+      "tests/e2e/chat-browser-security-isolation.spec.ts",
+      "tests/e2e/chat-live-reload-recovery.spec.ts",
+      "tests/e2e/chat-multitab-consistency.spec.ts",
+      "tests/e2e/chat-runtime-resilience.spec.ts",
+      "tests/e2e/chat-stream-race-conditions.spec.ts",
+      "tests/e2e/documents-cross-scope-access.spec.ts",
+      "tests/e2e/documents-download-security.spec.ts",
+      "tests/e2e/documents-msw-upload-lifecycle.spec.ts",
+      "tests/e2e/documents-upload-download-full.spec.ts",
+      "tests/e2e/documents-upload-failure-lifecycle.spec.ts",
+      "tests/e2e/fixtures/files/empty.txt",
+      "tests/e2e/fixtures/files/minimal.pdf",
+      "tests/e2e/fixtures/files/minimal.txt",
+      "tests/e2e/fixtures/files/unsafe-name.txt",
+      "tests/e2e/forms-network-errors-full.spec.ts",
+      "tests/e2e/frontend-keyboard-accessibility.spec.ts",
+      "tests/e2e/frontend-multitab-shell-state.spec.ts",
+      "tests/e2e/frontend-route-smoke.spec.ts",
+      "tests/e2e/frontend-route-state-cache.spec.ts",
+      "tests/e2e/frontend-runtime-preflight.spec.ts",
+      "tests/e2e/frontend-settings-shell-state.spec.ts",
+      "tests/e2e/frontend-shell-clickability.spec.ts",
+      "tests/e2e/frontend-shell-navigation-state.spec.ts",
+      "tests/e2e/frontend-sidebar-route-cache.spec.ts",
+      "tests/e2e/frontend-sidebar-settings.spec.ts",
+      "tests/e2e/frontend-visual-invariants.spec.ts",
+      "tests/e2e/global-chat-runtime-full.spec.ts",
+      "tests/e2e/helpers/runtime-preflight.ts",
+      "tests/e2e/project-chat-runtime-full.spec.ts",
+      "tests/e2e/project-composer-context.spec.ts",
+      "tests/e2e/project-rename-navigation-race.spec.ts",
+      "tests/e2e/project-sources-knowledge.spec.ts",
+      "tests/e2e/project-web-search-sources.spec.ts",
+      "tests/e2e/project-workspace-api-resilience.spec.ts",
+      "tests/e2e/project-workspace-composer-context.spec.ts",
+      "tests/e2e/project-workspace-flow.spec.ts",
+      "tests/e2e/project-workspace-tabs-state.spec.ts",
+      "tests/e2e/search-browser-security-isolation.spec.ts",
+      "tests/e2e/search-cross-workspace-scope.spec.ts",
+      "tests/e2e/search-navigation-cache-race.spec.ts",
+      "tests/e2e/search-rag-citations-security.spec.ts",
+      "tests/e2e/search-readiness-degraded-state.spec.ts",
+      "tests/e2e/security-admin-route-guard.spec.ts",
+      "tests/e2e/security-audit-redaction-live.spec.ts",
+      "tests/e2e/security-browser-storage-network-full.spec.ts",
+      "tests/e2e/security-cross-workspace-data-leakage.spec.ts",
+      "tests/e2e/security-forced-route-access.spec.ts",
+      "tests/e2e/settings-ai-route-preferences-live.spec.ts",
+      "tests/e2e/settings-browser-security-isolation.spec.ts",
+      "tests/e2e/settings-multitab-consistency.spec.ts",
+      "tests/e2e/settings-network-failure-resilience.spec.ts",
+      "tests/e2e/settings-profile-organization-live.spec.ts",
+      "tests/e2e/settings-secret-write-only-security.spec.ts",
+      "tests/e2e/settings-ssrf-guard-live.spec.ts",
+      "tests/e2e/system-release-gate-smoke.spec.ts",
+      "tests/e2e/ui-performance-animations-full.spec.ts",
+      "tests/e2e/ui-reduced-motion.spec.ts",
+      "tests/e2e/utils/accessibility.ts",
+      "tests/e2e/utils/activepieces.ts",
+      "tests/e2e/utils/animation.ts",
+      "tests/e2e/utils/automation.ts",
+      "tests/e2e/utils/browser-secret-scan.ts",
+      "tests/e2e/utils/browser-security.ts",
+      "tests/e2e/utils/canvas-runtime.ts",
+      "tests/e2e/utils/chat-runtime-part3.ts",
+      "tests/e2e/utils/chat.ts",
+      "tests/e2e/utils/clickability.ts",
+      "tests/e2e/utils/console.ts",
+      "tests/e2e/utils/documents.ts",
+      "tests/e2e/utils/evidence.ts",
+      "tests/e2e/utils/iframe.ts",
+      "tests/e2e/utils/navigation.ts",
+      "tests/e2e/utils/network-assertions.ts",
+      "tests/e2e/utils/network-security.ts",
+      "tests/e2e/utils/performance.ts",
+      "tests/e2e/utils/project-workspace-runtime.ts",
+      "tests/e2e/utils/project-workspace.ts",
+      "tests/e2e/utils/run-evidence.ts",
+      "tests/e2e/utils/settings-security.ts",
+      "tests/e2e/utils/shell-runtime.ts",
+      "tests/e2e/utils/storage.ts",
+      "tests/e2e/utils/visual-invariants.ts",
+      "tests/e2e/utils/visual.ts",
+      "tests/e2e/visual-system-evidence.spec.ts"
+    ],
+    "diffCheck": {
+      "status": "pass",
+      "stdout": "",
+      "stderr": ""
+    }
+  },
+  "summary": {
+    "total": 219,
+    "byInclude": {
+      "yes": 182,
+      "review": 27,
+      "no": 10
+    },
+    "byKind": {
+      "test": 116,
+      "code": 52,
+      "script": 5,
+      "temporary": 1,
+      "artifact": 10,
+      "doc": 35
+    },
+    "byDomain": {
+      "automation": 34,
+      "security": 19,
+      "chat": 28,
+      "documents": 16,
+      "search": 19,
+      "settings": 29,
+      "unrelated": 26,
+      "shell": 17,
+      "contracts": 5,
+      "full-gate": 16,
+      "temporary": 1,
+      "artifact": 9
+    }
+  },
+  "records": [
+    {
+      "path": "apps/backend/src/modules/activepieces/activepieces-jwt-signer.spec.ts",
+      "status": "modified",
+      "gitStatus": " M",
+      "domain": "automation",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Runtime/session bridge change; requires AP/backend-backed coverage.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "apps/backend/src/modules/activepieces/activepieces.controller.ts",
+      "status": "modified",
+      "gitStatus": " M",
+      "domain": "automation",
+      "includeInPr": "yes",
+      "reason": "Intentional automation hardening code change.",
+      "risk": "Runtime/session bridge change; requires AP/backend-backed coverage.",
+      "requiresTest": true,
+      "kind": "code"
+    },
+    {
+      "path": "apps/backend/src/modules/activepieces/activepieces.service.spec.ts",
+      "status": "modified",
+      "gitStatus": " M",
+      "domain": "automation",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Runtime/session bridge change; requires AP/backend-backed coverage.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "apps/backend/src/modules/activepieces/activepieces.service.ts",
+      "status": "modified",
+      "gitStatus": " M",
+      "domain": "automation",
+      "includeInPr": "yes",
+      "reason": "Intentional automation hardening code change.",
+      "risk": "Runtime/session bridge change; requires AP/backend-backed coverage.",
+      "requiresTest": true,
+      "kind": "code"
+    },
+    {
+      "path": "apps/backend/src/modules/audit/audit.service.ts",
+      "status": "modified",
+      "gitStatus": " M",
+      "domain": "security",
+      "includeInPr": "yes",
+      "reason": "Intentional security hardening code change.",
+      "risk": "Security boundary change; requires targeted auth/RBAC/audit tests.",
+      "requiresTest": true,
+      "kind": "code"
+    },
+    {
+      "path": "apps/backend/src/modules/automation-builder/automation-builder.service.ts",
+      "status": "modified",
+      "gitStatus": " M",
+      "domain": "automation",
+      "includeInPr": "yes",
+      "reason": "Intentional automation hardening code change.",
+      "risk": "Runtime/session bridge change; requires AP/backend-backed coverage.",
+      "requiresTest": true,
+      "kind": "code"
+    },
+    {
+      "path": "apps/backend/src/modules/canvas/canvas-io-utils.ts",
+      "status": "modified",
+      "gitStatus": " M",
+      "domain": "automation",
+      "includeInPr": "yes",
+      "reason": "Intentional automation hardening code change.",
+      "risk": "Runtime/session bridge change; requires AP/backend-backed coverage.",
+      "requiresTest": true,
+      "kind": "code"
+    },
+    {
+      "path": "apps/backend/src/modules/canvas/canvas-validation.service.spec.ts",
+      "status": "modified",
+      "gitStatus": " M",
+      "domain": "automation",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Runtime/session bridge change; requires AP/backend-backed coverage.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "apps/backend/src/modules/chat/chat-thread.service.spec.ts",
+      "status": "modified",
+      "gitStatus": " M",
+      "domain": "chat",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Streaming/state change; requires reload/retry/secret isolation proof.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "apps/backend/src/modules/chat/chat-thread.service.ts",
+      "status": "modified",
+      "gitStatus": " M",
+      "domain": "chat",
+      "includeInPr": "yes",
+      "reason": "Intentional chat hardening code change.",
+      "risk": "Streaming/state change; requires reload/retry/secret isolation proof.",
+      "requiresTest": true,
+      "kind": "code"
+    },
+    {
+      "path": "apps/backend/src/modules/chat/chat.controller.ts",
+      "status": "modified",
+      "gitStatus": " M",
+      "domain": "chat",
+      "includeInPr": "yes",
+      "reason": "Intentional chat hardening code change.",
+      "risk": "Streaming/state change; requires reload/retry/secret isolation proof.",
+      "requiresTest": true,
+      "kind": "code"
+    },
+    {
+      "path": "apps/backend/src/modules/documents/documents.service.spec.ts",
+      "status": "modified",
+      "gitStatus": " M",
+      "domain": "documents",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Storage lifecycle change; requires upload/download and no signed URL leak proof.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "apps/backend/src/modules/documents/documents.service.ts",
+      "status": "modified",
+      "gitStatus": " M",
+      "domain": "documents",
+      "includeInPr": "yes",
+      "reason": "Intentional documents hardening code change.",
+      "risk": "Storage lifecycle change; requires upload/download and no signed URL leak proof.",
+      "requiresTest": true,
+      "kind": "code"
+    },
+    {
+      "path": "apps/backend/src/modules/legal-search/legal-search.service.ts",
+      "status": "modified",
+      "gitStatus": " M",
+      "domain": "search",
+      "includeInPr": "yes",
+      "reason": "Intentional search hardening code change.",
+      "risk": "Source/RAG scoping change; requires search readiness and no cross-workspace leakage proof.",
+      "requiresTest": true,
+      "kind": "code"
+    },
+    {
+      "path": "apps/backend/src/modules/settings/ai-base-url-ssrf.guard.spec.ts",
+      "status": "modified",
+      "gitStatus": " M",
+      "domain": "settings",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Secret-handling change; requires browser/storage/network redaction proof.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "apps/backend/src/modules/settings/ai-base-url-ssrf.guard.ts",
+      "status": "modified",
+      "gitStatus": " M",
+      "domain": "settings",
+      "includeInPr": "yes",
+      "reason": "Intentional settings hardening code change.",
+      "risk": "Secret-handling change; requires browser/storage/network redaction proof.",
+      "requiresTest": true,
+      "kind": "code"
+    },
+    {
+      "path": "apps/backend/src/modules/settings/settings-redactor.spec.ts",
+      "status": "modified",
+      "gitStatus": " M",
+      "domain": "settings",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Secret-handling change; requires browser/storage/network redaction proof.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "apps/backend/src/modules/settings/settings-redactor.ts",
+      "status": "modified",
+      "gitStatus": " M",
+      "domain": "settings",
+      "includeInPr": "yes",
+      "reason": "Intentional settings hardening code change.",
+      "risk": "Secret-handling change; requires browser/storage/network redaction proof.",
+      "requiresTest": true,
+      "kind": "code"
+    },
+    {
+      "path": "apps/backend/src/modules/stage15-projects/project-web-search.service.spec.ts",
+      "status": "modified",
+      "gitStatus": " M",
+      "domain": "search",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Source/RAG scoping change; requires search readiness and no cross-workspace leakage proof.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "apps/backend/src/modules/stage15-projects/project-web-search.service.ts",
+      "status": "modified",
+      "gitStatus": " M",
+      "domain": "search",
+      "includeInPr": "yes",
+      "reason": "Intentional search hardening code change.",
+      "risk": "Source/RAG scoping change; requires search readiness and no cross-workspace leakage proof.",
+      "requiresTest": true,
+      "kind": "code"
+    },
+    {
+      "path": "apps/web/next-env.d.ts",
+      "status": "modified",
+      "gitStatus": " M",
+      "domain": "unrelated",
+      "includeInPr": "review",
+      "reason": "Needs human PR-scope review before staging; may be generated evidence, package metadata, or cross-domain shared code.",
+      "risk": "Generated file; verify whether Next version changed it intentionally.",
+      "requiresTest": true,
+      "kind": "code"
+    },
+    {
+      "path": "apps/web/src/app/(auth)/onboarding/workspace/page.tsx",
+      "status": "modified",
+      "gitStatus": " M",
+      "domain": "security",
+      "includeInPr": "yes",
+      "reason": "Intentional security hardening code change.",
+      "risk": "Security boundary change; requires targeted auth/RBAC/audit tests.",
+      "requiresTest": true,
+      "kind": "code"
+    },
+    {
+      "path": "apps/web/src/app/(auth)/sign-in/page.tsx",
+      "status": "modified",
+      "gitStatus": " M",
+      "domain": "security",
+      "includeInPr": "yes",
+      "reason": "Intentional security hardening code change.",
+      "risk": "Security boundary change; requires targeted auth/RBAC/audit tests.",
+      "requiresTest": true,
+      "kind": "code"
+    },
+    {
+      "path": "apps/web/src/components/app-shell.test.tsx",
+      "status": "modified",
+      "gitStatus": " M",
+      "domain": "shell",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Standard regression risk; covered by full gate or targeted part gates.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "apps/web/src/components/app-shell.tsx",
+      "status": "modified",
+      "gitStatus": " M",
+      "domain": "shell",
+      "includeInPr": "yes",
+      "reason": "Intentional shell hardening code change.",
+      "risk": "Standard regression risk; covered by full gate or targeted part gates.",
+      "requiresTest": true,
+      "kind": "code"
+    },
+    {
+      "path": "apps/web/src/components/legal/legal-research-workspace.tsx",
+      "status": "modified",
+      "gitStatus": " M",
+      "domain": "search",
+      "includeInPr": "yes",
+      "reason": "Intentional search hardening code change.",
+      "risk": "Source/RAG scoping change; requires search readiness and no cross-workspace leakage proof.",
+      "requiresTest": true,
+      "kind": "code"
+    },
+    {
+      "path": "apps/web/src/components/preview-panel.test.tsx",
+      "status": "modified",
+      "gitStatus": " M",
+      "domain": "documents",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Storage lifecycle change; requires upload/download and no signed URL leak proof.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "apps/web/src/components/preview-panel.tsx",
+      "status": "modified",
+      "gitStatus": " M",
+      "domain": "documents",
+      "includeInPr": "yes",
+      "reason": "Intentional documents hardening code change.",
+      "risk": "Storage lifecycle change; requires upload/download and no signed URL leak proof.",
+      "requiresTest": true,
+      "kind": "code"
+    },
+    {
+      "path": "apps/web/src/components/shell/project-home.test.tsx",
+      "status": "modified",
+      "gitStatus": " M",
+      "domain": "shell",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Standard regression risk; covered by full gate or targeted part gates.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "apps/web/src/components/shell/project-home.tsx",
+      "status": "modified",
+      "gitStatus": " M",
+      "domain": "shell",
+      "includeInPr": "yes",
+      "reason": "Intentional shell hardening code change.",
+      "risk": "Standard regression risk; covered by full gate or targeted part gates.",
+      "requiresTest": true,
+      "kind": "code"
+    },
+    {
+      "path": "apps/web/src/components/shell/project-sidebar.test.tsx",
+      "status": "modified",
+      "gitStatus": " M",
+      "domain": "shell",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Standard regression risk; covered by full gate or targeted part gates.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "apps/web/src/components/shell/project-sidebar.tsx",
+      "status": "modified",
+      "gitStatus": " M",
+      "domain": "shell",
+      "includeInPr": "yes",
+      "reason": "Intentional shell hardening code change.",
+      "risk": "Standard regression risk; covered by full gate or targeted part gates.",
+      "requiresTest": true,
+      "kind": "code"
+    },
+    {
+      "path": "apps/web/src/components/ui/dialog.tsx",
+      "status": "modified",
+      "gitStatus": " M",
+      "domain": "shell",
+      "includeInPr": "yes",
+      "reason": "Intentional shell hardening code change.",
+      "risk": "Standard regression risk; covered by full gate or targeted part gates.",
+      "requiresTest": true,
+      "kind": "code"
+    },
+    {
+      "path": "apps/web/src/components/ui/tabs.tsx",
+      "status": "modified",
+      "gitStatus": " M",
+      "domain": "shell",
+      "includeInPr": "yes",
+      "reason": "Intentional shell hardening code change.",
+      "risk": "Standard regression risk; covered by full gate or targeted part gates.",
+      "requiresTest": true,
+      "kind": "code"
+    },
+    {
+      "path": "apps/web/src/features/ai-chat/components/LexFrameChatShell.test.tsx",
+      "status": "modified",
+      "gitStatus": " M",
+      "domain": "chat",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Streaming/state change; requires reload/retry/secret isolation proof.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "apps/web/src/features/ai-chat/components/LexFrameChatShell.tsx",
+      "status": "modified",
+      "gitStatus": " M",
+      "domain": "chat",
+      "includeInPr": "yes",
+      "reason": "Intentional chat hardening code change.",
+      "risk": "Streaming/state change; requires reload/retry/secret isolation proof.",
+      "requiresTest": true,
+      "kind": "code"
+    },
+    {
+      "path": "apps/web/src/features/ai-chat/components/LexFrameComposer.tsx",
+      "status": "modified",
+      "gitStatus": " M",
+      "domain": "chat",
+      "includeInPr": "yes",
+      "reason": "Intentional chat hardening code change.",
+      "risk": "Streaming/state change; requires reload/retry/secret isolation proof.",
+      "requiresTest": true,
+      "kind": "code"
+    },
+    {
+      "path": "apps/web/src/features/ai-chat/components/LexFrameThread.tsx",
+      "status": "modified",
+      "gitStatus": " M",
+      "domain": "chat",
+      "includeInPr": "yes",
+      "reason": "Intentional chat hardening code change.",
+      "risk": "Streaming/state change; requires reload/retry/secret isolation proof.",
+      "requiresTest": true,
+      "kind": "code"
+    },
+    {
+      "path": "apps/web/src/features/ai-chat/domain/chatStateMachine.test.ts",
+      "status": "modified",
+      "gitStatus": " M",
+      "domain": "chat",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Streaming/state change; requires reload/retry/secret isolation proof.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "apps/web/src/features/ai-chat/domain/chatStateMachine.ts",
+      "status": "modified",
+      "gitStatus": " M",
+      "domain": "chat",
+      "includeInPr": "yes",
+      "reason": "Intentional chat hardening code change.",
+      "risk": "Streaming/state change; requires reload/retry/secret isolation proof.",
+      "requiresTest": true,
+      "kind": "code"
+    },
+    {
+      "path": "apps/web/src/features/automation-canvas/activepieces-canvas-route.test.tsx",
+      "status": "modified",
+      "gitStatus": " M",
+      "domain": "automation",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Runtime/session bridge change; requires AP/backend-backed coverage.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "apps/web/src/features/automation-canvas/activepieces-canvas-route.tsx",
+      "status": "modified",
+      "gitStatus": " M",
+      "domain": "automation",
+      "includeInPr": "yes",
+      "reason": "Intentional automation hardening code change.",
+      "risk": "Runtime/session bridge change; requires AP/backend-backed coverage.",
+      "requiresTest": true,
+      "kind": "code"
+    },
+    {
+      "path": "apps/web/src/features/automation-canvas/activepieces-canvas-wrapper.test.tsx",
+      "status": "modified",
+      "gitStatus": " M",
+      "domain": "automation",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Runtime/session bridge change; requires AP/backend-backed coverage.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "apps/web/src/features/automation-canvas/use-activepieces-session.test.tsx",
+      "status": "modified",
+      "gitStatus": " M",
+      "domain": "automation",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Runtime/session bridge change; requires AP/backend-backed coverage.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "apps/web/src/features/automation-canvas/use-activepieces-session.ts",
+      "status": "modified",
+      "gitStatus": " M",
+      "domain": "automation",
+      "includeInPr": "yes",
+      "reason": "Intentional automation hardening code change.",
+      "risk": "Runtime/session bridge change; requires AP/backend-backed coverage.",
+      "requiresTest": true,
+      "kind": "code"
+    },
+    {
+      "path": "apps/web/src/features/settings/components/ai-connection-test-button.tsx",
+      "status": "modified",
+      "gitStatus": " M",
+      "domain": "settings",
+      "includeInPr": "yes",
+      "reason": "Intentional settings hardening code change.",
+      "risk": "Secret-handling change; requires browser/storage/network redaction proof.",
+      "requiresTest": true,
+      "kind": "code"
+    },
+    {
+      "path": "apps/web/src/features/settings/components/ai-key-write-only-field.tsx",
+      "status": "modified",
+      "gitStatus": " M",
+      "domain": "settings",
+      "includeInPr": "yes",
+      "reason": "Intentional settings hardening code change.",
+      "risk": "Secret-handling change; requires browser/storage/network redaction proof.",
+      "requiresTest": true,
+      "kind": "code"
+    },
+    {
+      "path": "apps/web/src/features/settings/components/ai-provider-connection-form.tsx",
+      "status": "modified",
+      "gitStatus": " M",
+      "domain": "settings",
+      "includeInPr": "yes",
+      "reason": "Intentional settings hardening code change.",
+      "risk": "Secret-handling change; requires browser/storage/network redaction proof.",
+      "requiresTest": true,
+      "kind": "code"
+    },
+    {
+      "path": "apps/web/src/features/settings/components/ai-route-group-card.tsx",
+      "status": "modified",
+      "gitStatus": " M",
+      "domain": "settings",
+      "includeInPr": "yes",
+      "reason": "Intentional settings hardening code change.",
+      "risk": "Secret-handling change; requires browser/storage/network redaction proof.",
+      "requiresTest": true,
+      "kind": "code"
+    },
+    {
+      "path": "apps/web/src/features/settings/components/ai-settings-panel.test.tsx",
+      "status": "modified",
+      "gitStatus": " M",
+      "domain": "settings",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Secret-handling change; requires browser/storage/network redaction proof.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "apps/web/src/features/settings/components/ai-settings-panel.tsx",
+      "status": "modified",
+      "gitStatus": " M",
+      "domain": "settings",
+      "includeInPr": "yes",
+      "reason": "Intentional settings hardening code change.",
+      "risk": "Secret-handling change; requires browser/storage/network redaction proof.",
+      "requiresTest": true,
+      "kind": "code"
+    },
+    {
+      "path": "apps/web/src/features/settings/components/organization-settings-panel.tsx",
+      "status": "modified",
+      "gitStatus": " M",
+      "domain": "settings",
+      "includeInPr": "yes",
+      "reason": "Intentional settings hardening code change.",
+      "risk": "Secret-handling change; requires browser/storage/network redaction proof.",
+      "requiresTest": true,
+      "kind": "code"
+    },
+    {
+      "path": "apps/web/src/features/settings/components/profile-settings-panel.tsx",
+      "status": "modified",
+      "gitStatus": " M",
+      "domain": "settings",
+      "includeInPr": "yes",
+      "reason": "Intentional settings hardening code change.",
+      "risk": "Secret-handling change; requires browser/storage/network redaction proof.",
+      "requiresTest": true,
+      "kind": "code"
+    },
+    {
+      "path": "apps/web/src/features/settings/components/settings-button.test.tsx",
+      "status": "modified",
+      "gitStatus": " M",
+      "domain": "settings",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Secret-handling change; requires browser/storage/network redaction proof.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "apps/web/src/features/settings/components/settings-button.tsx",
+      "status": "modified",
+      "gitStatus": " M",
+      "domain": "settings",
+      "includeInPr": "yes",
+      "reason": "Intentional settings hardening code change.",
+      "risk": "Secret-handling change; requires browser/storage/network redaction proof.",
+      "requiresTest": true,
+      "kind": "code"
+    },
+    {
+      "path": "apps/web/src/features/settings/components/settings-dialog.tsx",
+      "status": "modified",
+      "gitStatus": " M",
+      "domain": "settings",
+      "includeInPr": "yes",
+      "reason": "Intentional settings hardening code change.",
+      "risk": "Secret-handling change; requires browser/storage/network redaction proof.",
+      "requiresTest": true,
+      "kind": "code"
+    },
+    {
+      "path": "apps/web/src/features/settings/components/settings-save-bar.tsx",
+      "status": "modified",
+      "gitStatus": " M",
+      "domain": "settings",
+      "includeInPr": "yes",
+      "reason": "Intentional settings hardening code change.",
+      "risk": "Secret-handling change; requires browser/storage/network redaction proof.",
+      "requiresTest": true,
+      "kind": "code"
+    },
+    {
+      "path": "apps/web/src/features/settings/components/settings-shell.tsx",
+      "status": "modified",
+      "gitStatus": " M",
+      "domain": "settings",
+      "includeInPr": "yes",
+      "reason": "Intentional settings hardening code change.",
+      "risk": "Secret-handling change; requires browser/storage/network redaction proof.",
+      "requiresTest": true,
+      "kind": "code"
+    },
+    {
+      "path": "apps/web/src/hooks/use-stage0-data.ts",
+      "status": "modified",
+      "gitStatus": " M",
+      "domain": "search",
+      "includeInPr": "yes",
+      "reason": "Intentional search hardening code change.",
+      "risk": "Source/RAG scoping change; requires search readiness and no cross-workspace leakage proof.",
+      "requiresTest": true,
+      "kind": "code"
+    },
+    {
+      "path": "apps/web/src/mocks/handlers.ts",
+      "status": "modified",
+      "gitStatus": " M",
+      "domain": "unrelated",
+      "includeInPr": "review",
+      "reason": "Needs human PR-scope review before staging; may be generated evidence, package metadata, or cross-domain shared code.",
+      "risk": "Standard regression risk; covered by full gate or targeted part gates.",
+      "requiresTest": true,
+      "kind": "code"
+    },
+    {
+      "path": "apps/web/src/mocks/stage15-handlers.ts",
+      "status": "modified",
+      "gitStatus": " M",
+      "domain": "search",
+      "includeInPr": "yes",
+      "reason": "Intentional search hardening code change.",
+      "risk": "Source/RAG scoping change; requires search readiness and no cross-workspace leakage proof.",
+      "requiresTest": true,
+      "kind": "code"
+    },
+    {
+      "path": "apps/web/src/providers/session-provider.tsx",
+      "status": "modified",
+      "gitStatus": " M",
+      "domain": "security",
+      "includeInPr": "yes",
+      "reason": "Intentional security hardening code change.",
+      "risk": "Security boundary change; requires targeted auth/RBAC/audit tests.",
+      "requiresTest": true,
+      "kind": "code"
+    },
+    {
+      "path": "package.json",
+      "status": "modified",
+      "gitStatus": " M",
+      "domain": "contracts",
+      "includeInPr": "yes",
+      "reason": "Intentional contracts hardening code change.",
+      "risk": "Standard regression risk; covered by full gate or targeted part gates.",
+      "requiresTest": true,
+      "kind": "code"
+    },
+    {
+      "path": "packages/ai-gateway/package.json",
+      "status": "modified",
+      "gitStatus": " M",
+      "domain": "contracts",
+      "includeInPr": "yes",
+      "reason": "Intentional contracts hardening code change.",
+      "risk": "Standard regression risk; covered by full gate or targeted part gates.",
+      "requiresTest": true,
+      "kind": "code"
+    },
+    {
+      "path": "packages/api-client/package.json",
+      "status": "modified",
+      "gitStatus": " M",
+      "domain": "contracts",
+      "includeInPr": "yes",
+      "reason": "Intentional contracts hardening code change.",
+      "risk": "Standard regression risk; covered by full gate or targeted part gates.",
+      "requiresTest": true,
+      "kind": "code"
+    },
+    {
+      "path": "packages/contracts/package.json",
+      "status": "modified",
+      "gitStatus": " M",
+      "domain": "contracts",
+      "includeInPr": "yes",
+      "reason": "Intentional contracts hardening code change.",
+      "risk": "Standard regression risk; covered by full gate or targeted part gates.",
+      "requiresTest": true,
+      "kind": "code"
+    },
+    {
+      "path": "packages/contracts/src/canvas.ts",
+      "status": "modified",
+      "gitStatus": " M",
+      "domain": "automation",
+      "includeInPr": "yes",
+      "reason": "Intentional automation hardening code change.",
+      "risk": "Runtime/session bridge change; requires AP/backend-backed coverage.",
+      "requiresTest": true,
+      "kind": "code"
+    },
+    {
+      "path": "packages/contracts/src/errors/error-codes.ts",
+      "status": "modified",
+      "gitStatus": " M",
+      "domain": "contracts",
+      "includeInPr": "yes",
+      "reason": "Intentional contracts hardening code change.",
+      "risk": "Standard regression risk; covered by full gate or targeted part gates.",
+      "requiresTest": true,
+      "kind": "code"
+    },
+    {
+      "path": "scripts/stage16-build-backend-runtime.mjs",
+      "status": "modified",
+      "gitStatus": " M",
+      "domain": "full-gate",
+      "includeInPr": "yes",
+      "reason": "Intentional runtime/gate/verification script.",
+      "risk": "Release gate script/test change; requires fresh system:full-gate run.",
+      "requiresTest": true,
+      "kind": "script"
+    },
+    {
+      "path": "scripts/stage16-db-apply-local.mjs",
+      "status": "modified",
+      "gitStatus": " M",
+      "domain": "full-gate",
+      "includeInPr": "yes",
+      "reason": "Intentional runtime/gate/verification script.",
+      "risk": "Release gate script/test change; requires fresh system:full-gate run.",
+      "requiresTest": true,
+      "kind": "script"
+    },
+    {
+      "path": "tests/e2e/documents-storage.spec.ts",
+      "status": "modified",
+      "gitStatus": " M",
+      "domain": "documents",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Storage lifecycle change; requires upload/download and no signed URL leak proof.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "tests/e2e/helpers/api.ts",
+      "status": "modified",
+      "gitStatus": " M",
+      "domain": "full-gate",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Release gate script/test change; requires fresh system:full-gate run.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "tests/e2e/helpers/auth.ts",
+      "status": "modified",
+      "gitStatus": " M",
+      "domain": "full-gate",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Release gate script/test change; requires fresh system:full-gate run.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "tests/e2e/playwright.config.ts",
+      "status": "modified",
+      "gitStatus": " M",
+      "domain": "full-gate",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Release gate script/test change; requires fresh system:full-gate run.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "tests/e2e/stage2-storage-integrated.spec.ts",
+      "status": "modified",
+      "gitStatus": " M",
+      "domain": "documents",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Storage lifecycle change; requires upload/download and no signed URL leak proof.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": ".codex-dev-logs/",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "temporary",
+      "includeInPr": "no",
+      "reason": "Generated/local-only artifact or temporary runtime file; keep out of PR unless explicitly attached outside git.",
+      "risk": "Commit noise, stale binary artifacts, or local-only evidence if staged.",
+      "requiresTest": false,
+      "kind": "temporary"
+    },
+    {
+      "path": "apps/backend/src/modules/activepieces/activepieces-audit-writer.spec.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "automation",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Runtime/session bridge change; requires AP/backend-backed coverage.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "apps/backend/src/modules/audit/audit-redaction.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "security",
+      "includeInPr": "yes",
+      "reason": "Intentional security hardening code change.",
+      "risk": "Security boundary change; requires targeted auth/RBAC/audit tests.",
+      "requiresTest": true,
+      "kind": "code"
+    },
+    {
+      "path": "apps/backend/src/modules/audit/audit.service.spec.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "security",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Security boundary change; requires targeted auth/RBAC/audit tests.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "apps/backend/src/modules/authorization/authorization.service.spec.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "security",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Security boundary change; requires targeted auth/RBAC/audit tests.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "apps/backend/src/modules/automation-builder/automation-builder.service.spec.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "automation",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Runtime/session bridge change; requires AP/backend-backed coverage.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "apps/backend/src/modules/chat/chat-sse-headers.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "chat",
+      "includeInPr": "yes",
+      "reason": "Intentional chat hardening code change.",
+      "risk": "Streaming/state change; requires reload/retry/secret isolation proof.",
+      "requiresTest": true,
+      "kind": "code"
+    },
+    {
+      "path": "apps/backend/src/modules/chat/chat.controller.spec.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "chat",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Streaming/state change; requires reload/retry/secret isolation proof.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "apps/backend/src/modules/legal-rag/legal-rag.service.spec.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "search",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Source/RAG scoping change; requires search readiness and no cross-workspace leakage proof.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "apps/backend/src/modules/legal-search/legal-search.service.spec.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "search",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Source/RAG scoping change; requires search readiness and no cross-workspace leakage proof.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "apps/backend/src/modules/legal-sources/legal-sources.service.spec.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "search",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Source/RAG scoping change; requires search readiness and no cross-workspace leakage proof.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "apps/backend/src/modules/runs/run-preflight.service.spec.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "automation",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Runtime/session bridge change; requires AP/backend-backed coverage.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "apps/web/src/components/ui/ui-primitives.test.tsx",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "unrelated",
+      "includeInPr": "review",
+      "reason": "Needs human PR-scope review before staging; may be generated evidence, package metadata, or cross-domain shared code.",
+      "risk": "Standard regression risk; covered by full gate or targeted part gates.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "apps/web/src/features/ai-chat/components/LexFrameAttachmentTile.test.tsx",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "chat",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Streaming/state change; requires reload/retry/secret isolation proof.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "apps/web/src/features/ai-chat/components/LexFrameComposer.test.tsx",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "chat",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Streaming/state change; requires reload/retry/secret isolation proof.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "apps/web/src/features/settings/components/settings-shell.test.tsx",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "settings",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Secret-handling change; requires browser/storage/network redaction proof.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "apps/web/src/mocks/e2e-control.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "unrelated",
+      "includeInPr": "review",
+      "reason": "Needs human PR-scope review before staging; may be generated evidence, package metadata, or cross-domain shared code.",
+      "risk": "Standard regression risk; covered by full gate or targeted part gates.",
+      "requiresTest": true,
+      "kind": "code"
+    },
+    {
+      "path": "apps/web/src/providers/session-provider.test.tsx",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "security",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Security boundary change; requires targeted auth/RBAC/audit tests.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "artifacts/system-tests/",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "artifact",
+      "includeInPr": "review",
+      "reason": "Needs human PR-scope review before staging; may be generated evidence, package metadata, or cross-domain shared code.",
+      "risk": "Artifact policy review required before PR.",
+      "requiresTest": false,
+      "kind": "artifact"
+    },
+    {
+      "path": "docs/testing/LexFrame_system_tests_chat_report_2026-05-13.docx",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "chat",
+      "includeInPr": "no",
+      "reason": "Generated/local-only artifact or temporary runtime file; keep out of PR unless explicitly attached outside git.",
+      "risk": "Commit noise, stale binary artifacts, or local-only evidence if staged.",
+      "requiresTest": false,
+      "kind": "artifact"
+    },
+    {
+      "path": "docs/testing/accessibility-keyboard-plan.md",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "unrelated",
+      "includeInPr": "review",
+      "reason": "Needs human PR-scope review before staging; may be generated evidence, package metadata, or cross-domain shared code.",
+      "risk": "Standard regression risk; covered by full gate or targeted part gates.",
+      "requiresTest": false,
+      "kind": "doc"
+    },
+    {
+      "path": "docs/testing/activepieces-session-security-checklist.md",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "automation",
+      "includeInPr": "yes",
+      "reason": "Intentional hardening-cycle documentation.",
+      "risk": "Runtime/session bridge change; requires AP/backend-backed coverage.",
+      "requiresTest": false,
+      "kind": "doc"
+    },
+    {
+      "path": "docs/testing/automation-activepieces-runtime-inventory.md",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "automation",
+      "includeInPr": "yes",
+      "reason": "Intentional hardening-cycle documentation.",
+      "risk": "Runtime/session bridge change; requires AP/backend-backed coverage.",
+      "requiresTest": false,
+      "kind": "doc"
+    },
+    {
+      "path": "docs/testing/automation-activepieces-runtime-test-plan.md",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "automation",
+      "includeInPr": "yes",
+      "reason": "Intentional hardening-cycle documentation.",
+      "risk": "Runtime/session bridge change; requires AP/backend-backed coverage.",
+      "requiresTest": false,
+      "kind": "doc"
+    },
+    {
+      "path": "docs/testing/automation-canvas-security-matrix.md",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "automation",
+      "includeInPr": "yes",
+      "reason": "Intentional hardening-cycle documentation.",
+      "risk": "Runtime/session bridge change; requires AP/backend-backed coverage.",
+      "requiresTest": false,
+      "kind": "doc"
+    },
+    {
+      "path": "docs/testing/backend-contract-db-security-inventory.md",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "security",
+      "includeInPr": "yes",
+      "reason": "Intentional hardening-cycle documentation.",
+      "risk": "Security boundary change; requires targeted auth/RBAC/audit tests.",
+      "requiresTest": false,
+      "kind": "doc"
+    },
+    {
+      "path": "docs/testing/backend-contract-db-security-test-plan.md",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "security",
+      "includeInPr": "yes",
+      "reason": "Intentional hardening-cycle documentation.",
+      "risk": "Security boundary change; requires targeted auth/RBAC/audit tests.",
+      "requiresTest": false,
+      "kind": "doc"
+    },
+    {
+      "path": "docs/testing/browser-security-scan-plan.md",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "security",
+      "includeInPr": "yes",
+      "reason": "Intentional hardening-cycle documentation.",
+      "risk": "Security boundary change; requires targeted auth/RBAC/audit tests.",
+      "requiresTest": false,
+      "kind": "doc"
+    },
+    {
+      "path": "docs/testing/chat-runtime-scenario-matrix.md",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "chat",
+      "includeInPr": "yes",
+      "reason": "Intentional hardening-cycle documentation.",
+      "risk": "Streaming/state change; requires reload/retry/secret isolation proof.",
+      "requiresTest": false,
+      "kind": "doc"
+    },
+    {
+      "path": "docs/testing/clean-runtime-rc-plan.md",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "full-gate",
+      "includeInPr": "yes",
+      "reason": "Intentional hardening-cycle documentation.",
+      "risk": "Release gate script/test change; requires fresh system:full-gate run.",
+      "requiresTest": false,
+      "kind": "doc"
+    },
+    {
+      "path": "docs/testing/clickability-matrix.md",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "unrelated",
+      "includeInPr": "review",
+      "reason": "Needs human PR-scope review before staging; may be generated evidence, package metadata, or cross-domain shared code.",
+      "risk": "Standard regression risk; covered by full gate or targeted part gates.",
+      "requiresTest": false,
+      "kind": "doc"
+    },
+    {
+      "path": "docs/testing/coverage-matrix.md",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "search",
+      "includeInPr": "yes",
+      "reason": "Intentional hardening-cycle documentation.",
+      "risk": "Source/RAG scoping change; requires search readiness and no cross-workspace leakage proof.",
+      "requiresTest": false,
+      "kind": "doc"
+    },
+    {
+      "path": "docs/testing/detected-defects.md",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "unrelated",
+      "includeInPr": "review",
+      "reason": "Needs human PR-scope review before staging; may be generated evidence, package metadata, or cross-domain shared code.",
+      "risk": "Standard regression risk; covered by full gate or targeted part gates.",
+      "requiresTest": false,
+      "kind": "doc"
+    },
+    {
+      "path": "docs/testing/documents-upload-test-matrix.md",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "documents",
+      "includeInPr": "yes",
+      "reason": "Intentional hardening-cycle documentation.",
+      "risk": "Storage lifecycle change; requires upload/download and no signed URL leak proof.",
+      "requiresTest": false,
+      "kind": "doc"
+    },
+    {
+      "path": "docs/testing/evidence-manifest-spec.md",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "unrelated",
+      "includeInPr": "review",
+      "reason": "Needs human PR-scope review before staging; may be generated evidence, package metadata, or cross-domain shared code.",
+      "risk": "Standard regression risk; covered by full gate or targeted part gates.",
+      "requiresTest": false,
+      "kind": "doc"
+    },
+    {
+      "path": "docs/testing/frontend-clickability-defects.md",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "unrelated",
+      "includeInPr": "review",
+      "reason": "Needs human PR-scope review before staging; may be generated evidence, package metadata, or cross-domain shared code.",
+      "risk": "Standard regression risk; covered by full gate or targeted part gates.",
+      "requiresTest": false,
+      "kind": "doc"
+    },
+    {
+      "path": "docs/testing/frontend-clickability-inventory.md",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "unrelated",
+      "includeInPr": "review",
+      "reason": "Needs human PR-scope review before staging; may be generated evidence, package metadata, or cross-domain shared code.",
+      "risk": "Standard regression risk; covered by full gate or targeted part gates.",
+      "requiresTest": false,
+      "kind": "doc"
+    },
+    {
+      "path": "docs/testing/merge-readiness-report.md",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "full-gate",
+      "includeInPr": "yes",
+      "reason": "Intentional hardening-cycle documentation.",
+      "risk": "Release gate script/test change; requires fresh system:full-gate run.",
+      "requiresTest": false,
+      "kind": "doc"
+    },
+    {
+      "path": "docs/testing/part2-project-workspace-bug-hunt.md",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "shell",
+      "includeInPr": "yes",
+      "reason": "Intentional hardening-cycle documentation.",
+      "risk": "Standard regression risk; covered by full gate or targeted part gates.",
+      "requiresTest": false,
+      "kind": "doc"
+    },
+    {
+      "path": "docs/testing/part3-chat-runtime-bug-hunt.md",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "chat",
+      "includeInPr": "yes",
+      "reason": "Intentional hardening-cycle documentation.",
+      "risk": "Streaming/state change; requires reload/retry/secret isolation proof.",
+      "requiresTest": false,
+      "kind": "doc"
+    },
+    {
+      "path": "docs/testing/part4-automation-runtime-bug-hunt.md",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "automation",
+      "includeInPr": "yes",
+      "reason": "Intentional hardening-cycle documentation.",
+      "risk": "Runtime/session bridge change; requires AP/backend-backed coverage.",
+      "requiresTest": false,
+      "kind": "doc"
+    },
+    {
+      "path": "docs/testing/part5-documents-storage-bug-hunt.md",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "documents",
+      "includeInPr": "yes",
+      "reason": "Intentional hardening-cycle documentation.",
+      "risk": "Storage lifecycle change; requires upload/download and no signed URL leak proof.",
+      "requiresTest": false,
+      "kind": "doc"
+    },
+    {
+      "path": "docs/testing/part6-settings-security-bug-hunt.md",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "settings",
+      "includeInPr": "yes",
+      "reason": "Intentional hardening-cycle documentation.",
+      "risk": "Secret-handling change; requires browser/storage/network redaction proof.",
+      "requiresTest": false,
+      "kind": "doc"
+    },
+    {
+      "path": "docs/testing/part7-security-rbac-audit-bug-hunt.md",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "security",
+      "includeInPr": "yes",
+      "reason": "Intentional hardening-cycle documentation.",
+      "risk": "Security boundary change; requires targeted auth/RBAC/audit tests.",
+      "requiresTest": false,
+      "kind": "doc"
+    },
+    {
+      "path": "docs/testing/part8-search-rag-sources-bug-hunt.md",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "search",
+      "includeInPr": "yes",
+      "reason": "Intentional hardening-cycle documentation.",
+      "risk": "Source/RAG scoping change; requires search readiness and no cross-workspace leakage proof.",
+      "requiresTest": false,
+      "kind": "doc"
+    },
+    {
+      "path": "docs/testing/part9-full-system-gate.md",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "full-gate",
+      "includeInPr": "yes",
+      "reason": "Intentional hardening-cycle documentation.",
+      "risk": "Release gate script/test change; requires fresh system:full-gate run.",
+      "requiresTest": false,
+      "kind": "doc"
+    },
+    {
+      "path": "docs/testing/performance-animation-budget.md",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "unrelated",
+      "includeInPr": "review",
+      "reason": "Needs human PR-scope review before staging; may be generated evidence, package metadata, or cross-domain shared code.",
+      "risk": "Standard regression risk; covered by full gate or targeted part gates.",
+      "requiresTest": false,
+      "kind": "doc"
+    },
+    {
+      "path": "docs/testing/performance-animation-security-inventory.md",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "security",
+      "includeInPr": "yes",
+      "reason": "Intentional hardening-cycle documentation.",
+      "risk": "Security boundary change; requires targeted auth/RBAC/audit tests.",
+      "requiresTest": false,
+      "kind": "doc"
+    },
+    {
+      "path": "docs/testing/project-chat-documents-inventory.md",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "documents",
+      "includeInPr": "yes",
+      "reason": "Intentional hardening-cycle documentation.",
+      "risk": "Storage lifecycle change; requires upload/download and no signed URL leak proof.",
+      "requiresTest": false,
+      "kind": "doc"
+    },
+    {
+      "path": "docs/testing/project-chat-documents-test-plan.md",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "documents",
+      "includeInPr": "yes",
+      "reason": "Intentional hardening-cycle documentation.",
+      "risk": "Storage lifecycle change; requires upload/download and no signed URL leak proof.",
+      "requiresTest": false,
+      "kind": "doc"
+    },
+    {
+      "path": "docs/testing/project-knowledge-sources-test-matrix.md",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "search",
+      "includeInPr": "yes",
+      "reason": "Intentional hardening-cycle documentation.",
+      "risk": "Source/RAG scoping change; requires search readiness and no cross-workspace leakage proof.",
+      "requiresTest": false,
+      "kind": "doc"
+    },
+    {
+      "path": "docs/testing/run-evidence-matrix.md",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "unrelated",
+      "includeInPr": "review",
+      "reason": "Needs human PR-scope review before staging; may be generated evidence, package metadata, or cross-domain shared code.",
+      "risk": "Standard regression risk; covered by full gate or targeted part gates.",
+      "requiresTest": false,
+      "kind": "doc"
+    },
+    {
+      "path": "docs/testing/system-hardening-cycle-summary.md",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "full-gate",
+      "includeInPr": "yes",
+      "reason": "Intentional hardening-cycle documentation.",
+      "risk": "Release gate script/test change; requires fresh system:full-gate run.",
+      "requiresTest": false,
+      "kind": "doc"
+    },
+    {
+      "path": "docs/testing/system-release-gate.md",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "full-gate",
+      "includeInPr": "yes",
+      "reason": "Intentional hardening-cycle documentation.",
+      "risk": "Release gate script/test change; requires fresh system:full-gate run.",
+      "requiresTest": false,
+      "kind": "doc"
+    },
+    {
+      "path": "docs/testing/system-test-final-report.md",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "unrelated",
+      "includeInPr": "review",
+      "reason": "Needs human PR-scope review before staging; may be generated evidence, package metadata, or cross-domain shared code.",
+      "risk": "Standard regression risk; covered by full gate or targeted part gates.",
+      "requiresTest": false,
+      "kind": "doc"
+    },
+    {
+      "path": "packages/ai-gateway/src/route-assets.test.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "chat",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Streaming/state change; requires reload/retry/secret isolation proof.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "packages/api-client/src/chat-client.test.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "chat",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Streaming/state change; requires reload/retry/secret isolation proof.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "packages/api-client/src/settings-client.test.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "settings",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Secret-handling change; requires browser/storage/network redaction proof.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "packages/contracts/src/security-invariants.test.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "security",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Security boundary change; requires targeted auth/RBAC/audit tests.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "scripts/stage16-e2e-preflight.mjs",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "full-gate",
+      "includeInPr": "yes",
+      "reason": "Intentional runtime/gate/verification script.",
+      "risk": "Release gate script/test change; requires fresh system:full-gate run.",
+      "requiresTest": true,
+      "kind": "script"
+    },
+    {
+      "path": "scripts/stage16-e2e-preflight.test.mjs",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "full-gate",
+      "includeInPr": "yes",
+      "reason": "Intentional runtime/gate/verification script.",
+      "risk": "Release gate script/test change; requires fresh system:full-gate run.",
+      "requiresTest": true,
+      "kind": "script"
+    },
+    {
+      "path": "scripts/testing/",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "full-gate",
+      "includeInPr": "yes",
+      "reason": "Intentional runtime/gate/verification script.",
+      "risk": "Release gate script/test change; requires fresh system:full-gate run.",
+      "requiresTest": true,
+      "kind": "script"
+    },
+    {
+      "path": "tests/e2e/accessibility-keyboard-focus.spec.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "unrelated",
+      "includeInPr": "review",
+      "reason": "Needs human PR-scope review before staging; may be generated evidence, package metadata, or cross-domain shared code.",
+      "risk": "Standard regression risk; covered by full gate or targeted part gates.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "tests/e2e/artifacts/playwright-part6-backend-final/",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "artifact",
+      "includeInPr": "no",
+      "reason": "Generated/local-only artifact or temporary runtime file; keep out of PR unless explicitly attached outside git.",
+      "risk": "Commit noise, stale binary artifacts, or local-only evidence if staged.",
+      "requiresTest": false,
+      "kind": "artifact"
+    },
+    {
+      "path": "tests/e2e/artifacts/playwright-part6-backend-rerun/",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "artifact",
+      "includeInPr": "no",
+      "reason": "Generated/local-only artifact or temporary runtime file; keep out of PR unless explicitly attached outside git.",
+      "risk": "Commit noise, stale binary artifacts, or local-only evidence if staged.",
+      "requiresTest": false,
+      "kind": "artifact"
+    },
+    {
+      "path": "tests/e2e/artifacts/playwright-part6-backend/",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "artifact",
+      "includeInPr": "no",
+      "reason": "Generated/local-only artifact or temporary runtime file; keep out of PR unless explicitly attached outside git.",
+      "risk": "Commit noise, stale binary artifacts, or local-only evidence if staged.",
+      "requiresTest": false,
+      "kind": "artifact"
+    },
+    {
+      "path": "tests/e2e/artifacts/playwright-part6-msw-final/",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "artifact",
+      "includeInPr": "no",
+      "reason": "Generated/local-only artifact or temporary runtime file; keep out of PR unless explicitly attached outside git.",
+      "risk": "Commit noise, stale binary artifacts, or local-only evidence if staged.",
+      "requiresTest": false,
+      "kind": "artifact"
+    },
+    {
+      "path": "tests/e2e/artifacts/playwright-part7-backend-final/",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "artifact",
+      "includeInPr": "no",
+      "reason": "Generated/local-only artifact or temporary runtime file; keep out of PR unless explicitly attached outside git.",
+      "risk": "Commit noise, stale binary artifacts, or local-only evidence if staged.",
+      "requiresTest": false,
+      "kind": "artifact"
+    },
+    {
+      "path": "tests/e2e/artifacts/playwright-part7-backend-rerun/",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "artifact",
+      "includeInPr": "no",
+      "reason": "Generated/local-only artifact or temporary runtime file; keep out of PR unless explicitly attached outside git.",
+      "risk": "Commit noise, stale binary artifacts, or local-only evidence if staged.",
+      "requiresTest": false,
+      "kind": "artifact"
+    },
+    {
+      "path": "tests/e2e/artifacts/playwright-part7-backend-security/",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "artifact",
+      "includeInPr": "no",
+      "reason": "Generated/local-only artifact or temporary runtime file; keep out of PR unless explicitly attached outside git.",
+      "risk": "Commit noise, stale binary artifacts, or local-only evidence if staged.",
+      "requiresTest": false,
+      "kind": "artifact"
+    },
+    {
+      "path": "tests/e2e/artifacts/playwright-part7-forced-route-rerun/",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "artifact",
+      "includeInPr": "no",
+      "reason": "Generated/local-only artifact or temporary runtime file; keep out of PR unless explicitly attached outside git.",
+      "risk": "Commit noise, stale binary artifacts, or local-only evidence if staged.",
+      "requiresTest": false,
+      "kind": "artifact"
+    },
+    {
+      "path": "tests/e2e/automation-activepieces-canvas-full.spec.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "automation",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Runtime/session bridge change; requires AP/backend-backed coverage.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "tests/e2e/automation-activepieces-session-security.spec.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "automation",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Runtime/session bridge change; requires AP/backend-backed coverage.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "tests/e2e/automation-ai-builder-runtime.spec.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "automation",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Runtime/session bridge change; requires AP/backend-backed coverage.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "tests/e2e/automation-browser-security-isolation.spec.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "automation",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Runtime/session bridge change; requires AP/backend-backed coverage.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "tests/e2e/automation-canvas-validation-security.spec.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "automation",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Runtime/session bridge change; requires AP/backend-backed coverage.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "tests/e2e/automation-cross-scope-access.spec.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "automation",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Runtime/session bridge change; requires AP/backend-backed coverage.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "tests/e2e/automation-dry-run-idempotency.spec.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "automation",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Runtime/session bridge change; requires AP/backend-backed coverage.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "tests/e2e/automation-route-cache-cleanup.spec.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "automation",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Runtime/session bridge change; requires AP/backend-backed coverage.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "tests/e2e/automation-route-family-cache-live.spec.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "automation",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Runtime/session bridge change; requires AP/backend-backed coverage.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "tests/e2e/automation-runtime-dry-run-full.spec.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "automation",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Runtime/session bridge change; requires AP/backend-backed coverage.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "tests/e2e/automation-runtime-evidence-live.spec.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "automation",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Runtime/session bridge change; requires AP/backend-backed coverage.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "tests/e2e/automation-runtime-readiness-live.spec.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "automation",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Runtime/session bridge change; requires AP/backend-backed coverage.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "tests/e2e/automation-session-refresh-expiry.spec.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "automation",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Runtime/session bridge change; requires AP/backend-backed coverage.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "tests/e2e/browser-security-isolation-full.spec.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "security",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Security boundary change; requires targeted auth/RBAC/audit tests.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "tests/e2e/chat-attachments-branches.spec.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "chat",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Streaming/state change; requires reload/retry/secret isolation proof.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "tests/e2e/chat-attachments-failure-lifecycle.spec.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "chat",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Streaming/state change; requires reload/retry/secret isolation proof.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "tests/e2e/chat-branch-persistence-live.spec.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "chat",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Streaming/state change; requires reload/retry/secret isolation proof.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "tests/e2e/chat-browser-security-isolation.spec.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "chat",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Streaming/state change; requires reload/retry/secret isolation proof.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "tests/e2e/chat-live-reload-recovery.spec.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "chat",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Streaming/state change; requires reload/retry/secret isolation proof.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "tests/e2e/chat-multitab-consistency.spec.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "chat",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Streaming/state change; requires reload/retry/secret isolation proof.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "tests/e2e/chat-runtime-resilience.spec.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "chat",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Streaming/state change; requires reload/retry/secret isolation proof.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "tests/e2e/chat-stream-race-conditions.spec.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "chat",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Streaming/state change; requires reload/retry/secret isolation proof.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "tests/e2e/documents-cross-scope-access.spec.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "documents",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Storage lifecycle change; requires upload/download and no signed URL leak proof.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "tests/e2e/documents-download-security.spec.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "documents",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Storage lifecycle change; requires upload/download and no signed URL leak proof.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "tests/e2e/documents-msw-upload-lifecycle.spec.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "documents",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Storage lifecycle change; requires upload/download and no signed URL leak proof.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "tests/e2e/documents-upload-download-full.spec.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "documents",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Storage lifecycle change; requires upload/download and no signed URL leak proof.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "tests/e2e/documents-upload-failure-lifecycle.spec.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "documents",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Storage lifecycle change; requires upload/download and no signed URL leak proof.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "tests/e2e/fixtures/",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "unrelated",
+      "includeInPr": "review",
+      "reason": "Needs human PR-scope review before staging; may be generated evidence, package metadata, or cross-domain shared code.",
+      "risk": "Standard regression risk; covered by full gate or targeted part gates.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "tests/e2e/forms-network-errors-full.spec.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "unrelated",
+      "includeInPr": "review",
+      "reason": "Needs human PR-scope review before staging; may be generated evidence, package metadata, or cross-domain shared code.",
+      "risk": "Standard regression risk; covered by full gate or targeted part gates.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "tests/e2e/frontend-keyboard-accessibility.spec.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "unrelated",
+      "includeInPr": "review",
+      "reason": "Needs human PR-scope review before staging; may be generated evidence, package metadata, or cross-domain shared code.",
+      "risk": "Standard regression risk; covered by full gate or targeted part gates.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "tests/e2e/frontend-multitab-shell-state.spec.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "shell",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Standard regression risk; covered by full gate or targeted part gates.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "tests/e2e/frontend-route-smoke.spec.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "unrelated",
+      "includeInPr": "review",
+      "reason": "Needs human PR-scope review before staging; may be generated evidence, package metadata, or cross-domain shared code.",
+      "risk": "Standard regression risk; covered by full gate or targeted part gates.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "tests/e2e/frontend-route-state-cache.spec.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "unrelated",
+      "includeInPr": "review",
+      "reason": "Needs human PR-scope review before staging; may be generated evidence, package metadata, or cross-domain shared code.",
+      "risk": "Standard regression risk; covered by full gate or targeted part gates.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "tests/e2e/frontend-runtime-preflight.spec.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "full-gate",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Release gate script/test change; requires fresh system:full-gate run.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "tests/e2e/frontend-settings-shell-state.spec.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "settings",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Secret-handling change; requires browser/storage/network redaction proof.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "tests/e2e/frontend-shell-clickability.spec.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "shell",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Standard regression risk; covered by full gate or targeted part gates.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "tests/e2e/frontend-shell-navigation-state.spec.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "shell",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Standard regression risk; covered by full gate or targeted part gates.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "tests/e2e/frontend-sidebar-route-cache.spec.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "shell",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Standard regression risk; covered by full gate or targeted part gates.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "tests/e2e/frontend-sidebar-settings.spec.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "settings",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Secret-handling change; requires browser/storage/network redaction proof.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "tests/e2e/frontend-visual-invariants.spec.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "unrelated",
+      "includeInPr": "review",
+      "reason": "Needs human PR-scope review before staging; may be generated evidence, package metadata, or cross-domain shared code.",
+      "risk": "Standard regression risk; covered by full gate or targeted part gates.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "tests/e2e/global-chat-runtime-full.spec.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "chat",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Streaming/state change; requires reload/retry/secret isolation proof.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "tests/e2e/helpers/runtime-preflight.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "full-gate",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Release gate script/test change; requires fresh system:full-gate run.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "tests/e2e/project-chat-runtime-full.spec.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "chat",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Streaming/state change; requires reload/retry/secret isolation proof.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "tests/e2e/project-composer-context.spec.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "unrelated",
+      "includeInPr": "review",
+      "reason": "Needs human PR-scope review before staging; may be generated evidence, package metadata, or cross-domain shared code.",
+      "risk": "Standard regression risk; covered by full gate or targeted part gates.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "tests/e2e/project-rename-navigation-race.spec.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "unrelated",
+      "includeInPr": "review",
+      "reason": "Needs human PR-scope review before staging; may be generated evidence, package metadata, or cross-domain shared code.",
+      "risk": "Standard regression risk; covered by full gate or targeted part gates.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "tests/e2e/project-sources-knowledge.spec.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "search",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Source/RAG scoping change; requires search readiness and no cross-workspace leakage proof.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "tests/e2e/project-web-search-sources.spec.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "search",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Source/RAG scoping change; requires search readiness and no cross-workspace leakage proof.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "tests/e2e/project-workspace-api-resilience.spec.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "shell",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Standard regression risk; covered by full gate or targeted part gates.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "tests/e2e/project-workspace-composer-context.spec.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "shell",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Standard regression risk; covered by full gate or targeted part gates.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "tests/e2e/project-workspace-flow.spec.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "shell",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Standard regression risk; covered by full gate or targeted part gates.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "tests/e2e/project-workspace-tabs-state.spec.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "shell",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Standard regression risk; covered by full gate or targeted part gates.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "tests/e2e/search-browser-security-isolation.spec.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "search",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Source/RAG scoping change; requires search readiness and no cross-workspace leakage proof.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "tests/e2e/search-cross-workspace-scope.spec.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "search",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Source/RAG scoping change; requires search readiness and no cross-workspace leakage proof.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "tests/e2e/search-navigation-cache-race.spec.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "search",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Source/RAG scoping change; requires search readiness and no cross-workspace leakage proof.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "tests/e2e/search-rag-citations-security.spec.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "search",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Source/RAG scoping change; requires search readiness and no cross-workspace leakage proof.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "tests/e2e/search-readiness-degraded-state.spec.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "search",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Source/RAG scoping change; requires search readiness and no cross-workspace leakage proof.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "tests/e2e/security-admin-route-guard.spec.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "security",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Security boundary change; requires targeted auth/RBAC/audit tests.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "tests/e2e/security-audit-redaction-live.spec.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "security",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Security boundary change; requires targeted auth/RBAC/audit tests.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "tests/e2e/security-browser-storage-network-full.spec.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "documents",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Storage lifecycle change; requires upload/download and no signed URL leak proof.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "tests/e2e/security-cross-workspace-data-leakage.spec.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "security",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Security boundary change; requires targeted auth/RBAC/audit tests.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "tests/e2e/security-forced-route-access.spec.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "security",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Security boundary change; requires targeted auth/RBAC/audit tests.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "tests/e2e/settings-ai-route-preferences-live.spec.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "settings",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Secret-handling change; requires browser/storage/network redaction proof.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "tests/e2e/settings-browser-security-isolation.spec.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "settings",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Secret-handling change; requires browser/storage/network redaction proof.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "tests/e2e/settings-multitab-consistency.spec.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "settings",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Secret-handling change; requires browser/storage/network redaction proof.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "tests/e2e/settings-network-failure-resilience.spec.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "settings",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Secret-handling change; requires browser/storage/network redaction proof.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "tests/e2e/settings-profile-organization-live.spec.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "settings",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Secret-handling change; requires browser/storage/network redaction proof.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "tests/e2e/settings-secret-write-only-security.spec.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "settings",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Secret-handling change; requires browser/storage/network redaction proof.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "tests/e2e/settings-ssrf-guard-live.spec.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "settings",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Secret-handling change; requires browser/storage/network redaction proof.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "tests/e2e/system-release-gate-smoke.spec.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "full-gate",
+      "includeInPr": "yes",
+      "reason": "Intentional regression or release-gate test coverage.",
+      "risk": "Release gate script/test change; requires fresh system:full-gate run.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "tests/e2e/ui-performance-animations-full.spec.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "unrelated",
+      "includeInPr": "review",
+      "reason": "Needs human PR-scope review before staging; may be generated evidence, package metadata, or cross-domain shared code.",
+      "risk": "Standard regression risk; covered by full gate or targeted part gates.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "tests/e2e/ui-reduced-motion.spec.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "unrelated",
+      "includeInPr": "review",
+      "reason": "Needs human PR-scope review before staging; may be generated evidence, package metadata, or cross-domain shared code.",
+      "risk": "Standard regression risk; covered by full gate or targeted part gates.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "tests/e2e/utils/",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "unrelated",
+      "includeInPr": "review",
+      "reason": "Needs human PR-scope review before staging; may be generated evidence, package metadata, or cross-domain shared code.",
+      "risk": "Standard regression risk; covered by full gate or targeted part gates.",
+      "requiresTest": true,
+      "kind": "test"
+    },
+    {
+      "path": "tests/e2e/visual-system-evidence.spec.ts",
+      "status": "untracked",
+      "gitStatus": "??",
+      "domain": "unrelated",
+      "includeInPr": "review",
+      "reason": "Needs human PR-scope review before staging; may be generated evidence, package metadata, or cross-domain shared code.",
+      "risk": "Standard regression risk; covered by full gate or targeted part gates.",
+      "requiresTest": true,
+      "kind": "test"
+    }
+  ]
+}

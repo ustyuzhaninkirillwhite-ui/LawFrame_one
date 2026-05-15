@@ -43,10 +43,12 @@ export function OrganizationSettingsPanel({
   isSaving,
   organization,
   onSave,
+  saveButtonTestId,
 }: {
   readonly isSaving?: boolean;
   readonly organization: SettingsOrganizationDto | null;
   readonly onSave: (input: UpdateOrganizationSettingsRequest) => Promise<void>;
+  readonly saveButtonTestId?: string;
 }) {
   const [form, dispatchForm] = React.useReducer(
     organizationFormReducer,
@@ -107,6 +109,7 @@ export function OrganizationSettingsPanel({
       <SettingsSaveBar
         disabled={disabled}
         isSaving={isSaving}
+        testId={saveButtonTestId}
         onSave={() =>
           onSave({
             format: "manual_form",

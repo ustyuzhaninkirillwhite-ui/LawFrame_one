@@ -48,11 +48,13 @@ export default function WorkspaceOnboardingPage() {
         </CardHeader>
         <CardContent className="grid gap-4">
           <Input
+            data-testid="onboarding-workspace-name"
             value={name}
             onChange={(event) => setName(event.target.value)}
             placeholder="Orlov & Partners"
           />
           <Input
+            data-testid="onboarding-workspace-slug"
             value={slug}
             onChange={(event) => setSlug(event.target.value)}
             placeholder="orlov-partners"
@@ -64,6 +66,7 @@ export default function WorkspaceOnboardingPage() {
           ) : null}
           <div className="flex flex-col gap-3 sm:flex-row">
             <Button
+              data-testid="onboarding-workspace-submit"
               disabled={submitting}
               onClick={() => {
                 void (async () => {

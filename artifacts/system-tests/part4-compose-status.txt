@@ -1,0 +1,6 @@
+﻿NAME                                     IMAGE                              COMMAND                  SERVICE                 CREATED      STATUS                 PORTS
+law_frame_main-activepieces-app-1        activepieces/activepieces:0.44.0   "./docker-entrypoint…"   activepieces-app        6 days ago   Up 2 hours (healthy)   0.0.0.0:8080->80/tcp, [::]:8080->80/tcp
+law_frame_main-activepieces-postgres-1   postgres:16-alpine                 "docker-entrypoint.s…"   activepieces-postgres   6 days ago   Up 2 hours (healthy)   0.0.0.0:54323->5432/tcp, [::]:54323->5432/tcp
+law_frame_main-activepieces-redis-1      redis:7-alpine                     "docker-entrypoint.s…"   activepieces-redis      6 days ago   Up 2 hours (healthy)   0.0.0.0:6380->6379/tcp, [::]:6380->6379/tcp
+law_frame_main-activepieces-worker-1     activepieces/activepieces:0.44.0   "./docker-entrypoint…"   activepieces-worker     6 days ago   Up 2 hours             80/tcp
+law_frame_main-postgres-1                postgres:16-alpine                 "docker-entrypoint.s…"   postgres                6 days ago   Up 6 hours (healthy)   0.0.0.0:54322->5432/tcp, [::]:54322->5432/tcp

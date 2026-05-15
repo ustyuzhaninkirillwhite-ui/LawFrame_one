@@ -1,4 +1,4 @@
-import { existsSync } from "node:fs";
+import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 
@@ -102,12 +102,36 @@ function verifyArtifacts() {
   }
 }
 
+function writeRuntimeBuildManifest() {
+  const manifestPath = join(
+    root,
+    ".codex-runtime",
+    "stage16-backend-runtime-build.json",
+  );
+  mkdirSync(join(root, ".codex-runtime"), { recursive: true });
+  writeFileSync(
+    manifestPath,
+    `${JSON.stringify(
+      {
+        generatedAt: new Date().toISOString(),
+        artifacts: requiredArtifacts.map(([packageName, relativePath]) => ({
+          packageName,
+          path: relativePath,
+        })),
+      },
+      null,
+      2,
+    )}\n`,
+  );
+}
+
 const closure = readBackendClosure();
 assertExpectedClosure(closure);
 console.log(`[stage16-build] backend runtime closure: ${closure.join(", ")}`);
 
 buildBackendRuntime();
 verifyArtifacts();
+writeRuntimeBuildManifest();
 
 console.log("[stage16-build] verified backend runtime artifacts:");
 for (const [packageName, relativePath] of requiredArtifacts) {

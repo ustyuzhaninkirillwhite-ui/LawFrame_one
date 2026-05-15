@@ -65,12 +65,23 @@ export function ProjectHome({ projectId }: { readonly projectId: string }) {
   const [webResults, setWebResults] = React.useState<readonly ProjectWebSearchResult[]>([]);
   const [webSearchError, setWebSearchError] = React.useState<string | null>(null);
   const [webSearching, setWebSearching] = React.useState(false);
+  const [composerError, setComposerError] = React.useState<string | null>(null);
   const [submitting, setSubmitting] = React.useState(false);
   const [renamingProject, setRenamingProject] = React.useState(false);
   const [projectNameDraft, setProjectNameDraft] = React.useState("");
+  const [projectRenameError, setProjectRenameError] = React.useState<string | null>(
+    null,
+  );
   const [projectRenameSaving, setProjectRenameSaving] = React.useState(false);
   const imageInputRef = React.useRef<HTMLInputElement | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
+  const plusButtonRef = React.useRef<HTMLButtonElement | null>(null);
+  const submittingRef = React.useRef(false);
+  const currentProjectIdRef = React.useRef(projectId);
+  const previousProjectIdRef = React.useRef(projectId);
+  const webSearchRequestIdRef = React.useRef(0);
+  const projectRenameSavingRef = React.useRef(false);
+  const projectRenameRequestIdRef = React.useRef(0);
 
   const project = snapshot.data?.project ?? {
     id: projectId,
@@ -99,6 +110,7 @@ export function ProjectHome({ projectId }: { readonly projectId: string }) {
     queryFn: () => apiClient.listProjectKnowledge(projectId),
     enabled: Boolean(projectId),
     initialData: emptyKnowledgeResponse,
+    retry: false,
   });
 
   const chats = React.useMemo(
@@ -107,8 +119,93 @@ export function ProjectHome({ projectId }: { readonly projectId: string }) {
   );
   const sources = knowledge.data.items;
   const currentAutomations = automations.data ?? [];
+  const validFiles = React.useMemo(
+    () => files.filter((item) => !item.error),
+    [files],
+  );
   const canSend =
-    Boolean(prompt.trim()) || files.length > 0 || Boolean(selectedAutomation);
+    Boolean(prompt.trim()) || validFiles.length > 0 || Boolean(selectedAutomation);
+
+  const selectTab = React.useCallback(
+    (tab: ProjectWorkspaceTab) => {
+      const nextParams = new URLSearchParams(window.location.search);
+      if (tab === "chats") {
+        nextParams.delete("tab");
+      } else {
+        nextParams.set("tab", tab);
+      }
+
+      const query = nextParams.toString();
+      const nextUrl = `/app/projects/${projectId}${query ? `?${query}` : ""}`;
+      router.push(nextUrl, { scroll: false });
+      setActiveTab(tab);
+    },
+    [projectId, router],
+  );
+
+  React.useLayoutEffect(() => {
+    currentProjectIdRef.current = projectId;
+  }, [projectId]);
+
+  React.useEffect(() => {
+    if (previousProjectIdRef.current === projectId) {
+      return;
+    }
+
+    previousProjectIdRef.current = projectId;
+    webSearchRequestIdRef.current += 1;
+    projectRenameRequestIdRef.current += 1;
+    submittingRef.current = false;
+    projectRenameSavingRef.current = false;
+    setMenuMode("closed");
+    setPrompt("");
+    setFiles([]);
+    setSelectedAutomation(null);
+    setWebQuery("");
+    setWebResults([]);
+    setWebSearchError(null);
+    setWebSearching(false);
+    setComposerError(null);
+    setSubmitting(false);
+    setRenamingProject(false);
+    setProjectNameDraft("");
+    setProjectRenameError(null);
+    setProjectRenameSaving(false);
+  }, [projectId]);
+
+  React.useEffect(() => {
+    const syncTabFromUrl = () => {
+      setActiveTab(
+        readProjectWorkspaceTab(new URLSearchParams(window.location.search).get("tab")) ??
+          "chats",
+      );
+    };
+
+    syncTabFromUrl();
+    window.addEventListener("popstate", syncTabFromUrl);
+
+    return () => {
+      window.removeEventListener("popstate", syncTabFromUrl);
+    };
+  }, [projectId]);
+
+  React.useEffect(() => {
+    if (menuMode === "closed") {
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setMenuMode("closed");
+        window.requestAnimationFrame(() => plusButtonRef.current?.focus());
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [menuMode]);
 
   const handleFiles = React.useCallback(
     (incomingFiles: FileList | readonly File[], kind: LocalComposerFile["kind"]) => {
@@ -136,6 +233,7 @@ export function ProjectHome({ projectId }: { readonly projectId: string }) {
       });
 
       setFiles((current) => [...current, ...nextFiles]);
+      setComposerError(null);
       setMenuMode("closed");
     },
     [files],
@@ -162,14 +260,15 @@ export function ProjectHome({ projectId }: { readonly projectId: string }) {
   );
 
   async function handleSubmit() {
-    if (!canSend || submitting) {
+    if (!canSend || submittingRef.current) {
       return;
     }
 
-    const validFiles = files.filter((item) => !item.error);
     const messageText =
       prompt.trim() || selectedAutomation?.title || "Новый чат проекта";
+    submittingRef.current = true;
     setSubmitting(true);
+    setComposerError(null);
 
     try {
       const response = await createChat.mutateAsync({
@@ -194,7 +293,10 @@ export function ProjectHome({ projectId }: { readonly projectId: string }) {
           : [],
       });
       router.push(`/app/projects/${projectId}/chats/${chatId}`);
+    } catch {
+      setComposerError("Сообщение не отправлено. Проверьте соединение и попробуйте ещё раз.");
     } finally {
+      submittingRef.current = false;
       setSubmitting(false);
     }
   }
@@ -249,43 +351,86 @@ export function ProjectHome({ projectId }: { readonly projectId: string }) {
 
     setWebSearching(true);
     setWebSearchError(null);
+    const requestProjectId = projectId;
+    const requestId = webSearchRequestIdRef.current + 1;
+    webSearchRequestIdRef.current = requestId;
     try {
       const response = await apiClient.searchProjectWeb(projectId, {
         query,
         saveResults: true,
       });
+      if (!isCurrentWebSearch(requestProjectId, requestId)) {
+        return;
+      }
       setWebResults(response.items);
       await queryClient.invalidateQueries({ queryKey: ["projectKnowledge", projectId] });
+      if (!isCurrentWebSearch(requestProjectId, requestId)) {
+        return;
+      }
       if (response.status === "ok") {
         setMenuMode("closed");
       } else {
         setWebSearchError(response.error?.message ?? "Поиск временно недоступен.");
       }
     } catch {
-      setWebSearchError("Поиск временно недоступен.");
+      if (isCurrentWebSearch(requestProjectId, requestId)) {
+        setWebSearchError("Поиск временно недоступен.");
+      }
     } finally {
-      setWebSearching(false);
+      if (isCurrentWebSearch(requestProjectId, requestId)) {
+        setWebSearching(false);
+      }
     }
   }
 
   async function saveProjectName() {
     const name = projectNameDraft.trim();
-    if (!name || projectRenameSaving) {
+    if (!name || projectRenameSavingRef.current) {
       return;
     }
 
+    const requestProjectId = projectId;
+    const requestId = projectRenameRequestIdRef.current + 1;
+    projectRenameRequestIdRef.current = requestId;
+    projectRenameSavingRef.current = true;
     setProjectRenameSaving(true);
+    setProjectRenameError(null);
     try {
-      await apiClient.updateProject(projectId, { name });
+      await apiClient.updateProject(requestProjectId, { name });
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["stage15-projects"] }),
         queryClient.invalidateQueries({ queryKey: ["stage15-project-snapshot"] }),
         queryClient.invalidateQueries({ queryKey: ["stage15-project"] }),
       ]);
-      setRenamingProject(false);
+      if (isCurrentProjectRequest(requestProjectId, requestId)) {
+        setRenamingProject(false);
+      }
+    } catch {
+      if (isCurrentProjectRequest(requestProjectId, requestId)) {
+        setProjectRenameError("Project name was not saved. Try again.");
+      }
     } finally {
-      setProjectRenameSaving(false);
+      if (projectRenameRequestIdRef.current === requestId) {
+        projectRenameSavingRef.current = false;
+      }
+      if (isCurrentProjectRequest(requestProjectId, requestId)) {
+        setProjectRenameSaving(false);
+      }
     }
+  }
+
+  function isCurrentWebSearch(requestProjectId: string, requestId: number) {
+    return (
+      currentProjectIdRef.current === requestProjectId &&
+      webSearchRequestIdRef.current === requestId
+    );
+  }
+
+  function isCurrentProjectRequest(requestProjectId: string, requestId: number) {
+    return (
+      currentProjectIdRef.current === requestProjectId &&
+      projectRenameRequestIdRef.current === requestId
+    );
   }
 
   async function handleProjectRename(event: React.FormEvent<HTMLFormElement>) {
@@ -314,6 +459,7 @@ export function ProjectHome({ projectId }: { readonly projectId: string }) {
                 if (event.key === "Escape") {
                   event.preventDefault();
                   setProjectNameDraft(project.name);
+                  setProjectRenameError(null);
                   setRenamingProject(false);
                 } else if (event.key === "Enter") {
                   event.preventDefault();
@@ -329,6 +475,11 @@ export function ProjectHome({ projectId }: { readonly projectId: string }) {
             >
               <Check className="h-5 w-5" />
             </button>
+            {projectRenameError ? (
+              <span className="text-sm text-[color:var(--danger)]">
+                {projectRenameError}
+              </span>
+            ) : null}
           </form>
         ) : (
           <>
@@ -341,6 +492,7 @@ export function ProjectHome({ projectId }: { readonly projectId: string }) {
               className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[color:var(--lf-text-muted)] transition hover:bg-[color:var(--lf-state-hover)] hover:text-[color:var(--lf-text-primary)]"
               onClick={() => {
                 setProjectNameDraft(project.name);
+                setProjectRenameError(null);
                 setRenamingProject(true);
               }}
             >
@@ -354,7 +506,9 @@ export function ProjectHome({ projectId }: { readonly projectId: string }) {
         <div className="rounded-[32px] border border-[color:var(--lf-border)] bg-[color:var(--lf-bg-muted)] px-4 py-3 shadow-sm">
           <div className="flex items-center gap-3">
             <button
+              ref={plusButtonRef}
               type="button"
+              data-testid="project-plus-button"
               className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[color:var(--lf-bg-card)] text-[color:var(--lf-text-primary)] transition hover:bg-[color:var(--lf-state-hover)]"
               aria-label="Добавить контекст"
               onClick={() => setMenuMode((mode) => (mode === "menu" ? "closed" : "menu"))}
@@ -362,6 +516,7 @@ export function ProjectHome({ projectId }: { readonly projectId: string }) {
               <Plus className="h-5 w-5" />
             </button>
             <textarea
+              data-testid="project-composer-input"
               value={prompt}
               onChange={(event) => setPrompt(event.target.value)}
               onPaste={handlePaste}
@@ -378,6 +533,7 @@ export function ProjectHome({ projectId }: { readonly projectId: string }) {
             </button>
             <button
               type="button"
+              data-testid="project-composer-send"
               className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[color:var(--lf-primary)] text-[color:var(--lf-primary-fg)] transition hover:bg-[color:var(--lf-primary-hover)] disabled:cursor-not-allowed disabled:opacity-50"
               aria-label="Отправить сообщение"
               disabled={!canSend || submitting}
@@ -407,6 +563,11 @@ export function ProjectHome({ projectId }: { readonly projectId: string }) {
               ))}
             </div>
           ) : null}
+          {composerError ? (
+            <div className="mt-3 pl-1">
+              <MutedLine text={composerError} />
+            </div>
+          ) : null}
         </div>
 
         {menuMode === "menu" ? (
@@ -415,7 +576,7 @@ export function ProjectHome({ projectId }: { readonly projectId: string }) {
             onFiles={() => fileInputRef.current?.click()}
             onAutomations={() => setMenuMode("automations")}
             onWebSearch={() => {
-              setActiveTab("sources");
+              selectTab("sources");
               setMenuMode("webSearch");
             }}
           />
@@ -424,6 +585,7 @@ export function ProjectHome({ projectId }: { readonly projectId: string }) {
         {menuMode === "automations" ? (
           <AutomationPicker
             automations={currentAutomations}
+            error={automations.isError}
             loading={automations.isLoading}
             onSelect={(automation) => {
               setSelectedAutomation(automation);
@@ -447,6 +609,7 @@ export function ProjectHome({ projectId }: { readonly projectId: string }) {
 
       <input
         ref={imageInputRef}
+        data-testid="project-image-input"
         type="file"
         accept="image/*"
         multiple
@@ -460,6 +623,7 @@ export function ProjectHome({ projectId }: { readonly projectId: string }) {
       />
       <input
         ref={fileInputRef}
+        data-testid="project-file-input"
         type="file"
         multiple
         className="hidden"
@@ -472,15 +636,24 @@ export function ProjectHome({ projectId }: { readonly projectId: string }) {
       />
 
       <div className="mt-9 flex items-center gap-2">
-        <TabButton active={activeTab === "chats"} onClick={() => setActiveTab("chats")}>
+        <TabButton
+          active={activeTab === "chats"}
+          testId="project-tab-chats"
+          onClick={() => selectTab("chats")}
+        >
           Чаты
         </TabButton>
-        <TabButton active={activeTab === "sources"} onClick={() => setActiveTab("sources")}>
+        <TabButton
+          active={activeTab === "sources"}
+          testId="project-tab-sources"
+          onClick={() => selectTab("sources")}
+        >
           Источники
         </TabButton>
         <TabButton
           active={activeTab === "automations"}
-          onClick={() => setActiveTab("automations")}
+          testId="project-tab-automations"
+          onClick={() => selectTab("automations")}
         >
           Автоматизации
         </TabButton>
@@ -496,6 +669,7 @@ export function ProjectHome({ projectId }: { readonly projectId: string }) {
         ) : null}
         {activeTab === "sources" ? (
           <ProjectSourceList
+            error={knowledge.isError}
             loading={knowledge.isLoading}
             sources={sources}
             webResults={webResults}
@@ -504,6 +678,7 @@ export function ProjectHome({ projectId }: { readonly projectId: string }) {
         {activeTab === "automations" ? (
           <ProjectAutomationList
             automations={currentAutomations}
+            error={automations.isError}
             loading={automations.isLoading}
             projectId={projectId}
           />
@@ -568,20 +743,28 @@ function MenuButton({
 
 function AutomationPicker({
   automations,
+  error,
   loading,
   onSelect,
 }: {
   readonly automations: readonly InstalledAutomationDetail[];
+  readonly error: boolean;
   readonly loading: boolean;
   readonly onSelect: (automation: InstalledAutomationDetail) => void;
 }) {
   return (
-    <div className="absolute left-1 top-[64px] z-20 grid w-[360px] gap-2 rounded-[20px] border border-[color:var(--lf-border)] bg-[color:var(--lf-bg-panel)] p-3 shadow-[var(--lf-shadow-popover)]">
+    <div
+      data-testid="project-automation-picker"
+      className="absolute left-1 top-[64px] z-20 grid w-[360px] gap-2 rounded-[20px] border border-[color:var(--lf-border)] bg-[color:var(--lf-bg-panel)] p-3 shadow-[var(--lf-shadow-popover)]"
+    >
       <div className="px-2 text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--lf-text-muted)]">
         Автоматизации проекта
       </div>
       {loading ? <MutedLine text="Загружаю автоматизации..." /> : null}
-      {!loading && automations.length === 0 ? (
+      {!loading && error ? (
+        <MutedLine text="Автоматизации временно недоступны. Попробуйте позже." />
+      ) : null}
+      {!loading && !error && automations.length === 0 ? (
         <MutedLine text="Автоматизаций пока нет." />
       ) : null}
       {automations.map((automation) => (
@@ -623,6 +806,7 @@ function WebSearchPanel({
 }) {
   return (
     <form
+      data-testid="project-web-search-panel"
       className="absolute left-1 top-[64px] z-20 grid w-[420px] max-w-[calc(100vw-48px)] gap-3 rounded-[20px] border border-[color:var(--lf-border)] bg-[color:var(--lf-bg-panel)] p-4 shadow-[var(--lf-shadow-popover)]"
       onSubmit={onSubmit}
     >
@@ -672,16 +856,19 @@ function TabButton({
   active,
   children,
   onClick,
+  testId,
 }: {
   readonly active: boolean;
   readonly children: React.ReactNode;
   readonly onClick: () => void;
+  readonly testId: string;
 }) {
   return (
     <button
       type="button"
       role="tab"
       aria-selected={active}
+      data-testid={testId}
       className={cn(
         "rounded-full px-5 py-3 text-sm font-semibold transition",
         active
@@ -740,22 +927,30 @@ function ProjectChatList({
 }
 
 function ProjectSourceList({
+  error,
   loading,
   sources,
   webResults,
 }: {
+  readonly error: boolean;
   readonly loading: boolean;
   readonly sources: readonly ProjectKnowledgeItem[];
   readonly webResults: readonly ProjectWebSearchResult[];
 }) {
   const mergedSources = React.useMemo(() => {
-    const seen = new Set(sources.map((source) => source.url ?? source.sourceId));
-    const transientSources = webResults.filter((result) => !seen.has(result.url));
+    const seen = new Set(sources.flatMap(sourceIdentityKeys));
+    const transientSources = webResults.filter((result) =>
+      sourceIdentityKeys(result).every((key) => !seen.has(key)),
+    );
     return { sources, transientSources };
   }, [sources, webResults]);
 
   if (loading && sources.length === 0) {
     return <SkeletonRows />;
+  }
+
+  if (error && sources.length === 0 && webResults.length === 0) {
+    return <EmptyState text="Источники временно недоступны. Попробуйте позже." />;
   }
 
   if (sources.length === 0 && webResults.length === 0) {
@@ -776,15 +971,21 @@ function ProjectSourceList({
 
 function ProjectAutomationList({
   automations,
+  error,
   loading,
   projectId,
 }: {
   readonly automations: readonly InstalledAutomationDetail[];
+  readonly error: boolean;
   readonly loading: boolean;
   readonly projectId: string;
 }) {
   if (loading && automations.length === 0) {
     return <SkeletonRows />;
+  }
+
+  if (error && automations.length === 0) {
+    return <EmptyState text="Автоматизации временно недоступны. Попробуйте позже." />;
   }
 
   if (automations.length === 0) {
@@ -929,9 +1130,39 @@ function SourceRow({
   );
 }
 
+function sourceIdentityKeys(
+  source: ProjectKnowledgeItem | ProjectWebSearchResult,
+): readonly string[] {
+  const keys = new Set<string>();
+  if ("url" in source && source.url) {
+    keys.add(`url:${normalizeSourceUrl(source.url)}`);
+  }
+  if ("sourceId" in source && source.sourceId) {
+    keys.add(`source:${source.sourceId}`);
+  }
+  if ("knowledgeItemId" in source && source.knowledgeItemId) {
+    keys.add(`knowledge:${source.knowledgeItemId}`);
+  }
+  if (source.id) {
+    keys.add(`id:${source.id}`);
+  }
+
+  return Array.from(keys);
+}
+
+function normalizeSourceUrl(value: string) {
+  try {
+    const url = new URL(value);
+    url.hash = "";
+    return url.toString().replace(/\/$/, "").toLowerCase();
+  } catch {
+    return value.trim().replace(/\/$/, "").toLowerCase();
+  }
+}
+
 function SkeletonRows() {
   return (
-    <div className="grid gap-3 px-4 py-3">
+    <div data-testid="project-skeleton-rows" className="grid gap-3 px-4 py-3">
       {[0, 1, 2].map((item) => (
         <div
           key={item}
@@ -993,6 +1224,14 @@ function validateComposerFile(file: File, kind: LocalComposerFile["kind"]) {
 
   if (kind === "image" && !file.type.startsWith("image/")) {
     return "Нужен файл изображения.";
+  }
+
+  return null;
+}
+
+function readProjectWorkspaceTab(value: string | null): ProjectWorkspaceTab | null {
+  if (value === "chats" || value === "sources" || value === "automations") {
+    return value;
   }
 
   return null;

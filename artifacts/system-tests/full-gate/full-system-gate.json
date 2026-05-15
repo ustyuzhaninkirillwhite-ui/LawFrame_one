@@ -1,0 +1,94 @@
+{
+  "status": "PASS",
+  "summary": "full system gate passed",
+  "startedAt": "2026-05-14T18:32:58.526Z",
+  "finishedAt": "2026-05-14T18:43:35.094Z",
+  "mode": "reuse-runtime",
+  "scope": "full",
+  "phases": [
+    {
+      "name": "inventory",
+      "status": "PASS"
+    },
+    {
+      "name": "preflight",
+      "status": "PASS"
+    },
+    {
+      "name": "contracts-typecheck",
+      "status": "PASS",
+      "durationMs": 2976
+    },
+    {
+      "name": "api-client-typecheck",
+      "status": "PASS",
+      "durationMs": 2583
+    },
+    {
+      "name": "backend-typecheck",
+      "status": "PASS",
+      "durationMs": 20293
+    },
+    {
+      "name": "backend-lint",
+      "status": "PASS",
+      "durationMs": 44919
+    },
+    {
+      "name": "backend-cross-domain-tests",
+      "status": "PASS",
+      "durationMs": 18145
+    },
+    {
+      "name": "web-typecheck",
+      "status": "PASS",
+      "durationMs": 20245
+    },
+    {
+      "name": "web-lint",
+      "status": "PASS",
+      "durationMs": 46732
+    },
+    {
+      "name": "web-cross-domain-unit-tests",
+      "status": "PASS",
+      "durationMs": 36074
+    },
+    {
+      "name": "e2e-typecheck",
+      "status": "PASS",
+      "durationMs": 4629
+    },
+    {
+      "name": "e2e-lint",
+      "status": "PASS",
+      "durationMs": 4692
+    },
+    {
+      "name": "web-bundle-secret-scan",
+      "status": "PASS",
+      "durationMs": 2658
+    },
+    {
+      "name": "repo-secret-scan",
+      "status": "PASS",
+      "durationMs": 26805
+    },
+    {
+      "name": "backend-backed-cross-domain-e2e",
+      "status": "PASS",
+      "durationMs": 402730
+    },
+    {
+      "name": "artifact-redaction",
+      "status": "PASS"
+    },
+    {
+      "name": "evidence",
+      "status": "PASS"
+    }
+  ],
+  "commandLedger": "artifacts/system-tests/full-gate/command-ledger.json",
+  "artifactsDir": "artifacts/system-tests/full-gate",
+  "playwrightResults": "artifacts/system-tests/full-gate/playwright-results.backend-full-system.json"
+}

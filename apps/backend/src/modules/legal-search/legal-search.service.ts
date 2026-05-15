@@ -11,6 +11,7 @@ import type {
   AccessContext,
   AuthenticatedActor,
 } from '../../common/types/lexframe-request';
+import { createHash } from 'node:crypto';
 import { loadServerEnv } from '@lexframe/config';
 import { Injectable } from '@nestjs/common';
 import { AuditService } from '../audit/audit.service';
@@ -134,10 +135,11 @@ export class LegalSearchService {
       requestId: meta.requestId,
       traceId: meta.traceId,
       metadata: {
-        query: input.query,
+        queryHash: hashAuditValue(input.query),
+        queryLength: input.query.trim().length,
         mode: input.mode,
         total,
-        selectedSources: input.selectedSourceIds ?? [],
+        selectedSourceCount: input.selectedSourceIds?.length ?? 0,
       },
     });
 
@@ -659,6 +661,10 @@ function readMetadataString(
 
 function roundScore(value: number) {
   return Math.round(value * 1000) / 1000;
+}
+
+function hashAuditValue(value: string) {
+  return `sha256:${createHash('sha256').update(value).digest('hex')}`;
 }
 
 function clampNonNegative(value: number) {

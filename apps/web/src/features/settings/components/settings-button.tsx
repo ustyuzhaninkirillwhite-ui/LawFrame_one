@@ -16,10 +16,16 @@ export function SettingsButton({
 }) {
   const open = useSettingsDialogStore((state) => state.open);
   const setOpen = useSettingsDialogStore((state) => state.setOpen);
+  const entryRef = React.useRef<HTMLButtonElement | null>(null);
+  const closeDialog = React.useCallback(() => {
+    setOpen(false);
+    entryRef.current?.focus();
+  }, [setOpen]);
 
   return (
     <>
       <Button
+        ref={entryRef}
         type="button"
         variant="ghost"
         className={cn(
@@ -34,7 +40,7 @@ export function SettingsButton({
         <Settings size={collapsed ? 18 : 16} />
         {collapsed ? null : <span>Настройки</span>}
       </Button>
-      <SettingsDialog open={open} onClose={() => setOpen(false)} />
+      <SettingsDialog open={open} onClose={closeDialog} />
     </>
   );
 }

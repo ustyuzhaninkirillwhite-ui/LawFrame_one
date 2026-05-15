@@ -33,4 +33,26 @@ describe('Stage 21 settings redactor', () => {
       message: 'provider failed with key [REDACTED]',
     });
   });
+
+  it('redacts backend secret references from audit metadata', () => {
+    const value = {
+      connection_id: 'conn_workspace_ai',
+      secret_ref_id: '00000000-0000-4000-8000-000000000099',
+      nested: {
+        secretRefId: '00000000-0000-4000-8000-000000000099',
+        backendSecretId: 'vault_secret_001',
+      },
+      vault_secret_id: 'vault_secret_002',
+    };
+
+    expect(redactSecrets(value)).toEqual({
+      connection_id: 'conn_workspace_ai',
+      secret_ref_id: '[REDACTED]',
+      nested: {
+        secretRefId: '[REDACTED]',
+        backendSecretId: '[REDACTED]',
+      },
+      vault_secret_id: '[REDACTED]',
+    });
+  });
 });

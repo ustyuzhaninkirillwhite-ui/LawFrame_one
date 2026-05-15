@@ -12,12 +12,24 @@ export function Dialog({
     return null;
   }
 
+  const {
+    "aria-label": ariaLabel,
+    "aria-labelledby": ariaLabelledBy,
+    ...rootProps
+  } = props;
+
   return (
     <div
       className="fixed inset-0 z-50 grid place-items-center bg-[color:var(--lf-bg-app)]/70 p-4 backdrop-blur-sm"
-      {...props}
+      {...rootProps}
     >
-      <div role="dialog" aria-modal="true" className={cn(overlayRecipe.dialog, className)}>
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={ariaLabel}
+        aria-labelledby={ariaLabelledBy}
+        className={cn(overlayRecipe.dialog, className)}
+      >
         {children}
       </div>
     </div>

@@ -237,6 +237,86 @@ describe('CanvasValidationService', () => {
     expect(result.can_compile).toBe(false);
   });
 
+  it('blocks direct AI provider nodes that bypass the LexFrame AI Gateway', () => {
+    const base = makeWorkflow();
+    const aiNode = {
+      ...createWorkflowNode({
+        id: 'ai_direct_provider',
+        type: 'aiAction',
+        displayName: 'Direct provider call',
+        x: 160,
+        y: 180,
+      }),
+      runtime_mapping: {
+        provider: 'openai' as never,
+        can_compile: true,
+      },
+    };
+    const workflow = {
+      ...base,
+      nodes: [base.nodes[0]!, aiNode, base.nodes[1]!],
+      edges: [
+        createWorkflowEdge({
+          source: 'trigger_manual_start',
+          target: aiNode.id,
+        }),
+        createWorkflowEdge({
+          source: aiNode.id,
+          target: 'end_success',
+        }),
+      ],
+    };
+
+    const result = service.validateWorkflow(workflow);
+
+    expect(result.policy_blocks_count).toBeGreaterThanOrEqual(1);
+    expect(result.can_run).toBe(false);
+    expect(
+      result.issues.some(
+        (issue) =>
+          issue.code === 'WF_POLICY_002_AI_ROUTE_FORBIDDEN_FOR_DATA_CLASS',
+      ),
+    ).toBe(true);
+  });
+
+  it('blocks cross-workspace document references before compile or run', () => {
+    const workflow = workflowWithAction({
+      inputs: [
+        {
+          key: 'document',
+          label: 'Document',
+          data_type: 'document_ref',
+          type: 'document_ref',
+          required: true,
+          classification: 'client_material',
+        },
+      ],
+      bindings: [
+        {
+          target: {
+            node_id: 'legal_action',
+            input_key: 'document',
+          },
+          source: {
+            type: 'document',
+            document_id: 'doc_other_workspace',
+            workspace_id: 'workspace_other',
+          },
+        } as never,
+      ],
+    });
+
+    const result = service.validateWorkflow(workflow);
+
+    expect(result.policy_blocks_count).toBeGreaterThanOrEqual(1);
+    expect(result.can_compile).toBe(false);
+    expect(
+      result.issues.some(
+        (issue) => issue.code === 'WF_POLICY_004_CROSS_WORKSPACE_REFERENCE',
+      ),
+    ).toBe(true);
+  });
+
   it('keeps downstream bindings stale when a source node is removed', () => {
     const workflow = workflowWithAction({
       inputs: [

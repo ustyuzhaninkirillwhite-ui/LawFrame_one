@@ -15,6 +15,26 @@ describe('Stage 21 AI provider base URL SSRF guard', () => {
     ).rejects.toMatchObject({ code: 'AI_BASE_URL_BLOCKED' });
   });
 
+  it('blocks literal localhost and private targets outside production too', async () => {
+    await expect(
+      validateAiProviderBaseUrl('http://127.0.0.1:11434/v1', {
+        production: false,
+      }),
+    ).rejects.toMatchObject({ code: 'AI_BASE_URL_BLOCKED' });
+
+    await expect(
+      validateAiProviderBaseUrl('http://[::1]/v1', {
+        production: false,
+      }),
+    ).rejects.toMatchObject({ code: 'AI_BASE_URL_BLOCKED' });
+
+    await expect(
+      validateAiProviderBaseUrl('http://169.254.169.254/latest', {
+        production: false,
+      }),
+    ).rejects.toMatchObject({ code: 'AI_BASE_URL_BLOCKED' });
+  });
+
   it('requires https and rejects credentials in production URLs', async () => {
     await expect(
       validateAiProviderBaseUrl('http://api.example.test/v1', {

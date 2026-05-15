@@ -15,11 +15,6 @@ import type { AiProviderConnectionFormValue } from "./ai-provider-connection-for
 import { AiRouteGroupCard } from "./ai-route-group-card";
 import { SettingsErrorState } from "./settings-error-state";
 
-const WORKSPACE_DEFAULT_ROUTE_GROUPS: readonly AiRouteGroup[] = [
-  "chat_ai",
-  "automation_ai",
-];
-
 export function AiSettingsPanel({
   canManageSelf,
   canManageWorkspace,
@@ -79,18 +74,14 @@ export function AiSettingsPanel({
       );
     }
 
-    await Promise.all(
-      WORKSPACE_DEFAULT_ROUTE_GROUPS.map((routeGroup) =>
-        apiClient.updateAiRouteGroupPreference(routeGroup, {
-          format: "manual_form",
-          scopeType: ownerScope,
-          providerConnectionId: persistedConnection.id,
-          modelId: persistedConnection.modelId,
-          enabled: true,
-          capabilitiesConfirmed: input.form.capabilities,
-        }),
-      ),
-    );
+    await apiClient.updateAiRouteGroupPreference(input.routeGroup, {
+      format: "manual_form",
+      scopeType: ownerScope,
+      providerConnectionId: persistedConnection.id,
+      modelId: persistedConnection.modelId,
+      enabled: true,
+      capabilitiesConfirmed: input.form.capabilities,
+    });
 
     return persistedConnection;
   };
@@ -255,7 +246,7 @@ function pickConnection(
     }
   }
 
-  return connections[0] ?? null;
+  return null;
 }
 
 function formatAiSettingsError(error: unknown, fallback: string): string {
@@ -268,6 +259,14 @@ function formatAiSettingsError(error: unknown, fallback: string): string {
       return "API-ключ не сохранён. Введите новый ключ, сохраните настройки и повторите проверку.";
     }
 
+    if (
+      error.code === "AI_PROVIDER_UNAVAILABLE" ||
+      error.status >= 500 ||
+      !isSafeAiUiErrorMessage(error.message)
+    ) {
+      return "AI provider is temporarily unavailable. Check provider status and saved connection settings.";
+    }
+
     return error.message || fallback;
   }
 
@@ -276,4 +275,14 @@ function formatAiSettingsError(error: unknown, fallback: string): string {
   }
 
   return fallback;
+}
+
+function isSafeAiUiErrorMessage(message: string) {
+  return (
+    message.length > 0 &&
+    message.length <= 220 &&
+    !/authorization|bearer|x-api-key|api[_ -]?key|sk-[A-Za-z0-9_-]{8,}|BEGIN PRIVATE KEY|upstream\s+5\d\d/i.test(
+      message,
+    )
+  );
 }

@@ -8,11 +8,15 @@ import { Input } from "@/components/ui/input";
 
 export function AiKeyWriteOnlyField({
   disabled,
+  inputId = "stage21-ai-api-key",
+  inputTestId,
   secret,
   value,
   onChange,
 }: {
   readonly disabled?: boolean;
+  readonly inputId?: string;
+  readonly inputTestId?: string;
   readonly secret: AiSecretStatusDto;
   readonly value: string;
   readonly onChange: (value: string) => void;
@@ -58,13 +62,14 @@ export function AiKeyWriteOnlyField({
   return (
     <div className="grid gap-2">
       <label
-        htmlFor="stage21-ai-api-key"
+        htmlFor={inputId}
         className="text-sm font-medium text-[color:var(--lf-text-primary)]"
       >
         Новый API key
       </label>
       <Input
-        id="stage21-ai-api-key"
+        id={inputId}
+        data-testid={inputTestId}
         type="password"
         value={value}
         autoComplete="off"

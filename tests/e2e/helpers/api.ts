@@ -4,7 +4,7 @@ const apiBaseUrl =
   process.env.LEXFRAME_API_BASE_URL ??
   (process.env.LEXFRAME_STAGE17_17_10_LIVE === "1"
     ? "http://127.0.0.1:3100/api"
-    : "http://127.0.0.1:3100");
+    : `http://127.0.0.1:${process.env.LEXFRAME_API_PORT ?? "3100"}`);
 
 interface SessionContextPayload {
   readonly activeWorkspace: {

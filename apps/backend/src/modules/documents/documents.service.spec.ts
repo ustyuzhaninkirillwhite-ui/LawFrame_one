@@ -163,6 +163,7 @@ describe('DocumentsService', () => {
       status: 'upload_pending',
       mime_type: 'text/plain',
       original_filename: 'evidence.txt',
+      size_bytes: 5,
       scan_status: 'queued',
       preview_status: 'queued',
       extraction_status: 'queued',
@@ -219,6 +220,7 @@ describe('DocumentsService', () => {
       status: 'upload_pending',
       mime_type: 'text/plain',
       original_filename: 'evidence.txt',
+      size_bytes: 6,
       scan_status: 'queued',
       preview_status: 'queued',
       extraction_status: 'queued',
@@ -243,6 +245,201 @@ describe('DocumentsService', () => {
       'DOCUMENT_UPLOAD_SIZE_MISMATCH',
       400,
     );
+  });
+
+  it('rejects content upload when reported metadata differs from the upload intent', async () => {
+    const { service, databaseService, auditService } = createService();
+
+    databaseService.one.mockResolvedValue({
+      id: 'docv_uploaded',
+      document_id: 'doc_uploaded',
+      storage_bucket: 'documents-private',
+      storage_path:
+        'workspace/ws/documents/doc_uploaded/versions/docv_uploaded/original/evidence.pdf',
+      status: 'upload_pending',
+      mime_type: 'application/pdf',
+      original_filename: 'evidence.pdf',
+      size_bytes: 5,
+      scan_status: 'queued',
+      preview_status: 'queued',
+      extraction_status: 'queued',
+    });
+
+    await expectAppError(
+      service.uploadVersionContent(
+        actor,
+        access,
+        'doc_uploaded',
+        'docv_uploaded',
+        {
+          contentBase64: 'aGVsbG8=',
+          clientReportedMimeType: 'text/plain',
+          clientReportedSize: 5,
+        },
+        {
+          requestId: 'req_mismatch',
+          traceId: 'trace_mismatch',
+        },
+      ),
+      'DOCUMENT_UPLOAD_METADATA_MISMATCH',
+      400,
+    );
+
+    expect(auditService.record).not.toHaveBeenCalled();
+  });
+
+  it('rejects upload completion before document content is received', async () => {
+    const { service, databaseService, auditService } = createService();
+
+    databaseService.one.mockResolvedValueOnce({
+      id: 'docv_pending',
+      document_id: 'doc_pending',
+      storage_bucket: 'documents-private',
+      storage_path:
+        'workspace/ws/documents/doc_pending/versions/docv_pending/original/evidence.pdf',
+      status: 'upload_pending',
+      mime_type: 'application/pdf',
+      original_filename: 'evidence.pdf',
+      size_bytes: 5,
+      scan_status: 'queued',
+      preview_status: 'queued',
+      extraction_status: 'queued',
+    });
+    jest.spyOn(service as any, 'verifyUploadedObject').mockResolvedValue({
+      mimeType: 'application/pdf',
+      sizeBytes: 5,
+    });
+
+    await expectAppError(
+      service.completeUpload(
+        actor,
+        access,
+        'doc_pending',
+        'docv_pending',
+        {
+          clientReportedSize: 5,
+          clientReportedMimeType: 'application/pdf',
+          sha256:
+            '2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824',
+        },
+        {
+          requestId: 'req_complete_before_content',
+          traceId: 'trace_complete_before_content',
+        },
+      ),
+      'DOCUMENT_UPLOAD_NOT_READY',
+      409,
+    );
+
+    expect(auditService.record).not.toHaveBeenCalled();
+  });
+
+  it('rejects unsafe document upload intent metadata before creating storage rows', async () => {
+    const { service, databaseService } = createService();
+    const baseInput: DocumentUploadIntentRequest = {
+      title: 'Unsafe upload',
+      kind: 'case_material',
+      classification: 'client_material',
+      originalFilename: 'evidence.pdf',
+      mimeType: 'application/pdf',
+      sizeBytes: 12,
+      tags: [],
+    };
+
+    await expectAppError(
+      service.createUploadIntent(
+        actor,
+        access,
+        { ...baseInput, sizeBytes: 0 },
+        { requestId: 'req_empty', traceId: 'trace_empty' },
+      ),
+      'VALIDATION_ERROR',
+      400,
+    );
+    await expectAppError(
+      service.createUploadIntent(
+        actor,
+        access,
+        {
+          ...baseInput,
+          originalFilename: '../payload.pdf',
+        },
+        { requestId: 'req_path', traceId: 'trace_path' },
+      ),
+      'VALIDATION_ERROR',
+      400,
+    );
+    await expectAppError(
+      service.createUploadIntent(
+        actor,
+        access,
+        {
+          ...baseInput,
+          originalFilename: 'payload.exe',
+          mimeType: 'application/pdf',
+        },
+        { requestId: 'req_disguised', traceId: 'trace_disguised' },
+      ),
+      'VALIDATION_ERROR',
+      400,
+    );
+    await expectAppError(
+      service.createUploadIntent(
+        actor,
+        access,
+        {
+          ...baseInput,
+          originalFilename: 'payload.bin',
+          mimeType: 'application/octet-stream',
+        },
+        { requestId: 'req_mime', traceId: 'trace_mime' },
+      ),
+      'UNSUPPORTED_MIME_TYPE',
+      400,
+    );
+
+    expect(databaseService.transaction).not.toHaveBeenCalled();
+  });
+
+  it('rejects non-canonical document content base64 without auditing raw content', async () => {
+    const { service, databaseService, auditService } = createService();
+
+    databaseService.one.mockResolvedValue({
+      id: 'docv_uploaded',
+      document_id: 'doc_uploaded',
+      storage_bucket: 'documents-private',
+      storage_path:
+        'workspace/ws/documents/doc_uploaded/versions/docv_uploaded/original/evidence.txt',
+      status: 'upload_pending',
+      mime_type: 'text/plain',
+      original_filename: 'evidence.txt',
+      size_bytes: 10,
+      scan_status: 'queued',
+      preview_status: 'queued',
+      extraction_status: 'queued',
+    });
+
+    await expectAppError(
+      service.uploadVersionContent(
+        actor,
+        access,
+        'doc_uploaded',
+        'docv_uploaded',
+        {
+          contentBase64: 'not valid base64',
+          clientReportedMimeType: 'text/plain',
+          clientReportedSize: 10,
+        },
+        {
+          requestId: 'req_bad_content',
+          traceId: 'trace_bad_content',
+        },
+      ),
+      'DOCUMENT_UPLOAD_CONTENT_INVALID',
+      400,
+    );
+
+    expect(auditService.record).not.toHaveBeenCalled();
   });
 
   it('creates run artifacts after the document version exists and only then marks it current', async () => {

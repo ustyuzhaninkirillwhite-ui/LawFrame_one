@@ -8,6 +8,9 @@ const listChatThreads = vi.fn();
 const createChatThread = vi.fn();
 const updateChatThread = vi.fn();
 const updateProject = vi.fn();
+const createProject = vi.fn();
+const signOut = vi.fn();
+const toggleTheme = vi.fn();
 let projectChats: readonly {
   readonly id: string;
   readonly projectId: string;
@@ -34,7 +37,7 @@ vi.mock("@/providers/session-provider", () => ({
       updateChatThread,
       updateProject,
     },
-    signOut: vi.fn(),
+    signOut,
     sessionContext: {
       activeWorkspace: { id: "ws_1", name: "Orlov & Partners" },
       permissions: [
@@ -50,7 +53,7 @@ vi.mock("@/providers/session-provider", () => ({
 }));
 
 vi.mock("@/providers/theme-provider", () => ({
-  useTheme: () => ({ theme: "light", toggleTheme: vi.fn() }),
+  useTheme: () => ({ theme: "light", toggleTheme }),
 }));
 
 vi.mock("@/features/settings", () => ({
@@ -72,7 +75,7 @@ vi.mock("@/hooks/domain/stage15", () => ({
   }),
   useCreateStage15Project: () => ({
     isPending: false,
-    mutateAsync: vi.fn(),
+    mutateAsync: createProject,
   }),
   useStage15ProjectChats: () => ({ data: projectChats, isLoading: false, error: null }),
   useStage15Projects: () => ({
@@ -113,6 +116,9 @@ describe("ProjectSidebar", () => {
     createChatThread.mockReset();
     updateChatThread.mockReset();
     updateProject.mockReset();
+    createProject.mockReset();
+    signOut.mockReset();
+    toggleTheme.mockReset();
     createChat.mockClear();
     pathname = "/app/connectors";
     projectChats = [
@@ -192,6 +198,12 @@ describe("ProjectSidebar", () => {
         name: "Renamed project",
       },
     });
+    createProject.mockResolvedValue({
+      project: {
+        id: "project_created",
+        name: "Created project",
+      },
+    });
   });
 
   it("shows global chat history on /chat without leaking project chats", async () => {
@@ -244,6 +256,14 @@ describe("ProjectSidebar", () => {
   it("renders compact navigation without workspace subtitle or active project cards", async () => {
     render(<ProjectSidebar />);
 
+    expect(screen.getByTestId("project-sidebar")).toHaveAttribute(
+      "data-collapsed",
+      "false",
+    );
+    expect(screen.getByTestId("project-sidebar")).toHaveAttribute(
+      "data-active-project-id",
+      "project_claim_001",
+    );
     const brand = screen.getByLabelText("LexFrame");
 
     expect(within(brand).getByText("LexFrame")).toBeInTheDocument();
@@ -306,6 +326,63 @@ describe("ProjectSidebar", () => {
         "/app/projects/project_claim_001/chats/chat_project_recent",
       );
     });
+  });
+
+  it("renders collapsed rail controls and opens the forced collapsed preview", () => {
+    render(<ProjectSidebar forceCollapsed />);
+
+    expect(screen.getByTestId("project-sidebar")).toHaveAttribute(
+      "data-collapsed",
+      "true",
+    );
+    expect(screen.getByRole("link", { name: "LexFrame" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Открыть меню" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Новый чат" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Поиск в чатах" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Настройки" })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Открыть меню" }));
+
+    expect(screen.getByRole("button", { name: "Закрыть меню" })).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "Новый чат" }).length).toBeGreaterThan(0);
+
+    fireEvent.click(screen.getByRole("button", { name: "Закрыть меню" }));
+    expect(screen.queryByRole("button", { name: "Закрыть меню" })).not.toBeInTheDocument();
+  });
+
+  it("validates the project creation form and opens the created project", async () => {
+    render(<ProjectSidebar />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Создать проект" }));
+    const submit = screen.getAllByRole("button", { name: "Создать проект" }).at(-1);
+
+    expect(submit).toBeInstanceOf(HTMLButtonElement);
+    expect(submit).toBeDisabled();
+
+    fireEvent.change(screen.getByPlaceholderText("Например, новый спор"), {
+      target: { value: "Created project" },
+    });
+    fireEvent.click(submit as HTMLButtonElement);
+
+    await waitFor(() => {
+      expect(createProject).toHaveBeenCalledWith({
+        name: "Created project",
+        description: "",
+        color: "#3B82F6",
+      });
+      expect(push).toHaveBeenCalledWith("/app/projects/project_created");
+    });
+  });
+
+  it("keeps settings, theme toggle and sign out reachable from expanded mode", () => {
+    render(<ProjectSidebar />);
+
+    expect(screen.getByRole("button", { name: "Настройки" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Включить тёмную тему" }));
+    fireEvent.click(screen.getByRole("button", { name: "Выйти" }));
+
+    expect(toggleTheme).toHaveBeenCalledTimes(1);
+    expect(signOut).toHaveBeenCalledTimes(1);
   });
 });
 

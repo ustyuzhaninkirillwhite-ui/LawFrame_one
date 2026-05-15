@@ -4,6 +4,7 @@ import type {
 } from '@lexframe/contracts';
 import { Injectable } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
+import { sanitizeAuditValue } from './audit-redaction';
 
 interface AuditEventRow {
   readonly id: string;
@@ -64,6 +65,9 @@ export class AuditService {
   }
 
   async record(input: AuditRecordInput): Promise<void> {
+    const metadata = sanitizeAuditValue(input.metadata ?? {});
+    const redactionSummary = sanitizeAuditValue(input.redactionSummary ?? {});
+
     await this.databaseService.query(
       `
         insert into audit.audit_events (
@@ -117,9 +121,11 @@ export class AuditService {
         input.eventCategory ?? null,
         input.sessionId ?? null,
         input.dataClass ?? null,
-        input.redactionApplied ?? false,
-        JSON.stringify(input.redactionSummary ?? {}),
-        JSON.stringify(input.metadata ?? {}),
+        (input.redactionApplied ?? false) ||
+          metadata.redacted ||
+          redactionSummary.redacted,
+        JSON.stringify(redactionSummary.value),
+        JSON.stringify(metadata.value),
       ],
     );
   }
@@ -190,7 +196,7 @@ export class AuditService {
       eventCategory: row.event_category,
       sessionId: row.session_id,
       dataClass: row.data_class,
-      metadata: row.metadata ?? {},
+      metadata: sanitizeAuditValue(row.metadata ?? {}).value,
     }));
   }
 

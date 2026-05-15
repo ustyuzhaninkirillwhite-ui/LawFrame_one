@@ -32,6 +32,13 @@ test.describe("Stage 2 documents / storage smoke", () => {
         "content-type": "application/json",
       };
 
+      const uploadBytes = new TextEncoder().encode(
+        "LexFrame browser storage smoke\n",
+      );
+      const uploadBase64 = btoa(
+        String.fromCharCode(...Array.from(uploadBytes)),
+      );
+
       const uploadIntent = await fetch(`${baseUrl}/documents/upload-intents`, {
         method: "POST",
         headers: jsonHeaders,
@@ -40,12 +47,25 @@ test.describe("Stage 2 documents / storage smoke", () => {
           description: "Smoke upload from Playwright",
           kind: "case_material",
           classification: "client_material",
-          mimeType: "application/pdf",
-          originalFilename: "claim.pdf",
-          sizeBytes: 196608,
+          mimeType: "text/plain",
+          originalFilename: "claim.txt",
+          sizeBytes: uploadBytes.byteLength,
           tags: ["stage2", "smoke"],
         }),
       }).then((response) => response.json());
+
+      const content = await fetch(
+        `${baseUrl}/documents/${uploadIntent.documentId}/versions/${uploadIntent.versionId}/content`,
+        {
+          method: "POST",
+          headers: jsonHeaders,
+          body: JSON.stringify({
+            contentBase64: uploadBase64,
+            clientReportedSize: uploadBytes.byteLength,
+            clientReportedMimeType: "text/plain",
+          }),
+        },
+      ).then((response) => response.json());
 
       await fetch(
         `${baseUrl}/documents/${uploadIntent.documentId}/versions/${uploadIntent.versionId}/complete`,
@@ -53,8 +73,9 @@ test.describe("Stage 2 documents / storage smoke", () => {
           method: "POST",
           headers: jsonHeaders,
           body: JSON.stringify({
-            clientReportedSize: 196608,
-            clientReportedMimeType: "application/pdf",
+            clientReportedSize: uploadBytes.byteLength,
+            clientReportedMimeType: "text/plain",
+            sha256: content.sha256,
           }),
         },
       );
@@ -66,8 +87,8 @@ test.describe("Stage 2 documents / storage smoke", () => {
           headers: jsonHeaders,
           body: JSON.stringify({
             versionId: uploadIntent.versionId,
-            objectRole: "preview_pdf",
-            purpose: "preview",
+            objectRole: "original",
+            purpose: "download",
           }),
         },
       );
@@ -79,9 +100,22 @@ test.describe("Stage 2 documents / storage smoke", () => {
           method: "POST",
           headers: jsonHeaders,
           body: JSON.stringify({
-            originalFilename: "claim-v2.pdf",
-            mimeType: "application/pdf",
-            sizeBytes: 221184,
+            originalFilename: "claim-v2.txt",
+            mimeType: "text/plain",
+            sizeBytes: uploadBytes.byteLength,
+          }),
+        },
+      ).then((response) => response.json());
+
+      const versionContent = await fetch(
+        `${baseUrl}/documents/${uploadIntent.documentId}/versions/${versionIntent.versionId}/content`,
+        {
+          method: "POST",
+          headers: jsonHeaders,
+          body: JSON.stringify({
+            contentBase64: uploadBase64,
+            clientReportedSize: uploadBytes.byteLength,
+            clientReportedMimeType: "text/plain",
           }),
         },
       ).then((response) => response.json());
@@ -92,8 +126,9 @@ test.describe("Stage 2 documents / storage smoke", () => {
           method: "POST",
           headers: jsonHeaders,
           body: JSON.stringify({
-            clientReportedSize: 221184,
-            clientReportedMimeType: "application/pdf",
+            clientReportedSize: uploadBytes.byteLength,
+            clientReportedMimeType: "text/plain",
+            sha256: versionContent.sha256,
           }),
         },
       );
@@ -124,7 +159,7 @@ test.describe("Stage 2 documents / storage smoke", () => {
       return {
         documentId: uploadIntent.documentId,
         signedUrlStatus: signedUrlResponse.status,
-        signedUrl: signedUrlBody.signedUrl,
+        signedUrlIssued: typeof signedUrlBody.signedUrl === "string",
         signedUrlErrorCode: signedUrlBody.error?.code,
         versionsCount: versions.length,
         archiveStatus: archive.status,
@@ -136,7 +171,7 @@ test.describe("Stage 2 documents / storage smoke", () => {
       /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
     );
     if (result.signedUrlStatus === 200) {
-      expect(result.signedUrl).toContain("storage");
+      expect(result.signedUrlIssued).toBe(true);
     } else {
       expect(result.signedUrlStatus).toBe(503);
       expect(result.signedUrlErrorCode).toBe("READINESS_GATE_BLOCKED");

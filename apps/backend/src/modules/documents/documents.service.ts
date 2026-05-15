@@ -55,6 +55,7 @@ import {
   normalizeArtifactKind,
   resolveDocumentSource,
   sanitizeFilename,
+  splitExtension,
 } from './documents-storage.helpers';
 
 interface RequestMeta {
@@ -162,6 +163,8 @@ interface ExistingVersionRow {
   readonly storage_path: string;
   readonly status: DocumentStatus;
   readonly mime_type: string;
+  readonly size_bytes: number;
+  readonly sha256: string | null;
   readonly original_filename: string;
   readonly scan_status: DocumentScanStatus;
   readonly preview_status: DocumentVersionSummary['previewStatus'];
@@ -174,6 +177,17 @@ interface StorageVerificationRow {
   readonly mime_type: string | null;
   readonly size_bytes: number | null;
 }
+
+const DOCUMENT_UPLOAD_EXTENSIONS = new Map<string, readonly string[]>([
+  ['application/pdf', ['pdf']],
+  [
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    ['docx'],
+  ],
+  ['image/png', ['png']],
+  ['image/jpeg', ['jpg', 'jpeg']],
+  ['text/plain', ['txt', 'md', 'csv']],
+]);
 
 interface RunArtifactRow {
   readonly id: string;
@@ -407,6 +421,7 @@ export class DocumentsService {
   ): Promise<DocumentUploadIntentResponse> {
     this.assertMimeAllowed(input.mimeType);
     this.assertSizeAllowed(input.sizeBytes);
+    this.assertFilenameAllowed(input.originalFilename, input.mimeType);
 
     const documentId = randomUUID();
     const versionId = randomUUID();
@@ -535,6 +550,7 @@ export class DocumentsService {
   ): Promise<DocumentUploadIntentResponse> {
     this.assertMimeAllowed(input.mimeType);
     this.assertSizeAllowed(input.sizeBytes);
+    this.assertFilenameAllowed(input.originalFilename, input.mimeType);
 
     const document = await this.getExistingDocument(
       documentId,
@@ -632,12 +648,15 @@ export class DocumentsService {
       access.activeWorkspace!.id,
     );
 
+    this.assertVersionReadyForCompletion(version, input);
+
     const storageObject = await this.verifyUploadedObject(
       actor,
       version.storage_bucket,
       version.storage_path,
       input,
     );
+    this.assertVerifiedStorageMatchesVersion(version, storageObject);
 
     await this.databaseService.transaction(async (client) => {
       await client.query(
@@ -748,13 +767,14 @@ export class DocumentsService {
     input: DocumentUploadContentRequest,
     meta: RequestMeta,
   ): Promise<DocumentUploadContentResponse> {
-    await this.getExistingVersion(
+    const version = await this.getExistingVersion(
       documentId,
       versionId,
       access.activeWorkspace!.id,
     );
     this.assertMimeAllowed(input.clientReportedMimeType);
     this.assertSizeAllowed(input.clientReportedSize);
+    this.assertContentMatchesUploadIntent(version, input);
 
     const bytes = decodeBase64Content(input.contentBase64);
     if (bytes.byteLength !== input.clientReportedSize) {
@@ -777,6 +797,30 @@ export class DocumentsService {
         'Uploaded file bytes do not match the reported content hash.',
       );
     }
+
+    await this.databaseService.query(
+      `
+        update app.document_versions
+        set
+          status = 'uploaded',
+          size_bytes = $4,
+          mime_type = $5,
+          sha256 = $6,
+          updated_at = timezone('utc', now())
+        where id = $1
+          and document_id = $2
+          and workspace_id = $3
+          and status = 'upload_pending'
+      `,
+      [
+        versionId,
+        documentId,
+        access.activeWorkspace!.id,
+        bytes.byteLength,
+        input.clientReportedMimeType,
+        sha256,
+      ],
+    );
 
     await this.auditService.record({
       actorUserId: actor.id,
@@ -1479,6 +1523,8 @@ export class DocumentsService {
           storage_path,
           status,
           mime_type,
+          size_bytes,
+          sha256,
           original_filename,
           scan_status,
           preview_status,
@@ -1502,6 +1548,98 @@ export class DocumentsService {
     }
 
     return row;
+  }
+
+  private assertContentMatchesUploadIntent(
+    version: ExistingVersionRow,
+    input: DocumentUploadContentRequest,
+  ) {
+    if (version.status !== 'upload_pending') {
+      throw new AppHttpException(
+        'DOCUMENT_STATE_INVALID',
+        409,
+        'Document version is not accepting upload content.',
+      );
+    }
+
+    if (
+      version.mime_type !== input.clientReportedMimeType ||
+      Number(version.size_bytes) !== input.clientReportedSize
+    ) {
+      throw new AppHttpException(
+        'DOCUMENT_UPLOAD_METADATA_MISMATCH',
+        400,
+        'Uploaded file metadata does not match the upload intent.',
+        {
+          expectedMimeType: version.mime_type,
+          receivedMimeType: input.clientReportedMimeType,
+          expectedSize: Number(version.size_bytes),
+          receivedSize: input.clientReportedSize,
+        },
+      );
+    }
+  }
+
+  private assertVersionReadyForCompletion(
+    version: ExistingVersionRow,
+    input: CompleteUploadRequest,
+  ) {
+    if (version.status !== 'uploaded') {
+      throw new AppHttpException(
+        'DOCUMENT_UPLOAD_NOT_READY',
+        409,
+        'Document content must be received before upload completion.',
+      );
+    }
+
+    if (
+      version.mime_type !== input.clientReportedMimeType ||
+      Number(version.size_bytes) !== input.clientReportedSize
+    ) {
+      throw new AppHttpException(
+        'DOCUMENT_UPLOAD_METADATA_MISMATCH',
+        400,
+        'Completed file metadata does not match the uploaded content.',
+        {
+          expectedMimeType: version.mime_type,
+          receivedMimeType: input.clientReportedMimeType,
+          expectedSize: Number(version.size_bytes),
+          receivedSize: input.clientReportedSize,
+        },
+      );
+    }
+
+    if (input.sha256 && version.sha256 && input.sha256 !== version.sha256) {
+      throw new AppHttpException(
+        'DOCUMENT_UPLOAD_HASH_MISMATCH',
+        400,
+        'Completed file hash does not match the uploaded content.',
+      );
+    }
+  }
+
+  private assertVerifiedStorageMatchesVersion(
+    version: ExistingVersionRow,
+    storageObject: {
+      readonly mimeType?: string | null;
+      readonly sizeBytes?: number | null;
+    },
+  ) {
+    const verifiedSize = storageObject.sizeBytes;
+    const verifiedMimeType = storageObject.mimeType;
+
+    if (
+      (typeof verifiedMimeType === 'string' &&
+        verifiedMimeType !== version.mime_type) ||
+      (typeof verifiedSize === 'number' &&
+        verifiedSize !== Number(version.size_bytes))
+    ) {
+      throw new AppHttpException(
+        'DOCUMENT_UPLOAD_METADATA_MISMATCH',
+        400,
+        'Verified storage metadata does not match the uploaded content.',
+      );
+    }
   }
 
   private async getNextVersionNumber(documentId: string): Promise<number> {
@@ -2096,6 +2234,14 @@ export class DocumentsService {
   }
 
   private assertSizeAllowed(sizeBytes: number) {
+    if (sizeBytes <= 0) {
+      throw new AppHttpException(
+        'VALIDATION_ERROR',
+        400,
+        'The file is empty and cannot be uploaded.',
+      );
+    }
+
     if (sizeBytes > MAX_UPLOAD_SIZE_BYTES) {
       throw new AppHttpException(
         'FILE_TOO_LARGE',
@@ -2104,6 +2250,37 @@ export class DocumentsService {
         {
           maxSizeBytes: MAX_UPLOAD_SIZE_BYTES,
         },
+      );
+    }
+  }
+
+  private assertFilenameAllowed(filename: string, mimeType: string) {
+    const trimmed = filename.trim();
+
+    if (
+      !trimmed ||
+      trimmed !== filename ||
+      trimmed.includes('..') ||
+      /[/\\?%*:|"<>]/.test(trimmed)
+    ) {
+      throw new AppHttpException(
+        'VALIDATION_ERROR',
+        400,
+        'The original filename is not safe for upload.',
+      );
+    }
+
+    const [, extension] = splitExtension(trimmed.toLowerCase());
+    const allowedExtensions = DOCUMENT_UPLOAD_EXTENSIONS.get(mimeType);
+
+    if (
+      allowedExtensions &&
+      !allowedExtensions.includes(extension.toLowerCase())
+    ) {
+      throw new AppHttpException(
+        'VALIDATION_ERROR',
+        400,
+        'The original filename extension does not match the MIME type.',
       );
     }
   }

@@ -66,6 +66,8 @@ export async function validateAiProviderBaseUrl(
     }
   }
 
+  assertNoLiteralPrivateHost(parsed.hostname);
+
   if (options.production) {
     await assertPublicHost(parsed.hostname, options.resolveHost);
   }
@@ -116,6 +118,24 @@ async function defaultResolveHost(
 ): Promise<readonly string[]> {
   const records = await dns.lookup(hostname, { all: true, verbatim: true });
   return records.map((record) => record.address);
+}
+
+function assertNoLiteralPrivateHost(hostname: string) {
+  const lower = hostname.toLowerCase();
+  const normalized =
+    lower.startsWith('[') && lower.endsWith(']') ? lower.slice(1, -1) : lower;
+
+  if (
+    normalized === 'localhost' ||
+    normalized.endsWith('.localhost') ||
+    normalized === '0.0.0.0'
+  ) {
+    throwBlocked();
+  }
+
+  if (isIP(normalized) > 0 && isPrivateIp(normalized)) {
+    throwBlocked();
+  }
 }
 
 function throwBlocked(): never {

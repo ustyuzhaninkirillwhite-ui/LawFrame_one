@@ -1,7 +1,11 @@
 import { expect, test } from "@playwright/test";
+import { createHash } from "node:crypto";
+import { readFile } from "node:fs/promises";
+import path from "node:path";
 import { signInAsDemo } from "./helpers/auth";
 import { getWorkspaceApiSession } from "./helpers/api";
-import { expectReadinessProfile } from "./helpers/readiness";
+
+const fixturesDir = path.join(__dirname, "fixtures", "files");
 
 test.describe("Stage 2 storage integrated smoke", () => {
   test("local-integrated issues a real signed URL with ttl and blocks it after archive", async ({
@@ -14,12 +18,15 @@ test.describe("Stage 2 storage integrated smoke", () => {
       fullName: "Stage2 Storage Integrated",
     });
 
-    await expectReadinessProfile(page, request, "local-integrated");
+    const storageHealth = await request.get("http://127.0.0.1:54321/health");
+    expect(storageHealth.ok(), await storageHealth.text()).toBeTruthy();
     const session = await getWorkspaceApiSession(page, request);
     const jsonHeaders = {
       ...session.headers,
       "content-type": "application/json",
     };
+    const pdfBytes = await readFile(path.join(fixturesDir, "minimal.pdf"));
+    const sha256 = createHash("sha256").update(pdfBytes).digest("hex");
 
     const uploadIntentResponse = await request.post(
       `${session.apiBaseUrl}/documents/upload-intents`,
@@ -32,7 +39,7 @@ test.describe("Stage 2 storage integrated smoke", () => {
           classification: "client_material",
           mimeType: "application/pdf",
           originalFilename: "integrated-claim.pdf",
-          sizeBytes: 196608,
+          sizeBytes: pdfBytes.length,
           tags: ["stage2", "integrated"],
         },
       },
@@ -40,13 +47,28 @@ test.describe("Stage 2 storage integrated smoke", () => {
     expect(uploadIntentResponse.ok()).toBeTruthy();
     const uploadIntent = await uploadIntentResponse.json();
 
+    const contentResponse = await request.post(
+      `${session.apiBaseUrl}/documents/${uploadIntent.documentId}/versions/${uploadIntent.versionId}/content`,
+      {
+        headers: jsonHeaders,
+        data: {
+          contentBase64: pdfBytes.toString("base64"),
+          clientReportedSize: pdfBytes.length,
+          clientReportedMimeType: "application/pdf",
+          sha256,
+        },
+      },
+    );
+    expect(contentResponse.ok(), await contentResponse.text()).toBeTruthy();
+
     const completeResponse = await request.post(
       `${session.apiBaseUrl}/documents/${uploadIntent.documentId}/versions/${uploadIntent.versionId}/complete`,
       {
         headers: jsonHeaders,
         data: {
-          clientReportedSize: 196608,
+          clientReportedSize: pdfBytes.length,
           clientReportedMimeType: "application/pdf",
+          sha256,
         },
       },
     );

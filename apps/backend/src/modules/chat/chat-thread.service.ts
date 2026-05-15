@@ -591,6 +591,16 @@ export class ChatThreadService {
       ],
     );
 
+    if (sourceMessageId) {
+      await this.copyThreadMessagesToBranch({
+        workspaceId,
+        sourceThreadId: threadId,
+        branchThreadId: created.thread.id,
+        sourceMessageId,
+        actorId: actor.id,
+      });
+    }
+
     await this.auditChat({
       actor,
       workspaceId,
@@ -1025,6 +1035,10 @@ export class ChatThreadService {
   ) {
     const { actor, access } = this.requireContext(context);
     const workspaceId = this.requireWorkspace(access).id;
+    if (!isUuid(streamId)) {
+      return { streamId, threadId, status: 'cancelled' as const };
+    }
+
     await this.databaseService.query(
       `
         update app.chat_stream_jobs
@@ -1049,6 +1063,101 @@ export class ChatThreadService {
     });
 
     return { streamId, threadId, status: 'cancelled' as const };
+  }
+
+  private async copyThreadMessagesToBranch(input: {
+    readonly workspaceId: string;
+    readonly sourceThreadId: string;
+    readonly branchThreadId: string;
+    readonly sourceMessageId: string;
+    readonly actorId: string;
+  }) {
+    const messages = await this.databaseService.query<MessageRow>(
+      `
+        select ${CHAT_MESSAGE_COLUMNS}
+        from app.chat_messages
+        where workspace_id = $1
+          and thread_id = $2
+          and status <> 'redacted'
+          and created_at <= (
+            select created_at
+            from app.chat_messages
+            where id = $3
+              and workspace_id = $1
+              and thread_id = $2
+            limit 1
+          )
+        order by created_at asc, id asc
+      `,
+      [input.workspaceId, input.sourceThreadId, input.sourceMessageId],
+    );
+
+    if (messages.rows.length === 0) {
+      return;
+    }
+
+    const parts = await this.databaseService.query<MessagePartRow>(
+      `
+        select ${CHAT_MESSAGE_PART_COLUMNS}
+        from app.chat_message_parts
+        where message_id = any($1::uuid[])
+        order by message_id asc, sequence asc
+      `,
+      [messages.rows.map((message) => message.id)],
+    );
+    const messageIdMap = new Map<string, string>();
+
+    for (const message of messages.rows) {
+      const messageParts = parts.rows.filter(
+        (part) => part.message_id === message.id,
+      );
+      const firstPart = messageParts[0];
+      const copied = await this.insertMessage({
+        workspaceId: input.workspaceId,
+        projectId: message.project_id,
+        threadId: input.branchThreadId,
+        role: message.role,
+        status: message.status,
+        parentMessageId: message.parent_message_id
+          ? (messageIdMap.get(message.parent_message_id) ?? null)
+          : null,
+        clientMessageId: null,
+        branchId: null,
+        runId: null,
+        actorId: message.created_by ?? input.actorId,
+        requestId: message.request_id,
+        traceId: message.trace_id,
+        text: firstPart?.text ?? '',
+        partType: firstPart?.type ?? 'text',
+      });
+      messageIdMap.set(message.id, copied.id);
+
+      for (const [index, part] of messageParts.slice(1).entries()) {
+        await this.databaseService.query(
+          `
+            insert into app.chat_message_parts (
+              message_id,
+              thread_id,
+              workspace_id,
+              type,
+              text,
+              payload,
+              sequence
+            )
+            values ($1, $2, $3, $4, $5, $6::jsonb, $7)
+          `,
+          [
+            copied.id,
+            input.branchThreadId,
+            input.workspaceId,
+            part.type,
+            part.text,
+            JSON.stringify(part.payload ?? {}),
+            index + 1,
+          ],
+        );
+      }
+    }
   }
 
   async regenerateMessage(
@@ -2834,6 +2943,12 @@ function safeErrorStatus(error: unknown) {
   }
 
   return null;
+}
+
+function isUuid(value: string) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    value,
+  );
 }
 
 function getTraceId(snapshot: ChatStreamSnapshot) {

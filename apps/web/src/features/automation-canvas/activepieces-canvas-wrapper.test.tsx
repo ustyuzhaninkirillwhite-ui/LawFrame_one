@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ActivepiecesCanvasWrapper } from "./activepieces-canvas-wrapper";
 
 const theme = vi.hoisted(() => ({
-  value: "light" as const,
+  value: "light" as "light" | "dark",
 }));
 
 vi.mock("@/lib/browser-auth", () => ({
@@ -26,6 +26,129 @@ describe("ActivepiecesCanvasWrapper", () => {
 
   beforeEach(() => {
     theme.value = "light";
+  });
+
+  it("configures the AP embed SDK with safe route-scoped config only", async () => {
+    const configure = vi.fn(async (input: Record<string, unknown>) => {
+      writeIframe(String(input.containerId), "Flow Builder");
+    });
+    window.activepieces = { configure };
+    const onMounted = vi.fn();
+
+    render(
+      <ActivepiecesCanvasWrapper
+        session={session("sess_config")}
+        tokenRef={{ current: "short_lived_embed_jwt" }}
+        onMounted={onMounted}
+        onAuthFailure={vi.fn()}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(onMounted).toHaveBeenCalledTimes(1);
+    });
+    const configureInput = configure.mock.calls[0]?.[0];
+    expect(configureInput).toMatchObject({
+      instanceUrl: "http://127.0.0.1:3100/automation-runtime",
+      jwtToken: "short_lived_embed_jwt",
+      prefix: "/automation-runtime",
+      containerId: "activepieces-canvas-sess_config",
+      locale: "ru",
+      initialRoute: "/flows/flow_1",
+      embedding: {
+        containerId: "activepieces-canvas-sess_config",
+        locale: "ru",
+        styling: {
+          mode: "light",
+        },
+        builder: {
+          disableNavigation: false,
+          hideFlowName: false,
+          homeButtonIcon: "logo",
+        },
+        dashboard: {
+          hideSidebar: false,
+          hideFlowsPageNavbar: false,
+          hidePageHeader: false,
+        },
+      },
+    });
+    expect(JSON.stringify(configureInput)).not.toMatch(
+      /ACTIVEPIECES_API_KEY|ACTIVEPIECES_SIGNING_PRIVATE_KEY|AP_JWT_SECRET|providerKey|BEGIN PRIVATE KEY/i,
+    );
+
+    const iframe = document
+      .getElementById("activepieces-canvas-sess_config")
+      ?.querySelector("iframe");
+    expect(iframe).toHaveStyle({
+      width: "100%",
+      height: "100%",
+      border: "0px",
+      display: "block",
+    });
+  });
+
+  it("treats AP login navigation as an auth failure", async () => {
+    let navigationHandler: ((input: unknown) => void) | null = null;
+    const configure = vi.fn(async (input: Record<string, unknown>) => {
+      navigationHandler = input.navigationHandler as (input: unknown) => void;
+      writeIframe(String(input.containerId), "Flow Builder");
+    });
+    window.activepieces = { configure };
+    const onAuthFailure = vi.fn();
+
+    render(
+      <ActivepiecesCanvasWrapper
+        session={session("sess_login_route")}
+        tokenRef={{ current: "token_1" }}
+        onMounted={vi.fn()}
+        onAuthFailure={onAuthFailure}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(navigationHandler).toBeTruthy();
+    });
+    (navigationHandler as unknown as (input: unknown) => void)({
+      route: "/sign-in",
+    });
+
+    expect(onAuthFailure).toHaveBeenCalledWith("auth");
+  });
+
+  it("does not remount the iframe just because the theme provider state changes", async () => {
+    const configure = vi.fn(async (input: Record<string, unknown>) => {
+      writeIframe(String(input.containerId), "Flow Builder");
+    });
+    window.activepieces = { configure };
+    const stableSession = session("sess_theme");
+    const tokenRef = { current: "token_1" };
+    const onMounted = vi.fn();
+    const onAuthFailure = vi.fn();
+    const result = render(
+      <ActivepiecesCanvasWrapper
+        session={stableSession}
+        tokenRef={tokenRef}
+        onMounted={onMounted}
+        onAuthFailure={onAuthFailure}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(onMounted).toHaveBeenCalledTimes(1);
+    });
+
+    theme.value = "dark";
+    result.rerender(
+      <ActivepiecesCanvasWrapper
+        session={stableSession}
+        tokenRef={tokenRef}
+        onMounted={onMounted}
+        onAuthFailure={onAuthFailure}
+      />,
+    );
+
+    expect(configure).toHaveBeenCalledTimes(1);
   });
 
   it("reports embedded Invalid Access as an auth failure instead of ready canvas", async () => {

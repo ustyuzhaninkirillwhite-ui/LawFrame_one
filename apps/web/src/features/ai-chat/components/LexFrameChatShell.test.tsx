@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
   chatApi: {
     listProjectThreads: vi.fn(),
     createProjectThread: vi.fn(),
+    createGlobalThread: vi.fn(),
     getThread: vi.fn(),
     listMessages: vi.fn(),
     streamMessage: vi.fn(),
@@ -115,6 +116,35 @@ describe("LexFrameChatShell", () => {
         updatedAt: "2026-05-08T10:00:00.000Z",
       },
       session: {} as never,
+    });
+    mocks.chatApi.createGlobalThread.mockResolvedValue({
+      thread: thread("thread_global_created", "Глобальный чат", null),
+    });
+    mocks.chatApi.createAttachmentUploadIntents.mockResolvedValue({
+      items: [],
+      errors: [],
+    });
+    mocks.chatApi.completeAttachmentUpload.mockResolvedValue({
+      attachment: {
+        id: "attachment_uploaded",
+        sourceType: "uploaded_file",
+        sourceId: "attachment_uploaded",
+        mode: "thread_attachment",
+        classification: "workspace_internal",
+        citationRequired: false,
+        originalFilename: "demo.txt",
+        mimeType: "text/plain",
+        sizeBytes: 4,
+        status: "uploaded",
+        downloadPath: "/chat/attachments/attachment_uploaded/download",
+        storageKey: null,
+        metadata: {},
+      },
+    });
+    mocks.chatApi.cancelStream.mockResolvedValue({
+      streamId: "stream_live",
+      threadId: "thread_existing",
+      status: "cancelled",
     });
     mocks.chatApi.streamMessageEvents.mockImplementation(
       async (
@@ -339,6 +369,124 @@ describe("LexFrameChatShell", () => {
     });
   });
 
+  it("replaces thread messages when the route thread changes", async () => {
+    mocks.chatApi.listMessages
+      .mockResolvedValueOnce({
+        items: [message("user", "THREAD_A_SHOULD_NOT_LEAK", "message_thread_a")],
+      })
+      .mockResolvedValueOnce({
+        items: [
+          {
+            ...message("user", "THREAD_B_VISIBLE", "message_thread_b"),
+            threadId: "thread_next",
+          },
+        ],
+      });
+
+    const { rerender } = render(
+      <LexFrameChatShell
+        projectId="project_claim_001"
+        initialThreadId="thread_existing"
+      />,
+    );
+
+    expect(await screen.findByText("THREAD_A_SHOULD_NOT_LEAK")).toBeInTheDocument();
+
+    rerender(
+      <LexFrameChatShell
+        projectId="project_claim_001"
+        initialThreadId="thread_next"
+      />,
+    );
+
+    expect(await screen.findByText("THREAD_B_VISIBLE")).toBeInTheDocument();
+    expect(screen.queryByText("THREAD_A_SHOULD_NOT_LEAK")).not.toBeInTheDocument();
+  });
+
+  it("ignores stream events from a previous route thread after navigation", async () => {
+    let previousRouteEvent:
+      | ((event: {
+          readonly type: string;
+          readonly payload: Record<string, unknown>;
+        }) => void)
+      | null = null;
+    mocks.chatApi.listMessages
+      .mockResolvedValueOnce({ items: [] })
+      .mockResolvedValueOnce({
+        items: [
+          {
+            ...message("user", "THREAD_B_VISIBLE", "message_thread_b_user"),
+            threadId: "thread_next",
+          },
+          {
+            ...message("assistant", "", "message_thread_b_assistant", "streaming"),
+            threadId: "thread_next",
+          },
+        ],
+      });
+    mocks.chatApi.streamMessageEvents.mockImplementation(
+      async (
+        _threadId: string,
+        _input: { readonly text: string; readonly clientMessageId?: string | null },
+        handlers?: {
+          readonly onEvent?: (event: {
+            readonly type: string;
+            readonly payload: Record<string, unknown>;
+          }) => void;
+        },
+      ) => {
+        previousRouteEvent = handlers?.onEvent ?? null;
+        return new Promise<ChatStreamSnapshot>(() => undefined);
+      },
+    );
+
+    const { rerender } = render(
+      <LexFrameChatShell
+        projectId="project_claim_001"
+        initialThreadId="thread_existing"
+      />,
+    );
+
+    fireEvent.change(screen.getByTestId("chat-composer-input"), {
+      target: { value: "THREAD_A_PENDING" },
+    });
+    fireEvent.click(sendButton());
+
+    await waitFor(() => {
+      expect(previousRouteEvent).not.toBeNull();
+    });
+
+    rerender(
+      <LexFrameChatShell
+        projectId="project_claim_001"
+        initialThreadId="thread_next"
+      />,
+    );
+
+    expect(await screen.findByText("THREAD_B_VISIBLE")).toBeInTheDocument();
+
+    await act(async () => {
+      previousRouteEvent?.({
+        type: "message_start",
+        payload: {
+          streamId: "stream_old",
+          threadId: "thread_existing",
+          messageId: "message_thread_a_assistant",
+        },
+      });
+      previousRouteEvent?.({
+        type: "text_delta",
+        payload: {
+          messageId: "message_thread_a_assistant",
+          delta: "THREAD_A_STREAM_LEAK",
+        },
+      });
+    });
+
+    expect(screen.queryByText("THREAD_A_STREAM_LEAK")).not.toBeInTheDocument();
+    expect(screen.getByText("THREAD_B_VISIBLE")).toBeInTheDocument();
+  });
+
   it("loads the active thread messages through the Stage 22 chat query key", async () => {
     render(
       <LexFrameChatShell
@@ -355,15 +503,259 @@ describe("LexFrameChatShell", () => {
       );
     });
   });
+
+  it("creates global chats without project scope and navigates to the global route", async () => {
+    render(<LexFrameChatShell projectId={null} initialThreadId={null} />);
+
+    fireEvent.change(screen.getByTestId("chat-composer-input"), {
+      target: { value: "Глобальный вопрос" },
+    });
+    fireEvent.click(sendButton());
+
+    await waitFor(() => {
+      expect(mocks.chatApi.createGlobalThread).toHaveBeenCalledWith({
+        title: "Глобальный вопрос",
+        kind: "general",
+      });
+      expect(mocks.push).toHaveBeenCalledWith("/chat/thread_global_created");
+    });
+    expect(mocks.chatApi.createProjectThread).not.toHaveBeenCalled();
+  });
+
+  it("uploads attachment bytes, completes the upload and sends returned attachment ids", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(null, { status: 200 }),
+    );
+    mocks.chatApi.createAttachmentUploadIntents.mockResolvedValue({
+      items: [
+        {
+          id: "attachment_uploaded",
+          clientAttachmentId: "client-attachment-0",
+          uploadUrl: "https://uploads.example.test/chat/attachment",
+          method: "PUT",
+          headers: { "content-type": "text/plain" },
+          expiresAt: "2026-05-13T00:10:00.000Z",
+          attachment: {
+            id: "attachment_uploaded",
+            sourceType: "uploaded_file",
+            sourceId: "attachment_uploaded",
+            mode: "thread_attachment",
+            classification: "workspace_internal",
+            citationRequired: false,
+            originalFilename: "demo.txt",
+            mimeType: "text/plain",
+            sizeBytes: 4,
+            status: "pending_upload",
+            downloadPath: "/chat/attachments/attachment_uploaded/download",
+            storageKey: null,
+            metadata: {},
+          },
+        },
+      ],
+      errors: [],
+    });
+
+    const { container } = render(
+      <LexFrameChatShell
+        projectId="project_claim_001"
+        initialThreadId="thread_existing"
+      />,
+    );
+    const input = container.querySelector('input[type="file"]') as HTMLInputElement;
+    const file = new File(["demo"], "demo.txt", { type: "text/plain" });
+
+    fireEvent.change(input, { target: { files: [file] } });
+    fireEvent.change(screen.getByTestId("chat-composer-input"), {
+      target: { value: "Проанализируй вложение" },
+    });
+    fireEvent.click(sendButton());
+
+    await waitFor(() => {
+      expect(mocks.chatApi.createAttachmentUploadIntents).toHaveBeenCalledWith({
+        threadId: "thread_existing",
+        files: [
+          {
+            clientAttachmentId: "client-attachment-0",
+            filename: "demo.txt",
+            mimeType: "text/plain",
+            sizeBytes: 4,
+          },
+        ],
+      });
+    });
+    expect(fetchSpy).toHaveBeenCalledWith(
+      "https://uploads.example.test/chat/attachment",
+      expect.objectContaining({
+        method: "PUT",
+        body: file,
+      }),
+    );
+    expect(mocks.chatApi.completeAttachmentUpload).toHaveBeenCalledWith(
+      "attachment_uploaded",
+      { threadId: "thread_existing" },
+    );
+    expect(mocks.chatApi.streamMessageEvents).toHaveBeenCalledWith(
+      "thread_existing",
+      expect.objectContaining({
+        text: "Проанализируй вложение",
+        attachmentIds: ["attachment_uploaded"],
+      }),
+      expect.any(Object),
+    );
+
+    fetchSpy.mockRestore();
+  });
+
+  it("cancels an active stream through the backend and leaves a controlled state", async () => {
+    mocks.chatApi.streamMessageEvents.mockImplementation(
+      async (
+        threadId: string,
+        _input: { readonly text: string; readonly clientMessageId?: string | null },
+        handlers?: {
+          readonly onEvent?: (event: {
+            readonly type: string;
+            readonly payload: Record<string, unknown>;
+          }) => void;
+        },
+      ) => {
+        handlers?.onEvent?.({
+          type: "run_status",
+          payload: {
+            streamId: "stream_live",
+            threadId,
+            messageId: "message_assistant_live",
+            status: "streaming",
+          },
+        });
+        return new Promise<ChatStreamSnapshot>(() => undefined);
+      },
+    );
+
+    render(
+      <LexFrameChatShell
+        projectId="project_claim_001"
+        initialThreadId="thread_existing"
+      />,
+    );
+
+    fireEvent.change(screen.getByTestId("chat-composer-input"), {
+      target: { value: "Долгий ответ" },
+    });
+    fireEvent.click(sendButton());
+    fireEvent.click(
+      await screen.findByRole("button", {
+        name: /Остановить генерацию|РћСЃС‚Р°РЅРѕРІРёС‚СЊ РіРµРЅРµСЂР°С†РёСЋ/,
+      }),
+    );
+
+    await waitFor(() => {
+      expect(mocks.chatApi.cancelStream).toHaveBeenCalledWith(
+        "thread_existing",
+        "stream_live",
+      );
+    });
+    expect(
+      await screen.findByText(
+        /Генерация остановлена|Р“РµРЅРµСЂР°С†РёСЏ РѕСЃС‚Р°РЅРѕРІР»РµРЅР°/,
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("cancels an optimistic stream locally before the backend stream id arrives", async () => {
+    mocks.chatApi.streamMessageEvents.mockImplementation(
+      () => new Promise<ChatStreamSnapshot>(() => undefined),
+    );
+
+    render(
+      <LexFrameChatShell
+        projectId="project_claim_001"
+        initialThreadId="thread_existing"
+      />,
+    );
+
+    fireEvent.change(screen.getByTestId("chat-composer-input"), {
+      target: { value: "РћСЃС‚Р°РЅРѕРІРёС‚СЊ РґРѕ stream id" },
+    });
+    fireEvent.click(sendButton());
+    fireEvent.click(await screen.findByLabelText("Остановить генерацию"));
+
+    expect(mocks.chatApi.cancelStream).not.toHaveBeenCalled();
+    expect(
+      await screen.findByText("Генерация остановлена."),
+    ).toBeInTheDocument();
+  });
+
+  it("branches and regenerates assistant messages without deleting old history", async () => {
+    mocks.chatApi.listMessages.mockResolvedValue({
+      items: [
+        message("user", "Исходный вопрос", "message_user"),
+        {
+          ...message("assistant", "Исходный ответ", "message_assistant"),
+          branchInfo: {
+            branchId: "branch_1",
+            activeBranchId: "branch_1",
+            ordinal: 1,
+            total: 2,
+            canSwitch: true,
+          },
+        },
+      ],
+    });
+    mocks.chatApi.branchThread.mockResolvedValue({
+      thread: thread("thread_branch", "Project branch"),
+    });
+    mocks.chatApi.regenerate.mockResolvedValue(
+      snapshot("thread_existing", "Исходный вопрос", "Новый ответ ветки"),
+    );
+
+    render(
+      <LexFrameChatShell
+        projectId="project_claim_001"
+        initialThreadId="thread_existing"
+      />,
+    );
+
+    expect(await screen.findByText("Исходный ответ")).toBeInTheDocument();
+    expect(screen.getByText("1 / 2")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /Ветка|Р’РµС‚РєР°/ }));
+    await waitFor(() => {
+      expect(mocks.chatApi.branchThread).toHaveBeenCalledWith(
+        "thread_existing",
+        "message_assistant",
+      );
+      expect(mocks.push).toHaveBeenCalledWith(
+        "/app/projects/project_claim_001/chats/thread_branch",
+      );
+    });
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: /Повторить|РџРѕРІС‚РѕСЂРёС‚СЊ/,
+      }),
+    );
+    expect(await screen.findByText("Новый ответ ветки")).toBeInTheDocument();
+    expect(screen.getByText("Исходный ответ")).toBeInTheDocument();
+  });
 });
 
-function thread(id: string, title: string): ChatThreadSummary {
+function sendButton() {
+  return screen.getByRole("button", {
+    name: /Отправить сообщение|РћС‚РїСЂР°РІРёС‚СЊ СЃРѕРѕР±С‰РµРЅРёРµ/,
+  });
+}
+
+function thread(
+  id: string,
+  title: string,
+  projectId: string | null = "project_claim_001",
+): ChatThreadSummary {
   return {
     id,
     workspaceId: "ws_1",
-    projectId: "project_claim_001",
-    kind: "project",
-    visibility: "project",
+    projectId,
+    kind: projectId ? "project" : "general",
+    visibility: projectId ? "project" : "private",
     status: "active",
     title,
     lastMessagePreview: null,
@@ -380,6 +772,7 @@ function message(
   role: ChatMessageDto["role"],
   text: string,
   id: string,
+  status: ChatMessageDto["status"] = "completed",
 ): ChatMessageDto {
   return {
     id,
@@ -387,7 +780,7 @@ function message(
     workspaceId: "ws_1",
     projectId: "project_claim_001",
     role,
-    status: "completed",
+    status,
     parentMessageId: null,
     clientMessageId: null,
     branchId: null,

@@ -207,6 +207,11 @@ interface WorkflowRunStatusRow {
   readonly trace_id: string;
 }
 
+interface ExistingWorkflowRunRow extends WorkflowRunStatusRow {
+  readonly id: string;
+  readonly external_run_id: string | null;
+}
+
 interface RunSmokeSummaryRow {
   readonly status: ActivepiecesRunSmokeResponse['status'];
   readonly external_run_id: string | null;
@@ -1267,6 +1272,24 @@ export class ActivepiecesService {
     input: StartAutomationRunRequest,
     meta: RequestMeta,
   ): Promise<StartAutomationRunResponse> {
+    const idempotencyKey = input.idempotencyKey?.trim() || null;
+    if (idempotencyKey) {
+      const existingRun = await this.loadExistingRunByIdempotencyKey(
+        access,
+        automationId,
+        input.mode,
+        idempotencyKey,
+      );
+      if (existingRun) {
+        return {
+          runId: existingRun.id,
+          status: existingRun.status,
+          traceId: existingRun.trace_id,
+          externalRunId: existingRun.external_run_id,
+        };
+      }
+    }
+
     const requirements = await this.getAutomationRuntimeRequirements(
       access,
       automationId,
@@ -1458,7 +1481,7 @@ export class ActivepiecesService {
           stepSummaries.some((step) => step.requiresApproval)
             ? 'pending'
             : 'not_required',
-          input.idempotencyKey ?? null,
+          idempotencyKey,
           actor.id,
         ],
       );
@@ -1625,6 +1648,31 @@ export class ActivepiecesService {
       externalRunId,
       dispatchMode,
     };
+  }
+
+  private async loadExistingRunByIdempotencyKey(
+    access: AccessContext,
+    automationId: string,
+    mode: StartAutomationRunRequest['mode'],
+    idempotencyKey: string,
+  ) {
+    return this.databaseService.one<ExistingWorkflowRunRow>(
+      `
+        select
+          id::text,
+          status,
+          trace_id,
+          external_run_id
+        from app.workflow_runs
+        where workspace_id = $1
+          and installed_automation_id = $2
+          and mode = $3
+          and idempotency_key = $4
+        order by created_at asc
+        limit 1
+      `,
+      [access.activeWorkspace!.id, automationId, mode, idempotencyKey],
+    );
   }
 
   async runSmoke(

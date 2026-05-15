@@ -1,4 +1,5 @@
 import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
+import { ApiClientError } from "@lexframe/api-client";
 import type { ActivepiecesSessionReadyResponse } from "@lexframe/contracts";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useActivepiecesSession } from "./use-activepieces-session";
@@ -144,6 +145,27 @@ describe("useActivepiecesSession", () => {
     expect(await screen.findByText("unavailable")).toBeInTheDocument();
     expect(bridge.apiClient.createActivepiecesSession).not.toHaveBeenCalled();
   });
+
+  it("redacts raw session bridge failures before rendering unavailable state", async () => {
+    bridge.apiClient.createActivepiecesSession.mockRejectedValue(
+      new ApiClientError(
+        "Activepieces 503 stack trace sk-live-secret eyJheader.payload.signature",
+        503,
+        "ACTIVEPIECES_UNAVAILABLE",
+        "req_session_failure",
+        undefined,
+      ),
+    );
+
+    render(
+      <SessionProbe projectId="project_claim_001" automationId="aut_secret" />,
+    );
+
+    expect(await screen.findByTestId("session-message")).toBeInTheDocument();
+    const message = screen.getByTestId("session-message").textContent ?? "";
+    expect(message).toMatch(/Конструктор|automation canvas|temporarily unavailable/i);
+    expect(message).not.toMatch(/stack trace|sk-live-secret|eyJheader/i);
+  });
 });
 
 function SessionProbe({
@@ -157,8 +179,11 @@ function SessionProbe({
 
   return (
     <div>
-      {state.phase}
-      {state.session ? `:${state.session.sessionId}` : ""}
+      <span>
+        {state.phase}
+        {state.session ? `:${state.session.sessionId}` : ""}
+      </span>
+      <span data-testid="session-message">{state.message}</span>
     </div>
   );
 }

@@ -1,0 +1,636 @@
+{
+  "config": {
+    "configFile": "E:\\Law_frame_main\\tests\\e2e\\playwright.config.ts",
+    "rootDir": "E:/Law_frame_main/tests/e2e",
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "E:/Law_frame_main/tests/e2e/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "default",
+        "name": "default",
+        "testDir": "E:/Law_frame_main/tests/e2e",
+        "testIgnore": [
+          "/stage16-live-audit\\/.*\\.spec\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      },
+      {
+        "outputDir": "E:/Law_frame_main/tests/e2e/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "stage16-live-audit",
+        "name": "stage16-live-audit",
+        "testDir": "E:/Law_frame_main/tests/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "/stage16-live-audit\\/.*\\.spec\\.ts/"
+        ],
+        "timeout": 60000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "html",
+        {
+          "outputFolder": "playwright-report",
+          "open": "never"
+        }
+      ],
+      [
+        "json",
+        {
+          "outputFile": "playwright-report/results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.59.1",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "automation-activepieces-canvas-full.spec.ts",
+      "file": "automation-activepieces-canvas-full.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "@block4 automation Activepieces Canvas full flow",
+          "file": "automation-activepieces-canvas-full.spec.ts",
+          "line": 24,
+          "column": 6,
+          "specs": [
+            {
+              "title": "opens an embedded builder through LexFrame route without AP login or secret exposure",
+              "ok": true,
+              "tags": [
+                "block4"
+              ],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "default",
+                  "projectName": "default",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 24056,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-14T11:42:54.205Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "c8aaa1f9d51aa1f1b308-51f754f017d734ea4eef",
+              "file": "automation-activepieces-canvas-full.spec.ts",
+              "line": 34,
+              "column": 7
+            },
+            {
+              "title": "opens canvas from the project automation row without sending the user to AP login",
+              "ok": true,
+              "tags": [
+                "block4"
+              ],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "default",
+                  "projectName": "default",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 13709,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-14T11:43:18.417Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "c8aaa1f9d51aa1f1b308-f28bc91a920dbae7544a",
+              "file": "automation-activepieces-canvas-full.spec.ts",
+              "line": 77,
+              "column": 7
+            },
+            {
+              "title": "shows a controlled redacted unavailable state when AP session creation returns 503",
+              "ok": true,
+              "tags": [
+                "block4"
+              ],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "default",
+                  "projectName": "default",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 6464,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-14T11:43:32.147Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "canvas-session-503-controlled-state",
+                          "contentType": "image/png",
+                          "body": "[REDACTED_ATTACHMENT_BODY:18049322edb84ba76e9136bef09eb5f387329012adb401b0c6c5293a299b77f2]"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "c8aaa1f9d51aa1f1b308-68e366427a959f5f1375",
+              "file": "automation-activepieces-canvas-full.spec.ts",
+              "line": 100,
+              "column": 7
+            },
+            {
+              "title": "keeps project automation canvas localized after the builder is ready",
+              "ok": true,
+              "tags": [
+                "block4"
+              ],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "default",
+                  "projectName": "default",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 11284,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-14T11:43:38.631Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "automation-canvas-localization-scan",
+                          "contentType": "application/json",
+                          "body": "ewogICJoaXRzIjogW10KfQo="
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "c8aaa1f9d51aa1f1b308-e1f608942bffd7b5cb4b",
+              "file": "automation-activepieces-canvas-full.spec.ts",
+              "line": 141,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "automation-browser-security-isolation.spec.ts",
+      "file": "automation-browser-security-isolation.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "@block4 automation browser security isolation",
+          "file": "automation-browser-security-isolation.spec.ts",
+          "line": 16,
+          "column": 6,
+          "specs": [
+            {
+              "title": "automation canvas and dry-run make no direct provider/admin-key browser calls",
+              "ok": true,
+              "tags": [
+                "block4"
+              ],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "default",
+                  "projectName": "default",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 11627,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-14T11:43:49.945Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "automation-browser-request-summary",
+                          "contentType": "application/json",
+                          "body": "ewogICJ0b3RhbCI6IDQyLAogICJmb3JiaWRkZW5Qcm92aWRlckNhbGxzIjogW10sCiAgImZvcmJpZGRlbkFwQWRtaW5LZXlDYWxscyI6IFtdCn0K"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "1dbf293524fa98d73f1f-176ba5508a36b6bd5477",
+              "file": "automation-browser-security-isolation.spec.ts",
+              "line": 17,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "automation-route-cache-cleanup.spec.ts",
+      "file": "automation-route-cache-cleanup.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "@block4 automation route cache and cleanup",
+          "file": "automation-route-cache-cleanup.spec.ts",
+          "line": 13,
+          "column": 6,
+          "specs": [
+            {
+              "title": "does not show skeleton or storm requests when re-entering the automation tab",
+              "ok": true,
+              "tags": [
+                "block4"
+              ],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "Backend request-count cache guard is covered by backend-backed runtime; MSW service worker request accounting is not equivalent.",
+                      "location": {
+                        "file": "E:\\Law_frame_main\\tests\\e2e\\automation-route-cache-cleanup.spec.ts",
+                        "line": 25,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "default",
+                  "projectName": "default",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 3369,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-14T11:44:01.620Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "Backend request-count cache guard is covered by backend-backed runtime; MSW service worker request accounting is not equivalent.",
+                          "location": {
+                            "file": "E:\\Law_frame_main\\tests\\e2e\\automation-route-cache-cleanup.spec.ts",
+                            "line": 25,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ef82f17b41ea52d507d2-c678835baaad9c13279d",
+              "file": "automation-route-cache-cleanup.spec.ts",
+              "line": 21,
+              "column": 7
+            },
+            {
+              "title": "keeps composer and tabs usable while automation list request is slow",
+              "ok": true,
+              "tags": [
+                "block4"
+              ],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "This browser route interception guard targets backend-backed network behavior; MSW handles the request before page.route.",
+                      "location": {
+                        "file": "E:\\Law_frame_main\\tests\\e2e\\automation-route-cache-cleanup.spec.ts",
+                        "line": 62,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "default",
+                  "projectName": "default",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 3354,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-14T11:44:05.036Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "This browser route interception guard targets backend-backed network behavior; MSW handles the request before page.route.",
+                          "location": {
+                            "file": "E:\\Law_frame_main\\tests\\e2e\\automation-route-cache-cleanup.spec.ts",
+                            "line": 62,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ef82f17b41ea52d507d2-da74c1c13c6d7eb0fd87",
+              "file": "automation-route-cache-cleanup.spec.ts",
+              "line": 59,
+              "column": 7
+            },
+            {
+              "title": "reuses route-family session where possible and clears AP browser tokens after leaving",
+              "ok": true,
+              "tags": [
+                "block4"
+              ],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "default",
+                  "projectName": "default",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 19030,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-14T11:44:08.411Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "automation-route-token-cleanup-storage",
+                          "contentType": "application/json",
+                          "body": "[REDACTED_ATTACHMENT_BODY:6f9da7e2c92bb51c3c540345de248611208ff67d8917674181458777ecab5492]"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ef82f17b41ea52d507d2-1d6415411acb7cf573e5",
+              "file": "automation-route-cache-cleanup.spec.ts",
+              "line": 107,
+              "column": 7
+            },
+            {
+              "title": "reloads the automation canvas without a repeated AP session loop",
+              "ok": true,
+              "tags": [
+                "block4"
+              ],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "default",
+                  "projectName": "default",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 10992,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-14T11:44:27.461Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "automation-route-session-loop-network",
+                          "contentType": "application/json",
+                          "body": "ewogICJyZXF1ZXN0cyI6IFtdCn0K"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ef82f17b41ea52d507d2-783a8e06c663147bc700",
+              "file": "automation-route-cache-cleanup.spec.ts",
+              "line": 139,
+              "column": 7
+            },
+            {
+              "title": "does not accumulate hidden iframes after repeated project and automation navigation",
+              "ok": true,
+              "tags": [
+                "block4"
+              ],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "default",
+                  "projectName": "default",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 14090,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-14T11:44:38.476Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ef82f17b41ea52d507d2-276a19babe4cadba7728",
+              "file": "automation-route-cache-cleanup.spec.ts",
+              "line": 163,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "automation-route-family-cache-live.spec.ts",
+      "file": "automation-route-family-cache-live.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "@block4 automation route family cache live",
+          "file": "automation-route-family-cache-live.spec.ts",
+          "line": 13,
+          "column": 6,
+          "specs": [
+            {
+              "title": "back forward keeps settled automation family stable and clears token outside",
+              "ok": true,
+              "tags": [
+                "block4"
+              ],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "default",
+                  "projectName": "default",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 15423,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-14T11:44:52.606Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "automation-route-family-session-requests",
+                          "contentType": "application/json",
+                          "body": "ewogICJzZXNzaW9uUmVxdWVzdHMiOiBbXQp9Cg=="
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ba72e8fe8a4b76f4286b-75998ddedc3086233a7c",
+              "file": "automation-route-family-cache-live.spec.ts",
+              "line": 14,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-05-14T11:42:14.787Z",
+    "duration": 174237.011,
+    "expected": 9,
+    "skipped": 2,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

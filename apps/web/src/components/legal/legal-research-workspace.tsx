@@ -84,7 +84,7 @@ export function LegalResearchWorkspace({
   }
 
   return (
-    <div className="grid gap-6">
+    <div className="grid gap-6" data-testid="legal-research-workspace">
       <Card>
         <CardHeader>
           <Badge variant="accent">гибридный поиск</Badge>
@@ -98,6 +98,7 @@ export function LegalResearchWorkspace({
         <CardContent className="grid gap-4">
           <div className="grid gap-3 xl:grid-cols-[1.1fr_0.9fr_0.7fr]">
             <Input
+              data-testid="legal-search-query-input"
               placeholder="Поиск по юридической практике"
               value={query}
               onChange={(event) => {
@@ -196,6 +197,8 @@ export function LegalResearchWorkspace({
                 <EmptyBox label="Введите запрос или выберите хотя бы один источник." />
               ) : search.isLoading ? (
                 <EmptyBox label="Ищем юридические фрагменты..." />
+              ) : search.isError ? (
+                <EmptyBox label="Поиск временно недоступен." />
               ) : (search.data?.results.length ?? 0) === 0 ? (
                 <EmptyBox label="В текущем контуре результатов нет." />
               ) : (

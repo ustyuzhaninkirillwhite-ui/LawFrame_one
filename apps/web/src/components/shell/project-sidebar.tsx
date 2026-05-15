@@ -483,7 +483,12 @@ export function ProjectSidebar({
   if (collapsed) {
     return (
       <>
-        <aside className="sidebar-sheen relative w-[88px] shrink-0 overflow-hidden px-4 py-5">
+        <aside
+          data-testid="project-sidebar"
+          data-collapsed="true"
+          data-active-project-id={activeProjectId}
+          className="sidebar-sheen relative w-[88px] shrink-0 overflow-hidden px-4 py-5"
+        >
           <div className="noise-overlay absolute inset-0" />
           <div className="relative grid h-full min-h-screen grid-rows-[auto_1fr_auto] justify-items-center gap-4">
             <div className="grid justify-items-center gap-3">
@@ -570,7 +575,12 @@ export function ProjectSidebar({
   }
 
   return (
-    <aside className="sidebar-sheen relative w-[320px] shrink-0 overflow-hidden px-5 py-6 transition-[width] duration-200">
+    <aside
+      data-testid="project-sidebar"
+      data-collapsed="false"
+      data-active-project-id={activeProjectId}
+      className="sidebar-sheen relative w-[320px] shrink-0 overflow-hidden px-5 py-6 transition-[width] duration-200"
+    >
       <div className="noise-overlay absolute inset-0" />
       <div className="relative flex h-full min-h-screen flex-col gap-5">
         {sidebarBody}
@@ -817,22 +827,35 @@ function RecentChatLink({
   const [editing, setEditing] = React.useState(false);
   const [title, setTitle] = React.useState(result.thread.title);
   const [saving, setSaving] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+
+  const submitRename = () => {
+    const nextTitle = title.trim();
+    if (!nextTitle || saving) {
+      return;
+    }
+
+    setSaving(true);
+    setError(null);
+    void onRenameChat(result.thread.id, nextTitle)
+      .then(() => {
+        setEditing(false);
+      })
+      .catch(() => {
+        setError("Chat title was not saved. Try again.");
+      })
+      .finally(() => {
+        setSaving(false);
+      });
+  };
 
   if (editing) {
     return (
       <form
-        className="flex min-h-10 items-center gap-2 rounded-[var(--lf-radius-control)] bg-[color:var(--lf-bg-muted)] px-2 py-1"
+        className="flex min-h-10 flex-wrap items-center gap-2 rounded-[var(--lf-radius-control)] bg-[color:var(--lf-bg-muted)] px-2 py-1"
         onSubmit={(event) => {
           event.preventDefault();
-          const nextTitle = title.trim();
-          if (!nextTitle || saving) {
-            return;
-          }
-          setSaving(true);
-          void onRenameChat(result.thread.id, nextTitle).finally(() => {
-            setSaving(false);
-            setEditing(false);
-          });
+          submitRename();
         }}
       >
         <input
@@ -840,23 +863,19 @@ function RecentChatLink({
           className="min-w-0 flex-1 rounded-[var(--lf-radius-control)] border border-[color:var(--lf-border)] bg-[color:var(--lf-bg-panel)] px-2 py-1 text-sm outline-none focus:border-[color:var(--lf-primary)]"
           autoFocus
           value={title}
-          onChange={(event) => setTitle(event.target.value)}
+          onChange={(event) => {
+            setTitle(event.target.value);
+            setError(null);
+          }}
           onKeyDown={(event) => {
             if (event.key === "Escape") {
               event.preventDefault();
               setTitle(result.thread.title);
+              setError(null);
               setEditing(false);
             } else if (event.key === "Enter") {
               event.preventDefault();
-              const nextTitle = title.trim();
-              if (!nextTitle || saving) {
-                return;
-              }
-              setSaving(true);
-              void onRenameChat(result.thread.id, nextTitle).finally(() => {
-                setSaving(false);
-                setEditing(false);
-              });
+              submitRename();
             }
           }}
         />
@@ -868,6 +887,11 @@ function RecentChatLink({
         >
           <Check size={15} />
         </button>
+        {error ? (
+          <span className="min-w-full px-1 text-xs text-[color:var(--danger)]">
+            {error}
+          </span>
+        ) : null}
       </form>
     );
   }
@@ -894,6 +918,7 @@ function RecentChatLink({
         className="mt-1.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[color:var(--lf-text-muted)] opacity-0 transition hover:bg-[color:var(--lf-bg-muted)] hover:text-[color:var(--lf-text-primary)] group-hover:opacity-100 focus:opacity-100"
         onClick={() => {
           setTitle(result.thread.title);
+          setError(null);
           setEditing(true);
         }}
       >

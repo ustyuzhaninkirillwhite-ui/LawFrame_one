@@ -143,6 +143,7 @@ export function AiProviderConnectionForm({
         <label className="grid gap-2 text-sm font-medium">
           <span>Provider</span>
           <Select
+            data-testid={`settings-ai-provider-${routeGroup}`}
             value={value.providerCode}
             disabled={disabled}
             onChange={(event) =>
@@ -159,6 +160,7 @@ export function AiProviderConnectionForm({
         <label className="grid gap-2 text-sm font-medium md:col-span-2">
           <span>Base URL</span>
           <Input
+            data-testid={`settings-ai-base-url-${routeGroup}`}
             value={value.baseUrl}
             disabled={disabled}
             onChange={(event) => update({ baseUrl: event.target.value })}
@@ -167,6 +169,7 @@ export function AiProviderConnectionForm({
         <label className="grid gap-2 text-sm font-medium md:col-span-3">
           <span>Model id</span>
           <Input
+            data-testid={`settings-ai-model-id-${routeGroup}`}
             value={value.modelId}
             disabled={disabled}
             onChange={(event) => update({ modelId: event.target.value })}
@@ -204,6 +207,8 @@ export function AiProviderConnectionForm({
       <AiKeyWriteOnlyField
         value={value.apiKey}
         disabled={disabled}
+        inputId={`stage21-ai-api-key-${routeGroup}`}
+        inputTestId={`settings-ai-api-key-${routeGroup}`}
         secret={
           connection?.secret ?? {
             hasSecret: false,
@@ -221,6 +226,7 @@ export function AiProviderConnectionForm({
         isPending={testPending}
         requiresSave={testRequiresSave}
         result={testResult}
+        testId={`settings-ai-test-${routeGroup}`}
         onTest={onTest}
       />
     </div>

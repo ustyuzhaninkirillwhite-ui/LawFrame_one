@@ -9,6 +9,7 @@ import {
 
 const database = process.env.STAGE16_TARGET_DB ?? "stage16_runtime";
 const postgresService = "postgres";
+const restartAppServices = process.env.STAGE16_DB_RESTART_APPS !== "0";
 
 function psql(args, input) {
   return composePsql(postgresService, "postgres", args, input);
@@ -59,6 +60,11 @@ function stopAppServices() {
 }
 
 function syncCatalogAndRestartApps() {
+  if (!restartAppServices) {
+    console.log("[stage16-db-local] app/catalog restart skipped because STAGE16_DB_RESTART_APPS=0");
+    return;
+  }
+
   compose(
     [
       "run",

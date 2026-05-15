@@ -11,31 +11,11 @@ export async function signInAsDemo(
   },
 ) {
   await page.goto("/sign-in");
-  try {
-    await page.waitForFunction(
-      () => {
-        const lexframeWindow = window as Window & {
-          __LEXFRAME_MSW_READY?: boolean;
-        };
-
-        return (
-          lexframeWindow.__LEXFRAME_MSW_READY === true ||
-          navigator.serviceWorker?.controller !== null
-        );
-      },
-      undefined,
-      {
-        timeout: 15_000,
-      },
-    );
-  } catch {
-    await page.waitForTimeout(1_000);
-  }
-  const signInFields = page.locator("input");
-  await signInFields.nth(0).fill(input.email);
-  await signInFields.nth(1).fill(input.fullName);
-  await signInFields.nth(2).fill("demo-password");
-  await page.locator("button").nth(0).click();
+  await waitForSignInReady(page);
+  await page.getByTestId("sign-in-email").fill(input.email);
+  await page.getByTestId("sign-in-full-name").fill(input.fullName);
+  await page.getByTestId("sign-in-password").fill("demo-password");
+  await page.getByTestId("sign-in-submit").click();
 
   await expect
     .poll(() => new URL(page.url()).pathname, {
@@ -48,20 +28,87 @@ export async function signInAsDemo(
       return;
     }
 
-    const onboardingFields = page.locator("input");
-    await onboardingFields.nth(0).fill(`${input.fullName} Workspace`);
-    await onboardingFields.nth(1).fill(buildWorkspaceSlug(input.email));
-    await page.locator("button").nth(0).click();
+    await completeWorkspaceOnboarding(page, input);
   }
 
-  await expect(page).toHaveURL(/\/app(?:\/.*)?$|\/dashboard$/);
+  await expect(page).toHaveURL(/\/app(?:\/.*)?$|\/dashboard$/, {
+    timeout: 15_000,
+  });
   await expect
     .poll(() =>
-      page.evaluate(() =>
-        window.localStorage.getItem("lexframe.dev.access-token"),
-      ),
+      page
+        .evaluate(() =>
+          window.localStorage.getItem("lexframe.dev.access-token"),
+        )
+        .catch(() => null),
     )
     .toBeTruthy();
+}
+
+async function completeWorkspaceOnboarding(
+  page: Page,
+  input: {
+    readonly email: string;
+    readonly fullName: string;
+  },
+) {
+  await page
+    .getByTestId("onboarding-workspace-name")
+    .fill(`${input.fullName} Workspace`);
+  await page
+    .getByTestId("onboarding-workspace-slug")
+    .fill(buildWorkspaceSlug(input.email));
+
+  const createButton = page.getByTestId("onboarding-workspace-submit");
+  await expect(createButton).toBeVisible({ timeout: 10_000 });
+  await expect(createButton).toBeEnabled({ timeout: 10_000 });
+
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    const workspaceResponse = page
+      .waitForResponse(
+        (response) =>
+          response.request().method() === "POST" &&
+          new URL(response.url()).pathname.endsWith("/workspaces"),
+        { timeout: 5_000 },
+      )
+      .catch(() => null);
+
+    await createButton.click();
+    const response = await workspaceResponse;
+    if (response) {
+      expect(response.status(), await response.text()).toBeLessThan(400);
+      return;
+    }
+
+    if (!page.url().endsWith("/onboarding/workspace")) {
+      return;
+    }
+
+    if (!(await createButton.isEnabled().catch(() => false))) {
+      return;
+    }
+  }
+}
+
+async function waitForSignInReady(page: Page) {
+  await expect(page.getByTestId("sign-in-email")).toBeVisible({
+    timeout: 15_000,
+  });
+  await page
+    .waitForFunction(
+      () => {
+        const lexframeWindow = window as Window & {
+          __LEXFRAME_MSW_READY?: boolean;
+        };
+
+        return lexframeWindow.__LEXFRAME_MSW_READY === true;
+      },
+      undefined,
+      {
+        timeout: 15_000,
+      },
+    )
+    .catch(() => undefined);
 }
 
 function buildWorkspaceSlug(email: string) {

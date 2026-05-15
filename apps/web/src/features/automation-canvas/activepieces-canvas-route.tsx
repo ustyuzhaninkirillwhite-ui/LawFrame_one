@@ -31,6 +31,7 @@ export function ActivepiecesCanvasRoute({
     readonly status: "idle" | "running" | "success" | "error";
     readonly message: string | null;
   }>({ status: "idle", message: null });
+  const runPendingRef = React.useRef(false);
   const safeSession =
     state.phase === "available" ? state.session : null;
   const canonicalReplacementRoute =
@@ -81,6 +82,11 @@ export function ActivepiecesCanvasRoute({
   }, [requestSession]);
 
   const handleStartDryRun = React.useCallback(() => {
+    if (runPendingRef.current) {
+      return;
+    }
+
+    runPendingRef.current = true;
     setRunState({ status: "running", message: "Запускаем dry-run..." });
     void apiClient
       .startAutomationRun(automationId, {
@@ -101,6 +107,9 @@ export function ActivepiecesCanvasRoute({
               ? error.message
               : "Не удалось запустить automation dry-run.",
         });
+      })
+      .finally(() => {
+        runPendingRef.current = false;
       });
   }, [apiClient, automationId]);
 

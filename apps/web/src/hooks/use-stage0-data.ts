@@ -417,6 +417,7 @@ export function useStage15ProjectAutomations(projectId?: string | null) {
     queryKey: ["stage15-project-automations", workspaceId, projectId],
     queryFn: () => apiClient.listProjectAutomations(projectId!),
     enabled: enabled && Boolean(projectId),
+    retry: false,
     staleTime: 5 * 60_000,
     gcTime: 30 * 60_000,
   });
@@ -1936,6 +1937,7 @@ export function useLegalSearch(
     queryKey: ["legal-search", workspaceId, input],
     queryFn: () => apiClient.queryLegalSearch(input!),
     enabled: enabled && Boolean(input) && (options.enabled ?? true),
+    retry: false,
     staleTime: 5_000,
   });
 }

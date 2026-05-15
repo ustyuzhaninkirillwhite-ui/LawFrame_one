@@ -51,7 +51,10 @@ export function AiRouteGroupCard({
     Boolean(form?.apiKey.trim()) || !connection?.secret.hasSecret;
 
   return (
-    <section className="grid gap-4 rounded-[var(--lf-radius-card)] border border-[color:var(--lf-border)] bg-[color:var(--lf-bg-panel)] p-4">
+    <section
+      data-testid={`settings-ai-route-card-${routeGroup}`}
+      className="grid gap-4 rounded-[var(--lf-radius-card)] border border-[color:var(--lf-border)] bg-[color:var(--lf-bg-panel)] p-4"
+    >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h3 className="text-lg font-semibold">{title}</h3>
@@ -102,6 +105,7 @@ export function AiRouteGroupCard({
       <div className="flex justify-end">
         <Button
           type="button"
+          data-testid={`settings-ai-save-${routeGroup}`}
           disabled={!canManageWorkspace || isSaving || automationCapabilityMissing}
           onClick={() => {
             if (form) {

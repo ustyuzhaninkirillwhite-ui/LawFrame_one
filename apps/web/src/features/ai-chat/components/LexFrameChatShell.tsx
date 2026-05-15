@@ -45,8 +45,13 @@ export function LexFrameChatShell({
     threadOverride?.routeThreadId === initialThreadId
       ? threadOverride.activeThreadId
       : initialThreadId;
+  const activeThreadIdRef = React.useRef(activeThreadId);
+  React.useLayoutEffect(() => {
+    activeThreadIdRef.current = activeThreadId;
+  }, [activeThreadId]);
   const setActiveThreadId = React.useCallback(
     (threadId: string | null) => {
+      activeThreadIdRef.current = threadId;
       setThreadOverride({
         routeThreadId: initialThreadId,
         activeThreadId: threadId,
@@ -55,8 +60,17 @@ export function LexFrameChatShell({
     [initialThreadId],
   );
   const messageLoadRequestId = React.useRef(0);
+  const streamRequestIdRef = React.useRef(0);
+  const streamThreadIdRef = React.useRef<string | null>(null);
+  const skipNextMessageLoadThreadRef = React.useRef<string | null>(null);
   const abortControllerRef = React.useRef<AbortController | null>(null);
-  const canSend = sessionContext.permissions.includes("chat.create");
+  const runtimeRef = React.useRef(runtime);
+  React.useEffect(() => {
+    runtimeRef.current = runtime;
+  }, [runtime]);
+  const canSend =
+    sessionContext.permissions.includes("chat.create") ||
+    sessionContext.permissions.includes("ai.chat.use");
   const canCreateAutomation =
     Boolean(projectId) &&
     sessionContext.permissions.includes("automation_builder.create_intent");
@@ -88,12 +102,15 @@ export function LexFrameChatShell({
   }, [chatThreadsQueryKey, projectId, queryClient, sessionContext.activeWorkspace?.id]);
 
   const loadMessages = React.useCallback(
-    async (threadId: string | null) => {
+    async (
+      threadId: string | null,
+      options: { readonly force?: boolean } = {},
+    ) => {
       const requestId = messageLoadRequestId.current + 1;
       messageLoadRequestId.current = requestId;
 
       if (!threadId) {
-        if (requestId === messageLoadRequestId.current) {
+        if (requestId === messageLoadRequestId.current && !streamThreadIdRef.current) {
           dispatchRuntime({ type: "hydrate", messages: [] });
         }
         return [];
@@ -104,7 +121,9 @@ export function LexFrameChatShell({
         queryFn: () => chatApi.listMessages(threadId),
       });
       const nextMessages = [...response.items];
-      if (requestId === messageLoadRequestId.current) {
+      const preserveActiveStream =
+        !options.force && streamThreadIdRef.current === threadId;
+      if (requestId === messageLoadRequestId.current && !preserveActiveStream) {
         dispatchRuntime({ type: "hydrate", messages: nextMessages });
         if (response.latestRun?.status === "recovering") {
           dispatchRuntime({
@@ -119,6 +138,16 @@ export function LexFrameChatShell({
   );
 
   React.useEffect(() => {
+    if (
+      activeThreadId &&
+      skipNextMessageLoadThreadRef.current === activeThreadId
+    ) {
+      skipNextMessageLoadThreadRef.current = null;
+      return;
+    }
+    if (activeThreadId && streamThreadIdRef.current === activeThreadId) {
+      return;
+    }
     void loadMessages(activeThreadId);
   }, [activeThreadId, loadMessages]);
 
@@ -142,42 +171,52 @@ export function LexFrameChatShell({
           threadId = created.thread.id;
         }
         createdThread = true;
+        skipNextMessageLoadThreadRef.current = threadId;
         setActiveThreadId(threadId);
       }
 
       const clientMessageId = createClientMessageId();
       const optimisticStreamId = `client-stream-${clientMessageId}`;
+      const streamRequestId = streamRequestIdRef.current + 1;
+      streamRequestIdRef.current = streamRequestId;
+      streamThreadIdRef.current = threadId;
       const createdAt = new Date().toISOString();
+      const optimisticUserMessage = createOptimisticMessage({
+        id: `client-message-${clientMessageId}`,
+        threadId,
+        projectId,
+        workspaceId: sessionContext.activeWorkspace?.id ?? "",
+        role: "user",
+        status: "completed",
+        text,
+        clientMessageId,
+        createdAt,
+        attachments: createOptimisticAttachments(files),
+      });
+      const optimisticAssistantMessage = createOptimisticMessage({
+        id: `assistant-placeholder-${clientMessageId}`,
+        threadId,
+        projectId,
+        workspaceId: sessionContext.activeWorkspace?.id ?? "",
+        role: "assistant",
+        status: "streaming",
+        text: "",
+        clientMessageId: null,
+        createdAt,
+        attachments: [],
+      });
       dispatchRuntime({
         type: "send_started",
         streamId: optimisticStreamId,
-        userMessage: createOptimisticMessage({
-          id: `client-message-${clientMessageId}`,
-          threadId,
-          projectId,
-          workspaceId: sessionContext.activeWorkspace?.id ?? "",
-          role: "user",
-          status: "completed",
-          text,
-          clientMessageId,
-          createdAt,
-          attachments: createOptimisticAttachments(files),
-        }),
-        assistantMessage: createOptimisticMessage({
-          id: `assistant-placeholder-${clientMessageId}`,
-          threadId,
-          projectId,
-          workspaceId: sessionContext.activeWorkspace?.id ?? "",
-          role: "assistant",
-          status: "streaming",
-          text: "",
-          clientMessageId: null,
-          createdAt,
-          attachments: [],
-        }),
+        userMessage: optimisticUserMessage,
+        assistantMessage: optimisticAssistantMessage,
       });
       abortControllerRef.current?.abort();
-      abortControllerRef.current = new AbortController();
+      const streamAbortController = new AbortController();
+      abortControllerRef.current = streamAbortController;
+      const isCurrentStream = () =>
+        activeThreadIdRef.current === threadId &&
+        streamRequestIdRef.current === streamRequestId;
       try {
         const attachmentIds = files.length
           ? await uploadChatAttachments(chatApi, threadId, files)
@@ -186,9 +225,9 @@ export function LexFrameChatShell({
           threadId,
           { text, clientMessageId, attachmentIds },
           {
-            signal: abortControllerRef.current.signal,
+            signal: streamAbortController.signal,
             onEvent: (event) => {
-              if (event.type !== "done") {
+              if (event.type !== "done" && isCurrentStream()) {
                 dispatchRuntime({
                   type: "stream_event",
                   event: event as ChatStreamEvent,
@@ -197,6 +236,9 @@ export function LexFrameChatShell({
             },
           },
         );
+        if (!isCurrentStream()) {
+          return;
+        }
         dispatchRuntime({
           type: "server_reconciled",
           clientMessageId,
@@ -210,11 +252,29 @@ export function LexFrameChatShell({
             assistantMessage: snapshot.assistantMessage ?? snapshotMessage,
           });
         }
-        const persistedMessages = await loadMessages(threadId);
-        if (
+        const persistedMessages = await loadMessages(threadId, { force: true });
+        const missingUserMessage =
+          snapshot.userMessage &&
+          !persistedMessages.some(
+            (message) =>
+              message.id === snapshot.userMessage?.id ||
+              (clientMessageId &&
+                message.clientMessageId === clientMessageId),
+          );
+        const missingAssistantMessage =
           snapshotMessage &&
-          !persistedMessages.some((message) => message.id === snapshotMessage.id)
-        ) {
+          !persistedMessages.some((message) => message.id === snapshotMessage.id);
+        if (missingUserMessage || missingAssistantMessage) {
+          dispatchRuntime({
+            type: "server_reconciled",
+            clientMessageId,
+            userMessage: missingUserMessage ? snapshot.userMessage : null,
+            assistantMessage: missingAssistantMessage
+              ? snapshot.assistantMessage ?? snapshotMessage
+              : null,
+          });
+        }
+        if (missingAssistantMessage) {
           dispatchRuntime({
             type: "completed",
             assistantMessage: snapshot.assistantMessage ?? snapshotMessage,
@@ -225,13 +285,39 @@ export function LexFrameChatShell({
           router.push(chatRouteForThread(threadId));
         }
       } catch (error) {
-        await loadMessages(threadId).catch(() => undefined);
-        dispatchRuntime({
-          type: "failed",
-          errorMessage: formatChatStreamError(error),
-        });
+        if (isAbortError(error)) {
+          if (isCurrentStream()) {
+            dispatchRuntime({ type: "cancelled" });
+          }
+          return;
+        }
 
-        if (createdThread) {
+        const persistedMessages = await loadMessages(threadId, {
+          force: true,
+        }).catch(() => [] as ChatMessageDto[]);
+        if (isCurrentStream()) {
+          if (
+            !persistedMessages.some(
+              (message) =>
+                message.id === optimisticUserMessage.id ||
+                (clientMessageId &&
+                  message.clientMessageId === clientMessageId),
+            )
+          ) {
+            dispatchRuntime({
+              type: "server_reconciled",
+              clientMessageId,
+              userMessage: optimisticUserMessage,
+              assistantMessage: optimisticAssistantMessage,
+            });
+          }
+          dispatchRuntime({
+            type: "failed",
+            errorMessage: formatChatStreamError(error),
+          });
+        }
+
+        if (createdThread && isCurrentStream()) {
           router.push(chatRouteForThread(threadId));
         }
       } finally {
@@ -248,7 +334,12 @@ export function LexFrameChatShell({
             queryKey: chatRunQueryKey(runtime.activeStreamId),
           });
         }
-        abortControllerRef.current = null;
+        if (abortControllerRef.current === streamAbortController) {
+          abortControllerRef.current = null;
+        }
+        if (streamRequestIdRef.current === streamRequestId) {
+          streamThreadIdRef.current = null;
+        }
         invalidateProjectChatSurfaces();
       }
     },
@@ -269,15 +360,26 @@ export function LexFrameChatShell({
 
   const cancelStream = React.useCallback(() => {
     abortControllerRef.current?.abort();
-    if (!activeThreadId || !runtime.activeStreamId) {
+    const streamId = runtimeRef.current.activeStreamId;
+    streamRequestIdRef.current += 1;
+    streamThreadIdRef.current = null;
+    if (!activeThreadId || !streamId) {
       dispatchRuntime({ type: "cancelled" });
       return;
     }
 
-    void chatApi.cancelStream(activeThreadId, runtime.activeStreamId).finally(() => {
+    if (streamId.startsWith("client-stream-")) {
       dispatchRuntime({ type: "cancelled" });
-    });
-  }, [activeThreadId, chatApi, runtime.activeStreamId]);
+      return;
+    }
+
+    void chatApi
+      .cancelStream(activeThreadId, streamId)
+      .catch(() => undefined)
+      .finally(() => {
+        dispatchRuntime({ type: "cancelled" });
+      });
+  }, [activeThreadId, chatApi]);
 
   const branch = React.useCallback(
     async (messageId: string) => {
@@ -306,9 +408,22 @@ export function LexFrameChatShell({
             assistantMessage: snapshot.assistantMessage,
           });
         }
-        await loadMessages(activeThreadId);
+        const persistedMessages = await loadMessages(activeThreadId, {
+          force: true,
+        });
+        if (
+          snapshot.assistantMessage &&
+          !persistedMessages.some(
+            (message) => message.id === snapshot.assistantMessage?.id,
+          )
+        ) {
+          dispatchRuntime({
+            type: "completed",
+            assistantMessage: snapshot.assistantMessage,
+          });
+        }
       } catch (error) {
-        await loadMessages(activeThreadId).catch(() => undefined);
+        await loadMessages(activeThreadId, { force: true }).catch(() => undefined);
         dispatchRuntime({
           type: "failed",
           errorMessage: formatChatStreamError(error),
@@ -540,6 +655,14 @@ function getSafeErrorCode(error: unknown): string | null {
   }
 
   return code;
+}
+
+function isAbortError(error: unknown) {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    (error as { readonly name?: unknown }).name === "AbortError"
+  );
 }
 
 function createAssistantMessageFromSnapshot(

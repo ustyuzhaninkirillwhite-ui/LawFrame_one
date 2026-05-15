@@ -9,12 +9,14 @@ export function AiConnectionTestButton({
   isPending,
   requiresSave,
   result,
+  testId,
   onTest,
 }: {
   readonly disabled?: boolean;
   readonly isPending?: boolean;
   readonly requiresSave?: boolean;
   readonly result?: AiConnectionTestResultDto | null;
+  readonly testId?: string;
   readonly onTest: () => void;
 }) {
   const label = isPending
@@ -30,6 +32,7 @@ export function AiConnectionTestButton({
       <Button
         type="button"
         variant="outline"
+        data-testid={testId}
         disabled={disabled || isPending}
         onClick={onTest}
       >

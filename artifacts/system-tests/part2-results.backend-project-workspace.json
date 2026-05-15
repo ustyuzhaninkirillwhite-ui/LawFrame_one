@@ -1,0 +1,793 @@
+{
+  "config": {
+    "configFile": "E:\\Law_frame_main\\tests\\e2e\\playwright.config.ts",
+    "rootDir": "E:/Law_frame_main/tests/e2e",
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "E:/Law_frame_main/tests/e2e/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "default",
+        "name": "default",
+        "testDir": "E:/Law_frame_main/tests/e2e",
+        "testIgnore": [
+          "/stage16-live-audit\\/.*\\.spec\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      },
+      {
+        "outputDir": "E:/Law_frame_main/tests/e2e/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "stage16-live-audit",
+        "name": "stage16-live-audit",
+        "testDir": "E:/Law_frame_main/tests/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "/stage16-live-audit\\/.*\\.spec\\.ts/"
+        ],
+        "timeout": 60000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "html",
+        {
+          "outputFolder": "playwright-report",
+          "open": "never"
+        }
+      ],
+      [
+        "json",
+        {
+          "outputFile": "playwright-report/results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.59.1",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "project-composer-context.spec.ts",
+      "file": "project-composer-context.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "@part2 project composer context",
+          "file": "project-composer-context.spec.ts",
+          "line": 30,
+          "column": 6,
+          "specs": [
+            {
+              "title": "prompt survives plus menu, web-search panel and tab switches",
+              "ok": true,
+              "tags": [
+                "part2"
+              ],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "default",
+                  "projectName": "default",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 24133,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-14T00:46:47.110Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "c91f730afe8733b70a2c-133d00ca893b609dc404",
+              "file": "project-composer-context.spec.ts",
+              "line": 36,
+              "column": 7
+            },
+            {
+              "title": "double click send creates at most one project chat and one stream",
+              "ok": true,
+              "tags": [
+                "part2"
+              ],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "default",
+                  "projectName": "default",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 9711,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-14T00:47:11.449Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "c91f730afe8733b70a2c-282b90e416ebdf5b2776",
+              "file": "project-composer-context.spec.ts",
+              "line": 58,
+              "column": 7
+            },
+            {
+              "title": "failed project chat creation keeps composer recoverable and redacted",
+              "ok": true,
+              "tags": [
+                "part2"
+              ],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "default",
+                  "projectName": "default",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 11740,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-14T00:47:21.193Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "c91f730afe8733b70a2c-b9c4fcd64c5061ab88a1",
+              "file": "project-composer-context.spec.ts",
+              "line": 98,
+              "column": 7
+            },
+            {
+              "title": "file chip validation and automation chip removal keep send state correct",
+              "ok": true,
+              "tags": [
+                "part2"
+              ],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "default",
+                  "projectName": "default",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 8331,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-14T00:47:32.965Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "c91f730afe8733b70a2c-f6c1407cb36425a464eb",
+              "file": "project-composer-context.spec.ts",
+              "line": 142,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "project-rename-navigation-race.spec.ts",
+      "file": "project-rename-navigation-race.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "@part2 project rename navigation race",
+          "file": "project-rename-navigation-race.spec.ts",
+          "line": 22,
+          "column": 6,
+          "specs": [
+            {
+              "title": "rename failure keeps original title authoritative and allows retry",
+              "ok": true,
+              "tags": [
+                "part2"
+              ],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "default",
+                  "projectName": "default",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 7712,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-14T00:47:41.343Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "c6fbfe4eb2a91532bbd9-6f18292eb8b6a1be7c0e",
+              "file": "project-rename-navigation-race.spec.ts",
+              "line": 28,
+              "column": 7
+            },
+            {
+              "title": "rename success updates ProjectHome and sidebar consistently after reload",
+              "ok": true,
+              "tags": [
+                "part2"
+              ],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "default",
+                  "projectName": "default",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 12766,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-14T00:47:49.079Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "c6fbfe4eb2a91532bbd9-9cc1d16ebe4f68e0d8b6",
+              "file": "project-rename-navigation-race.spec.ts",
+              "line": 76,
+              "column": 7
+            },
+            {
+              "title": "late rename response from project A does not overwrite project B",
+              "ok": true,
+              "tags": [
+                "part2"
+              ],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "default",
+                  "projectName": "default",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 11349,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-14T00:48:01.870Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "c6fbfe4eb2a91532bbd9-f23e451cebe0d617414f",
+              "file": "project-rename-navigation-race.spec.ts",
+              "line": 102,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "project-web-search-sources.spec.ts",
+      "file": "project-web-search-sources.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "@part2 project web-search and sources",
+          "file": "project-web-search-sources.spec.ts",
+          "line": 29,
+          "column": 6,
+          "specs": [
+            {
+              "title": "delayed web search response does not inject results into chats tab",
+              "ok": true,
+              "tags": [
+                "part2"
+              ],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "default",
+                  "projectName": "default",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 8866,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-14T00:48:13.253Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "f0ff5935dfabb7abc680-fad98fa10061798c3e4e",
+              "file": "project-web-search-sources.spec.ts",
+              "line": 36,
+              "column": 7
+            },
+            {
+              "title": "web search failure is controlled and redacted",
+              "ok": true,
+              "tags": [
+                "part2"
+              ],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "default",
+                  "projectName": "default",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 8707,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-14T00:48:22.139Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "f0ff5935dfabb7abc680-294927faf9044337c31b",
+              "file": "project-web-search-sources.spec.ts",
+              "line": 85,
+              "column": 7
+            },
+            {
+              "title": "saved web result appears once after invalidate and reload",
+              "ok": true,
+              "tags": [
+                "part2"
+              ],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "default",
+                  "projectName": "default",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 10841,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-14T00:48:30.864Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "f0ff5935dfabb7abc680-a7d5ec44dac80dc5c3f9",
+              "file": "project-web-search-sources.spec.ts",
+              "line": 123,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "project-workspace-api-resilience.spec.ts",
+      "file": "project-workspace-api-resilience.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "@part2 project workspace API resilience",
+          "file": "project-workspace-api-resilience.spec.ts",
+          "line": 33,
+          "column": 6,
+          "specs": [
+            {
+              "title": "delayed project snapshot still renders shell and settles to current project",
+              "ok": true,
+              "tags": [
+                "part2"
+              ],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "default",
+                  "projectName": "default",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 8074,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-14T00:48:41.738Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "5783640fe04c3b10b40f-c5115f93a71b3be26474",
+              "file": "project-workspace-api-resilience.spec.ts",
+              "line": 40,
+              "column": 7
+            },
+            {
+              "title": "failed project knowledge affects only Sources tab",
+              "ok": true,
+              "tags": [
+                "part2"
+              ],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "default",
+                  "projectName": "default",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 7229,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-14T00:48:49.830Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "5783640fe04c3b10b40f-e931f4243db1a21f7fde",
+              "file": "project-workspace-api-resilience.spec.ts",
+              "line": 65,
+              "column": 7
+            },
+            {
+              "title": "failed automations list does not block composer or Sources",
+              "ok": true,
+              "tags": [
+                "part2"
+              ],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "default",
+                  "projectName": "default",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 7767,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-14T00:48:57.078Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "5783640fe04c3b10b40f-080a6d05a72ebfbb3d24",
+              "file": "project-workspace-api-resilience.spec.ts",
+              "line": 95,
+              "column": 7
+            },
+            {
+              "title": "project switch clears prompt and automation chip from previous project",
+              "ok": true,
+              "tags": [
+                "part2"
+              ],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "default",
+                  "projectName": "default",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 10834,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-14T00:49:04.868Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "5783640fe04c3b10b40f-171c90700b2924a2296f",
+              "file": "project-workspace-api-resilience.spec.ts",
+              "line": 125,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "project-workspace-tabs-state.spec.ts",
+      "file": "project-workspace-tabs-state.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "@part2 project workspace tabs and route state",
+          "file": "project-workspace-tabs-state.spec.ts",
+          "line": 29,
+          "column": 6,
+          "specs": [
+            {
+              "title": "direct project workspace load exposes project context without old dashboard",
+              "ok": true,
+              "tags": [
+                "part2"
+              ],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "default",
+                  "projectName": "default",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 8089,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-14T00:49:15.733Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "d2dbfc6a5823f6805238-57b1fd15d15848126c4b",
+              "file": "project-workspace-tabs-state.spec.ts",
+              "line": 36,
+              "column": 7
+            },
+            {
+              "title": "tab switching preserves composer draft and avoids request storm",
+              "ok": true,
+              "tags": [
+                "part2"
+              ],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "default",
+                  "projectName": "default",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 7822,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-14T00:49:23.849Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "d2dbfc6a5823f6805238-2b09820e41db4be6bf8f",
+              "file": "project-workspace-tabs-state.spec.ts",
+              "line": 53,
+              "column": 7
+            },
+            {
+              "title": "browser back and forward keep selected project tab and DOM aligned",
+              "ok": true,
+              "tags": [
+                "part2"
+              ],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "default",
+                  "projectName": "default",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 7643,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-14T00:49:31.692Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "d2dbfc6a5823f6805238-983a631ae09ae98dde38",
+              "file": "project-workspace-tabs-state.spec.ts",
+              "line": 79,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-05-14T00:45:10.418Z",
+    "duration": 270542.37,
+    "expected": 17,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

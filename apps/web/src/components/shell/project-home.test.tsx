@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ProjectHome } from "./project-home";
 
@@ -115,6 +115,7 @@ describe("ProjectHome", () => {
   });
 
   beforeEach(() => {
+    window.history.replaceState(null, "", "/");
     createProjectChat.mockResolvedValue({
       chat: { id: "chat_created", projectId: "project_alpha", title: "Новый чат" },
       session: { id: "chat_created", status: "active" },
@@ -233,6 +234,62 @@ describe("ProjectHome", () => {
     );
   });
 
+  it("adds and removes composer file chips without changing the project workspace shell", async () => {
+    const { container } = renderProjectHome();
+    const fileInput = container.querySelectorAll('input[type="file"]')[1] as HTMLInputElement;
+    const file = new File(["claim"], "claim-facts.txt", { type: "text/plain" });
+
+    fireEvent.change(fileInput, { target: { files: [file] } });
+
+    expect(await screen.findByText("claim-facts.txt")).toBeInTheDocument();
+    expect(screen.getByTestId("project-workspace-shell")).toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: /Убрать файл|РЈР±СЂР°С‚СЊ С„Р°Р№Р»/i,
+      }),
+    );
+
+    expect(screen.queryByText("claim-facts.txt")).not.toBeInTheDocument();
+  });
+
+  it("shows validation on invalid composer attachment chips and does not send them", async () => {
+    const { container } = renderProjectHome();
+    const fileInput = container.querySelectorAll('input[type="file"]')[1] as HTMLInputElement;
+    const emptyFile = new File([""], "empty.txt", { type: "text/plain" });
+
+    fireEvent.change(fileInput, { target: { files: [emptyFile] } });
+
+    expect(await screen.findByText("empty.txt")).toBeInTheDocument();
+    expect(
+      screen.getByText(/Пустой файл\.|РџСѓСЃС‚РѕР№ С„Р°Р№Р»\./i),
+    ).toBeInTheDocument();
+    const prompt = "Проверить без валидных файлов";
+    fireEvent.change(screen.getByRole("textbox"), {
+      target: { value: prompt },
+    });
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: /Отправить сообщение|РћС‚РїСЂР°РІРёС‚СЊ СЃРѕРѕР±С‰РµРЅРёРµ/i,
+      }),
+    );
+
+    await waitFor(() => {
+      expect(streamChatMessage).toHaveBeenCalledWith("chat_created", {
+        attachments: [],
+        attachmentIds: [],
+        text: prompt,
+      });
+    });
+  });
+
+  it("keeps the old project dashboard and global floating composer out of the project workspace", () => {
+    renderProjectHome();
+
+    expect(screen.queryByText("РџРѕСЃР»РµРґРЅРёРµ РјР°С‚РµСЂРёР°Р»С‹")).not.toBeInTheDocument();
+    expect(screen.queryByText("Р“Р»СѓР±РѕРєРѕРµ")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("floating-ai-composer")).not.toBeInTheDocument();
+  });
+
   it("creates a project chat, sends the first message with automation context and opens the chat", async () => {
     renderProjectHome();
 
@@ -266,6 +323,117 @@ describe("ProjectHome", () => {
     expect(push).toHaveBeenCalledWith("/app/projects/project_alpha/chats/chat_created");
   });
 
+  it("keeps the project composer recoverable when chat creation fails", async () => {
+    createProjectChat.mockRejectedValueOnce(new Error("raw provider stack should stay hidden"));
+    renderProjectHome();
+
+    const prompt = "Проверить риск без потери черновика";
+    const composer = screen.getByRole("textbox");
+    fireEvent.change(composer, { target: { value: prompt } });
+    fireEvent.click(screen.getByRole("button", { name: "Отправить сообщение" }));
+
+    expect(await screen.findByText(/Сообщение не отправлено|Message was not sent/i)).toBeInTheDocument();
+    expect(composer).toHaveValue(prompt);
+    expect(screen.queryByText(/raw provider stack/i)).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Отправить сообщение" })).not.toBeDisabled();
+    });
+  });
+
+  it("does not apply stale web-search results after switching projects", async () => {
+    let resolveSearch: ((value: Awaited<ReturnType<typeof searchProjectWeb>>) => void) | null =
+      null;
+    searchProjectWeb.mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveSearch = resolve;
+      }),
+    );
+    const view = renderProjectHome();
+
+    fireEvent.click(screen.getByRole("button", { name: "Добавить контекст" }));
+    fireEvent.click(screen.getByRole("button", { name: "Поиск по сети" }));
+    fireEvent.change(screen.getByLabelText("Запрос для поиска по сети"), {
+      target: { value: "stale alpha query" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Найти" }));
+    await waitFor(() => {
+      expect(searchProjectWeb).toHaveBeenCalledWith("project_alpha", {
+        query: "stale alpha query",
+        saveResults: true,
+      });
+    });
+
+    view.rerenderProject("project_beta");
+
+    await act(async () => {
+      resolveSearch?.({
+        provider: "tavily",
+        status: "ok",
+        items: [
+          {
+            id: "web_stale_alpha",
+            title: "Stale Alpha Source",
+            url: "https://example.test/stale-alpha",
+            snippet: "Should not render after project switch",
+            sourceType: "web_search_result",
+            knowledgeItemId: "knowledge_stale_alpha",
+            createdAt: "2026-05-11T10:01:00.000Z",
+          },
+        ],
+        error: null,
+      });
+    });
+
+    expect(screen.queryByText("Stale Alpha Source")).not.toBeInTheDocument();
+    expect(screen.queryByText("Поиск по сети")).not.toBeInTheDocument();
+  });
+
+  it("clears project-scoped composer state when the project changes", async () => {
+    const view = renderProjectHome();
+
+    fireEvent.change(screen.getByRole("textbox"), {
+      target: { value: "Черновик проекта A" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Добавить контекст" }));
+    fireEvent.click(screen.getByRole("button", { name: "Автоматизации" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Прикрепить Проверка позиции по делу" }));
+    expect(screen.getByTestId("selected-automation-chip")).toBeInTheDocument();
+
+    view.rerenderProject("project_beta");
+
+    expect(screen.queryByTestId("selected-automation-chip")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("project-plus-menu")).not.toBeInTheDocument();
+    expect(screen.getByRole("textbox")).toHaveValue("");
+  });
+
+  it("guards project rename against Enter plus submit duplicate PATCH", async () => {
+    let resolveUpdate: ((value: Awaited<ReturnType<typeof updateProject>>) => void) | null =
+      null;
+    updateProject.mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveUpdate = resolve;
+      }),
+    );
+    renderProjectHome();
+
+    fireEvent.click(screen.getByRole("button", { name: "Переименовать проект Lex_Frame_06.05" }));
+    const input = screen.getByRole("textbox", { name: "Название проекта" });
+    fireEvent.change(input, { target: { value: "Deduped rename" } });
+    fireEvent.keyDown(input, { key: "Enter" });
+    fireEvent.submit(input.closest("form")!);
+
+    expect(updateProject).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      resolveUpdate?.({
+        project: {
+          id: "project_alpha",
+          name: "Deduped rename",
+        },
+      });
+    });
+  });
+
   it("runs web search through the backend and renders saved project sources", async () => {
     renderProjectHome();
 
@@ -289,7 +457,7 @@ describe("ProjectHome", () => {
   });
 });
 
-function renderProjectHome() {
+function renderProjectHome(projectId = "project_alpha") {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: { retry: false },
@@ -297,9 +465,20 @@ function renderProjectHome() {
     },
   });
 
-  return render(
+  const view = render(
     <QueryClientProvider client={queryClient}>
-      <ProjectHome projectId="project_alpha" />
+      <ProjectHome projectId={projectId} />
     </QueryClientProvider>,
   );
+
+  return {
+    ...view,
+    rerenderProject(nextProjectId: string) {
+      view.rerender(
+        <QueryClientProvider client={queryClient}>
+          <ProjectHome projectId={nextProjectId} />
+        </QueryClientProvider>,
+      );
+    },
+  };
 }

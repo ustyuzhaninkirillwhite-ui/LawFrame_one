@@ -89,6 +89,14 @@ export function PreviewPanel({
     }
   }
 
+  function openSignedUrl() {
+    if (!signedUrl) {
+      return;
+    }
+
+    window.open(signedUrl.signedUrl, "_blank", "noopener,noreferrer");
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -128,10 +136,11 @@ export function PreviewPanel({
               <Badge variant="success">активна</Badge>
             </div>
             <div className="mt-4 flex flex-wrap gap-3">
-              <Button asChild>
-                <a href={signedUrl.signedUrl} rel="noreferrer" target="_blank">
+              <Button
+                data-testid="document-preview-open-signed-url"
+                onClick={openSignedUrl}
+              >
                   Открыть ссылку
-                </a>
               </Button>
               <Button onClick={() => void requestSignedUrl()} variant="ghost">
                 Обновить ссылку
@@ -152,6 +161,7 @@ export function PreviewPanel({
 
         <Button
           className="w-full"
+          data-testid="document-preview-request-signed-url"
           disabled={!enabled || !versionId || loading}
           onClick={() => void requestSignedUrl()}
         >

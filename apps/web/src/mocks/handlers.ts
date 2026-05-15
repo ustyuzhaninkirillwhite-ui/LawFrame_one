@@ -21,6 +21,7 @@ import type {
   DocumentObjectRole,
   DocumentStatus,
   DocumentSummary,
+  DocumentUploadContentRequest,
   DocumentUploadIntentRequest,
   DocumentVersionSummary,
   RunLiveSnapshot,
@@ -71,6 +72,7 @@ import {
   buildStage15ProjectSnapshot,
   stage15Handlers,
 } from "./stage15-handlers";
+import { applyBlock5MswControls } from "./e2e-control";
 
 const ALLOWED_MIME_TYPES = [
   "application/pdf",
@@ -283,6 +285,8 @@ function buildSessionContext(request: Request): SessionContext {
       ?.permissions ?? [];
   const role = isViewer ? "viewer" : "owner";
   const ownerSettingsPermissions = [
+    "chat.create",
+    "chat.search",
     "settings.view",
     "settings.profile.update_self",
     "settings.organization.view",
@@ -1043,6 +1047,14 @@ function finalizeVersion(
   };
 }
 
+function decodeBase64ByteLength(value: string) {
+  try {
+    return atob(value).length;
+  } catch {
+    return null;
+  }
+}
+
 function getDocumentOrResponse(documentId: string) {
   const detail = state.documents.get(documentId);
 
@@ -1153,15 +1165,32 @@ export const handlers = [
     }),
   ),
 
-  http.get("*/session/context", ({ request }) =>
-    HttpResponse.json(buildSessionContext(request)),
-  ),
+  http.get("*/session/context", async ({ request }) => {
+    const controlled = await applyBlock5MswControls("GET /session/context");
+    if (controlled) {
+      return controlled;
+    }
 
-  http.get("*/settings/bootstrap", () =>
-    HttpResponse.json(buildSettingsBootstrap()),
-  ),
+    const sessionContext = buildSessionContext(request);
+    state.sessionContext = sessionContext;
+    return HttpResponse.json(sessionContext);
+  }),
+
+  http.get("*/settings/bootstrap", async () => {
+    const controlled = await applyBlock5MswControls("GET /settings/bootstrap");
+    if (controlled) {
+      return controlled;
+    }
+
+    return HttpResponse.json(buildSettingsBootstrap());
+  }),
 
   http.patch("*/settings/profile", async ({ request }) => {
+    const controlled = await applyBlock5MswControls("PATCH /settings/profile");
+    if (controlled) {
+      return controlled;
+    }
+
     const payload = (await request.json()) as Partial<typeof settingsProfile>;
     settingsProfile = {
       ...settingsProfile,
@@ -1183,6 +1212,13 @@ export const handlers = [
   }),
 
   http.patch("*/settings/organization", async ({ request }) => {
+    const controlled = await applyBlock5MswControls(
+      "PATCH /settings/organization",
+    );
+    if (controlled) {
+      return controlled;
+    }
+
     const payload = (await request.json()) as Partial<
       typeof settingsOrganization
     >;
@@ -1276,7 +1312,16 @@ export const handlers = [
     );
   }),
 
-  http.post("*/settings/ai/provider-connections/:id/test", ({ params }) => {
+  http.post("*/settings/ai/provider-connections/:id/test", async ({
+    params,
+  }) => {
+    const controlled = await applyBlock5MswControls(
+      "POST /settings/ai/provider-connections/test",
+    );
+    if (controlled) {
+      return controlled;
+    }
+
     const id = String(params.id);
     const result = {
       providerConnectionId: id,
@@ -2237,6 +2282,139 @@ export const handlers = [
   ),
 
   http.post(
+    "*/documents/:documentId/versions/:versionId/content",
+    async ({ params, request }) => {
+      const controlled = await applyBlock5MswControls(
+        "POST /documents/:documentId/versions/:versionId/content",
+      );
+      if (controlled) {
+        return controlled;
+      }
+
+      const documentId = String(params.documentId);
+      const versionId = String(params.versionId);
+      const detail = getDocumentOrResponse(documentId);
+
+      if (detail instanceof HttpResponse) {
+        return detail;
+      }
+
+      const payload = (await request.json()) as DocumentUploadContentRequest;
+      const version =
+        detail.versions.find((item) => item.id === versionId) ?? null;
+
+      if (!version) {
+        return HttpResponse.json(
+          {
+            error: {
+              code: "DOCUMENT_VERSION_NOT_FOUND",
+              message: "Document version not found.",
+            },
+            path: `/documents/${documentId}/versions/${versionId}/content`,
+            requestId: "req_msw",
+          },
+          { status: 404 },
+        );
+      }
+
+      if (version.status !== "upload_pending") {
+        return HttpResponse.json(
+          {
+            error: {
+              code: "DOCUMENT_STATE_INVALID",
+              message: "Document version is not accepting upload content.",
+            },
+            path: `/documents/${documentId}/versions/${versionId}/content`,
+            requestId: "req_msw",
+          },
+          { status: 409 },
+        );
+      }
+
+      if (
+        version.mimeType !== payload.clientReportedMimeType ||
+        version.sizeBytes !== payload.clientReportedSize
+      ) {
+        return HttpResponse.json(
+          {
+            error: {
+              code: "DOCUMENT_UPLOAD_METADATA_MISMATCH",
+              message:
+                "Uploaded file metadata does not match the upload intent.",
+            },
+            path: `/documents/${documentId}/versions/${versionId}/content`,
+            requestId: "req_msw",
+          },
+          { status: 400 },
+        );
+      }
+
+      const receivedSize = decodeBase64ByteLength(payload.contentBase64);
+      if (receivedSize === null) {
+        return HttpResponse.json(
+          {
+            error: {
+              code: "DOCUMENT_UPLOAD_CONTENT_INVALID",
+              message: "Uploaded file content is not valid base64.",
+            },
+            path: `/documents/${documentId}/versions/${versionId}/content`,
+            requestId: "req_msw",
+          },
+          { status: 400 },
+        );
+      }
+
+      if (receivedSize !== payload.clientReportedSize) {
+        return HttpResponse.json(
+          {
+            error: {
+              code: "DOCUMENT_UPLOAD_SIZE_MISMATCH",
+              message: "Uploaded file bytes do not match the reported size.",
+            },
+            path: `/documents/${documentId}/versions/${versionId}/content`,
+            requestId: "req_msw",
+          },
+          { status: 400 },
+        );
+      }
+
+      const sha256 = payload.sha256 ?? "0".repeat(64);
+      state.documents.set(documentId, {
+        ...detail,
+        updatedAt: new Date().toISOString(),
+        versions: sortVersions(
+          detail.versions.map((item) =>
+            item.id === versionId
+              ? {
+                  ...item,
+                  status: "uploaded" as DocumentStatus,
+                  sha256,
+                }
+              : item,
+          ),
+        ),
+      });
+      appendAudit(
+        "document.version.content_received",
+        "document_version",
+        versionId,
+        {
+          documentId,
+          mimeType: payload.clientReportedMimeType,
+          sizeBytes: payload.clientReportedSize,
+          sha256,
+        },
+      );
+
+      return HttpResponse.json({
+        sha256,
+        sizeBytes: payload.clientReportedSize,
+        mimeType: payload.clientReportedMimeType,
+      });
+    },
+  ),
+
+  http.post(
     "*/documents/:documentId/versions/:versionId/complete",
     async ({ params, request }) => {
       const documentId = String(params.documentId);
@@ -2248,6 +2426,71 @@ export const handlers = [
       }
 
       const payload = (await request.json()) as CompleteUploadRequest;
+      const version =
+        detail.versions.find((item) => item.id === versionId) ?? null;
+
+      if (!version) {
+        return HttpResponse.json(
+          {
+            error: {
+              code: "DOCUMENT_VERSION_NOT_FOUND",
+              message: "Document version not found.",
+            },
+            path: `/documents/${documentId}/versions/${versionId}/complete`,
+            requestId: "req_msw",
+          },
+          { status: 404 },
+        );
+      }
+
+      if (version.status !== "uploaded") {
+        return HttpResponse.json(
+          {
+            error: {
+              code: "DOCUMENT_UPLOAD_NOT_READY",
+              message:
+                "Document content must be received before upload completion.",
+            },
+            path: `/documents/${documentId}/versions/${versionId}/complete`,
+            requestId: "req_msw",
+          },
+          { status: 409 },
+        );
+      }
+
+      if (
+        version.mimeType !== payload.clientReportedMimeType ||
+        version.sizeBytes !== payload.clientReportedSize
+      ) {
+        return HttpResponse.json(
+          {
+            error: {
+              code: "DOCUMENT_UPLOAD_METADATA_MISMATCH",
+              message:
+                "Completed file metadata does not match the uploaded content.",
+            },
+            path: `/documents/${documentId}/versions/${versionId}/complete`,
+            requestId: "req_msw",
+          },
+          { status: 400 },
+        );
+      }
+
+      if (payload.sha256 && version.sha256 && payload.sha256 !== version.sha256) {
+        return HttpResponse.json(
+          {
+            error: {
+              code: "DOCUMENT_UPLOAD_HASH_MISMATCH",
+              message:
+                "Completed file hash does not match the uploaded content.",
+            },
+            path: `/documents/${documentId}/versions/${versionId}/complete`,
+            requestId: "req_msw",
+          },
+          { status: 400 },
+        );
+      }
+
       const nextDetail = finalizeVersion(detail, versionId, payload);
 
       state.documents.set(documentId, nextDetail);

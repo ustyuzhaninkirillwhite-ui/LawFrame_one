@@ -72,17 +72,20 @@ export default function SignInPage() {
         <CardContent className="flex flex-col gap-4">
           <div className="grid gap-3">
             <Input
+              data-testid="sign-in-email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               placeholder="name@example.com"
               type="email"
             />
             <Input
+              data-testid="sign-in-full-name"
               value={fullName}
               onChange={(event) => setFullName(event.target.value)}
               placeholder="Full name"
             />
             <Input
+              data-testid="sign-in-password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               placeholder={authMode === "demo" ? "Any password in demo mode" : "Password"}
@@ -95,7 +98,11 @@ export default function SignInPage() {
             </div>
           ) : null}
           <div className="flex flex-col gap-3 sm:flex-row">
-            <Button disabled={submitting} onClick={() => void handleSubmit()}>
+            <Button
+              data-testid="sign-in-submit"
+              disabled={submitting}
+              onClick={() => void handleSubmit()}
+            >
               {mode === "sign-in" ? "Sign in" : "Create account"}
             </Button>
             <Button

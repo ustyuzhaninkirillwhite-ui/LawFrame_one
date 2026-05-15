@@ -329,8 +329,10 @@ export interface CanvasDocumentSource {
   readonly document_id: string;
   readonly document_version_id?: string;
   readonly access_mode?: "reference_only" | "runtime_scoped_token";
+  readonly workspace_id?: string;
   readonly documentId?: string;
   readonly documentVersionId?: string;
+  readonly workspaceId?: string;
 }
 
 export interface ProfileSource {

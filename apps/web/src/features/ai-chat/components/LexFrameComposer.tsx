@@ -33,16 +33,23 @@ export function LexFrameComposer({
 }: {
   readonly disabled: boolean;
   readonly isRunning: boolean;
-  readonly onSend: (text: string, files: readonly File[]) => void;
+  readonly onSend: (text: string, files: readonly File[]) => Promise<void> | void;
   readonly onCancel: () => void;
 }) {
   const [text, setText] = React.useState("");
   const [attachments, setAttachments] = React.useState<PendingAttachment[]>([]);
   const [isDragging, setIsDragging] = React.useState(false);
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
+  const submitLockRef = React.useRef(false);
   const validFiles = attachments
     .filter((attachment) => !attachment.error)
     .map((attachment) => attachment.file);
+
+  React.useEffect(() => {
+    if (!isRunning) {
+      submitLockRef.current = false;
+    }
+  }, [isRunning]);
 
   const addFiles = React.useCallback((files: readonly File[]) => {
     setAttachments((current) => {
@@ -72,13 +79,27 @@ export function LexFrameComposer({
   const submit = () => {
     const next = text.trim();
 
-    if ((!next && validFiles.length === 0) || disabled) {
+    if (
+      (!next && validFiles.length === 0) ||
+      disabled ||
+      isRunning ||
+      submitLockRef.current
+    ) {
       return;
     }
 
+    submitLockRef.current = true;
     setText("");
     setAttachments([]);
-    onSend(next, validFiles);
+    try {
+      const sendResult = onSend(next, validFiles);
+      void Promise.resolve(sendResult).finally(() => {
+        submitLockRef.current = false;
+      });
+    } catch (error) {
+      submitLockRef.current = false;
+      throw error;
+    }
   };
 
   return (

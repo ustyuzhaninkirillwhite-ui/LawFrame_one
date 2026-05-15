@@ -1,0 +1,1 @@
+This file is copied to an unsafe browser File name in negative upload tests.

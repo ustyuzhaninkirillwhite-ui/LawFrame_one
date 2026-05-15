@@ -1,0 +1,18 @@
+{
+  "name": "settings-open",
+  "route": "/app/projects/project_claim_001",
+  "timestamp": "2026-05-13T17:32:10.137Z",
+  "browser": "chromium",
+  "viewport": {
+    "width": 1280,
+    "height": 720
+  },
+  "durationMs": 199,
+  "maxRafDeltaMs": 50,
+  "longFramesOver50ms": 0,
+  "layoutShift": 0.01040205454826355,
+  "passedBudget": true,
+  "notes": [
+    "long-task:50ms"
+  ]
+}

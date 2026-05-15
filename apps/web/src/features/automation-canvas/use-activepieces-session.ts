@@ -417,7 +417,7 @@ function mapSessionError(error: unknown): ActivepiecesSessionFailureResponse {
     return buildLocalFailureResponse(
       isUnavailableError(error.code) ? "unavailable" : "blocked",
       mapErrorCode(error.code),
-      error.message,
+      safeSessionFailureMessage(error.code),
       error.requestId,
     );
   }
@@ -426,9 +426,26 @@ function mapSessionError(error: unknown): ActivepiecesSessionFailureResponse {
     "unavailable",
     "SESSION_BRIDGE_UNAVAILABLE",
     error instanceof Error
-      ? error.message
+      ? safeSessionFailureMessage(null)
       : "Не удалось подготовить защищённую сессию конструктора.",
   );
+}
+
+function safeSessionFailureMessage(code: string | null) {
+  if (
+    code === "WORKSPACE_ACCESS_DENIED" ||
+    code === "PROJECT_ACCESS_DENIED" ||
+    code === "AUTOMATION_ACCESS_DENIED" ||
+    code === "ROLE_NOT_ALLOWED"
+  ) {
+    return "Нет доступа к конструктору автоматизаций для этого проекта.";
+  }
+
+  if (code === "FEATURE_DISABLED") {
+    return "Конструктор автоматизаций отключен для текущего рабочего пространства.";
+  }
+
+  return "Конструктор автоматизаций временно недоступен. LexFrame скрыл внутреннюю ошибку и оставил безопасную диагностику.";
 }
 
 function buildLocalFailureResponse(

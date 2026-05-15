@@ -8,7 +8,7 @@
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "eslint \"src/**/*.ts\"",
-    "test": "node -e \"console.log('api-client: no runtime tests')\""
+    "test": "tsc -p tsconfig.json && node dist/settings-client.test.js && node dist/chat-client.test.js"
   },
   "dependencies": {
     "@lexframe/contracts": "workspace:*",
