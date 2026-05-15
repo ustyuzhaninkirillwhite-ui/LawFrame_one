@@ -18,6 +18,7 @@ import { ActivepiecesFlowProvisioningService } from './activepieces-flow-provisi
 import { ActivepiecesIdentityBridge } from './activepieces-identity-bridge';
 import { ActivepiecesJwtSigner } from './activepieces-jwt-signer';
 import { ActivepiecesPiecesPolicyService } from './activepieces-pieces-policy.service';
+import { ActivepiecesPostgresPoolService } from './activepieces-postgres-pool.service';
 import { ActivepiecesRoleMapper } from './activepieces-role-mapper';
 import { ActivepiecesSessionService } from './activepieces-session.service';
 import { ActivepiecesService } from './activepieces.service';
@@ -44,6 +45,7 @@ import { ActivepiecesService } from './activepieces.service';
     ActivepiecesSessionService,
     ActivepiecesRoleMapper,
     ActivepiecesPiecesPolicyService,
+    ActivepiecesPostgresPoolService,
     ActivepiecesIdentityBridge,
     ActivepiecesFlowProvisioningService,
     ActivepiecesJwtSigner,
@@ -54,6 +56,7 @@ import { ActivepiecesService } from './activepieces.service';
     ActivepiecesCanvasProvisioningService,
     ActivepiecesCanvasReadinessService,
     ActivepiecesSessionService,
+    ActivepiecesPostgresPoolService,
   ],
 })
 export class ActivepiecesModule {}

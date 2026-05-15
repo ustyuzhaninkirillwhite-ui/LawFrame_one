@@ -21,8 +21,13 @@ const dependencyEndpoints = [
   ["activepieces-app", process.env.ACTIVEPIECES_HEALTH_URL ?? "http://127.0.0.1:8080"],
 ];
 
+const stage16BackendPort = process.env.STAGE16_BACKEND_PORT ?? "3104";
 const appEndpoints = [
-  ["backend", process.env.LEXFRAME_API_HEALTH_URL ?? "http://127.0.0.1:3100/health/live"],
+  [
+    "backend",
+    process.env.LEXFRAME_API_HEALTH_URL ??
+      `http://127.0.0.1:${stage16BackendPort}/health/live`,
+  ],
   ["frontend", process.env.LEXFRAME_WEB_HEALTH_URL ?? "http://127.0.0.1:3000"],
 ];
 

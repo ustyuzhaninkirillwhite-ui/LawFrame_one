@@ -20,11 +20,12 @@ const playwrightArtifactDir = isStage1820RemediationRun
 const port = Number(
   process.env.LEXFRAME_E2E_PORT ?? (isStage17LiveRun ? "3100" : "3000"),
 );
-const apiPort = Number(process.env.LEXFRAME_API_PORT ?? "3100");
+const apiPort = Number(process.env.LEXFRAME_API_PORT ?? "3104");
 const host = "127.0.0.1";
 const baseURL = `http://${host}:${port}`;
 const apiBaseURL = `http://${host}:${apiPort}`;
 const useMsw = process.env.LEXFRAME_E2E_USE_MSW === "1";
+const externalRuntime = process.env.LEXFRAME_E2E_EXTERNAL_RUNTIME === "1";
 const frontendApiBaseURL = useMsw ? baseURL : apiBaseURL;
 const readinessProfile =
   process.env.LEXFRAME_READINESS_PROFILE ??
@@ -125,7 +126,9 @@ export default defineConfig({
   outputDir: playwrightArtifactDir
     ? `${playwrightArtifactDir}/test-results`
     : "test-results",
-  webServer: [
+  webServer: externalRuntime
+    ? []
+    : [
     ...(
       useMsw
         ? []
@@ -142,6 +145,9 @@ export default defineConfig({
         LEXFRAME_ENV_PROFILE: process.env.LEXFRAME_ENV_PROFILE ?? "local",
         LEXFRAME_READINESS_PROFILE: readinessProfile,
         LEXFRAME_DEPLOY_ENV: process.env.LEXFRAME_DEPLOY_ENV ?? "local",
+        AI_PROVIDER_MODE: process.env.AI_PROVIDER_MODE ?? "controlled-real",
+        LEXFRAME_AI_SECRET_BACKEND:
+          process.env.LEXFRAME_AI_SECRET_BACKEND ?? "supabase_vault",
         LEXFRAME_CONTRACTS_VERSION:
           process.env.LEXFRAME_CONTRACTS_VERSION ?? "stage20",
         LEXFRAME_RELEASE_SHA:

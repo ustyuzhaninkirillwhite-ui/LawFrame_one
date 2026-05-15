@@ -1,6 +1,8 @@
 import { expect, test } from "@playwright/test";
 import { signInAsDemo } from "./helpers/auth";
 
+const apiBaseUrl = process.env.LEXFRAME_API_BASE_URL ?? `http://127.0.0.1:${process.env.LEXFRAME_API_PORT ?? "3104"}`;
+
 test.describe("Stage 1 auth / workspace / RBAC smoke", () => {
   test("owner sees admin surfaces, viewer is restricted to workspace-safe navigation", async ({
     browser,
@@ -19,7 +21,7 @@ test.describe("Stage 1 auth / workspace / RBAC smoke", () => {
     );
     expect(ownerToken).toBeTruthy();
 
-    const sessionContextResponse = await request.get("http://127.0.0.1:3100/session/context", {
+    const sessionContextResponse = await request.get(`${apiBaseUrl}/session/context`, {
       headers: {
         authorization: `Bearer ${ownerToken}`,
       },
@@ -32,7 +34,7 @@ test.describe("Stage 1 auth / workspace / RBAC smoke", () => {
     expect(workspaceId).toBeTruthy();
 
     const invitationResponse = await request.post(
-      `http://127.0.0.1:3100/workspaces/${workspaceId}/invitations`,
+      `${apiBaseUrl}/workspaces/${workspaceId}/invitations`,
       {
         headers: {
           authorization: `Bearer ${ownerToken}`,

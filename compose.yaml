@@ -8,7 +8,7 @@ x-web-build: &web-build
   dockerfile: ./apps/web/Dockerfile
   network: host
   args:
-    NEXT_PUBLIC_API_BASE_URL: http://localhost:3100
+    NEXT_PUBLIC_API_BASE_URL: http://localhost:${STAGE16_BACKEND_PORT:-3104}
     NEXT_PUBLIC_SUPABASE_URL: http://localhost:54321
     NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: demo_publishable_key
     NEXT_PUBLIC_ACTIVEPIECES_INSTANCE_URL: http://localhost:8080
@@ -229,7 +229,7 @@ services:
     profiles: ["local-integrated"]
     environment:
       NODE_ENV: production
-      PORT: 3100
+      PORT: ${STAGE16_BACKEND_PORT:-3104}
       LEXFRAME_APP_BASE_URL: http://localhost:3000
       LEXFRAME_ENV_PROFILE: local
       LEXFRAME_READINESS_PROFILE: local-integrated
@@ -243,7 +243,8 @@ services:
       LEXFRAME_DEFAULT_SESSION_MAX_AGE_MINUTES: 720
       LEXFRAME_DEFAULT_IDLE_TIMEOUT_MINUTES: 60
       LEXFRAME_AI_SENSITIVE_DATA_POLICY: zdr_or_block
-      AI_PROVIDER_MODE: ${AI_PROVIDER_MODE:-mock}
+      AI_PROVIDER_MODE: ${AI_PROVIDER_MODE:-controlled-real}
+      LEXFRAME_AI_SECRET_BACKEND: ${LEXFRAME_AI_SECRET_BACKEND:-supabase_vault}
       LEXFRAME_LOCAL_KEYS_FILE: /run/lexframe-secrets/lexframe.keys.local.json
       LEXFRAME_LOCAL_KEYS_DISABLED: ${LEXFRAME_LOCAL_KEYS_DISABLED:-false}
       LEXFRAME_AI_TEST_FORCE_COMETAPI: ${LEXFRAME_AI_TEST_FORCE_COMETAPI:-0}
@@ -259,7 +260,7 @@ services:
       SUPABASE_SECRET_KEY: stage14_supabase_secret_key
       SUPABASE_DB_URL: postgresql://postgres:postgres@postgres:5432/stage16_runtime
       ACTIVEPIECES_BASE_URL: http://activepieces-app:80
-      ACTIVEPIECES_PUBLIC_URL: http://127.0.0.1:3100
+      ACTIVEPIECES_PUBLIC_URL: http://127.0.0.1:${STAGE16_BACKEND_PORT:-3104}
       ACTIVEPIECES_API_KEY: local_activepieces_access_token
       ACTIVEPIECES_SERVICE_EMAIL: lexframe-stage16@lexframe.test
       ACTIVEPIECES_SERVICE_PASSWORD: Stage16Activepieces!123
@@ -309,12 +310,12 @@ services:
       opensearch:
         condition: service_started
     ports:
-      - "3100:3100"
+      - "${STAGE16_BACKEND_PORT:-3104}:${STAGE16_BACKEND_PORT:-3104}"
     healthcheck:
       test:
         [
           "CMD-SHELL",
-          'node -e "require(''http'').get(''http://127.0.0.1:3100/health/live'', r => process.exit(r.statusCode < 500 ? 0 : 1)).on(''error'', () => process.exit(1))"',
+          'node -e "require(''http'').get(''http://127.0.0.1:${STAGE16_BACKEND_PORT:-3104}/health/live'', r => process.exit(r.statusCode < 500 ? 0 : 1)).on(''error'', () => process.exit(1))"',
         ]
       interval: 10s
       timeout: 5s
@@ -329,7 +330,7 @@ services:
       NODE_ENV: production
       PORT: 3000
       HOSTNAME: 0.0.0.0
-      NEXT_PUBLIC_API_BASE_URL: http://localhost:3100
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:${STAGE16_BACKEND_PORT:-3104}
       NEXT_PUBLIC_SUPABASE_URL: http://localhost:54321
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: demo_publishable_key
       NEXT_PUBLIC_ACTIVEPIECES_INSTANCE_URL: http://localhost:8080

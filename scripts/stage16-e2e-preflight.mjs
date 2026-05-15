@@ -6,7 +6,17 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 const repoRoot = path.resolve(fileURLToPath(new URL("..", import.meta.url)));
 const backendBuildManifest = ".codex-runtime/stage16-backend-runtime-build.json";
-const appPorts = [3000, 3014, 3029, 3100, 3129];
+const frontendPort = Number(
+  process.env.LEXFRAME_E2E_PORT ?? process.env.STAGE16_WEB_PORT ?? "3000",
+);
+const backendPort = Number(
+  process.env.LEXFRAME_API_PORT ?? process.env.STAGE16_BACKEND_PORT ?? "3104",
+);
+const appPorts = uniqueNumbers([
+  frontendPort,
+  backendPort,
+  ...parsePortList(process.env.STAGE16_E2E_ADDITIONAL_APP_PORTS ?? ""),
+]);
 const backendArtifacts = [
   "apps/backend/dist/main.js",
   "packages/logger/dist/index.js",
@@ -606,7 +616,8 @@ function checkBackendDistArtifacts(msw) {
 
 async function checkBackendHealth(required) {
   const url =
-    process.env.LEXFRAME_API_HEALTH_URL ?? "http://127.0.0.1:3100/health/live";
+    process.env.LEXFRAME_API_HEALTH_URL ??
+    `http://127.0.0.1:${backendPort}/health/live`;
   const result = await checkUrl("backend-health", url);
   required.push({
     ...result,
@@ -617,7 +628,7 @@ async function checkBackendHealth(required) {
 async function checkAuthBootstrap(required) {
   const url =
     process.env.LEXFRAME_AUTH_BOOTSTRAP_URL ??
-    "http://127.0.0.1:3100/auth/bootstrap";
+    `http://127.0.0.1:${backendPort}/auth/bootstrap`;
   const token = process.env.LEXFRAME_E2E_AUTH_BOOTSTRAP_TOKEN;
 
   if (!token) {
@@ -739,6 +750,19 @@ function normalizeScope(scope) {
     return "shell";
   }
   return scope;
+}
+
+function parsePortList(value) {
+  return String(value)
+    .split(",")
+    .map((item) => Number(item.trim()))
+    .filter((port) => Number.isInteger(port) && port > 0);
+}
+
+function uniqueNumbers(values) {
+  return [
+    ...new Set(values.filter((value) => Number.isInteger(value) && value > 0)),
+  ];
 }
 
 function readArg(argv, name) {

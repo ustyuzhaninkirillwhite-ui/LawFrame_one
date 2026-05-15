@@ -409,14 +409,17 @@ export function useCreateStage15ProjectChat(projectId?: string | null) {
   });
 }
 
-export function useStage15ProjectAutomations(projectId?: string | null) {
+export function useStage15ProjectAutomations(
+  projectId?: string | null,
+  options: { readonly enabled?: boolean } = {},
+) {
   const { apiClient } = useSessionBridge();
   const { enabled, workspaceId } = useWorkspaceEnabled();
 
   return useQuery({
     queryKey: ["stage15-project-automations", workspaceId, projectId],
     queryFn: () => apiClient.listProjectAutomations(projectId!),
-    enabled: enabled && Boolean(projectId),
+    enabled: enabled && options.enabled !== false && Boolean(projectId),
     retry: false,
     staleTime: 5 * 60_000,
     gcTime: 30 * 60_000,

@@ -1,6 +1,6 @@
 import { expect, type Page } from "@playwright/test";
 
-const apiBaseUrl = process.env.LEXFRAME_API_BASE_URL ?? "http://127.0.0.1:3100";
+const apiBaseUrl = process.env.LEXFRAME_API_BASE_URL ?? "http://127.0.0.1:3104";
 
 export async function createProjectChat(page: Page, projectId: string) {
   const result = await fetchFromBrowser<{

@@ -17,6 +17,7 @@ import {
   useEnsureStage17CanvasAutomation,
   useStage15ProjectAutomations,
 } from "@/hooks/domain/stage15";
+import { useActivepiecesBackgroundCanvas } from "@/features/automation-canvas/activepieces-background-canvas-provider";
 import { useSessionBridge } from "@/providers/session-provider";
 import { ProjectAutomations } from "./project-automations";
 
@@ -77,6 +78,7 @@ export function ProjectAutomationsLanding({
 }) {
   const router = useRouter();
   const { apiClient } = useSessionBridge();
+  const backgroundCanvas = useActivepiecesBackgroundCanvas();
   const {
     data: automationData,
     isLoading: automationsLoading,
@@ -107,6 +109,9 @@ export function ProjectAutomationsLanding({
 
     return activepiecesReady ?? null;
   }, [items]);
+  const backgroundManagingProject =
+    backgroundCanvas.activeProjectId === projectId &&
+    backgroundCanvas.state.phase !== "idle";
 
   React.useEffect(() => {
     if (!ensureCanvasPending) {
@@ -122,6 +127,18 @@ export function ProjectAutomationsLanding({
 
   React.useEffect(() => {
     let cancelled = false;
+
+    if (backgroundManagingProject) {
+      if (
+        backgroundCanvas.state.phase === "available" &&
+        backgroundCanvas.route
+      ) {
+        router.replace(backgroundCanvas.route);
+      }
+      return () => {
+        cancelled = true;
+      };
+    }
 
     if (automationToOpen) {
       dispatchReadiness({ type: "loading" });
@@ -199,12 +216,48 @@ export function ProjectAutomationsLanding({
     apiClient,
     automationToOpen,
     automationsSuccess,
+    backgroundCanvas.route,
+    backgroundCanvas.state.phase,
+    backgroundManagingProject,
     ensureCanvasAutomation,
     ensureCanvasPending,
     projectId,
     refetchAutomations,
     router,
   ]);
+
+  if (backgroundManagingProject) {
+    if (backgroundCanvas.state.phase === "unavailable") {
+      return (
+        <Card>
+          <CardHeader>
+            <Badge variant="danger">недоступно</Badge>
+            <CardTitle>Не удалось открыть конструктор автоматизаций</CardTitle>
+            <CardDescription>
+              {backgroundCanvas.state.message ??
+                "Конструктор автоматизаций временно недоступен."}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-wrap gap-3">
+            <Button onClick={backgroundCanvas.retry}>
+              <RotateCw className="mr-2 size-4" aria-hidden="true" />
+              Повторить
+            </Button>
+          </CardContent>
+        </Card>
+      );
+    }
+
+    return (
+      <QueryState
+        title="Открываем конструктор автоматизаций"
+        description={
+          backgroundCanvas.state.message ??
+          "Готовим сценарий Stage 23 и сразу откроем рабочее поле автоматизаций."
+        }
+      />
+    );
+  }
 
   if (
     automationsLoading ||
@@ -214,7 +267,7 @@ export function ProjectAutomationsLanding({
     return (
       <QueryState
         title="Открываем конструктор автоматизаций"
-        description="Готовим сценарий Stage 21 и сразу откроем рабочее поле автоматизаций."
+        description="Готовим сценарий Stage 23 и сразу откроем рабочее поле автоматизаций."
       />
     );
   }
@@ -227,7 +280,7 @@ export function ProjectAutomationsLanding({
           <CardTitle>Не удалось открыть конструктор автоматизаций</CardTitle>
           <CardDescription>
             Старый canvas не используется как запасной режим. Проверьте runtime
-            автоматизаций и повторите подготовку сценария Stage 21.
+            автоматизаций и повторите подготовку сценария Stage 23.
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-wrap gap-3">
@@ -291,7 +344,7 @@ export function ProjectAutomationsLanding({
     return (
       <QueryState
         title="Открываем конструктор автоматизаций"
-        description="В проекте один сценарий Stage 21, перенаправляем прямо в рабочее поле."
+        description="В проекте один сценарий Stage 23, перенаправляем прямо в рабочее поле."
       />
     );
   }
@@ -306,7 +359,7 @@ export function ProjectAutomationsLanding({
         <div className="flex size-10 items-center justify-center rounded-[8px] border border-[color:var(--line)] bg-[color:var(--panel-muted)] text-[color:var(--accent)]">
           <Workflow className="size-5" aria-hidden="true" />
         </div>
-        <Badge variant="muted">Stage 21</Badge>
+        <Badge variant="muted">Stage 23</Badge>
         <CardTitle>Подготавливаем конструктор автоматизаций</CardTitle>
         <CardDescription>
           Создаём недостающие runtime-привязки. Старый canvas не используется.

@@ -1,4 +1,5 @@
 import { cleanup, render, screen } from "@testing-library/react";
+import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AppShell } from "./app-shell";
 
@@ -16,6 +17,14 @@ vi.mock("@/components/shell/project-sidebar", () => ({
 
 vi.mock("@/components/shell/floating-ai-composer", () => ({
   FloatingAiComposer: () => <div>Global floating composer</div>,
+}));
+
+vi.mock("@/features/automation-canvas/activepieces-background-canvas-provider", () => ({
+  ActivepiecesBackgroundCanvasProvider: ({
+    children,
+  }: {
+    readonly children: ReactNode;
+  }) => <>{children}</>,
 }));
 
 vi.mock("./system-status-banner", () => ({
@@ -145,7 +154,7 @@ describe("AppShell", () => {
     expect(window.sessionStorage.getItem("token")).toBeNull();
   });
 
-  it("keeps Activepieces browser tokens inside the automation route family", () => {
+  it("clears stale Activepieces browser tokens on automation routes too", () => {
     navigation.pathname = "/app/projects/project_claim_001/automations/automation_001/automation";
     const token = [
       "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
@@ -160,6 +169,6 @@ describe("AppShell", () => {
       </AppShell>,
     );
 
-    expect(window.sessionStorage.getItem("token")).toBe(token);
+    expect(window.sessionStorage.getItem("token")).toBeNull();
   });
 });

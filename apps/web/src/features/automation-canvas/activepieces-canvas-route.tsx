@@ -4,6 +4,10 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { QueryState } from "@/components/stage3-shared";
 import { Button } from "@/components/ui/button";
+import {
+  ActivepiecesBackgroundCanvasViewport,
+  useActivepiecesBackgroundCanvas,
+} from "./activepieces-background-canvas-provider";
 import { ActivepiecesCanvasWrapper } from "./activepieces-canvas-wrapper";
 import { BuilderUnavailableState } from "./builder-unavailable-state";
 import { useActivepiecesSession } from "./use-activepieces-session";
@@ -18,10 +22,15 @@ export function ActivepiecesCanvasRoute({
   readonly automationId: string;
 }) {
   const router = useRouter();
+  const backgroundCanvas = useActivepiecesBackgroundCanvas();
+  const useBackgroundCanvas =
+    backgroundCanvas.activeProjectId === projectId &&
+    backgroundCanvas.activeAutomationId === automationId &&
+    backgroundCanvas.state.phase !== "idle";
   const session = useActivepiecesSession({
     projectId,
     automationId,
-    enabled: true,
+    enabled: !useBackgroundCanvas,
   });
   const { apiClient, clearToken, requestSession, state, tokenRef } = session;
   const recoveryRetriesRef = React.useRef(0);
@@ -144,18 +153,63 @@ export function ActivepiecesCanvasRoute({
           {runState.status === "running" ? "Запускаем..." : "Запустить dry-run"}
         </Button>
       </div>
-      <CanvasPane
-        sessionState={state}
-        canvasFailure={canvasFailure}
-        tokenRef={tokenRef}
-        onRetry={handleRetry}
-        onAuthFailure={handleAuthFailure}
-        onMounted={handleMounted}
-      />
+      {useBackgroundCanvas ? (
+        <BackgroundCanvasPane canvas={backgroundCanvas} />
+      ) : (
+        <CanvasPane
+          sessionState={state}
+          canvasFailure={canvasFailure}
+          tokenRef={tokenRef}
+          onRetry={handleRetry}
+          onAuthFailure={handleAuthFailure}
+          onMounted={handleMounted}
+        />
+      )}
       <div className="sr-only">
         Проект {projectId}, автоматизация {automationId}
       </div>
     </section>
+  );
+}
+
+function BackgroundCanvasPane({
+  canvas,
+}: {
+  readonly canvas: ReturnType<typeof useActivepiecesBackgroundCanvas>;
+}) {
+  if (canvas.state.phase === "available") {
+    return (
+      <ActivepiecesBackgroundCanvasViewport className="h-full min-h-0 w-full" />
+    );
+  }
+
+  if (canvas.state.phase === "unavailable") {
+    const failure = buildCanvasFailure(
+      "FLOW_BINDING_MISSING",
+      canvas.state.message ??
+        "Конструктор автоматизаций временно недоступен. Повторите попытку.",
+    );
+    return (
+      <div className="flex h-full items-center justify-center p-6">
+        <BuilderUnavailableState
+          response={failure}
+          message={failure.message}
+          onRetry={canvas.retry}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex h-full items-center justify-center p-6">
+      <QueryState
+        title="Открываем конструктор автоматизаций"
+        description={
+          canvas.state.message ??
+          "Готовим защищённую сессию конструктора автоматизаций."
+        }
+      />
+    </div>
   );
 }
 
@@ -231,6 +285,7 @@ function CanvasPane({
 
 function buildCanvasFailure(
   readinessCode: "FLOW_BINDING_MISSING" | "AP_IFRAME_NAVIGATION_FAILED",
+  message = "Конструктор автоматизаций временно недоступен. LexFrame подготовил безопасный путь повтора.",
 ) {
   return {
     status: "unavailable" as const,
@@ -238,8 +293,7 @@ function buildCanvasFailure(
     jwtToken: null,
     expiresAt: null,
     role: null,
-    message:
-      "Automation Canvas could not confirm access to the ActivePieces project. LexFrame stopped the raw embed error and prepared a controlled retry path.",
+    message,
     fallback: {
       showBuilderUnavailableState: true,
       allowLexframeCanvasReserve: false,

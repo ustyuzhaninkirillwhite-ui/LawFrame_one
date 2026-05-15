@@ -10,6 +10,7 @@ const docker = resolveDockerCli();
 const shell = process.platform === "win32";
 const fullRuntimeEnv = {
   ...process.env,
+  STAGE16_BACKEND_PORT: process.env.STAGE16_BACKEND_PORT ?? "3104",
   AI_PROVIDER_MODE: process.env.AI_PROVIDER_MODE ?? "controlled-real",
   LEXFRAME_MINING_WORKER_HEALTH_URL:
     process.env.LEXFRAME_MINING_WORKER_HEALTH_URL ??
@@ -100,9 +101,10 @@ async function waitForMiningWorkerReady() {
 }
 
 async function waitForHealthySystemStatus() {
+  const backendPort = process.env.STAGE16_BACKEND_PORT ?? "3104";
   const url =
     process.env.STAGE16_SYSTEM_STATUS_URL ??
-    "http://127.0.0.1:3100/system/status";
+    `http://127.0.0.1:${backendPort}/system/status`;
   await waitForJson(
     "backend /system/status",
     url,

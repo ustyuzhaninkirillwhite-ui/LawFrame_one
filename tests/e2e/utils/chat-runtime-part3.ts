@@ -215,7 +215,7 @@ export async function fetchChatApiFromBrowser<T>(
   const apiBaseUrl =
     process.env.LEXFRAME_E2E_USE_MSW === "1"
       ? new URL(page.url()).origin
-      : process.env.LEXFRAME_API_BASE_URL ?? "http://127.0.0.1:3100";
+      : process.env.LEXFRAME_API_BASE_URL ?? "http://127.0.0.1:3104";
 
   let lastError: unknown = null;
   for (let attempt = 0; attempt < 3; attempt += 1) {

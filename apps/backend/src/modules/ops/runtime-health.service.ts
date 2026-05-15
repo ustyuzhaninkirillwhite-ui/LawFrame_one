@@ -6,6 +6,7 @@ import type {
 import type { ServerEnv } from '@lexframe/config';
 import { loadServerEnv } from '@lexframe/config';
 import { Injectable } from '@nestjs/common';
+import { createHash } from 'node:crypto';
 import { DatabaseService } from '../database/database.service';
 import { ReadinessService } from '../readiness/readiness.service';
 
@@ -16,6 +17,15 @@ type MiningWorkerReadyPayload = {
   readonly lastError?: unknown;
   readonly error?: unknown;
 };
+
+interface SavedAiRoutePreferenceRow {
+  readonly route_group: string;
+  readonly provider_code: string | null;
+  readonly backend: string | null;
+  readonly backend_secret_id: string | null;
+  readonly status: string | null;
+  readonly fingerprint: string | null;
+}
 
 @Injectable()
 export class RuntimeHealthService {
@@ -68,7 +78,11 @@ export class RuntimeHealthService {
         checkedAt,
       },
       activepieces,
-      resolveAiDependency(this.env, checkedAt),
+      await resolveSavedAwareAiDependency(
+        this.env,
+        checkedAt,
+        this.databaseService,
+      ),
       search,
       worker,
     ];
@@ -296,6 +310,154 @@ function resolveAiDependency(
     summary: 'Внешний ИИ-провайдер подключён для runtime-маршрутизации.',
     checkedAt,
   };
+}
+
+async function resolveSavedAwareAiDependency(
+  env: ServerEnv,
+  checkedAt: string,
+  databaseService: DatabaseService,
+): Promise<RuntimeDependencyStatus> {
+  const envStatus = resolveAiDependency(env, checkedAt);
+
+  if (envStatus.status === 'healthy') {
+    return envStatus;
+  }
+
+  if (env.AI_PROVIDER_MODE !== 'controlled-real') {
+    return {
+      ...envStatus,
+      summary:
+        'Full-services mode requires AI_PROVIDER_MODE=controlled-real; saved settings keys are ignored while mock provider mode is active.',
+    };
+  }
+
+  const savedRoutes = await resolveCallableSavedAiRoutes(env, databaseService);
+  const missingRoutes = ['chat_ai', 'automation_ai'].filter(
+    (routeGroup) => !savedRoutes.includes(routeGroup),
+  );
+
+  if (missingRoutes.length === 0) {
+    return {
+      code: 'ai',
+      status: 'healthy',
+      summary:
+        'Saved callable AI settings are configured for chat_ai and automation_ai route groups.',
+      checkedAt,
+    };
+  }
+
+  if (savedRoutes.length > 0) {
+    return {
+      code: 'ai',
+      status: 'degraded',
+      summary: `Saved callable AI settings are configured for ${savedRoutes.join(
+        ', ',
+      )}; missing callable ${missingRoutes.join(', ')}.`,
+      checkedAt,
+    };
+  }
+
+  return envStatus;
+}
+
+async function resolveCallableSavedAiRoutes(
+  env: ServerEnv,
+  databaseService: DatabaseService,
+): Promise<string[]> {
+  let result: { readonly rows: readonly SavedAiRoutePreferenceRow[] };
+  try {
+    result = await databaseService.query<SavedAiRoutePreferenceRow>(
+      `
+        select distinct on (p.route_group)
+          p.route_group,
+          c.provider_code,
+          s.backend,
+          s.backend_secret_id,
+          s.status,
+          s.fingerprint
+        from app.ai_route_group_preferences p
+        inner join app.ai_provider_connections c
+          on c.id = p.provider_connection_id
+        left join app.ai_secret_refs s
+          on s.id = c.secret_ref_id
+        where p.route_group in ('chat_ai', 'automation_ai')
+          and p.enabled = true
+          and c.enabled = true
+        order by p.route_group, p.updated_at desc
+      `,
+      [],
+    );
+  } catch (error) {
+    if (isMissingAiSettingsSchema(error)) {
+      return [];
+    }
+
+    throw error;
+  }
+
+  return Array.from(
+    new Set(
+      result.rows
+        .filter((row) => isSavedAiRouteCallable(env, row))
+        .map((row) => row.route_group),
+    ),
+  ).sort();
+}
+
+function isSavedAiRouteCallable(
+  env: ServerEnv,
+  row: SavedAiRoutePreferenceRow,
+) {
+  if (row.status !== 'active' || !row.fingerprint) {
+    return false;
+  }
+
+  if (row.backend === 'supabase_vault') {
+    return isConfiguredSecret(row.backend_secret_id ?? undefined);
+  }
+
+  if (row.backend === 'dev_mock') {
+    return getConfiguredBackendProviderKeys(env, row.provider_code).some(
+      (candidate) => fingerprintSecret(candidate) === row.fingerprint,
+    );
+  }
+
+  return false;
+}
+
+function getConfiguredBackendProviderKeys(
+  env: ServerEnv,
+  providerCode: string | null,
+) {
+  if (
+    providerCode !== 'cometapi' &&
+    providerCode !== 'openai_compatible' &&
+    providerCode !== 'openai'
+  ) {
+    return [];
+  }
+
+  return [
+    env.XAI_API_KEY,
+    env.COMETAPI_KEY,
+    env.COMETAPI_API_KEY,
+    ...env.COMETAPI_API_KEYS.split(/[\s,;]+/),
+  ]
+    .map((value) => value?.trim() ?? '')
+    .filter(isConfiguredSecret);
+}
+
+function fingerprintSecret(value: string): string {
+  return `sha256:${createHash('sha256').update(value).digest('hex').slice(0, 16)}`;
+}
+
+function isMissingAiSettingsSchema(error: unknown): boolean {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'code' in error &&
+    ['42P01', '42703'].includes(String((error as { code?: string }).code))
+  );
 }
 
 function isConfiguredSecret(value: string | undefined) {

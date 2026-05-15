@@ -216,6 +216,35 @@ describe("ProjectSidebar", () => {
     expect(listChatThreads).toHaveBeenCalledWith({ scope: "global" });
   });
 
+  it("renders legacy default global chat titles in Russian", async () => {
+    pathname = "/chat";
+    listChatThreads.mockResolvedValueOnce({
+      items: [
+        {
+          id: "chat_global_legacy_default",
+          workspaceId: "ws_1",
+          projectId: null,
+          kind: "general",
+          visibility: "private",
+          status: "active",
+          title: "New chat",
+          lastMessagePreview: null,
+          currentBranchId: null,
+          createdBy: "user_1",
+          createdAt: "2026-05-07T12:00:00.000Z",
+          updatedAt: "2026-05-07T12:30:00.000Z",
+          archivedAt: null,
+          deletedAt: null,
+        },
+      ],
+    });
+
+    render(<ProjectSidebar />);
+
+    expect(await screen.findByText("Новый чат")).toBeInTheDocument();
+    expect(screen.queryByText("New chat")).not.toBeInTheDocument();
+  });
+
   it("creates a global chat from /chat instead of creating a project chat", async () => {
     pathname = "/chat";
 

@@ -53,7 +53,6 @@ export function ProjectHome({ projectId }: { readonly projectId: string }) {
   const { apiClient } = useSessionBridge();
   const snapshot = useStage15ProjectSnapshot(projectId);
   const projectChats = useStage15ProjectChats(projectId);
-  const automations = useStage15ProjectAutomations(projectId);
   const createChat = useCreateStage15ProjectChat(projectId);
   const [activeTab, setActiveTab] = React.useState<ProjectWorkspaceTab>("chats");
   const [menuMode, setMenuMode] = React.useState<PlusMenuMode>("closed");
@@ -61,6 +60,9 @@ export function ProjectHome({ projectId }: { readonly projectId: string }) {
   const [files, setFiles] = React.useState<readonly LocalComposerFile[]>([]);
   const [selectedAutomation, setSelectedAutomation] =
     React.useState<InstalledAutomationDetail | null>(null);
+  const automations = useStage15ProjectAutomations(projectId, {
+    enabled: activeTab === "automations" || menuMode === "automations",
+  });
   const [webQuery, setWebQuery] = React.useState("");
   const [webResults, setWebResults] = React.useState<readonly ProjectWebSearchResult[]>([]);
   const [webSearchError, setWebSearchError] = React.useState<string | null>(null);

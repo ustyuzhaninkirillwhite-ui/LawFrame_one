@@ -383,7 +383,7 @@ export class ChatThreadService {
     const { actor, access } = this.requireContext(context);
     const workspaceId = this.requireWorkspace(access).id;
     const kind = input.kind ?? 'general';
-    const title = normalizeTitle(input.title) ?? 'New chat';
+    const title = normalizeTitle(input.title) ?? 'Новый чат';
     const row = await this.databaseService.one<ThreadRow>(
       `
         insert into app.chat_threads (

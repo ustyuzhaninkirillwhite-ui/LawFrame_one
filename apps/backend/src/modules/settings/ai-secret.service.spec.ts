@@ -95,6 +95,79 @@ describe('AiSecretService provider-call resolution', () => {
     );
   });
 
+  it('uses durable Supabase Vault storage by default for local backend-backed settings keys', async () => {
+    delete process.env.LEXFRAME_AI_SECRET_BACKEND;
+    process.env.NODE_ENV = 'production';
+    process.env.LEXFRAME_ENV_PROFILE = 'local';
+    process.env.LEXFRAME_DEPLOY_ENV = 'local';
+    const databaseService = {
+      one: jest.fn().mockResolvedValueOnce({
+        vault_secret_id: 'vault_secret_001',
+      }),
+      query: jest.fn().mockResolvedValue({ rows: [] }),
+    };
+    const service = new AiSecretService(databaseService as never);
+
+    const result = await service.createOrRotateSecret({
+      actor: {
+        id: '00000000-0000-4000-8000-000000000031',
+        email: 'owner@example.test',
+        fullName: 'Owner',
+        emailConfirmedAt: '2026-05-09T00:00:00.000Z',
+        assuranceLevel: 'aal1',
+        accessToken: 'dev-token',
+        sessionId: 'session_001',
+      },
+      workspaceId: '00000000-0000-4000-8000-000000000021',
+      ownerScope: 'workspace',
+      ownerUserId: null,
+      providerConnectionId: 'conn_workspace_ai',
+      providerCode: 'cometapi',
+      apiKey: 'sk-live-provider-key',
+    });
+
+    expect(result).toMatchObject({
+      backend: 'supabase_vault',
+      backendSecretId: 'vault_secret_001',
+      status: 'active',
+    });
+    expect(JSON.stringify(databaseService.query.mock.calls)).not.toContain(
+      'sk-live-provider-key',
+    );
+  });
+
+  it('rejects local_owner_vault writes for user-entered settings keys instead of creating unreadable refs', async () => {
+    process.env.LEXFRAME_AI_SECRET_BACKEND = 'local_owner_vault';
+    const databaseService = {
+      one: jest.fn(),
+      query: jest.fn(),
+    };
+    const service = new AiSecretService(databaseService as never);
+
+    await expect(
+      service.createOrRotateSecret({
+        actor: {
+          id: '00000000-0000-4000-8000-000000000031',
+          email: 'owner@example.test',
+          fullName: 'Owner',
+          emailConfirmedAt: '2026-05-09T00:00:00.000Z',
+          assuranceLevel: 'aal1',
+          accessToken: 'dev-token',
+          sessionId: 'session_001',
+        },
+        workspaceId: '00000000-0000-4000-8000-000000000021',
+        ownerScope: 'workspace',
+        ownerUserId: null,
+        providerConnectionId: 'conn_workspace_ai',
+        providerCode: 'cometapi',
+        apiKey: 'sk-live-provider-key',
+      }),
+    ).rejects.toMatchObject({
+      code: 'AI_SECRET_BACKEND_UNAVAILABLE',
+    });
+    expect(databaseService.query).not.toHaveBeenCalled();
+  });
+
   it('returns a controlled backend-unavailable error when Supabase Vault is missing', async () => {
     process.env.LEXFRAME_AI_SECRET_BACKEND = 'supabase_vault';
     const databaseService = {

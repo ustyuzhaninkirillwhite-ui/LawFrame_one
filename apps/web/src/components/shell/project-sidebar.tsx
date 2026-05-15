@@ -49,6 +49,14 @@ import { countSidebarNotifications } from "./sidebar-notifications";
 
 const fallbackProjectId = "project_claim_001";
 const defaultProjectColor = "#3B82F6";
+const defaultEnglishChatTitle = "New chat";
+const defaultRussianChatTitle = "Новый чат";
+
+function normalizeDefaultChatTitle(title: string) {
+  return title.trim() === defaultEnglishChatTitle
+    ? defaultRussianChatTitle
+    : title;
+}
 
 export function ProjectSidebar({
   forceCollapsed = false,
@@ -784,7 +792,7 @@ function mapProjectChatToSearchResult(
       kind: "project",
       visibility: "project",
       status: chat.status === "active" ? "active" : "archived",
-      title: chat.title,
+      title: normalizeDefaultChatTitle(chat.title),
       lastMessagePreview: chat.lastMessagePreview,
       currentBranchId: null,
       createdBy: null,
@@ -801,7 +809,10 @@ function mapProjectChatToSearchResult(
 
 function mapThreadToSearchResult(thread: ChatThreadSummary): ChatSearchResult {
   return {
-    thread,
+    thread: {
+      ...thread,
+      title: normalizeDefaultChatTitle(thread.title),
+    },
     messageId: null,
     snippet: thread.lastMessagePreview,
     classification: null,
@@ -824,8 +835,9 @@ function RecentChatLink({
     ? `/app/projects/${projectId}/chats/${result.thread.id}`
     : `/chat/${result.thread.id}`;
   const preview = result.snippet ?? result.thread.lastMessagePreview;
+  const displayTitle = normalizeDefaultChatTitle(result.thread.title);
   const [editing, setEditing] = React.useState(false);
-  const [title, setTitle] = React.useState(result.thread.title);
+  const [title, setTitle] = React.useState(displayTitle);
   const [saving, setSaving] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
@@ -842,7 +854,7 @@ function RecentChatLink({
         setEditing(false);
       })
       .catch(() => {
-        setError("Chat title was not saved. Try again.");
+        setError("Название чата не сохранено. Повторите попытку.");
       })
       .finally(() => {
         setSaving(false);
@@ -870,7 +882,7 @@ function RecentChatLink({
           onKeyDown={(event) => {
             if (event.key === "Escape") {
               event.preventDefault();
-              setTitle(result.thread.title);
+              setTitle(displayTitle);
               setError(null);
               setEditing(false);
             } else if (event.key === "Enter") {
@@ -900,24 +912,24 @@ function RecentChatLink({
     <div className="group flex items-start gap-1 rounded-[var(--lf-radius-control)] hover:bg-[color:var(--lf-state-hover)]">
       <Link
         href={href}
-        aria-label={result.thread.title}
+        aria-label={displayTitle}
         className="grid min-w-0 flex-1 gap-0.5 px-3 py-2 text-sm text-[color:var(--lf-text-muted)] transition hover:text-[color:var(--lf-text-primary)]"
         onClick={(event) => {
           event.preventDefault();
           onOpenChat(result);
         }}
       >
-        <span className="truncate font-medium">{result.thread.title}</span>
+        <span className="truncate font-medium">{displayTitle}</span>
         {preview ? (
           <span className="truncate text-xs text-[color:var(--muted)]">{preview}</span>
         ) : null}
       </Link>
       <button
         type="button"
-        aria-label={`Переименовать чат ${result.thread.title}`}
+        aria-label={`Переименовать чат ${displayTitle}`}
         className="mt-1.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[color:var(--lf-text-muted)] opacity-0 transition hover:bg-[color:var(--lf-bg-muted)] hover:text-[color:var(--lf-text-primary)] group-hover:opacity-100 focus:opacity-100"
         onClick={() => {
-          setTitle(result.thread.title);
+          setTitle(displayTitle);
           setError(null);
           setEditing(true);
         }}
@@ -1071,7 +1083,9 @@ function SearchPanel({
               className="grid rounded-[var(--lf-radius-control)] px-2 py-2 text-left text-sm hover:bg-[color:var(--lf-state-hover)]"
               onClick={() => onOpenResult(result)}
             >
-              <span className="truncate font-medium">{result.thread.title}</span>
+              <span className="truncate font-medium">
+                {normalizeDefaultChatTitle(result.thread.title)}
+              </span>
               <span className="truncate text-xs text-[color:var(--muted)]">
                 {result.snippet ?? result.thread.lastMessagePreview ?? activeProjectId}
               </span>

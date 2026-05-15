@@ -866,7 +866,7 @@ export const stage15Handlers = [
       kind: payload.kind ?? "general",
       visibility: "private",
       status: "active",
-      title: payload.title?.trim() || "New chat",
+      title: payload.title?.trim() || "Новый чат",
       lastMessagePreview: null,
       currentBranchId: null,
       createdBy: "user_demo",

@@ -2,11 +2,11 @@ import type { ActivepiecesSessionRole } from '@lexframe/contracts';
 import type { AuthenticatedActor } from '../../common/types/lexframe-request';
 import { loadServerEnv } from '@lexframe/config';
 import { AppHttpException } from '../../common/errors/app-http.exception';
-import { Injectable, OnModuleDestroy } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { createHash, randomUUID } from 'node:crypto';
-import { existsSync, readFileSync } from 'node:fs';
-import { Pool, type PoolClient } from 'pg';
+import type { PoolClient } from 'pg';
 import { DatabaseService } from '../database/database.service';
+import { ActivepiecesPostgresPoolService } from './activepieces-postgres-pool.service';
 import type {
   ActivepiecesInstalledAutomationForSession,
   ActivepiecesPiecesPolicy,
@@ -28,11 +28,13 @@ interface UserBindingRow {
 }
 
 @Injectable()
-export class ActivepiecesIdentityBridge implements OnModuleDestroy {
+export class ActivepiecesIdentityBridge {
   private readonly env = loadServerEnv();
-  private apPool: Pool | null = null;
 
-  constructor(private readonly databaseService: DatabaseService) {}
+  constructor(
+    private readonly databaseService: DatabaseService,
+    private readonly activepiecesPostgres: ActivepiecesPostgresPoolService,
+  ) {}
 
   buildExternalProjectId(workspaceId: string) {
     return `lex_ws_${workspaceId}`;
@@ -271,10 +273,6 @@ export class ActivepiecesIdentityBridge implements OnModuleDestroy {
     }
   }
 
-  async onModuleDestroy() {
-    await this.apPool?.end();
-  }
-
   private async resolveActivepiecesProject(
     client: PoolClient,
     input: {
@@ -378,21 +376,7 @@ export class ActivepiecesIdentityBridge implements OnModuleDestroy {
   }
 
   private getActivepiecesPool() {
-    if (this.apPool) {
-      return this.apPool;
-    }
-
-    this.apPool = new Pool({
-      host: this.env.ACTIVEPIECES_POSTGRES_HOST,
-      port: this.env.ACTIVEPIECES_POSTGRES_PORT,
-      database: this.env.ACTIVEPIECES_POSTGRES_DATABASE,
-      user: this.env.ACTIVEPIECES_POSTGRES_USERNAME,
-      password: readSecret(
-        this.env.ACTIVEPIECES_POSTGRES_PASSWORD,
-        this.env.ACTIVEPIECES_POSTGRES_PASSWORD_FILE,
-      ),
-    });
-    return this.apPool;
+    return this.activepiecesPostgres.getPool();
   }
 }
 
@@ -403,11 +387,4 @@ function idFrom(prefix: string, value: string) {
     0,
     21,
   );
-}
-
-function readSecret(envValue: string, filePath: string) {
-  if (filePath && existsSync(filePath)) {
-    return readFileSync(filePath, 'utf8').trim();
-  }
-  return envValue;
 }

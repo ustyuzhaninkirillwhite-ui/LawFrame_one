@@ -132,6 +132,48 @@ describe('ChatThreadService project chat streaming', () => {
     );
   });
 
+  it('uses a Russian default title for newly created global chats', async () => {
+    const databaseService = {
+      one: jest.fn().mockResolvedValue({
+        id: '00000000-0000-0000-0000-000000000503',
+        workspace_id: workspaceId,
+        project_id: null,
+        kind: 'general',
+        visibility: 'private',
+        status: 'active',
+        title: 'Новый чат',
+        last_message_preview: null,
+        current_branch_id: null,
+        created_by: actor.id,
+        created_at: '2026-05-09T00:00:00.000Z',
+        updated_at: '2026-05-09T00:00:00.000Z',
+        archived_at: null,
+        deleted_at: null,
+      }),
+      query: jest.fn(() => Promise.resolve({ rows: [] })),
+      transaction: jest.fn(),
+    };
+    const service = new ChatThreadService(
+      databaseService as never,
+      { record: jest.fn().mockResolvedValue(undefined) } as never,
+      {} as never,
+      {} as never,
+      new ChatStreamService(),
+    );
+
+    const result = await service.createGlobalThread(
+      { actor, access },
+      { title: null },
+      { requestId: 'request-1', traceId: 'trace-1' },
+    );
+
+    expect(result.thread.title).toBe('Новый чат');
+    expect(databaseService.one).toHaveBeenCalledWith(
+      expect.stringContaining('insert into app.chat_threads'),
+      expect.arrayContaining([workspaceId, 'general', 'Новый чат']),
+    );
+  });
+
   it('creates project chat threads in the caller-provided non-default project context', async () => {
     const databaseService = {
       one: jest.fn().mockResolvedValue({

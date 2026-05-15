@@ -53,6 +53,85 @@ describe('RuntimeHealthService', () => {
     );
   });
 
+  it('treats saved callable chat and automation route keys as healthy without env provider keys', async () => {
+    const service = createService({
+      AI_PROVIDER_MODE: 'controlled-real',
+      XAI_API_KEY: 'stage0_xai_api_key',
+      COMETAPI_API_KEY: 'stage0_comet_api_key',
+      COMETAPI_API_KEYS: '',
+    });
+    mockRuntimeFetch({ realtimeStatus: 'ok' });
+    lastDatabaseService.query.mockResolvedValue({
+      rows: [
+        {
+          route_group: 'chat_ai',
+          provider_code: 'cometapi',
+          backend: 'supabase_vault',
+          backend_secret_id: 'vault_chat',
+          status: 'active',
+          fingerprint: 'sha256:chat',
+        },
+        {
+          route_group: 'automation_ai',
+          provider_code: 'cometapi',
+          backend: 'supabase_vault',
+          backend_secret_id: 'vault_automation',
+          status: 'active',
+          fingerprint: 'sha256:automation',
+        },
+      ],
+    });
+
+    const summary = await service.getSystemStatus();
+    const ai = summary.components.find((component) => component.code === 'ai');
+
+    expect(summary.overall).toBe('healthy');
+    expect(ai).toEqual(
+      expect.objectContaining({
+        status: 'healthy',
+        summary: expect.stringContaining('chat_ai'),
+      }),
+    );
+  });
+
+  it('degrades AI when only the chat route has a callable saved key', async () => {
+    const service = createService({
+      AI_PROVIDER_MODE: 'controlled-real',
+      XAI_API_KEY: 'stage0_xai_api_key',
+      COMETAPI_API_KEY: 'stage0_comet_api_key',
+      COMETAPI_API_KEYS: '',
+    });
+    mockRuntimeFetch({ realtimeStatus: 'ok' });
+    lastDatabaseService.query.mockResolvedValue({
+      rows: [
+        {
+          route_group: 'chat_ai',
+          provider_code: 'cometapi',
+          backend: 'supabase_vault',
+          backend_secret_id: 'vault_chat',
+          status: 'active',
+          fingerprint: 'sha256:chat',
+        },
+      ],
+    });
+
+    const summary = await service.getSystemStatus();
+    const ai = summary.components.find((component) => component.code === 'ai');
+
+    expect(summary.overall).toBe('degraded');
+    expect(ai).toEqual(
+      expect.objectContaining({
+        status: 'degraded',
+        summary: expect.stringContaining('automation_ai'),
+      }),
+    );
+  });
+
+  let lastDatabaseService: {
+    ping: jest.Mock;
+    query: jest.Mock;
+  };
+
   it('maps mining-worker degraded readiness payload to degraded realtime status', async () => {
     const service = createService({
       AI_PROVIDER_MODE: 'controlled-real',
@@ -111,7 +190,9 @@ describe('RuntimeHealthService', () => {
 
     const databaseService = {
       ping: jest.fn().mockResolvedValue(true),
+      query: jest.fn().mockResolvedValue({ rows: [] }),
     };
+    lastDatabaseService = databaseService;
     const readinessService = {
       getReadinessSnapshot: jest.fn().mockResolvedValue({ gates: [] }),
     };

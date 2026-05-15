@@ -174,7 +174,7 @@ test.describe("@block5 forms and network error recovery", () => {
     await failNextMswRequest(page, `PATCH /chat/threads/${threadId}`, {
       status: 500,
       code: "CHAT_TITLE_RENAME_FAILED",
-      message: "Chat title was not saved. Try again.",
+      message: "Название чата не сохранено. Повторите попытку.",
     });
 
     const renameButton = page
@@ -193,7 +193,9 @@ test.describe("@block5 forms and network error recovery", () => {
       .click();
 
     await expect(titleInput).toHaveValue(draftTitle);
-    await expect(page.locator("body")).toContainText(/Chat title was not saved/i);
+    await expect(page.locator("body")).toContainText(
+      /Название чата не сохранено/i,
+    );
     await expect(page.locator("a", { hasText: draftTitle })).toHaveCount(0);
     if (originalTitle) {
       expect(originalTitle).not.toContain(draftTitle);

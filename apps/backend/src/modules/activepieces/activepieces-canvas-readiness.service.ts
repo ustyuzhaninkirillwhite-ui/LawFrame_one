@@ -4,15 +4,14 @@ import type {
   AutomationCanvasReadinessCode,
 } from '@lexframe/contracts';
 import { loadServerEnv } from '@lexframe/config';
-import { Injectable, OnModuleDestroy } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { createHash } from 'node:crypto';
-import { existsSync, readFileSync } from 'node:fs';
-import { Pool } from 'pg';
 import type {
   ActivepiecesFlowBindingForSession,
   ActivepiecesProjectBindingForSession,
   ActivepiecesUserBindingForSession,
 } from './activepieces-session.types';
+import { ActivepiecesPostgresPoolService } from './activepieces-postgres-pool.service';
 
 type ReadinessCheckStatus = 'pass' | 'warn' | 'fail' | 'repaired';
 
@@ -65,9 +64,12 @@ interface ReadinessCheck {
 }
 
 @Injectable()
-export class ActivepiecesCanvasReadinessService implements OnModuleDestroy {
+export class ActivepiecesCanvasReadinessService {
   private readonly env = loadServerEnv();
-  private apPool: Pool | null = null;
+
+  constructor(
+    private readonly activepiecesPostgres: ActivepiecesPostgresPoolService,
+  ) {}
 
   async validate(input: {
     readonly workspaceId: string;
@@ -329,10 +331,6 @@ export class ActivepiecesCanvasReadinessService implements OnModuleDestroy {
     };
   }
 
-  async onModuleDestroy() {
-    await this.apPool?.end();
-  }
-
   private async checkWebsocketReadiness(): Promise<ReadinessCheck | null> {
     const url = buildWebsocketReadinessUrl(
       process.env.ACTIVEPIECES_WEBSOCKET_READINESS_URL ??
@@ -385,21 +383,7 @@ export class ActivepiecesCanvasReadinessService implements OnModuleDestroy {
   }
 
   private getActivepiecesPool() {
-    if (this.apPool) {
-      return this.apPool;
-    }
-
-    this.apPool = new Pool({
-      host: this.env.ACTIVEPIECES_POSTGRES_HOST,
-      port: this.env.ACTIVEPIECES_POSTGRES_PORT,
-      database: this.env.ACTIVEPIECES_POSTGRES_DATABASE,
-      user: this.env.ACTIVEPIECES_POSTGRES_USERNAME,
-      password: readSecret(
-        this.env.ACTIVEPIECES_POSTGRES_PASSWORD,
-        this.env.ACTIVEPIECES_POSTGRES_PASSWORD_FILE,
-      ),
-    });
-    return this.apPool;
+    return this.activepiecesPostgres.getPool();
   }
 }
 
@@ -612,11 +596,4 @@ function messageForReadinessCode(code: AutomationCanvasReadinessCode) {
     default:
       return 'ActivePieces Canvas is not ready.';
   }
-}
-
-function readSecret(envValue: string, filePath: string) {
-  if (filePath && existsSync(filePath)) {
-    return readFileSync(filePath, 'utf8').trim();
-  }
-  return envValue;
 }

@@ -1,6 +1,8 @@
 import { expect, test } from "@playwright/test";
 import { signInAsDemo } from "./helpers/auth";
 
+const apiBaseUrl = process.env.LEXFRAME_API_BASE_URL ?? `http://127.0.0.1:${process.env.LEXFRAME_API_PORT ?? "3104"}`;
+
 test.describe("Stage 2 documents / storage smoke", () => {
   test("owner can upload a document, request a preview URL, create a new version and archive/restore it", async ({
     page,
@@ -10,8 +12,7 @@ test.describe("Stage 2 documents / storage smoke", () => {
       fullName: "Stage2 Documents Owner",
     });
 
-    const result = await page.evaluate(async () => {
-      const baseUrl = "http://127.0.0.1:3100";
+    const result = await page.evaluate(async (baseUrl) => {
       const token = window.localStorage.getItem("lexframe.dev.access-token");
       if (!token) {
         throw new Error("Missing demo access token.");
@@ -165,7 +166,7 @@ test.describe("Stage 2 documents / storage smoke", () => {
         archiveStatus: archive.status,
         restoreStatus: restore.status,
       };
-    });
+    }, apiBaseUrl);
 
     expect(result.documentId).toMatch(
       /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,

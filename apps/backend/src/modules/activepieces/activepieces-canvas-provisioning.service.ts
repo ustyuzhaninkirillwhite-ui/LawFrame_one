@@ -4,10 +4,9 @@ import type {
   AuthenticatedActor,
 } from '../../common/types/lexframe-request';
 import { loadServerEnv } from '@lexframe/config';
-import { Injectable, OnModuleDestroy } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { createHash, randomUUID } from 'node:crypto';
-import { existsSync, readFileSync } from 'node:fs';
-import { Pool, type PoolClient } from 'pg';
+import type { PoolClient } from 'pg';
 import { AppHttpException } from '../../common/errors/app-http.exception';
 import { DatabaseService } from '../database/database.service';
 import {
@@ -15,6 +14,7 @@ import {
   STAGE17_AUTOMATION_BRAND,
   STAGE17_PINNED_PIECE_NAMES,
 } from './activepieces-piece-catalog';
+import { ActivepiecesPostgresPoolService } from './activepieces-postgres-pool.service';
 
 const STAGE17_TEMPLATE_CODE = 'stage17.activepieces.canvas';
 const STAGE17_TEMPLATE_VERSION = 'v17-canvas';
@@ -44,13 +44,64 @@ interface ActivepiecesPlatformPiecesPolicy {
 }
 
 @Injectable()
-export class ActivepiecesCanvasProvisioningService implements OnModuleDestroy {
+export class ActivepiecesCanvasProvisioningService {
   private readonly env = loadServerEnv();
-  private apPool: Pool | null = null;
+  private readonly ensureInFlight = new Map<
+    string,
+    Promise<Stage17CanvasEnsureWireResponse>
+  >();
 
-  constructor(private readonly databaseService: DatabaseService) {}
+  constructor(
+    private readonly databaseService: DatabaseService,
+    private readonly activepiecesPostgres: ActivepiecesPostgresPoolService,
+  ) {}
 
   async ensureStage17Canvas(input: {
+    readonly actor: AuthenticatedActor;
+    readonly access: AccessContext;
+    readonly projectId: string;
+    readonly traceId: string | null;
+  }): Promise<Stage17CanvasEnsureWireResponse> {
+    const workspace = input.access.activeWorkspace;
+    if (!workspace) {
+      throw new AppHttpException(
+        'WORKSPACE_CONTEXT_REQUIRED',
+        403,
+        'Active workspace is required to provision automation canvas.',
+      );
+    }
+
+    const key = `${workspace.id}:${input.projectId}`;
+    const existing = this.ensureInFlight.get(key);
+    if (existing) {
+      return existing;
+    }
+
+    const promise = this.withEnsureLock(input, workspace.id).finally(() => {
+      this.ensureInFlight.delete(key);
+    });
+    this.ensureInFlight.set(key, promise);
+    return promise;
+  }
+
+  private async withEnsureLock(
+    input: {
+      readonly actor: AuthenticatedActor;
+      readonly access: AccessContext;
+      readonly projectId: string;
+      readonly traceId: string | null;
+    },
+    workspaceId: string,
+  ) {
+    return this.databaseService.transaction(async (client) => {
+      await client.query('select pg_advisory_xact_lock(hashtext($1))', [
+        `stage17-canvas:${workspaceId}:${input.projectId}`,
+      ]);
+      return this.ensureStage17CanvasUnlocked(input);
+    });
+  }
+
+  private async ensureStage17CanvasUnlocked(input: {
     readonly actor: AuthenticatedActor;
     readonly access: AccessContext;
     readonly projectId: string;
@@ -1601,25 +1652,7 @@ export class ActivepiecesCanvasProvisioningService implements OnModuleDestroy {
   }
 
   private getActivepiecesPool() {
-    if (this.apPool) {
-      return this.apPool;
-    }
-
-    this.apPool = new Pool({
-      host: this.env.ACTIVEPIECES_POSTGRES_HOST,
-      port: this.env.ACTIVEPIECES_POSTGRES_PORT,
-      database: this.env.ACTIVEPIECES_POSTGRES_DATABASE,
-      user: this.env.ACTIVEPIECES_POSTGRES_USERNAME,
-      password: readSecret(
-        this.env.ACTIVEPIECES_POSTGRES_PASSWORD,
-        this.env.ACTIVEPIECES_POSTGRES_PASSWORD_FILE,
-      ),
-    });
-    return this.apPool;
-  }
-
-  async onModuleDestroy() {
-    await this.apPool?.end();
+    return this.activepiecesPostgres.getPool();
   }
 }
 
@@ -1758,13 +1791,6 @@ async function detachLegacyExternalIds(
       ],
     );
   }
-}
-
-function readSecret(envValue: string, filePath: string) {
-  if (filePath && existsSync(filePath)) {
-    return readFileSync(filePath, 'utf8').trim();
-  }
-  return envValue;
 }
 
 function splitDisplayName(value: string | null) {

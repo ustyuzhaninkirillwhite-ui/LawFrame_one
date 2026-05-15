@@ -11,7 +11,7 @@ import {
 } from "@playwright/test";
 
 const repoRoot = resolve(__dirname, "..", "..", "..");
-const apiBaseUrl = process.env.LEXFRAME_API_BASE_URL ?? "http://127.0.0.1:3100";
+const apiBaseUrl = process.env.LEXFRAME_API_BASE_URL ?? `http://127.0.0.1:${process.env.LEXFRAME_API_PORT ?? "3104"}`;
 const webBaseUrl = process.env.LEXFRAME_E2E_BASE_URL ?? "http://127.0.0.1:3000";
 const activepiecesBaseUrl = process.env.ACTIVEPIECES_BASE_URL ?? "http://127.0.0.1:8080";
 const testDb = process.env.STAGE16_DB_NAME ?? "stage16_runtime";

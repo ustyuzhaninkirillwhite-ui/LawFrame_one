@@ -251,7 +251,7 @@ export class AiSecretService {
     const production =
       process.env.LEXFRAME_DEPLOY_ENV === 'production' ||
       process.env.LEXFRAME_ENV_PROFILE === 'production';
-    const backend = requested ?? (production ? 'supabase_vault' : 'dev_mock');
+    const backend = requested ?? 'supabase_vault';
 
     if (production && backend !== 'supabase_vault') {
       throw new AppHttpException(
@@ -266,6 +266,14 @@ export class AiSecretService {
         'AI_SECRET_BACKEND_UNAVAILABLE',
         503,
         'env_secret is read-only and cannot store user-provided API keys.',
+      );
+    }
+
+    if (backend === 'local_owner_vault') {
+      throw new AppHttpException(
+        'AI_SECRET_BACKEND_UNAVAILABLE',
+        503,
+        'local_owner_vault keys must be provided through the backend-only local keys file, not through settings forms.',
       );
     }
 
