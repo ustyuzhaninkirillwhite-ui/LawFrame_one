@@ -3,6 +3,7 @@
 import * as React from "react";
 import { createPortal } from "react-dom";
 import { usePathname } from "next/navigation";
+import type { AutomationCanvasReadinessCode } from "@lexframe/contracts";
 import {
   useEnsureStage17CanvasAutomation,
   useStage15ProjectAutomations,
@@ -15,12 +16,14 @@ import { ActivepiecesCanvasWrapper } from "./activepieces-canvas-wrapper";
 import { useActivepiecesSession } from "./use-activepieces-session";
 
 const fallbackProjectId = "project_claim_001";
+const BACKGROUND_CANVAS_TIMEOUT_MS = 20_000;
 
 type BackgroundCanvasPhase = "idle" | "warming" | "available" | "unavailable";
 
 type BackgroundCanvasState = {
   readonly phase: BackgroundCanvasPhase;
   readonly message: string | null;
+  readonly code?: AutomationCanvasReadinessCode | null;
 };
 
 type ActivepiecesBackgroundCanvasContextValue = {
@@ -29,7 +32,7 @@ type ActivepiecesBackgroundCanvasContextValue = {
   readonly activeAutomationId: string | null;
   readonly route: string | null;
   readonly attach: (target: HTMLElement) => void;
-  readonly detach: () => void;
+  readonly detach: (target?: HTMLElement | null) => void;
   readonly retry: () => void;
   readonly clear: () => void;
 };
@@ -37,7 +40,7 @@ type ActivepiecesBackgroundCanvasContextValue = {
 const noop = () => {};
 
 const defaultContext: ActivepiecesBackgroundCanvasContextValue = {
-  state: { phase: "idle", message: null },
+  state: { phase: "idle", message: null, code: null },
   activeProjectId: null,
   activeAutomationId: null,
   route: null,
@@ -68,8 +71,18 @@ export function ActivepiecesBackgroundCanvasProvider({
   const automationsQuery = useStage15ProjectAutomations(activeProjectId, {
     enabled: shouldWarmBackground,
   });
+  const refetchAutomations = automationsQuery.refetch;
   const ensureCanvas = useEnsureStage17CanvasAutomation(activeProjectId);
   const ensuredProjectsRef = React.useRef(new Set<string>());
+  const warmingKey = `${workspaceId ?? "no-workspace"}:${activeProjectId ?? "no-project"}:${
+    shouldWarmBackground ? "warm" : "idle"
+  }`;
+  const [warmingTimeout, setWarmingTimeout] = React.useState<{
+    readonly key: string;
+    readonly timedOut: boolean;
+  }>({ key: "", timedOut: false });
+  const warmingTimedOut =
+    warmingTimeout.key === warmingKey && warmingTimeout.timedOut;
   const [hiddenRoot, setHiddenRoot] = React.useState<HTMLDivElement | null>(
     null,
   );
@@ -84,15 +97,21 @@ export function ActivepiecesBackgroundCanvasProvider({
     }
     const host = document.createElement("div");
     host.dataset.testid = "activepieces-background-canvas-host";
-    host.style.width = "100%";
-    host.style.height = "100%";
-    host.style.minHeight = "0";
+    applyHiddenCanvasHostStyles(host);
     return host;
   }, []);
 
-  React.useEffect(() => {
+  React.useLayoutEffect(() => {
+    if (!canvasHost || typeof document === "undefined") {
+      return;
+    }
+
+    if (canvasHost.parentElement !== document.body) {
+      document.body.appendChild(canvasHost);
+    }
+
     return () => {
-      canvasHost?.remove();
+      canvasHost.remove();
     };
   }, [canvasHost]);
 
@@ -114,6 +133,20 @@ export function ActivepiecesBackgroundCanvasProvider({
       ) ?? null
     );
   }, [automationsQuery.data]);
+  const automationId = automationToOpen?.id ?? null;
+  const ensureErrorBlocksCanvas = ensureCanvas.isError && !automationToOpen;
+  const session = useActivepiecesSession({
+    projectId: activeProjectId,
+    automationId: automationId ?? "__pending_automation__",
+    enabled: Boolean(shouldWarmBackground && workspaceId && automationId),
+  });
+  const {
+    apiClient,
+    clearToken,
+    requestSession,
+    state: sessionState,
+    tokenRef,
+  } = session;
 
   React.useEffect(() => {
     if (
@@ -124,6 +157,7 @@ export function ActivepiecesBackgroundCanvasProvider({
       !automationsQuery.isSuccess ||
       automationToOpen ||
       ensureCanvas.isPending ||
+      ensureErrorBlocksCanvas ||
       ensuredProjectsRef.current.has(activeProjectId)
     ) {
       return;
@@ -141,36 +175,87 @@ export function ActivepiecesBackgroundCanvasProvider({
     automationToOpen,
     automationsQuery.isSuccess,
     ensureCanvas,
+    ensureErrorBlocksCanvas,
     shouldWarmBackground,
     workspaceId,
   ]);
 
-  const automationId = automationToOpen?.id ?? null;
-  const session = useActivepiecesSession({
-    projectId: activeProjectId,
-    automationId: automationId ?? "__pending_automation__",
-    enabled: Boolean(shouldWarmBackground && workspaceId && automationId),
-  });
-  const {
-    apiClient,
-    clearToken,
-    requestSession,
-    state: sessionState,
-    tokenRef,
-  } = session;
-
   React.useEffect(() => {
+    if (
+      authPending ||
+      !shouldWarmBackground ||
+      !workspaceId ||
+      !activeProjectId ||
+      automationToOpen ||
+      automationsQuery.isError ||
+      ensureErrorBlocksCanvas ||
+      sessionState.phase === "available" ||
+      sessionState.phase === "blocked" ||
+      sessionState.phase === "unavailable" ||
+      sessionState.phase === "error"
+    ) {
+      return;
+    }
+
+    const timeoutKey = warmingKey;
+    const timeoutId = window.setTimeout(() => {
+      setWarmingTimeout({ key: timeoutKey, timedOut: true });
+    }, BACKGROUND_CANVAS_TIMEOUT_MS);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [
+    activeProjectId,
+    authPending,
+    automationToOpen,
+    automationsQuery.isError,
+    ensureErrorBlocksCanvas,
+    sessionState.phase,
+    shouldWarmBackground,
+    warmingKey,
+    workspaceId,
+  ]);
+
+  React.useLayoutEffect(() => {
     if (!canvasHost) {
       return;
     }
 
-    const target = attachedTarget ?? hiddenRoot;
-    if (!target || canvasHost.parentElement === target) {
+    if (!attachedTarget) {
+      applyHiddenCanvasHostStyles(canvasHost);
       return;
     }
 
-    target.appendChild(canvasHost);
-  }, [attachedTarget, canvasHost, hiddenRoot]);
+    let updateFrame = 0;
+    const updatePosition = () => {
+      applyViewportCanvasHostStyles(canvasHost, attachedTarget);
+    };
+    const scheduleUpdate = () => {
+      window.cancelAnimationFrame(updateFrame);
+      updateFrame = window.requestAnimationFrame(updatePosition);
+    };
+
+    scheduleUpdate();
+    const resizeFrame = window.requestAnimationFrame(() => {
+      window.dispatchEvent(new Event("resize"));
+    });
+    const resizeObserver =
+      typeof ResizeObserver === "undefined"
+        ? null
+        : new ResizeObserver(scheduleUpdate);
+    resizeObserver?.observe(attachedTarget);
+    window.addEventListener("resize", scheduleUpdate);
+    window.addEventListener("scroll", scheduleUpdate, true);
+
+    return () => {
+      window.cancelAnimationFrame(updateFrame);
+      window.cancelAnimationFrame(resizeFrame);
+      resizeObserver?.disconnect();
+      window.removeEventListener("resize", scheduleUpdate);
+      window.removeEventListener("scroll", scheduleUpdate, true);
+    };
+  }, [attachedTarget, canvasHost]);
 
   React.useEffect(() => {
     if (previousWorkspaceIdRef.current === workspaceId) {
@@ -211,16 +296,27 @@ export function ActivepiecesBackgroundCanvasProvider({
   );
 
   const attach = React.useCallback((target: HTMLElement) => {
-    setAttachedTarget(target);
+    setAttachedTarget((current) => (current === target ? current : target));
   }, []);
 
-  const detach = React.useCallback(() => {
-    setAttachedTarget(null);
+  const detach = React.useCallback((target?: HTMLElement | null) => {
+    setAttachedTarget((current) => {
+      if (!target || current === target) {
+        return null;
+      }
+      return current;
+    });
   }, []);
 
   const retry = React.useCallback(() => {
+    setWarmingTimeout({ key: warmingKey, timedOut: false });
+    ensureCanvas.reset?.();
+    if (activeProjectId) {
+      ensuredProjectsRef.current.delete(activeProjectId);
+    }
+    void refetchAutomations?.();
     void requestSession("retry");
-  }, [requestSession]);
+  }, [activeProjectId, ensureCanvas, refetchAutomations, requestSession, warmingKey]);
 
   const clear = React.useCallback(() => {
     clearToken();
@@ -234,7 +330,25 @@ export function ActivepiecesBackgroundCanvasProvider({
       : null;
   const state = React.useMemo<BackgroundCanvasState>(() => {
     if (authPending || !shouldWarmBackground || !workspaceId || !activeProjectId) {
-      return { phase: "idle", message: null };
+      return { phase: "idle", message: null, code: null };
+    }
+    if (automationsQuery.isError) {
+      return {
+        phase: "unavailable",
+        message: "Не удалось загрузить список автоматизаций. Повторите попытку.",
+      };
+    }
+    if (ensureErrorBlocksCanvas) {
+      return {
+        phase: "unavailable",
+        message: "Не удалось подготовить runtime-привязку автоматизации. Повторите попытку.",
+      };
+    }
+    if (warmingTimedOut) {
+      return {
+        phase: "unavailable",
+        message: "Конструктор автоматизаций не ответил вовремя. Повторите попытку.",
+      };
     }
     if (!automationId || sessionState.phase === "loading") {
       return {
@@ -243,7 +357,7 @@ export function ActivepiecesBackgroundCanvasProvider({
       };
     }
     if (sessionState.phase === "available") {
-      return { phase: "available", message: null };
+      return { phase: "available", message: null, code: null };
     }
     if (
       sessionState.phase === "blocked" ||
@@ -261,10 +375,13 @@ export function ActivepiecesBackgroundCanvasProvider({
     };
   }, [
     activeProjectId,
+    automationsQuery.isError,
     authPending,
     automationId,
+    ensureErrorBlocksCanvas,
     shouldWarmBackground,
     sessionState,
+    warmingTimedOut,
     workspaceId,
   ]);
 
@@ -295,14 +412,18 @@ export function ActivepiecesBackgroundCanvasProvider({
           position: "fixed",
           left: "-10000px",
           top: 0,
-          width: 1,
-          height: 1,
+          width: "100vw",
+          height: "100vh",
           overflow: "hidden",
           opacity: 0,
           pointerEvents: "none",
         }}
-      />
-      {canvasHost && sessionState.phase === "available"
+      >
+        <span data-testid="automation-canvas-background-state">
+          {state.phase}
+        </span>
+      </div>
+      {canvasHost && state.phase === "available" && sessionState.phase === "available"
         ? createPortal(
             <ActivepiecesCanvasWrapper
               session={sessionState.session}
@@ -322,10 +443,7 @@ function shouldWarmActivepiecesCanvas(pathname: string | null) {
     return false;
   }
 
-  if (
-    pathname === "/app/projects" ||
-    pathname.match(/^\/app\/projects\/[^/]+\/automations(?:\/.*)?$/)
-  ) {
+  if (pathname === "/app" || pathname.startsWith("/app/")) {
     return true;
   }
 
@@ -333,6 +451,46 @@ function shouldWarmActivepiecesCanvas(pathname: string | null) {
     pathname === "/chat" ||
     pathname.startsWith("/chat/")
   );
+}
+
+function applyHiddenCanvasHostStyles(host: HTMLDivElement) {
+  host.dataset.canvasHostLocation = "hidden";
+  host.setAttribute("aria-hidden", "true");
+  host.setAttribute("inert", "");
+  Object.assign(host.style, {
+    position: "fixed",
+    left: "-10000px",
+    top: "0px",
+    width: "100vw",
+    height: "100vh",
+    minHeight: "0",
+    overflow: "hidden",
+    opacity: "0",
+    pointerEvents: "none",
+    zIndex: "0",
+  });
+}
+
+function applyViewportCanvasHostStyles(
+  host: HTMLDivElement,
+  target: HTMLElement,
+) {
+  const rect = target.getBoundingClientRect();
+  host.dataset.canvasHostLocation = "viewport";
+  host.removeAttribute("aria-hidden");
+  host.removeAttribute("inert");
+  Object.assign(host.style, {
+    position: "fixed",
+    left: `${rect.left}px`,
+    top: `${rect.top}px`,
+    width: `${Math.max(rect.width, 0)}px`,
+    height: `${Math.max(rect.height, 0)}px`,
+    minHeight: "0",
+    overflow: "hidden",
+    opacity: "1",
+    pointerEvents: "auto",
+    zIndex: "10",
+  });
 }
 
 export function useActivepiecesBackgroundCanvas() {
@@ -344,25 +502,26 @@ export function ActivepiecesBackgroundCanvasViewport({
 }: {
   readonly className?: string;
 }) {
-  const canvas = useActivepiecesBackgroundCanvas();
-  const ref = React.useCallback(
-    (node: HTMLDivElement | null) => {
-      if (node) {
-        canvas.attach(node);
-        return;
-      }
-      canvas.detach();
-    },
-    [canvas],
-  );
+  const { attach, detach } = useActivepiecesBackgroundCanvas();
+  const [node, setNode] = React.useState<HTMLDivElement | null>(null);
 
-  React.useEffect(() => () => canvas.detach(), [canvas]);
+  React.useLayoutEffect(() => {
+    if (!node) {
+      return;
+    }
+
+    attach(node);
+    return () => {
+      detach(node);
+    };
+  }, [attach, detach, node]);
 
   return (
     <div
-      ref={ref}
+      ref={setNode}
       className={className}
-      data-testid="activepieces-background-canvas-viewport"
+      data-canvas-host-location={node ? "viewport" : "detached"}
+      data-testid="automation-canvas-ready-viewport"
     />
   );
 }

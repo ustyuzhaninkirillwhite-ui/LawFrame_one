@@ -83,6 +83,50 @@ describe("useActivepiecesSession", () => {
     );
   });
 
+  it("single-flights concurrent canvas session requests for the same automation", async () => {
+    let resolveSession: (value: ActivepiecesSessionReadyResponse) => void =
+      () => undefined;
+    bridge.apiClient.createActivepiecesSession.mockImplementation(
+      () =>
+        new Promise<ActivepiecesSessionReadyResponse>((resolve) => {
+          resolveSession = resolve;
+        }),
+    );
+
+    render(
+      <>
+        <SessionProbe
+          projectId="project_claim_001"
+          automationId="aut_singleflight"
+        />
+        <SessionProbe
+          projectId="project_claim_001"
+          automationId="aut_singleflight"
+        />
+      </>,
+    );
+
+    await waitFor(() => {
+      expect(
+        bridge.apiClient.getActivepiecesCanvasReadiness,
+      ).toHaveBeenCalledTimes(2);
+    });
+    expect(bridge.apiClient.createActivepiecesSession).toHaveBeenCalledTimes(1);
+
+    resolveSession(
+      readySession({
+        sessionId: "sess_singleflight",
+        jwtToken: "token_singleflight",
+        expiresAt: new Date(Date.now() + 120_000).toISOString(),
+      }),
+    );
+
+    expect(await screen.findAllByText("available:sess_singleflight")).toHaveLength(2);
+    await waitFor(() => {
+      expect(bridge.apiClient.createActivepiecesSession).toHaveBeenCalledTimes(1);
+    });
+  });
+
   it("does not start a foreground session refresh while a canvas remains healthy", async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-05-08T10:00:00.000Z"));
@@ -161,7 +205,11 @@ describe("useActivepiecesSession", () => {
       <SessionProbe projectId="project_claim_001" automationId="aut_secret" />,
     );
 
-    expect(await screen.findByTestId("session-message")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByTestId("session-message").textContent ?? "").toMatch(
+        /Конструктор|automation canvas|temporarily unavailable/i,
+      );
+    });
     const message = screen.getByTestId("session-message").textContent ?? "";
     expect(message).toMatch(/Конструктор|automation canvas|temporarily unavailable/i);
     expect(message).not.toMatch(/stack trace|sk-live-secret|eyJheader/i);

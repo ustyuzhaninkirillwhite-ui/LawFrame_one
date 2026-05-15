@@ -170,6 +170,7 @@
     "stage23:e2e-preflight": "corepack pnpm stage16:e2e-preflight",
     "stage23:runtime:health": "corepack pnpm stage16:runtime:health",
     "stage23:runtime:up-full": "corepack pnpm stage16:runtime:up-full",
+    "stage23:runtime:rebuild": "node scripts/stage23-runtime-rebuild.mjs",
     "stage23:preview:prewarm": "corepack pnpm stage16:preview:prewarm",
     "stage23:system:full-gate": "corepack pnpm system:full-gate",
     "test:block1:backend": "corepack pnpm --filter @lexframe/backend test",

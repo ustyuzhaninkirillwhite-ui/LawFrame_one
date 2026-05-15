@@ -57,6 +57,39 @@ const servicePorts = new Map([
   ["mining-worker", 8090],
 ]);
 
+const databaseName = process.env.STAGE16_TARGET_DB ?? "stage16_runtime";
+
+const schemaRequirements = {
+  shell: ["app.projects"],
+  chat: ["app.projects", "app.chat_messages.client_message_id"],
+  "project-workspace": [
+    "app.projects",
+    "app.project_knowledge_items",
+    "app.installed_automations",
+  ],
+  settings: ["app.workspaces", "app.ai_route_preferences"],
+  security: ["app.workspaces", "audit.audit_events"],
+  automation: [
+    "app.projects",
+    "app.chat_messages.client_message_id",
+    "app.installed_automations",
+    "app.automation_runtime_bindings",
+    "app.activepieces_project_bindings",
+  ],
+  documents: ["app.documents", "app.document_versions"],
+  search: ["app.projects", "app.project_knowledge_items", "app.legal_sources"],
+  full: [
+    "app.projects",
+    "app.chat_messages.client_message_id",
+    "app.installed_automations",
+    "app.automation_runtime_bindings",
+    "app.activepieces_project_bindings",
+    "app.documents",
+    "app.project_knowledge_items",
+    "audit.audit_events",
+  ],
+};
+
 const scopeDefinitions = {
   shell: {
     requiredServices: ["postgres"],
@@ -258,6 +291,96 @@ export function buildPreflightReport(input) {
   };
 }
 
+export function classifyDatabaseSchemaProbe(scope, probe) {
+  if (!probe.ok) {
+    return {
+      name: "database-schema",
+      status: "STALE_SCHEMA",
+      blocksRequired: true,
+      details: {
+        database: databaseName,
+        error: sanitize(probe.error ?? "schema probe failed"),
+      },
+    };
+  }
+
+  const missing = [];
+  let automationFixtureCount = null;
+  for (const line of probe.rows) {
+    const [name, status] = String(line).split("|");
+    if (!name) {
+      continue;
+    }
+    if (name === "automation_fixture_count") {
+      automationFixtureCount = Number(status);
+      continue;
+    }
+    if (status === "missing" || status === "f" || status === "") {
+      missing.push(name);
+    }
+  }
+
+  if (
+    (scope === "automation" || scope === "full") &&
+    automationFixtureCount !== null &&
+    automationFixtureCount < 1
+  ) {
+    missing.push("NO_AUTOMATION_FIXTURE");
+  }
+
+  return {
+    name: "database-schema",
+    status: missing.length > 0 ? "STALE_SCHEMA" : "READY",
+    blocksRequired: missing.length > 0,
+    details: {
+      database: databaseName,
+      missing,
+      automationFixtureCount,
+    },
+  };
+}
+
+export function classifyAutomationEnsureProbe(probe) {
+  let parsed = null;
+  try {
+    parsed = probe.body ? JSON.parse(probe.body) : null;
+  } catch {
+    parsed = null;
+  }
+
+  const code =
+    parsed?.readiness_code ??
+    parsed?.readinessCode ??
+    parsed?.error?.code ??
+    parsed?.error?.details?.reasonCode ??
+    null;
+  const ready =
+    probe.ok &&
+    probe.status >= 200 &&
+    probe.status < 300 &&
+    (parsed?.status === "ready" || parsed?.status === "repaired");
+
+  if (ready) {
+    return {
+      name: "automation-ensure",
+      status: "READY",
+      blocksRequired: false,
+      details: { httpStatus: probe.status, code: code ?? "READY" },
+    };
+  }
+
+  return {
+    name: "automation-ensure",
+    status: "AP_RUNTIME_BLOCKED",
+    blocksRequired: true,
+    details: {
+      httpStatus: probe.status,
+      code: code ?? "AUTOMATION_ENSURE_FAILED",
+      error: probe.error ? sanitize(probe.error) : undefined,
+    },
+  };
+}
+
 async function runCli() {
   const options = parseCliOptions(process.argv.slice(2));
 
@@ -313,6 +436,16 @@ async function collectPreflightReport(options) {
       }
     }
     await checkScopePorts(plan, required, optional);
+    if (!options.msw && plan.requiredServices.has("postgres")) {
+      required.push(checkDatabaseSchema(plan.scope));
+    }
+    if (
+      options.allowReuseRuntime &&
+      !options.msw &&
+      (plan.scope === "automation" || plan.scope === "full")
+    ) {
+      required.push(await checkAutomationEnsureEndpoint());
+    }
   }
 
   if (options.phase === "after-build") {
@@ -471,6 +604,88 @@ function checkComposeServices(plan, services, required, optional) {
       },
     });
   }
+}
+
+function checkDatabaseSchema(scope) {
+  const requirements = schemaRequirements[scope] ?? [];
+  if (requirements.length === 0) {
+    return {
+      name: "database-schema",
+      status: "READY",
+      blocksRequired: false,
+      details: { database: databaseName, action: "not-required-for-scope" },
+    };
+  }
+
+  const relationChecks = requirements
+    .filter((name) => !isColumnRequirement(name))
+    .map(
+      (name) =>
+        `select ${sqlLiteral(name)} || '|' || coalesce((select c.relkind::text from pg_class c where c.oid = to_regclass(${sqlLiteral(name)})), 'missing')`,
+    );
+  const columnChecks = requirements
+    .filter(isColumnRequirement)
+    .map((name) => {
+      const { schema, table, column } = parseColumnRequirement(name);
+      return `select ${sqlLiteral(name)} || '|' || case when exists (select 1 from information_schema.columns where table_schema = ${sqlLiteral(schema)} and table_name = ${sqlLiteral(table)} and column_name = ${sqlLiteral(column)}) then 'column' else 'missing' end`;
+    });
+  const fixtureCheck =
+    scope === "automation" || scope === "full"
+      ? [
+          "select 'automation_fixture_count|' || coalesce((select count(*)::text from app.installed_automations), '0')",
+        ]
+      : [];
+
+  const sql = [...relationChecks, ...columnChecks, ...fixtureCheck].join(
+    " union all ",
+  );
+  const docker = resolveDockerCli();
+  const result = spawnSync(
+    docker,
+    [
+      "compose",
+      "--profile",
+      "local-integrated",
+      "--profile",
+      "full-runtime",
+      "exec",
+      "-T",
+      "postgres",
+      "psql",
+      "-U",
+      "postgres",
+      "-d",
+      databaseName,
+      "-Atc",
+      sql,
+    ],
+    {
+      cwd: repoRoot,
+      encoding: "utf8",
+      shell: false,
+      env: process.env,
+      maxBuffer: 20 * 1024 * 1024,
+    },
+  );
+
+  return classifyDatabaseSchemaProbe(scope, {
+    ok: result.status === 0,
+    rows: (result.stdout ?? "").trim().split(/\r?\n/).filter(Boolean),
+    error: result.stderr || result.stdout,
+  });
+}
+
+function isColumnRequirement(name) {
+  return name.split(".").length === 3;
+}
+
+function parseColumnRequirement(name) {
+  const [schema, table, column] = name.split(".");
+  return { schema, table, column };
+}
+
+function sqlLiteral(value) {
+  return `'${String(value).replace(/'/g, "''")}'`;
 }
 
 async function checkApplicationPorts(required, options) {
@@ -654,6 +869,68 @@ async function checkAuthBootstrap(required) {
   });
 }
 
+async function checkAutomationEnsureEndpoint() {
+  const projectId = process.env.LEXFRAME_E2E_PROJECT_ID ?? "project_claim_001";
+  const token = buildDevAccessToken({
+    id:
+      process.env.LEXFRAME_E2E_DEV_USER_ID ??
+      "16000000-0000-4000-8000-000000000001",
+    email: process.env.LEXFRAME_E2E_DEV_EMAIL ?? "stage16.owner@lexframe.test",
+    fullName: process.env.LEXFRAME_E2E_DEV_FULL_NAME ?? "Stage16 Owner",
+  });
+
+  try {
+    await fetch(`http://127.0.0.1:${backendPort}/auth/bootstrap`, {
+      method: "POST",
+      headers: { authorization: `Bearer ${token}` },
+      signal: AbortSignal.timeout(5_000),
+    });
+    const contextResponse = await fetch(
+      `http://127.0.0.1:${backendPort}/session/context`,
+      {
+        headers: { authorization: `Bearer ${token}` },
+        signal: AbortSignal.timeout(5_000),
+      },
+    );
+    const contextText = await contextResponse.text();
+    const context = JSON.parse(contextText);
+    const workspaceId = context?.activeWorkspace?.id;
+
+    if (!contextResponse.ok || !workspaceId) {
+      return classifyAutomationEnsureProbe({
+        ok: false,
+        status: contextResponse.status,
+        error: "active workspace unavailable for automation ensure preflight",
+      });
+    }
+
+    const response = await fetch(
+      `http://127.0.0.1:${backendPort}/projects/${encodeURIComponent(projectId)}/automations/stage17-canvas/ensure`,
+      {
+        method: "POST",
+        headers: {
+          authorization: `Bearer ${token}`,
+          "content-type": "application/json",
+          "x-workspace-id": workspaceId,
+        },
+        body: "{}",
+        signal: AbortSignal.timeout(10_000),
+      },
+    );
+    return classifyAutomationEnsureProbe({
+      ok: response.ok,
+      status: response.status,
+      body: await response.text(),
+    });
+  } catch (error) {
+    return classifyAutomationEnsureProbe({
+      ok: false,
+      status: 0,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+}
+
 async function checkUrl(name, url, init = {}) {
   try {
     const response = await fetch(url, {
@@ -678,6 +955,17 @@ async function checkUrl(name, url, init = {}) {
   }
 }
 
+function buildDevAccessToken(input) {
+  const payload = {
+    id: input.id,
+    email: input.email,
+    fullName: input.fullName,
+    emailConfirmedAt: new Date().toISOString(),
+    assuranceLevel: "aal1",
+  };
+  return `dev.${Buffer.from(JSON.stringify(payload), "utf8").toString("base64url")}`;
+}
+
 function addScopeRecommendations(plan, required, recommendations) {
   const blockedStatuses = new Set(required.filter((item) => item.blocksRequired).map((item) => item.status));
   if (blockedStatuses.has("COMPOSE_SERVICE_STOPPED")) {
@@ -694,6 +982,9 @@ function addScopeRecommendations(plan, required, recommendations) {
   }
   if (blockedStatuses.has("STALE_BUILD")) {
     recommendations.push("Run corepack pnpm stage16:build:backend-runtime before backend-backed Playwright.");
+  }
+  if (blockedStatuses.has("STALE_SCHEMA")) {
+    recommendations.push("Rebuild the DB bootstrap/runtime images and re-apply local runtime schema, for example: corepack pnpm stage23:runtime:rebuild.");
   }
   if (plan.scope !== "search") {
     recommendations.push("OpenSearch is not required for this scope unless search/RAG specs are selected.");

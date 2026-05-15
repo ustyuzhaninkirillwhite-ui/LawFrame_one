@@ -455,11 +455,15 @@ type LocalizationFallbackMetrics = {
 
 async function verifyEmbeddedLocalizationBeforeVisible(containerId: string) {
   const startedAt = Date.now();
-  let doc = await waitForEmbeddedDocument(containerId, 5_000);
+  const embeddedSurface = await waitForEmbeddedDocumentOrIframe(
+    containerId,
+    5_000,
+  );
+  let doc = embeddedSurface.document;
   if (!doc?.body) {
     return {
       knownEnglishHits: 0,
-      surfaceReady: false,
+      surfaceReady: embeddedSurface.iframeAttached,
     };
   }
 
@@ -480,9 +484,7 @@ async function verifyEmbeddedLocalizationBeforeVisible(containerId: string) {
     }
 
     await wait(100);
-    doc =
-      document.getElementById(containerId)?.querySelector("iframe")
-        ?.contentDocument ?? doc;
+    doc = getEmbeddedIframeDocument(containerId) ?? doc;
   } while (Date.now() - startedAt < 8_000);
   recordLocalizationFallback({
     invocations: 0,
@@ -497,9 +499,7 @@ async function verifyEmbeddedLocalizationBeforeVisible(containerId: string) {
 }
 
 function styleEmbeddedIframe(containerId: string) {
-  const iframe = document
-    .getElementById(containerId)
-    ?.querySelector<HTMLIFrameElement>("iframe");
+  const iframe = getEmbeddedIframe(containerId);
 
   if (!iframe) {
     return;
@@ -517,10 +517,7 @@ function installEmbeddedLocalizationOverlay(containerId: string) {
   let activeObserver: MutationObserver | null = null;
 
   const attach = () => {
-    const iframe = document
-      .getElementById(containerId)
-      ?.querySelector("iframe");
-    const doc = iframe?.contentDocument;
+    const doc = getEmbeddedIframeDocument(containerId);
     if (!doc?.body) {
       return;
     }
@@ -564,6 +561,27 @@ function installEmbeddedLocalizationOverlay(containerId: string) {
     window.clearInterval(intervalId);
     activeObserver?.disconnect();
   };
+}
+
+function getEmbeddedIframe(containerId: string) {
+  return (
+    document
+      .getElementById(containerId)
+      ?.querySelector<HTMLIFrameElement>("iframe") ?? null
+  );
+}
+
+function getEmbeddedIframeDocument(containerId: string) {
+  const iframe = getEmbeddedIframe(containerId);
+  if (!iframe) {
+    return null;
+  }
+
+  try {
+    return iframe.contentDocument ?? null;
+  } catch {
+    return null;
+  }
 }
 
 function translateEmbeddedDocument(doc: Document) {
@@ -675,22 +693,31 @@ function wait(milliseconds: number) {
   });
 }
 
-function waitForEmbeddedDocument(containerId: string, timeoutMs: number) {
+function waitForEmbeddedDocumentOrIframe(
+  containerId: string,
+  timeoutMs: number,
+) {
   const startedAt = Date.now();
 
-  return new Promise<Document | null>((resolve) => {
+  return new Promise<{
+    readonly document: Document | null;
+    readonly iframeAttached: boolean;
+  }>((resolve) => {
     const check = () => {
-      const iframe = document
-        .getElementById(containerId)
-        ?.querySelector("iframe");
-      const doc = iframe?.contentDocument ?? null;
+      const iframe = getEmbeddedIframe(containerId);
+      const doc = getEmbeddedIframeDocument(containerId);
       if (doc?.body) {
-        resolve(doc);
+        resolve({ document: doc, iframeAttached: true });
+        return;
+      }
+
+      if (iframe) {
+        resolve({ document: null, iframeAttached: true });
         return;
       }
 
       if (Date.now() - startedAt >= timeoutMs) {
-        resolve(null);
+        resolve({ document: null, iframeAttached: false });
         return;
       }
 
@@ -731,12 +758,10 @@ function collectVisiblePayload(doc: Document) {
 }
 
 function classifyEmbeddedReadiness(containerId: string) {
-  const doc = document
-    .getElementById(containerId)
-    ?.querySelector("iframe")
-    ?.contentDocument;
+  const iframe = getEmbeddedIframe(containerId);
+  const doc = getEmbeddedIframeDocument(containerId);
   if (!doc?.body) {
-    return "pending";
+    return iframe ? "ready" : "pending";
   }
 
   const visiblePayload = collectVisiblePayload(doc);

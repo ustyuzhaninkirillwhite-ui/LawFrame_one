@@ -66,6 +66,10 @@ type CachedActivepiecesSession = {
 
 const SESSION_REUSE_BUFFER_MS = 15_000;
 const activepiecesSessionCache = new Map<string, CachedActivepiecesSession>();
+const activepiecesSessionInFlight = new Map<
+  string,
+  Promise<ActivepiecesSessionResponse>
+>();
 
 export function useActivepiecesSession({
   projectId,
@@ -217,17 +221,32 @@ export function useActivepiecesSession({
           }
         }
 
-        const response = await apiClient.createActivepiecesSession({
-          workspaceId,
-          projectId,
-          automationId,
-          purpose: "automation_canvas",
-          clientRoute: `/app/projects/${projectId}/automations/${automationId}/automation`,
-          modePreference: "auto",
-          returnBuilderConfig: true,
-          clientTraceId: createClientTraceId(),
-          idempotencyKey: reason === "initial" ? sessionCacheKey : null,
-        });
+        const response =
+          reason === "initial" && sessionCacheKey
+            ? await createSingleFlightSession(sessionCacheKey, () =>
+                apiClient.createActivepiecesSession({
+                  workspaceId,
+                  projectId,
+                  automationId,
+                  purpose: "automation_canvas",
+                  clientRoute: `/app/projects/${projectId}/automations/${automationId}/automation`,
+                  modePreference: "auto",
+                  returnBuilderConfig: true,
+                  clientTraceId: createClientTraceId(),
+                  idempotencyKey: sessionCacheKey,
+                }),
+              )
+            : await apiClient.createActivepiecesSession({
+                workspaceId,
+                projectId,
+                automationId,
+                purpose: "automation_canvas",
+                clientRoute: `/app/projects/${projectId}/automations/${automationId}/automation`,
+                modePreference: "auto",
+                returnBuilderConfig: true,
+                clientTraceId: createClientTraceId(),
+                idempotencyKey: null,
+              });
 
         if (isAvailableSession(response)) {
           tokenRef.current = response.jwtToken;
@@ -406,6 +425,22 @@ function readCachedSession(cacheKey: string) {
   }
 
   return cached;
+}
+
+function createSingleFlightSession(
+  cacheKey: string,
+  createSession: () => Promise<ActivepiecesSessionResponse>,
+) {
+  const existing = activepiecesSessionInFlight.get(cacheKey);
+  if (existing) {
+    return existing;
+  }
+
+  const promise = createSession().finally(() => {
+    activepiecesSessionInFlight.delete(cacheKey);
+  });
+  activepiecesSessionInFlight.set(cacheKey, promise);
+  return promise;
 }
 
 function stableContainerId(cacheKey: string) {

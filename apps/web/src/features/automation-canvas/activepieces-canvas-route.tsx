@@ -190,7 +190,10 @@ function BackgroundCanvasPane({
         "Конструктор автоматизаций временно недоступен. Повторите попытку.",
     );
     return (
-      <div className="flex h-full items-center justify-center p-6">
+      <div
+        className="flex h-full items-center justify-center p-6"
+        data-testid="automation-canvas-unavailable-state"
+      >
         <BuilderUnavailableState
           response={failure}
           message={failure.message}
@@ -201,7 +204,10 @@ function BackgroundCanvasPane({
   }
 
   return (
-    <div className="flex h-full items-center justify-center p-6">
+    <div
+      className="flex h-full items-center justify-center p-6"
+      data-testid="automation-canvas-loading-state"
+    >
       <QueryState
         title="Открываем конструктор автоматизаций"
         description={
@@ -230,7 +236,10 @@ function CanvasPane({
 }) {
   if (canvasFailure) {
     return (
-      <div className="flex h-full items-center justify-center p-6">
+      <div
+        className="flex h-full items-center justify-center p-6"
+        data-testid="automation-canvas-unavailable-state"
+      >
         <BuilderUnavailableState
           response={canvasFailure}
           message={canvasFailure.message}
@@ -246,7 +255,10 @@ function CanvasPane({
     sessionState.phase === "loading"
   ) {
     return (
-      <div className="flex h-full items-center justify-center p-6">
+      <div
+        className="flex h-full items-center justify-center p-6"
+        data-testid="automation-canvas-loading-state"
+      >
         <QueryState
           title="Открываем конструктор автоматизаций"
           description={
@@ -260,7 +272,10 @@ function CanvasPane({
 
   if (sessionState.phase !== "available") {
     return (
-      <div className="flex h-full items-center justify-center p-6">
+      <div
+        className="flex h-full items-center justify-center p-6"
+        data-testid="automation-canvas-unavailable-state"
+      >
         <BuilderUnavailableState
           response={sessionState.response}
           message={sessionState.message}

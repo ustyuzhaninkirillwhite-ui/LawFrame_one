@@ -166,8 +166,18 @@ export default defineConfig({
           process.env.ACTIVEPIECES_SIGNING_KEY_ID ?? "lexframe-stage4",
         ACTIVEPIECES_PROJECT_PREFIX:
           process.env.ACTIVEPIECES_PROJECT_PREFIX ?? "lf",
+        ACTIVEPIECES_POSTGRES_HOST:
+          process.env.ACTIVEPIECES_POSTGRES_HOST ?? "127.0.0.1",
+        ACTIVEPIECES_POSTGRES_PORT:
+          process.env.ACTIVEPIECES_POSTGRES_PORT ?? "54323",
+        ACTIVEPIECES_POSTGRES_DATABASE:
+          process.env.ACTIVEPIECES_POSTGRES_DATABASE ?? "activepieces",
+        ACTIVEPIECES_POSTGRES_USERNAME:
+          process.env.ACTIVEPIECES_POSTGRES_USERNAME ?? "postgres",
         ACTIVEPIECES_POSTGRES_PASSWORD:
           process.env.ACTIVEPIECES_POSTGRES_PASSWORD ?? "postgres",
+        ACTIVEPIECES_POSTGRES_PASSWORD_FILE:
+          process.env.ACTIVEPIECES_POSTGRES_PASSWORD_FILE ?? "",
         LEXFRAME_DELIVERY_TRANSPORT: deliveryTransport,
         LEXFRAME_DELIVERY_WEBHOOK_URL: deliveryWebhookUrl,
         LEXFRAME_DELIVERY_WEBHOOK_TOKEN: deliveryWebhookToken,

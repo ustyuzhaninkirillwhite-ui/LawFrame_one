@@ -229,7 +229,12 @@ export function ProjectAutomationsLanding({
   if (backgroundManagingProject) {
     if (backgroundCanvas.state.phase === "unavailable") {
       return (
-        <Card>
+        <Card
+          data-testid="automation-canvas-unavailable-state"
+          data-readiness-code={
+            backgroundCanvas.state.code ?? "BACKGROUND_CANVAS_UNAVAILABLE"
+          }
+        >
           <CardHeader>
             <Badge variant="danger">недоступно</Badge>
             <CardTitle>Не удалось открыть конструктор автоматизаций</CardTitle>
@@ -250,6 +255,7 @@ export function ProjectAutomationsLanding({
 
     return (
       <QueryState
+        testId="automation-canvas-loading-state"
         title="Открываем конструктор автоматизаций"
         description={
           backgroundCanvas.state.message ??
@@ -266,6 +272,7 @@ export function ProjectAutomationsLanding({
   ) {
     return (
       <QueryState
+        testId="automation-canvas-loading-state"
         title="Открываем конструктор автоматизаций"
         description="Готовим сценарий Stage 23 и сразу откроем рабочее поле автоматизаций."
       />
@@ -274,7 +281,16 @@ export function ProjectAutomationsLanding({
 
   if (automationsError || ensureCanvasError || ensureTimedOut) {
     return (
-      <Card>
+      <Card
+        data-testid="automation-canvas-unavailable-state"
+        data-readiness-code={
+          automationsError
+            ? "AUTOMATION_LIST_FAILED"
+            : ensureCanvasError
+              ? "FLOW_BINDING_MISSING"
+              : "BACKGROUND_CANVAS_TIMEOUT"
+        }
+      >
         <CardHeader>
           <Badge variant="danger">недоступно</Badge>
           <CardTitle>Не удалось открыть конструктор автоматизаций</CardTitle>
@@ -315,7 +331,10 @@ export function ProjectAutomationsLanding({
 
   if (readinessState.failure) {
     return (
-      <Card>
+      <Card
+        data-testid="automation-canvas-unavailable-state"
+        data-readiness-code={readinessState.failure.code}
+      >
         <CardHeader>
           <Badge variant="danger">недоступно</Badge>
           <CardTitle>Конструктор автоматизаций временно недоступен</CardTitle>
@@ -343,6 +362,7 @@ export function ProjectAutomationsLanding({
   if (automationToOpen) {
     return (
       <QueryState
+        testId="automation-canvas-loading-state"
         title="Открываем конструктор автоматизаций"
         description="В проекте один сценарий Stage 23, перенаправляем прямо в рабочее поле."
       />

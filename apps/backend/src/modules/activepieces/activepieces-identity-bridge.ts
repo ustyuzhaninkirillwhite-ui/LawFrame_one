@@ -200,34 +200,46 @@ export class ActivepiecesIdentityBridge {
         project.platformId ??
         user.platformId ??
         STAGE17_ACTIVEPIECES_PLATFORM_ID;
-      const projectRoleId = await this.resolveProjectRoleId(client, {
-        platformId,
-        role: input.role,
-      });
-
-      await client.query(
-        `
-          insert into project_member (
-            id,
-            "projectId",
-            "platformId",
-            "userId",
-            "projectRoleId"
-          )
-          values ($1, $2, $3, $4, $5)
-          on conflict ("projectId", "userId", "platformId") do update
-          set
-            "projectRoleId" = excluded."projectRoleId",
-            updated = now()
-        `,
-        [
-          idFrom('lfm', `${project.id}:${user.id}:${platformId}`),
-          project.id,
+      if (await this.hasActivepiecesTable(client, 'project_member')) {
+        const projectRoleId = await this.resolveProjectRoleId(client, {
           platformId,
-          user.id,
-          projectRoleId,
-        ],
-      );
+          role: input.role,
+        });
+
+        await client.query(
+          `
+            insert into project_member (
+              id,
+              "projectId",
+              "platformId",
+              "userId",
+              "projectRoleId"
+            )
+            values ($1, $2, $3, $4, $5)
+            on conflict ("projectId", "userId", "platformId") do update
+            set
+              "projectRoleId" = excluded."projectRoleId",
+              updated = now()
+          `,
+          [
+            idFrom('lfm', `${project.id}:${user.id}:${platformId}`),
+            project.id,
+            platformId,
+            user.id,
+            projectRoleId,
+          ],
+        );
+      } else {
+        await client.query(
+          `
+            update project
+            set "ownerId" = $2,
+                updated = now()
+            where id = $1
+          `,
+          [project.id, user.id],
+        );
+      }
 
       await this.databaseService.query(
         `
@@ -377,6 +389,22 @@ export class ActivepiecesIdentityBridge {
 
   private getActivepiecesPool() {
     return this.activepiecesPostgres.getPool();
+  }
+
+  private async hasActivepiecesTable(client: PoolClient, tableName: string) {
+    const result = await client.query<{ readonly exists: boolean }>(
+      `
+        select exists (
+          select 1
+          from information_schema.tables
+          where table_schema = 'public'
+            and table_name = $1
+        ) as exists
+      `,
+      [tableName],
+    );
+
+    return result.rows[0]?.exists === true;
   }
 }
 

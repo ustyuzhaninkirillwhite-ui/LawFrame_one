@@ -8,12 +8,14 @@ import { formatStatus, t } from "@/lib/i18n";
 export function QueryState({
   title,
   description,
+  testId,
 }: {
   readonly title: string;
   readonly description: string;
+  readonly testId?: string;
 }) {
   return (
-    <Card>
+    <Card data-testid={testId}>
       <CardHeader>
         <Badge variant="muted">state</Badge>
         <CardTitle>{title}</CardTitle>

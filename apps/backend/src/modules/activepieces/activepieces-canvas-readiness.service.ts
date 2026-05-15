@@ -30,6 +30,7 @@ interface ActivepiecesProjectRow {
   readonly id: string;
   readonly externalId: string | null;
   readonly platformId: string | null;
+  readonly ownerId: string | null;
 }
 
 interface ActivepiecesUserRow {
@@ -106,7 +107,7 @@ export class ActivepiecesCanvasReadinessService {
       const project = await client
         .query<ActivepiecesProjectRow>(
           `
-            select id, "externalId", "platformId"
+            select id, "externalId", "platformId", "ownerId"
             from project
             where id = $1
                or "externalId" = $2
@@ -161,35 +162,20 @@ export class ActivepiecesCanvasReadinessService {
         project?.platformId ??
         user?.platformId ??
         STAGE17_ACTIVEPIECES_PLATFORM_ID;
-      const membership =
+      const membershipCheck =
         project && user
-          ? await client
-              .query<ActivepiecesMembershipRow>(
-                `
-                  select id
-                  from project_member
-                  where "projectId" = $1
-                    and "userId" = $2
-                    and "platformId" = $3
-                  limit 1
-                `,
-                [project.id, user.id, platformId],
-              )
-              .then((result) => result.rows[0] ?? null)
-          : null;
-
-      checks.push(
-        membership
-          ? pass(
-              'ap.project_member',
-              `ActivePieces membership ${membership.id} exists.`,
-            )
+          ? await this.checkProjectMembership(client, {
+              project,
+              user,
+              platformId,
+            })
           : fail(
               'ap.project_member',
               'AP_PROJECT_MEMBERSHIP_MISSING',
               'ActivePieces user is not a member of the target project.',
-            ),
-      );
+            );
+
+      checks.push(membershipCheck);
 
       const flow = await client
         .query<ActivepiecesFlowRow>(
@@ -385,6 +371,58 @@ export class ActivepiecesCanvasReadinessService {
   private getActivepiecesPool() {
     return this.activepiecesPostgres.getPool();
   }
+
+  private async checkProjectMembership(
+    client: {
+      query<T = unknown>(
+        queryText: string,
+        values?: readonly unknown[],
+      ): Promise<{ rows: T[] }>;
+    },
+    input: {
+      readonly project: ActivepiecesProjectRow;
+      readonly user: ActivepiecesUserRow;
+      readonly platformId: string;
+    },
+  ): Promise<ReadinessCheck> {
+    if (!(await hasActivepiecesTable(client, 'project_member'))) {
+      return input.project.ownerId === input.user.id
+        ? pass(
+            'ap.project_owner',
+            `ActivePieces project owner ${input.user.id} grants canvas access.`,
+          )
+        : fail(
+            'ap.project_owner',
+            'AP_PROJECT_MEMBERSHIP_MISSING',
+            'ActivePieces user is not the owner of a runtime without project_member.',
+          );
+    }
+
+    const membership = await client
+      .query<ActivepiecesMembershipRow>(
+        `
+          select id
+          from project_member
+          where "projectId" = $1
+            and "userId" = $2
+            and "platformId" = $3
+          limit 1
+        `,
+        [input.project.id, input.user.id, input.platformId],
+      )
+      .then((result) => result.rows[0] ?? null);
+
+    return membership
+      ? pass(
+          'ap.project_member',
+          `ActivePieces membership ${membership.id} exists.`,
+        )
+      : fail(
+          'ap.project_member',
+          'AP_PROJECT_MEMBERSHIP_MISSING',
+          'ActivePieces user is not a member of the target project.',
+        );
+  }
 }
 
 const STAGE17_ACTIVEPIECES_PLATFORM_ID = 'lfstg17platform000001';
@@ -456,6 +494,30 @@ function fail(
     code,
     message,
   };
+}
+
+async function hasActivepiecesTable(
+  client: {
+    query<T = unknown>(
+      queryText: string,
+      values?: readonly unknown[],
+    ): Promise<{ rows: T[] }>;
+  },
+  tableName: string,
+) {
+  const result = await client.query<{ readonly exists: boolean }>(
+    `
+      select exists (
+        select 1
+        from information_schema.tables
+        where table_schema = 'public'
+          and table_name = $1
+      ) as exists
+    `,
+    [tableName],
+  );
+
+  return result.rows[0]?.exists === true;
 }
 
 function buildReadinessVersion(input: {

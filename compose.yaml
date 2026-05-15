@@ -260,7 +260,7 @@ services:
       SUPABASE_SECRET_KEY: stage14_supabase_secret_key
       SUPABASE_DB_URL: postgresql://postgres:postgres@postgres:5432/stage16_runtime
       ACTIVEPIECES_BASE_URL: http://activepieces-app:80
-      ACTIVEPIECES_PUBLIC_URL: http://127.0.0.1:${STAGE16_BACKEND_PORT:-3104}
+      ACTIVEPIECES_PUBLIC_URL: ${ACTIVEPIECES_PUBLIC_URL:-http://127.0.0.1:${STAGE16_BACKEND_PORT:-3104}}
       ACTIVEPIECES_API_KEY: local_activepieces_access_token
       ACTIVEPIECES_SERVICE_EMAIL: lexframe-stage16@lexframe.test
       ACTIVEPIECES_SERVICE_PASSWORD: Stage16Activepieces!123

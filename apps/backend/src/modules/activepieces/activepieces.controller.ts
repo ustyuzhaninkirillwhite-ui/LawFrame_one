@@ -515,6 +515,22 @@ export class ActivepiecesController {
     return this.proxyActivepiecesRequest(request, reply, '');
   }
 
+  @All('api/socket.io')
+  proxyActivepiecesApiSocketIoRoot(
+    @Req() request: LexframeRequest,
+    @Res() reply: ProxyReply,
+  ) {
+    return this.proxyActivepiecesRequest(request, reply, '');
+  }
+
+  @All('api/socket.io/*')
+  proxyActivepiecesApiSocketIo(
+    @Req() request: LexframeRequest,
+    @Res() reply: ProxyReply,
+  ) {
+    return this.proxyActivepiecesRequest(request, reply, '');
+  }
+
   @All('assets/*')
   proxyActivepiecesAssets(
     @Req() request: LexframeRequest,

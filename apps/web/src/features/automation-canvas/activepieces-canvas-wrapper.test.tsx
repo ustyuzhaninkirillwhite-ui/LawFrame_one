@@ -242,6 +242,27 @@ describe("ActivepiecesCanvasWrapper", () => {
     expect(onMounted).not.toHaveBeenCalled();
   });
 
+  it("accepts an attached cross-origin iframe after SDK configuration", async () => {
+    const configure = vi.fn(async (input: Record<string, unknown>) => {
+      writeCrossOriginIframe(String(input.containerId));
+    });
+    window.activepieces = { configure };
+    const onMounted = vi.fn();
+
+    render(
+      <ActivepiecesCanvasWrapper
+        session={session("sess_cross_origin")}
+        tokenRef={{ current: "token_1" }}
+        onMounted={onMounted}
+        onAuthFailure={vi.fn()}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(onMounted).toHaveBeenCalledTimes(1);
+    });
+  });
+
   it("reports a stuck loading iframe after a previously ready canvas", async () => {
     vi.useFakeTimers();
     vi.spyOn(window, "requestAnimationFrame").mockImplementation((callback) =>
@@ -346,6 +367,19 @@ function writeIframe(containerId: string, text: string) {
   iframe.contentDocument?.open();
   iframe.contentDocument?.write(`<main>${text}</main>`);
   iframe.contentDocument?.close();
+}
+
+function writeCrossOriginIframe(containerId: string) {
+  const container = document.getElementById(containerId);
+  if (!container) {
+    throw new Error(`Missing container ${containerId}`);
+  }
+  const iframe = document.createElement("iframe");
+  Object.defineProperty(iframe, "contentDocument", {
+    configurable: true,
+    get: () => null,
+  });
+  container.appendChild(iframe);
 }
 
 function session(sessionId = "sess_1"): SafeActivepiecesSession {

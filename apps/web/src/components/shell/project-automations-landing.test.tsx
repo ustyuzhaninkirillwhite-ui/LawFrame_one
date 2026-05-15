@@ -1,5 +1,5 @@
-import { render, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ProjectAutomationsLanding } from "./project-automations-landing";
 
 const replace = vi.fn();
@@ -8,6 +8,7 @@ const mutate = vi.fn();
 const getActivepiecesCanvasReadiness = vi.fn();
 let automationsState: Record<string, unknown>;
 let ensureState: Record<string, unknown>;
+let backgroundCanvas: Record<string, unknown>;
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({
@@ -26,6 +27,10 @@ vi.mock("@/providers/session-provider", () => ({
       getActivepiecesCanvasReadiness,
     },
   }),
+}));
+
+vi.mock("@/features/automation-canvas/activepieces-background-canvas-provider", () => ({
+  useActivepiecesBackgroundCanvas: () => backgroundCanvas,
 }));
 
 vi.mock("./project-automations", () => ({
@@ -67,6 +72,17 @@ describe("ProjectAutomationsLanding", () => {
       mutate,
       reset: vi.fn(),
     };
+    backgroundCanvas = {
+      activeProjectId: null,
+      activeAutomationId: null,
+      route: null,
+      state: { phase: "idle", message: null },
+      retry: vi.fn(),
+    };
+  });
+
+  afterEach(() => {
+    cleanup();
   });
 
   it("opens the ready ActivePieces automation when legacy entries are also present", async () => {
@@ -116,5 +132,25 @@ describe("ProjectAutomationsLanding", () => {
       expect(replace).not.toHaveBeenCalled();
     });
     expect(mutate).toHaveBeenCalled();
+  });
+
+  it("renders a controlled retry state when background canvas fails", () => {
+    backgroundCanvas = {
+      activeProjectId: "project_claim_001",
+      activeAutomationId: null,
+      route: null,
+      state: {
+        phase: "unavailable",
+        message: "Schema is stale.",
+      },
+      retry: vi.fn(),
+    };
+
+    render(<ProjectAutomationsLanding projectId="project_claim_001" />);
+
+    expect(
+      screen.getByTestId("automation-canvas-unavailable-state"),
+    ).toBeInTheDocument();
+    expect(replace).not.toHaveBeenCalled();
   });
 });

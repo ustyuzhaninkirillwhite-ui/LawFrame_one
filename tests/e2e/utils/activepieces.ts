@@ -18,6 +18,9 @@ export async function waitForActivepiecesIframe(page: Page): Promise<Locator> {
   });
   const iframe = page.getByTestId("activepieces-canvas-container").locator("iframe").first();
   await expect(iframe).toBeVisible({ timeout: 45_000 });
+  await expect
+    .poll(() => readVisibleBuilderFrameState(page), { timeout: 45_000 })
+    .toBe("visible");
   return iframe;
 }
 
@@ -29,18 +32,22 @@ export async function waitForBuilderSurface(page: Page) {
           return "controlled-unavailable";
         }
         if (await page.getByTestId("activepieces-canvas-container").isVisible().catch(() => false)) {
-          const iframeCount = await page
-            .getByTestId("activepieces-canvas-container")
-            .locator("iframe")
-            .count()
-            .catch(() => 0);
-          return iframeCount > 0 ? "iframe" : "container";
+          const frameState = await readVisibleBuilderFrameState(page);
+          return frameState === "visible" ? "iframe" : frameState;
         }
         return "waiting";
       },
       { timeout: 45_000 },
     )
     .not.toBe("waiting");
+
+  if (await page.getByTestId("activepieces-canvas-container").isVisible().catch(() => false)) {
+    await expect
+      .poll(() => readBuilderFrameText(page), { timeout: 45_000 })
+      .toMatch(
+        /Runs|Versions|Test Flow|Manual Trigger|Flow Builder|Ручной запуск|Запуски|Версии|Тест/i,
+      );
+  }
 }
 
 export async function assertNotActivepiecesLogin(page: Page) {
@@ -144,4 +151,45 @@ export async function scanStorageForActivepiecesJwt(
 export async function assertNoActivepiecesServerSecretsInStorage(page: Page) {
   const storage = JSON.stringify(await readBrowserStorage(page));
   expect(storage).not.toMatch(forbiddenEmbedSecretPattern);
+}
+
+async function readVisibleBuilderFrameState(page: Page) {
+  return page.evaluate(() => {
+    const container = document.querySelector<HTMLElement>(
+      '[data-testid="activepieces-canvas-container"]',
+    );
+    const iframe = container?.querySelector<HTMLIFrameElement>("iframe") ?? null;
+    if (!container || !iframe) {
+      return "missing";
+    }
+
+    const containerBox = container.getBoundingClientRect();
+    const iframeBox = iframe.getBoundingClientRect();
+    const viewportWidth = window.innerWidth || document.documentElement.clientWidth;
+    const viewportHeight =
+      window.innerHeight || document.documentElement.clientHeight;
+    const minVisibleSize = 120;
+    const visible =
+      containerBox.width >= minVisibleSize &&
+      containerBox.height >= minVisibleSize &&
+      iframeBox.width >= minVisibleSize &&
+      iframeBox.height >= minVisibleSize &&
+      iframeBox.right > 0 &&
+      iframeBox.bottom > 0 &&
+      iframeBox.left < viewportWidth &&
+      iframeBox.top < viewportHeight;
+
+    return visible ? "visible" : "offscreen";
+  });
+}
+
+async function readBuilderFrameText(page: Page) {
+  const iframe = page.getByTestId("activepieces-canvas-container").locator("iframe").first();
+  const handle = await iframe.elementHandle().catch(() => null);
+  const frame = await handle?.contentFrame().catch(() => null);
+  if (!frame) {
+    return "";
+  }
+
+  return frame.locator("body").innerText({ timeout: 2_000 }).catch(() => "");
 }

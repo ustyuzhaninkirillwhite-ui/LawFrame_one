@@ -24,6 +24,7 @@ out/
 playwright-report/
 test-results/
 .playwright-mcp/
+.codex-dev-logs/
 *.tsbuildinfo
 apps/web/.next/
 apps/web/out/
@@ -37,6 +38,7 @@ stage16-audit-evidence-*/
 backend-startup-env.json
 
 # Generated audit/report artifacts
+/artifacts/system-tests/
 /stage17-*.png
 /lexframe-light-theme-canvas-smoke.png
 /artifacts/pravokontur-presentation/
@@ -44,3 +46,5 @@ backend-startup-env.json
 /artifacts/stage17/*.png
 /artifacts/stage18-20/remediation/e2e/playwright/
 /artifacts/stage21/playwright/*.png
+/tests/e2e/artifacts/
+/docs/testing/*.docx

@@ -3,6 +3,8 @@ import assert from "node:assert/strict";
 
 import {
   buildPreflightReport,
+  classifyDatabaseSchemaProbe,
+  classifyAutomationEnsureProbe,
   classifyComposeService,
   getScopePlan,
 } from "./stage16-e2e-preflight.mjs";
@@ -81,4 +83,44 @@ test("optional degradation does not block a scoped preflight report", () => {
 
   assert.equal(report.status, "DEGRADED_OPTIONAL");
   assert.equal(report.blockers.length, 0);
+});
+
+test("automation scope blocks stale product schema before browser specs", () => {
+  const item = classifyDatabaseSchemaProbe("automation", {
+    ok: true,
+    rows: [
+      "app.projects|missing",
+      "app.chat_messages.client_message_id|missing",
+      "app.installed_automations|r",
+      "app.automation_runtime_bindings|r",
+      "app.activepieces_project_bindings|r",
+      "automation_fixture_count|0",
+    ],
+  });
+
+  assert.equal(item.status, "STALE_SCHEMA");
+  assert.equal(item.blocksRequired, true);
+  assert.deepEqual(item.details.missing, [
+    "app.projects",
+    "app.chat_messages.client_message_id",
+    "NO_AUTOMATION_FIXTURE",
+  ]);
+  assert.equal(item.details.automationFixtureCount, 0);
+});
+
+test("automation ensure 503 is classified as an AP runtime blocker", () => {
+  const item = classifyAutomationEnsureProbe({
+    ok: false,
+    status: 503,
+    body: JSON.stringify({
+      error: {
+        code: "AP_POSTGRES_CONFIG_MISSING",
+        message: "Activepieces runtime database credentials are not configured.",
+      },
+    }),
+  });
+
+  assert.equal(item.status, "AP_RUNTIME_BLOCKED");
+  assert.equal(item.blocksRequired, true);
+  assert.equal(item.details.code, "AP_POSTGRES_CONFIG_MISSING");
 });

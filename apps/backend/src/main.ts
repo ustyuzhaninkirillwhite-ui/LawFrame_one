@@ -9,6 +9,7 @@ import {
 import { ErrorMappingFilter } from './common/filters/error-mapping.filter';
 import { AuditInterceptor } from './common/interceptors/audit.interceptor';
 import { AppModule } from './app.module';
+import { installActivepiecesWebSocketProxy } from './modules/activepieces/activepieces-websocket-proxy';
 
 async function bootstrap() {
   const env = loadServerEnv();
@@ -28,6 +29,11 @@ async function bootstrap() {
   app.useGlobalFilters(new ErrorMappingFilter());
   app.useGlobalInterceptors(
     new AuditInterceptor(createLogger('backend.audit')),
+  );
+  installActivepiecesWebSocketProxy(
+    app.getHttpServer(),
+    env,
+    createLogger('backend.activepieces.websocket'),
   );
 
   await app.listen(env.PORT, '0.0.0.0');
