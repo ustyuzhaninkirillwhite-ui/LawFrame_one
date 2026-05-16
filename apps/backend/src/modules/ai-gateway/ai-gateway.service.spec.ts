@@ -141,6 +141,51 @@ describe('AIGatewayService AI provider routing', () => {
     );
   });
 
+  it('does not let the controlled-real test force route override saved workspace AI preferences', async () => {
+    process.env.AI_PROVIDER_MODE = 'controlled-real';
+    process.env.LEXFRAME_AI_TEST_FORCE_COMETAPI = '1';
+    process.env.LEXFRAME_AI_TEST_MODEL = 'grok-4-1-fast-non-reasoning';
+    const routeGroupResolver = {
+      resolveEffectivePolicy: jest.fn().mockResolvedValue({
+        routeGroup: 'chat_ai',
+        routeCode: 'default_chat',
+        source: 'workspace_preference',
+        providerConnectionId: 'conn_workspace_ai',
+        providerCode: 'cometapi',
+        modelId: 'deepseek-v4-pro',
+        baseUrl: 'https://api.cometapi.com/v1',
+        hasSecret: true,
+        secretStatus: 'active',
+        fingerprint: 'sha256:workspace',
+        supportsStreaming: true,
+        supportsJson: true,
+        supportsToolCalls: true,
+        policyDecisionId: 'decision_workspace_ai',
+        resolvedAt: '2026-05-09T00:00:00.000Z',
+      }),
+    };
+    const service = createService(policy, { routeGroupResolver });
+
+    const route = await service.planStructuredRoute({
+      access,
+      classification: 'public',
+      taskType: 'clarification',
+      hasDocuments: false,
+    });
+
+    expect(route).toEqual(
+      expect.objectContaining({
+        blocked: false,
+        route: 'default_chat',
+        provider: 'cometapi',
+        model: 'deepseek-v4-pro',
+        routeReason: 'workspace_preference:default_chat',
+        providerConnectionId: 'conn_workspace_ai',
+      }),
+    );
+    expect(route.routeReason).not.toBe('test_force_cometapi_route');
+  });
+
   it('passes the saved workspace secret into structured provider calls', async () => {
     process.env.AI_PROVIDER_MODE = 'controlled-real';
     process.env.LEXFRAME_AI_TEST_FORCE_COMETAPI = '0';

@@ -310,6 +310,7 @@ async function requestOpenAiCompatibleChatStream(input: {
     maxTokens: input.request.maxTokens,
     reasoningEffort: input.request.reasoningEffort,
     thinking: input.request.thinking ?? { type: 'enabled' as const },
+    includeReasoningOptions: true,
   });
   let final = first;
   let contentChunkCount = first.contentChunkCount;
@@ -329,6 +330,25 @@ async function requestOpenAiCompatibleChatStream(input: {
       maxTokens: 768,
       reasoningEffort: 'low',
       thinking: { type: 'disabled' as const },
+      includeReasoningOptions: true,
+    });
+    final = retry;
+    contentChunkCount += retry.contentChunkCount;
+    reasoningChunkCount += retry.reasoningChunkCount;
+  } else if (
+    !first.ok &&
+    first.errorClass === 'PROVIDER_UNSUPPORTED_REQUEST_OPTIONS'
+  ) {
+    retryReason = 'PROVIDER_UNSUPPORTED_REQUEST_OPTIONS';
+    attemptCount = 2;
+    const retry = await requestOpenAiCompatibleChatStreamAttempt({
+      ...input,
+      endpoint,
+      sourceTokenFingerprint,
+      maxTokens: Math.min(input.request.maxTokens, 768),
+      reasoningEffort: 'none',
+      thinking: { type: 'disabled' as const },
+      includeReasoningOptions: false,
     });
     final = retry;
     contentChunkCount += retry.contentChunkCount;
@@ -361,6 +381,7 @@ async function requestOpenAiCompatibleChatStreamAttempt(input: {
   readonly maxTokens: number;
   readonly reasoningEffort: string;
   readonly thinking: { readonly type: 'enabled' | 'disabled' };
+  readonly includeReasoningOptions: boolean;
   readonly timeoutMs?: number;
 }): Promise<{
   readonly ok: boolean;
@@ -382,6 +403,7 @@ async function requestOpenAiCompatibleChatStreamAttempt(input: {
     maxTokens: input.maxTokens,
     reasoningEffort: input.reasoningEffort,
     thinkingEnabled: input.thinking.type === 'enabled',
+    includeReasoningOptions: input.includeReasoningOptions,
   });
   const controller = new AbortController();
   const timeout = setTimeout(
@@ -390,7 +412,7 @@ async function requestOpenAiCompatibleChatStreamAttempt(input: {
   );
 
   try {
-    const body = {
+    const body: Record<string, unknown> = {
       model: input.request.model,
       messages: input.request.messages.map((message) => ({
         role: message.role,
@@ -398,9 +420,11 @@ async function requestOpenAiCompatibleChatStreamAttempt(input: {
       })),
       stream: true,
       max_tokens: input.maxTokens,
-      reasoning_effort: input.reasoningEffort,
-      thinking: input.thinking,
     };
+    if (input.includeReasoningOptions) {
+      body.reasoning_effort = input.reasoningEffort;
+      body.thinking = input.thinking;
+    }
     const response = await fetch(input.endpoint, {
       method: 'POST',
       signal: controller.signal,
@@ -467,6 +491,7 @@ function buildChatCompletionDescriptor(input: {
   readonly maxTokens: number;
   readonly reasoningEffort: string;
   readonly thinkingEnabled: boolean;
+  readonly includeReasoningOptions?: boolean;
 }): ChatCompletionRequestDescriptor {
   const url = new URL(input.endpoint);
   const basePath = url.pathname.replace(/\/chat\/completions$/i, '') || '/';
@@ -479,14 +504,17 @@ function buildChatCompletionDescriptor(input: {
     baseUrlHost: url.host,
     baseUrlPath: basePath,
     model: input.model,
-    bodyKeys: [
-      'model',
-      'messages',
-      'stream',
-      'max_tokens',
-      'reasoning_effort',
-      'thinking',
-    ],
+    bodyKeys:
+      input.includeReasoningOptions === false
+        ? ['model', 'messages', 'stream', 'max_tokens']
+        : [
+            'model',
+            'messages',
+            'stream',
+            'max_tokens',
+            'reasoning_effort',
+            'thinking',
+          ],
     hasAuthorizationHeader: true,
     authorizationScheme: 'Bearer',
     secretFingerprint: input.secretFingerprint,
@@ -617,6 +645,16 @@ function classifyProviderError(status: number, body: string) {
   }
   if (status === 429) {
     return 'PROVIDER_RATE_LIMITED';
+  }
+  if (
+    (status === 400 || status === 422) &&
+    (text.includes('reasoning_effort') ||
+      text.includes('thinking') ||
+      text.includes('unsupported parameter') ||
+      text.includes('unrecognized request argument') ||
+      text.includes('unknown parameter'))
+  ) {
+    return 'PROVIDER_UNSUPPORTED_REQUEST_OPTIONS';
   }
   if (status >= 500) {
     return 'PROVIDER_SERVER_ERROR';

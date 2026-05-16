@@ -357,6 +357,84 @@ describe('CometApiAdapter', () => {
     expect(JSON.stringify(response)).not.toContain('Bearer sk-');
   });
 
+  it('retries OpenAI-compatible chat without reasoning-only request options when the provider rejects them', async () => {
+    process.env.COMETAPI_API_KEY = 'test_env_key';
+    process.env.COMETAPI_API_KEYS = '';
+    const fetchMock = jest
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            error: {
+              message: 'Unrecognized request argument supplied: thinking',
+            },
+          }),
+          {
+            status: 400,
+            headers: { 'content-type': 'application/json' },
+          },
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          [
+            'data: {"choices":[{"delta":{"content":"Recovered answer"}}]}',
+            'data: [DONE]',
+            '',
+          ].join('\n\n'),
+          {
+            status: 200,
+            headers: { 'content-type': 'text/event-stream' },
+          },
+        ),
+      );
+    const adapter = new CometApiAdapter();
+
+    const response = await adapter.streamChatCompletion({
+      provider: 'cometapi',
+      model: 'deepseek-v4-pro',
+      messages: [{ role: 'user', content: 'Say visible text.' }],
+      maxTokens: 256,
+      reasoningEffort: 'high',
+      thinking: { type: 'enabled' },
+      runtimeConnection: {
+        providerConnectionId: 'conn_workspace_ai',
+        baseUrl: 'https://api.cometapi.com/v1',
+        apiKey: new SecretString('sk-workspace-runtime-key'),
+        fingerprint: 'sha256:workspace',
+      },
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    const firstBody = parseRequestJsonBody(
+      fetchMock.mock.calls[0]?.[1] as RequestInit | undefined,
+    );
+    const retryBody = parseRequestJsonBody(
+      fetchMock.mock.calls[1]?.[1] as RequestInit | undefined,
+    );
+
+    expect(firstBody).toEqual(
+      expect.objectContaining({
+        reasoning_effort: 'high',
+        thinking: { type: 'enabled' },
+      }),
+    );
+    expect(retryBody).not.toHaveProperty('reasoning_effort');
+    expect(retryBody).not.toHaveProperty('thinking');
+    expect(response).toMatchObject({
+      ok: true,
+      text: 'Recovered answer',
+      attemptCount: 2,
+      retryReason: 'PROVIDER_UNSUPPORTED_REQUEST_OPTIONS',
+      requestDescriptor: {
+        bodyKeys: ['model', 'messages', 'stream', 'max_tokens'],
+        reasoningEffort: 'none',
+        thinkingEnabled: false,
+      },
+    });
+    expect(JSON.stringify(response)).not.toContain('sk-workspace-runtime-key');
+  });
+
   it('redacts provider auth failures by returning only the configured fallback', async () => {
     process.env.COMETAPI_API_KEY = 'test_env_key_12345';
     process.env.COMETAPI_API_KEYS = '';

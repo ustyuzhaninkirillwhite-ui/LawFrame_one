@@ -182,6 +182,7 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       LEXFRAME_DB_NAME: stage16_runtime
+      STAGE16_DB_BOOTSTRAP_MODE: ${STAGE16_DB_BOOTSTRAP_MODE:-preserve}
     depends_on:
       postgres:
         condition: service_healthy
@@ -194,6 +195,16 @@ services:
           echo "[stage16-db-bootstrap] waiting for postgres"
           sleep 1
         done
+        DB_EXISTS="$$(psql -h postgres -U "$${POSTGRES_USER}" -d postgres -v ON_ERROR_STOP=1 -Atc "select 1 from pg_database where datname = '$${LEXFRAME_DB_NAME}'" | tr -d '[:space:]')"
+        if [ "$${STAGE16_DB_BOOTSTRAP_MODE:-preserve}" != "reset" ] && [ "$${DB_EXISTS}" = "1" ]; then
+          SCHEMA_STATUS="$$(psql -h postgres -U "$${POSTGRES_USER}" -d "$${LEXFRAME_DB_NAME}" -v ON_ERROR_STOP=1 -Atc "select case when to_regclass('app.projects') is not null and to_regclass('app.chat_messages') is not null and exists (select 1 from information_schema.columns where table_schema = 'app' and table_name = 'chat_messages' and column_name = 'client_message_id') and to_regclass('app.installed_automations') is not null and to_regclass('app.automation_runtime_bindings') is not null and to_regclass('app.activepieces_project_bindings') is not null and to_regclass('app.ai_route_group_preferences') is not null then 'ready' else 'stale' end;" | tr -d '[:space:]')"
+          if [ "$${SCHEMA_STATUS}" = "ready" ]; then
+            echo "[stage16-db-bootstrap] keeping existing $${LEXFRAME_DB_NAME}; schema is ready"
+            exit 0
+          fi
+          echo "[stage16-db-bootstrap] existing $${LEXFRAME_DB_NAME} schema is stale; set STAGE16_DB_BOOTSTRAP_MODE=reset to recreate it"
+          exit 2
+        fi
         psql -h postgres -U "$${POSTGRES_USER}" -d postgres -v ON_ERROR_STOP=1 \
           -c "select pg_terminate_backend(pid) from pg_stat_activity where datname = '$${LEXFRAME_DB_NAME}' and pid <> pg_backend_pid();" \
           -c "drop database if exists \"$${LEXFRAME_DB_NAME}\";" \

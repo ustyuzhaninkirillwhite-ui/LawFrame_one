@@ -4015,26 +4015,6 @@ export class AIGatewayService {
     const requestedRoute =
       routeCode ?? this.stage18RouteForTask(taskType, hasDocuments);
 
-    if (
-      this.env.AI_PROVIDER_MODE === 'controlled-real' &&
-      this.env.LEXFRAME_AI_TEST_FORCE_COMETAPI === '1'
-    ) {
-      return {
-        route: 'cometapi',
-        provider: 'cometapi',
-        model: this.env.LEXFRAME_AI_TEST_MODEL,
-        routeReason: 'test_force_cometapi_route',
-      };
-    }
-
-    if (requestedRoute === 'automation_planner_high') {
-      throw new AppHttpException(
-        'AI_ROUTE_NOT_ALLOWED',
-        403,
-        'automation_planner_high is reserved for Stage 20 automation planning.',
-      );
-    }
-
     if (dataClass === 'C_LEGAL_SECRET') {
       return {
         route: 'local_mock',
@@ -4065,6 +4045,26 @@ export class AIGatewayService {
 
     if (savedPreference) {
       return savedPreference;
+    }
+
+    if (
+      this.env.AI_PROVIDER_MODE === 'controlled-real' &&
+      this.env.LEXFRAME_AI_TEST_FORCE_COMETAPI === '1'
+    ) {
+      return {
+        route: 'cometapi',
+        provider: 'cometapi',
+        model: this.env.LEXFRAME_AI_TEST_MODEL,
+        routeReason: 'test_force_cometapi_route',
+      };
+    }
+
+    if (requestedRoute === 'automation_planner_high') {
+      throw new AppHttpException(
+        'AI_ROUTE_NOT_ALLOWED',
+        403,
+        'automation_planner_high is reserved for Stage 20 automation planning.',
+      );
     }
 
     const route = this.aiModelRouteRegistryService.getRoute(requestedRoute);

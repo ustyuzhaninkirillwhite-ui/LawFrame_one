@@ -16,6 +16,7 @@ async function main() {
 export function applyLocalRuntimeDefaults() {
   process.env.PORT ??= process.env.STAGE16_BACKEND_PORT ?? "3104";
   process.env.AI_PROVIDER_MODE ??= "controlled-real";
+  process.env.LEXFRAME_AI_TEST_FORCE_COMETAPI ??= "0";
   process.env.LEXFRAME_AI_SECRET_BACKEND ??= "supabase_vault";
   process.env.LEXFRAME_READINESS_PROFILE ??= "local-integrated";
   process.env.SUPABASE_DB_URL ??=

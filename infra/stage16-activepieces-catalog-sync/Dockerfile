@@ -15,4 +15,5 @@ COPY --from=activepieces-source /usr/src/app/packages/pieces /activepieces/packa
 
 RUN corepack pnpm --filter @lexframe/activepieces-catalog-sync... --workspace-concurrency=1 run build
 
+ENTRYPOINT []
 CMD ["node", "packages/activepieces-catalog-sync/dist/cli.js", "--repo-root", "/activepieces", "--apply"]

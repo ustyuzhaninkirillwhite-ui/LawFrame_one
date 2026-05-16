@@ -12,6 +12,8 @@ const fullRuntimeEnv = {
   ...process.env,
   STAGE16_BACKEND_PORT: process.env.STAGE16_BACKEND_PORT ?? "3104",
   AI_PROVIDER_MODE: process.env.AI_PROVIDER_MODE ?? "controlled-real",
+  LEXFRAME_AI_TEST_FORCE_COMETAPI:
+    process.env.LEXFRAME_AI_TEST_FORCE_COMETAPI ?? "0",
   LEXFRAME_MINING_WORKER_HEALTH_URL:
     process.env.LEXFRAME_MINING_WORKER_HEALTH_URL ??
     "http://mining-worker:8090/health/ready",

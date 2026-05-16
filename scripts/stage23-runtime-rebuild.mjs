@@ -7,7 +7,12 @@ const node = process.execPath;
 const env = {
   ...process.env,
   STAGE16_BACKEND_PORT: process.env.STAGE16_BACKEND_PORT ?? "3104",
+  STAGE16_DB_BOOTSTRAP_MODE: process.argv.includes("--reset-db")
+    ? "reset"
+    : (process.env.STAGE16_DB_BOOTSTRAP_MODE ?? "preserve"),
   AI_PROVIDER_MODE: process.env.AI_PROVIDER_MODE ?? "controlled-real",
+  LEXFRAME_AI_TEST_FORCE_COMETAPI:
+    process.env.LEXFRAME_AI_TEST_FORCE_COMETAPI ?? "0",
   LEXFRAME_READINESS_PROFILE:
     process.env.LEXFRAME_READINESS_PROFILE ?? "local-integrated",
   NEXT_PUBLIC_ENABLE_MSW: process.env.NEXT_PUBLIC_ENABLE_MSW ?? "0",
