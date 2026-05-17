@@ -78,7 +78,9 @@ function proxyActivepiecesSocketUpgrade(
     return;
   }
 
-  const port = Number(upstream.port || (upstream.protocol === 'https:' ? 443 : 80));
+  const port = Number(
+    upstream.port || (upstream.protocol === 'https:' ? 443 : 80),
+  );
   const upstreamSocket =
     upstream.protocol === 'https:'
       ? createTlsConnection({

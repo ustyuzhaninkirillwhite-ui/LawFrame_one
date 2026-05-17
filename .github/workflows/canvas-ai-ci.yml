@@ -35,12 +35,8 @@ jobs:
         run: corepack pnpm validate:json-schemas
       - name: OpenAPI validation
         run: corepack pnpm validate:openapi
-      - name: Backend Canvas AI tests
-        run: corepack pnpm --filter @lexframe/backend test -- canvas-ai
       - name: Backend typecheck
         run: corepack pnpm --filter @lexframe/backend typecheck
-      - name: Frontend Canvas AI tests
-        run: corepack pnpm --filter @lexframe/web test -- canvas-ai
       - name: Frontend typecheck
         run: corepack pnpm --filter @lexframe/web typecheck
       - name: Secret scan

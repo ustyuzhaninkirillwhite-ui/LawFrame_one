@@ -1,6 +1,6 @@
 # LexFrame Stage 14 Runtime Track
 
-This repository contains the current LexFrame runtime track through Stage 14 iteration 1: a NestJS backend, a Next.js workspace UI, shared contracts/packages, Supabase migrations through release gates, and validation tooling for readiness, Activepieces runtime, storage, security, and e2e checks.
+This repository contains the current LexFrame runtime track through Stage 14 iteration 1: a NestJS backend, a Next.js workspace UI, shared contracts/packages, Supabase migrations, and production validation tooling for readiness, Activepieces runtime, storage, and security.
 
 ## Workspace
 
@@ -13,8 +13,7 @@ This repository contains the current LexFrame runtime track through Stage 14 ite
 - `packages/telemetry` - telemetry/event helpers
 - `packages/workflow` - workflow schema and semantic validation
 - `docs` - ADRs, diagrams, contracts, development notes
-- `supabase` - migrations, RLS, and security/release-gate SQL suites
-- `tests` - Playwright smoke/e2e coverage
+- `supabase` - migrations, RLS, and security SQL assets
 
 ## Stage 14 Local Profiles
 
@@ -68,15 +67,11 @@ Get-ChildItem supabase/seed/*.sql | Sort-Object Name | ForEach-Object { Get-Cont
 node scripts/prepare-stage14-search-index.mjs
 ```
 
-11. Stage 14 demo smoke commands:
+11. Run production validation commands:
 
 ```bash
-corepack pnpm --filter @lexframe/e2e test:stage2:storage-integrated
-corepack pnpm --filter @lexframe/e2e test:stage4:activepieces-integrated
-corepack pnpm --filter @lexframe/e2e test:stage5:ai-gateway-policy
-corepack pnpm --filter @lexframe/e2e test:stage6:search-integrated
-corepack pnpm --filter @lexframe/e2e test:stage8:delivery-sandbox
-corepack pnpm --filter @lexframe/e2e test:stage10:realtime-integrated
+corepack pnpm build
+corepack pnpm check
 ```
 
 ## Commands
@@ -92,7 +87,7 @@ corepack pnpm dev:backend
 ## Notes
 
 - `GET /health/readiness` now stays backward-compatible while also returning the effective readiness profile and service summary.
-- `GET /health/readiness/details` exposes the strict profile contract, blocked reasons, and service-level diagnostics for Stage 14 smoke tests.
+- `GET /health/readiness/details` exposes the strict profile contract, blocked reasons, and service-level diagnostics.
 - `GET /integrations/delivery/status` reports webhook + sandbox receiver readiness for the delivery demo contour.
 - `POST /delivery/sandbox/test` dispatches a synthetic payload into the configured webhook target without creating a workflow run.
 - Recommendations, delivery, and document signed URLs now fail with explicit readiness errors when upstream runtime/storage is not configured instead of silently returning fixtures or demo URLs.

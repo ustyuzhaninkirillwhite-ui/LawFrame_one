@@ -114,7 +114,7 @@ function gitFiles(args) {
 }
 
 function ignoredGeneratedPath(file) {
-  return /(^|[\\/])(node_modules|dist|build|coverage|\.next|playwright-report)[\\/]/i.test(
+  return /(^|[\\/])(node_modules|dist|build|coverage|\.next)[\\/]/i.test(
     file,
   );
 }

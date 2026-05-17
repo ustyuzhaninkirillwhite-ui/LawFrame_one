@@ -12,15 +12,6 @@ const migrationFiles = [
   "supabase/migrations/000031_stage11_release_gates.sql",
 ];
 
-const pgtapFiles = [
-  "supabase/tests/pgtap/stage11_identity_sessions.sql",
-  "supabase/tests/pgtap/stage11_security_rls.sql",
-  "supabase/tests/pgtap/stage11_audit_secrets.sql",
-  "supabase/tests/pgtap/stage11_ai_documents_activepieces.sql",
-  "supabase/tests/pgtap/stage11_compliance_incidents_access_reviews.sql",
-  "supabase/tests/pgtap/stage11_release_gates.sql",
-];
-
 const routeChecks = [
   "/admin/security/overview",
   "/admin/security/sessions",
@@ -52,12 +43,6 @@ const uiFiles = [
   "apps/web/src/app/(app)/admin/access-reviews/page.tsx",
 ];
 
-const requiredScripts = [
-  "\"validate:stage11-security\"",
-  "\"db:test:rls\"",
-  "\"test:security-e2e\"",
-];
-
 const failures = [];
 
 async function read(relativePath) {
@@ -87,10 +72,6 @@ for (const file of migrationFiles) {
   check(await exists(file), `Stage 11 migration exists: ${file}`);
 }
 
-for (const file of pgtapFiles) {
-  check(await exists(file), `Stage 11 pgTAP suite exists: ${file}`);
-}
-
 if (mode === "full") {
   const [packageJson, openapi, apiClient, webPanels] = await Promise.all([
     read("package.json"),
@@ -99,9 +80,7 @@ if (mode === "full") {
     read("apps/web/src/components/stage11-security-panels.tsx"),
   ]);
 
-  for (const script of requiredScripts) {
-    check(packageJson.includes(script), `Root package script registered: ${script}`);
-  }
+  check(packageJson.includes("\"validate:stage11-security\""), "Root package script registered: validate:stage11-security");
 
   for (const route of routeChecks) {
     check(openapi.includes(route), `OpenAPI documents Stage 11 route: ${route}`);

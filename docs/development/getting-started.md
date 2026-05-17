@@ -58,7 +58,7 @@ corepack pnpm dev:web
 
 ## Local Notes
 
-- Frontend uses the real API by default. MSW stays disabled unless `NEXT_PUBLIC_ENABLE_MSW=1`.
+- Frontend uses the real API by default.
 - Backend readiness is live-derived from env, DB relations, release gates, mining snapshots, and realtime activity.
 - Recommendation APIs now block when Stage 9 storage is not migrated instead of returning fixtures.
 - Document signed URL issuance now fails if Supabase storage signing is unavailable instead of returning a deterministic demo URL.

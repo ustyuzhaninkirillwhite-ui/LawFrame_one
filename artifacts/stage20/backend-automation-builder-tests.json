@@ -1,6 +1,0 @@
-{
-  "status": "pass",
-  "command": "corepack pnpm --filter @lexframe/backend test -- automation-builder --runInBand",
-  "duration_ms": 11082,
-  "generated_at": "2026-05-07T12:06:05.207Z"
-}

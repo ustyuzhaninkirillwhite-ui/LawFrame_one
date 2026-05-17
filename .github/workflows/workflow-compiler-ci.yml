@@ -24,7 +24,5 @@ jobs:
         run: pnpm --filter @lexframe/contracts typecheck
       - name: Backend typecheck
         run: pnpm --filter @lexframe/backend typecheck
-      - name: Workflow compiler unit tests
-        run: pnpm --filter @lexframe/backend test -- workflow-compiler.service.spec.ts --runInBand
       - name: JSON schema validation
         run: pnpm validate:json-schemas

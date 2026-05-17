@@ -1,6 +1,0 @@
-{
-  "status": "pass",
-  "command": "corepack pnpm --filter @lexframe/api-client typecheck",
-  "duration_ms": 1855,
-  "generated_at": "2026-05-07T12:04:19.312Z"
-}

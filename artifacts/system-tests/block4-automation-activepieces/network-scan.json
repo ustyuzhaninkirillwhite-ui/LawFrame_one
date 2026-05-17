@@ -1,5 +1,0 @@
-{
-  "block": "block4-automation-activepieces",
-  "status": "pending-live-run",
-  "notes": "Generated browser network/security scans should be stored here by live E2E runs."
-}

@@ -15,7 +15,7 @@
 - `check:ai`
 - `check:activepieces`
 - `check:security`
-- `check:e2e`
+- manual browser smoke
 
 ## Release Artifacts
 

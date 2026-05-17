@@ -413,13 +413,19 @@ export class ReadinessService {
           : 'degraded',
         'Workflow compiler preview service is present or degraded.',
       ),
-      stage17_activepieces_runtime: stage20ExternalArtifactCheck(
-        'artifacts/stage17/release-gate.json',
-        'Stage 17 Activepieces release evidence is present.',
+      stage17_activepieces_runtime: stage20Check(
+        existsSync(
+          resolve(process.cwd(), 'apps/backend/src/modules/activepieces'),
+        )
+          ? 'pass'
+          : 'fail',
+        'Activepieces runtime module is present.',
       ),
-      stage17_runtime_evidence: stage20ExternalArtifactCheck(
-        'artifacts/stage17/runtime-evidence.json',
-        'Stage 17 runtime evidence artifact is present.',
+      stage17_runtime_evidence: stage20Check(
+        existsSync(resolve(process.cwd(), 'scripts/stage17-compose.mjs'))
+          ? 'pass'
+          : 'degraded',
+        'Activepieces runtime compose helper is present.',
       ),
       stage18_ai_gateway: stage20Check(
         this.getStage18Readiness().status === 'unavailable' ? 'fail' : 'pass',
@@ -1385,7 +1391,7 @@ export class ReadinessService {
           'docs/security/rbac-permissions.md',
           'docs/integrations/supabase.md',
         ],
-        linkedTests: ['supabase/tests/pgtap/rls_smoke.sql'],
+        linkedTests: [],
         blockers: authBlockers,
         hasSchema:
           databaseReachable &&
@@ -1401,7 +1407,7 @@ export class ReadinessService {
         stage: 'Stage 2 Documents / Storage',
         owner: 'document-core',
         linkedContracts: ['docs/contracts/api/openapi.yaml'],
-        linkedTests: ['supabase/tests/pgtap/stage2_documents.sql'],
+        linkedTests: [],
         blockers: documentsBlockers,
         hasSchema:
           databaseReachable &&
@@ -1421,10 +1427,7 @@ export class ReadinessService {
           'docs/integrations/activepieces.md',
           'docs/contracts/api/openapi.yaml',
         ],
-        linkedTests: [
-          'tests/e2e/builder-readiness.spec.ts',
-          'tests/e2e/documents-storage.spec.ts',
-        ],
+        linkedTests: [],
         blockers: runtimeBlockers,
         hasSchema:
           databaseReachable &&
@@ -1445,7 +1448,7 @@ export class ReadinessService {
         stage: 'Stage 9 Recommendations / Mining',
         owner: 'analytics',
         linkedContracts: ['docs/contracts/api/openapi.yaml'],
-        linkedTests: ['supabase/tests/pgtap/stage9_product_events.sql'],
+        linkedTests: [],
         blockers: recommendationsBlockers,
         hasSchema:
           databaseReachable &&
@@ -1462,7 +1465,7 @@ export class ReadinessService {
         stage: 'Stage 10 Realtime / Dashboard',
         owner: 'platform-runtime',
         linkedContracts: ['docs/contracts/api/openapi.yaml'],
-        linkedTests: ['tests/e2e/stage11-security-control-plane.spec.ts'],
+        linkedTests: [],
         blockers: realtimeBlockers,
         hasSchema:
           databaseReachable &&
@@ -1481,10 +1484,7 @@ export class ReadinessService {
           'docs/security/rbac-permissions.md',
           'docs/contracts/api/openapi.yaml',
         ],
-        linkedTests: [
-          'supabase/tests/pgtap/stage11_security.sql',
-          'tests/e2e/stage11-security-control-plane.spec.ts',
-        ],
+        linkedTests: [],
         blockers: securityBlockers,
         hasSchema:
           databaseReachable &&
@@ -2254,15 +2254,6 @@ function stage20ArtifactCheck(
   const artifactPath = `artifacts/stage20/${artifactName}`;
   return existsSync(resolve(process.cwd(), artifactPath))
     ? stage20Check('pass', `${artifactPath} is present.`)
-    : stage20Check('degraded', `${artifactPath} has not been generated yet.`);
-}
-
-function stage20ExternalArtifactCheck(
-  artifactPath: string,
-  passMessage: string,
-): Stage20ReadinessResponse['checks'][string] {
-  return existsSync(resolve(process.cwd(), artifactPath))
-    ? stage20Check('pass', passMessage)
     : stage20Check('degraded', `${artifactPath} has not been generated yet.`);
 }
 

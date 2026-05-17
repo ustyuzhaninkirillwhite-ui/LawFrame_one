@@ -7,8 +7,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "lint": "eslint \"src/**/*.ts\"",
-    "test": "node -e \"console.log('activepieces-legal-pieces: no runtime tests')\""
+    "lint": "eslint \"src/**/*.ts\""
   },
   "dependencies": {
     "@lexframe/contracts": "workspace:*"

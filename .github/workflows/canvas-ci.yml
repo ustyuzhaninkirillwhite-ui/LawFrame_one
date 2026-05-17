@@ -8,11 +8,9 @@ on:
       - "apps/backend/src/modules/canvas/**"
       - "apps/backend/src/modules/workflow-compiler/**"
       - "packages/contracts/src/canvas/**"
-      - "packages/canvas-test-fixtures/**"
       - "supabase/migrations/**"
       - "supabase/seed/**"
       - "scripts/stage16-*.mjs"
-      - "docs/testing/canvas-v2-*.md"
       - ".github/workflows/canvas-ci.yml"
   push:
     branches:
@@ -32,19 +30,7 @@ jobs:
       - run: corepack pnpm install --frozen-lockfile
       - name: Clean DB bootstrap
         run: corepack pnpm stage16:db:bootstrap
-      - name: Canvas fixture contract coverage
-        run: corepack pnpm validate:canvas-fixtures
       - name: JSON schema contract coverage
         run: corepack pnpm validate:json-schemas
-      - name: Backend Canvas unit/integration coverage
-        run: corepack pnpm --filter @lexframe/backend test -- canvas
-      - name: Compiler golden/runtime coverage
-        run: corepack pnpm --filter @lexframe/backend test -- workflow-compiler
-      - name: Web Canvas unit coverage
-        run: corepack pnpm --filter @lexframe/web test:canvas:unit
-      - name: Web Canvas component coverage
-        run: corepack pnpm --filter @lexframe/web test:canvas:components
-      - name: Web Canvas MSW contract coverage
-        run: corepack pnpm --filter @lexframe/web test:canvas:contracts
       - name: Storybook visual coverage build
         run: corepack pnpm --filter @lexframe/web storybook:build

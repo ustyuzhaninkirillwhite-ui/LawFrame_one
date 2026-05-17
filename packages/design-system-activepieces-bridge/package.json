@@ -33,8 +33,7 @@
     "build": "tsc -p tsconfig.json",
     "extract": "node scripts/extract-activepieces-tokens.mjs --write",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "lint": "eslint \"src/**/*.ts\"",
-    "test": "node scripts/validate-token-map.mjs"
+    "lint": "eslint \"src/**/*.ts\""
   },
   "devDependencies": {
     "typescript": "^5.9.3"

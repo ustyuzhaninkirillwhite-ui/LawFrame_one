@@ -27,6 +27,6 @@ Stage 16.18-16.20 is complete only when these P0 gates are true:
 ## Consequences
 
 - Canvas API changes must map to a `CanvasOperation` and write audit metadata.
-- New node types require schema, UI schema, validation rules, runtime mapping, fixtures, and release-gate coverage before appearing in the palette.
+- New node types require schema, UI schema, validation rules, runtime mapping, and production readiness coverage before appearing in the palette.
 - Runtime sync and reverse sync can be disabled independently from the rest of Canvas through rollout flags.
 - Release candidates must pass Canvas fixture, release gate, security, compiler, e2e, and performance checks.

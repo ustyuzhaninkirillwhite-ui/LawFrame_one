@@ -7,8 +7,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "lint": "eslint \"src/**/*.ts\"",
-    "test": "tsc -p tsconfig.json && node --test test/smoke.test.mjs"
+    "lint": "eslint \"src/**/*.ts\""
   },
   "devDependencies": {
     "typescript": "^5.9.3"

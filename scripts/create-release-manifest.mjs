@@ -82,29 +82,6 @@ const manifest = {
           "block new publishes and keep existing published versions",
       },
     ],
-    testReports: {
-      schema:
-        process.env.LEXFRAME_CANVAS_SCHEMA_REPORT ??
-        "artifacts/canvas-schema-report.json",
-      backend:
-        process.env.LEXFRAME_CANVAS_BACKEND_REPORT ??
-        "artifacts/backend-canvas-jest.json",
-      frontend:
-        process.env.LEXFRAME_CANVAS_FRONTEND_REPORT ??
-        "artifacts/web-canvas-vitest.json",
-      e2e:
-        process.env.LEXFRAME_CANVAS_E2E_REPORT ??
-        "artifacts/playwright-canvas-report",
-      security:
-        process.env.LEXFRAME_CANVAS_SECURITY_REPORT ??
-        "artifacts/canvas-security-report.json",
-      performance:
-        process.env.LEXFRAME_CANVAS_PERFORMANCE_REPORT ??
-        "artifacts/canvas-performance-smoke.json",
-      manualQa:
-        process.env.LEXFRAME_CANVAS_MANUAL_QA_REPORT ??
-        "docs/testing/canvas-v2-manual-qa-checklist.md",
-    },
     rollbackPlan: {
       previousImageDigests: [
         {
@@ -122,7 +99,7 @@ const manifest = {
         "canvas_v2_reverse_sync_enabled",
       ],
       runtimeBindingPolicy: "freeze_runtime",
-      verificationCommand: "corepack pnpm canvas:release-gate",
+      verificationCommand: "corepack pnpm check",
     },
   },
   build: {

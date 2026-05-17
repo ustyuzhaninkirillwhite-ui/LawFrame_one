@@ -36,7 +36,6 @@ const files = await fg(["scripts/**/*.{js,mjs,ts}", "tests/**/*.{js,mjs,ts}"], {
     "**/node_modules/**",
     "**/dist/**",
     "**/.next/**",
-    "**/playwright-report/**",
     "**/test-results/**",
     "**/*evidence*/**",
     self.replaceAll("\\", "/"),

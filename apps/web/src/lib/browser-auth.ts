@@ -22,7 +22,6 @@ const env = loadPublicEnv({
     process.env.NEXT_PUBLIC_ACTIVEPIECES_EMBED_SDK_URL,
   NEXT_PUBLIC_POSTHOG_KEY: process.env.NEXT_PUBLIC_POSTHOG_KEY,
   NEXT_PUBLIC_CONTRACTS_VERSION: process.env.NEXT_PUBLIC_CONTRACTS_VERSION,
-  NEXT_PUBLIC_ENABLE_MSW: process.env.NEXT_PUBLIC_ENABLE_MSW,
 });
 const DEV_TOKEN_STORAGE_KEY = "lexframe.dev.access-token";
 const SEEDED_DEV_USER_IDS: Record<string, string> = {

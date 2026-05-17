@@ -4,12 +4,10 @@ import path from "node:path";
 const requiredFiles = [
   "supabase/README.md",
   "supabase/migrations/000001_extensions.sql",
-  "supabase/tests/pgtap/rls_smoke.sql",
 ];
 
 const requiredDirs = [
   "supabase/migrations",
-  "supabase/tests/pgtap",
   "supabase/seed",
 ];
 

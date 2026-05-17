@@ -7,8 +7,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "lint": "eslint \"src/**/*.ts\"",
-    "test": "node -e \"console.log('piece-ai-gateway: contract tests are covered by backend runtime tests')\""
+    "lint": "eslint \"src/**/*.ts\""
   },
   "devDependencies": {
     "typescript": "^5.9.3"

@@ -14,7 +14,6 @@ ARG NEXT_PUBLIC_LEXFRAME_AP_DESIGN_SYSTEM_ENABLED=0
 ARG NEXT_PUBLIC_ACTIVEPIECES_EMBED_SDK_URL=/vendor/activepieces/embed-sdk-0.9.0.js
 ARG NEXT_PUBLIC_POSTHOG_KEY=phc_stage_local
 ARG NEXT_PUBLIC_CONTRACTS_VERSION=stage11
-ARG NEXT_PUBLIC_ENABLE_MSW=0
 
 ENV NODE_ENV=production
 ENV PORT=3000
@@ -30,7 +29,6 @@ ENV NEXT_PUBLIC_LEXFRAME_AP_DESIGN_SYSTEM_ENABLED=$NEXT_PUBLIC_LEXFRAME_AP_DESIG
 ENV NEXT_PUBLIC_ACTIVEPIECES_EMBED_SDK_URL=$NEXT_PUBLIC_ACTIVEPIECES_EMBED_SDK_URL
 ENV NEXT_PUBLIC_POSTHOG_KEY=$NEXT_PUBLIC_POSTHOG_KEY
 ENV NEXT_PUBLIC_CONTRACTS_VERSION=$NEXT_PUBLIC_CONTRACTS_VERSION
-ENV NEXT_PUBLIC_ENABLE_MSW=$NEXT_PUBLIC_ENABLE_MSW
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json ./
 COPY apps/backend/package.json apps/backend/package.json
@@ -42,7 +40,6 @@ COPY packages/activepieces-legal-pieces/package.json packages/activepieces-legal
 COPY packages/activepieces-template-ingestor/package.json packages/activepieces-template-ingestor/package.json
 COPY packages/ai-gateway/package.json packages/ai-gateway/package.json
 COPY packages/api-client/package.json packages/api-client/package.json
-COPY packages/canvas-test-fixtures/package.json packages/canvas-test-fixtures/package.json
 COPY packages/config/package.json packages/config/package.json
 COPY packages/contracts/package.json packages/contracts/package.json
 COPY packages/design-system-activepieces-bridge/package.json packages/design-system-activepieces-bridge/package.json
@@ -51,7 +48,6 @@ COPY packages/telemetry/package.json packages/telemetry/package.json
 COPY packages/workflow/package.json packages/workflow/package.json
 COPY packages/workflow-compiler/package.json packages/workflow-compiler/package.json
 COPY packages/workflow-dsl/package.json packages/workflow-dsl/package.json
-COPY tests/e2e/package.json tests/e2e/package.json
 RUN corepack pnpm install --filter @lexframe/web... --frozen-lockfile
 
 COPY . .

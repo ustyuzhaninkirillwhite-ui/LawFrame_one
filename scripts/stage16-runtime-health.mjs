@@ -47,7 +47,7 @@ async function main() {
   }
 
   await retry(activepiecesAuthPreflight, "activepieces API preflight");
-  assertWorkerEvidence();
+  await retry(async () => assertWorkerEvidence(), "activepieces-worker log evidence");
 
   const unavailableOptional = optionalEndpointResults.filter((item) => !item.available);
   if (unavailableOptional.length > 0 && !requireAppHealth) {

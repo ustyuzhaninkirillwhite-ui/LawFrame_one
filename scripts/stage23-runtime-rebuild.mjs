@@ -15,7 +15,6 @@ const env = {
     process.env.LEXFRAME_AI_TEST_FORCE_COMETAPI ?? "0",
   LEXFRAME_READINESS_PROFILE:
     process.env.LEXFRAME_READINESS_PROFILE ?? "local-integrated",
-  NEXT_PUBLIC_ENABLE_MSW: process.env.NEXT_PUBLIC_ENABLE_MSW ?? "0",
 };
 const composeProfiles = [
   "compose",
@@ -24,7 +23,19 @@ const composeProfiles = [
   "--profile",
   "full-runtime",
 ];
-const rebuildServices = [
+const runtimeServices = [
+  "postgres",
+  "redis",
+  "activepieces-postgres",
+  "activepieces-redis",
+  "activepieces-app",
+  "activepieces-worker",
+  "opensearch",
+  "storage-sandbox",
+  "delivery-sandbox",
+  "redpanda",
+  "clickhouse",
+  "mining-worker",
   "stage16-db-bootstrap",
   "stage16-activepieces-catalog-sync",
   "backend",
@@ -44,7 +55,7 @@ async function main() {
     label: "compose inventory before rebuild",
     allowFailure: true,
   });
-  run(docker, [...composeProfiles, "rm", "-f", "-s", ...rebuildServices], {
+  run(docker, [...composeProfiles, "rm", "-f", "-s", ...runtimeServices], {
     label: "remove stale runtime containers",
   });
   run(
@@ -57,7 +68,7 @@ async function main() {
       "--pull",
       composePullPolicy,
       "--force-recreate",
-      ...rebuildServices,
+      ...runtimeServices,
     ],
     { label: "rebuild runtime containers" },
   );
@@ -66,20 +77,12 @@ async function main() {
     `http://127.0.0.1:${env.STAGE16_BACKEND_PORT}/health/live`,
   );
   await waitForUrl("web preview", "http://127.0.0.1:3000/chat");
-  run(node, [
-    "scripts/stage16-e2e-preflight.mjs",
-    "--scope=chat",
-    "--json",
-    "--fail-on-required",
-    "--allow-reuse-runtime",
-  ], { label: "chat schema preflight" });
-  run(node, [
-    "scripts/stage16-e2e-preflight.mjs",
-    "--scope=automation",
-    "--json",
-    "--fail-on-required",
-    "--allow-reuse-runtime",
-  ], { label: "automation schema preflight" });
+  run(node, ["scripts/stage16-runtime-health.mjs"], {
+    label: "runtime health",
+    envOverrides: {
+      STAGE16_REQUIRE_APP_HEALTH: "1",
+    },
+  });
   run(node, ["scripts/stage16-preview-prewarm.mjs"], {
     label: "preview prewarm",
   });
@@ -117,7 +120,10 @@ function run(command, args, options = {}) {
     cwd: process.cwd(),
     encoding: "utf8",
     shell: false,
-    env,
+    env: {
+      ...env,
+      ...(options.envOverrides ?? {}),
+    },
     maxBuffer: 30 * 1024 * 1024,
   });
   const stdout = sanitize(result.stdout ?? "").trim();

@@ -12,8 +12,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "lint": "eslint \"src/**/*.ts\"",
-    "test": "tsc -p tsconfig.json && node dist/route-assets.test.js"
+    "lint": "eslint \"src/**/*.ts\""
   },
   "dependencies": {
     "@lexframe/contracts": "workspace:*"

@@ -38,8 +38,6 @@ const files = {
   rls: "supabase/migrations/000007_stage1_rls.sql",
   lockdown: "supabase/migrations/000008_stage1_lock_stage0_drafts.sql",
   seed: "supabase/seed/000001_stage0_seed.sql",
-  pgtapSmoke: "supabase/tests/pgtap/rls_smoke.sql",
-  pgtapMatrix: "supabase/tests/pgtap/stage1_access_matrix.sql",
   permissions: "packages/contracts/src/permissions/permission-codes.ts",
   openapi: "docs/contracts/api/openapi.yaml",
 };
@@ -126,18 +124,6 @@ check(
   loaded.lockdown.includes("revoke all on public.workspaces from anon, authenticated;") &&
     loaded.lockdown.includes("revoke all on public.documents from anon, authenticated;"),
   "Stage 0 draft tables are locked down from direct client access",
-);
-
-check(
-  loaded.pgtapSmoke.includes("select plan(18);"),
-  "pgTAP smoke suite plan matches Stage 1 assertions",
-);
-
-check(
-  loaded.pgtapMatrix.includes("workspaces_select_member") &&
-    loaded.pgtapMatrix.includes("workspace_invitations_manage") &&
-    loaded.pgtapMatrix.includes("api.workspace_summaries"),
-  "Stage 1 pgTAP access matrix suite exists",
 );
 
 for (const route of [

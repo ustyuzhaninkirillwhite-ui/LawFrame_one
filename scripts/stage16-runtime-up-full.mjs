@@ -20,7 +20,6 @@ const fullRuntimeEnv = {
   LEXFRAME_READINESS_PROFILE:
     process.env.LEXFRAME_READINESS_PROFILE ?? "local-integrated",
   ACTIVEPIECES_SIMULATE_RUNS: process.env.ACTIVEPIECES_SIMULATE_RUNS ?? "0",
-  NEXT_PUBLIC_ENABLE_MSW: process.env.NEXT_PUBLIC_ENABLE_MSW ?? "0",
 };
 
 const composeProfiles = [

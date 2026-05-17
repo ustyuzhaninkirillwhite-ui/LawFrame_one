@@ -1,9 +1,0 @@
-{
-  "status": "pass",
-  "checks": [
-    "contracts_present",
-    "attachment_tile_renders_classification_mode",
-    "backend_revalidation_documented"
-  ],
-  "generated_at": "2026-05-07T12:04:06.136Z"
-}

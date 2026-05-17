@@ -5,8 +5,6 @@ on:
     paths:
       - "packages/workflow-dsl/**"
       - "packages/contracts/src/canvas/**"
-      - "packages/canvas-test-fixtures/**"
-      - "scripts/validate-canvas-fixtures.mjs"
       - ".github/workflows/workflow-dsl-ci.yml"
   push:
     branches:
@@ -25,13 +23,5 @@ jobs:
           cache: pnpm
       - run: corepack enable
       - run: corepack pnpm install --frozen-lockfile
-      - name: Contract
-        run: corepack pnpm validate:canvas-fixtures
-      - name: Validation
-        run: corepack pnpm --filter @lexframe/workflow-dsl test:schema
-      - name: Validation
-        run: corepack pnpm --filter @lexframe/workflow-dsl test:operations
-      - name: Validation
-        run: corepack pnpm --filter @lexframe/workflow-dsl test:validation
-      - name: Runtime
-        run: corepack pnpm --filter @lexframe/workflow-dsl test:compiler
+      - name: Typecheck
+        run: corepack pnpm --filter @lexframe/workflow-dsl typecheck

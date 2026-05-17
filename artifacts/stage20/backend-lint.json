@@ -1,6 +1,0 @@
-{
-  "status": "pass",
-  "command": "corepack pnpm --filter @lexframe/backend exec eslint src/modules/automation-builder src/modules/readiness/readiness.controller.ts src/modules/readiness/readiness.service.ts src/modules/ai-gateway/ai-route-registry.service.ts src/modules/ai-gateway/ai-route-resolver.service.ts",
-  "duration_ms": 24863,
-  "generated_at": "2026-05-07T12:05:14.045Z"
-}

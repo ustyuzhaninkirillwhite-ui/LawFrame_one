@@ -1040,7 +1040,7 @@ export const readinessFixture: readonly ReadinessGate[] = [
       "docs/security/rbac-permissions.md",
       "docs/integrations/supabase.md",
     ],
-    linkedTests: ["supabase/tests/pgtap/rls_smoke.sql"],
+    linkedTests: [],
   },
   {
     stage: "Stage 2 Documents / Storage",
@@ -1048,7 +1048,7 @@ export const readinessFixture: readonly ReadinessGate[] = [
     blockers: ["preview worker adapter", "storage RLS smoke"],
     owner: "document-core",
     linkedContracts: ["docs/contracts/api/openapi.yaml"],
-    linkedTests: ["supabase/tests/pgtap/stage2_documents.sql"],
+    linkedTests: [],
   },
   {
     stage: "Stage 3 Modules / Library",
@@ -1056,10 +1056,7 @@ export const readinessFixture: readonly ReadinessGate[] = [
     blockers: ["public template moderation review", "runtime sync adapter"],
     owner: "automation-core",
     linkedContracts: ["docs/contracts/api/openapi.yaml", "packages/contracts/src/domain.ts"],
-    linkedTests: [
-      "packages/workflow/src/semantic-validator.test.ts",
-      "supabase/tests/pgtap/stage3_library.sql",
-    ],
+    linkedTests: [],
   },
   {
     stage: "Activepieces Builder",
@@ -1067,7 +1064,7 @@ export const readinessFixture: readonly ReadinessGate[] = [
     blockers: ["embed signing key", "sync-flow webhook contract", "connection binding UI"],
     owner: "integrations",
     linkedContracts: ["docs/integrations/activepieces.md"],
-    linkedTests: ["tests/e2e/builder-readiness.spec.ts"],
+    linkedTests: [],
   },
 ] as const;
 

@@ -31,7 +31,6 @@ export const publicEnvSchema = z.object({
   NEXT_PUBLIC_ACTIVEPIECES_EMBED_SDK_URL: publicAssetUrlSchema.default("/vendor/activepieces/embed-sdk-0.9.0.js"),
   NEXT_PUBLIC_POSTHOG_KEY: z.string().min(3).default("phc_stage_local"),
   NEXT_PUBLIC_CONTRACTS_VERSION: z.string().min(1).default("stage11"),
-  NEXT_PUBLIC_ENABLE_MSW: z.enum(["0", "1"]).default("0"),
 });
 
 export type PublicEnv = z.infer<typeof publicEnvSchema>;

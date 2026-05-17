@@ -16,7 +16,6 @@ COPY packages/activepieces-legal-pieces/package.json packages/activepieces-legal
 COPY packages/activepieces-template-ingestor/package.json packages/activepieces-template-ingestor/package.json
 COPY packages/ai-gateway/package.json packages/ai-gateway/package.json
 COPY packages/api-client/package.json packages/api-client/package.json
-COPY packages/canvas-test-fixtures/package.json packages/canvas-test-fixtures/package.json
 COPY packages/contracts/package.json packages/contracts/package.json
 COPY packages/config/package.json packages/config/package.json
 COPY packages/logger/package.json packages/logger/package.json
@@ -24,7 +23,6 @@ COPY packages/telemetry/package.json packages/telemetry/package.json
 COPY packages/workflow/package.json packages/workflow/package.json
 COPY packages/workflow-compiler/package.json packages/workflow-compiler/package.json
 COPY packages/workflow-dsl/package.json packages/workflow-dsl/package.json
-COPY tests/e2e/package.json tests/e2e/package.json
 RUN corepack pnpm install --filter @lexframe/backend... --frozen-lockfile
 
 COPY . .

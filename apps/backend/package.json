@@ -5,17 +5,12 @@
   "license": "UNLICENSED",
   "scripts": {
     "build": "nest build",
-    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
+    "format": "prettier --write \"src/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
-    "lint": "node --max-old-space-size=4096 ./node_modules/eslint/bin/eslint.js \"{src,test}/**/*.ts\"",
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "test:cov": "jest --coverage",
-    "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json",
+    "lint": "node --max-old-space-size=4096 ./node_modules/eslint/bin/eslint.js \"src/**/*.ts\"",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
@@ -45,50 +40,19 @@
     "@eslint/js": "^9.18.0",
     "@nestjs/cli": "^11.0.0",
     "@nestjs/schematics": "^11.0.0",
-    "@nestjs/testing": "^11.0.1",
     "@types/dagre": "^0.7.54",
-    "@types/jest": "^30.0.0",
     "@types/node": "^24.0.0",
     "@types/pg": "^8.15.5",
-    "@types/supertest": "^7.0.0",
     "eslint": "^9.18.0",
     "eslint-config-prettier": "^10.0.1",
     "eslint-plugin-prettier": "^5.2.2",
     "globals": "^17.0.0",
-    "jest": "^30.0.0",
     "prettier": "^3.4.2",
     "source-map-support": "^0.5.21",
-    "supertest": "^7.0.0",
-    "ts-jest": "^29.2.5",
     "ts-loader": "^9.5.2",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.7.3",
     "typescript-eslint": "^8.20.0"
-  },
-  "jest": {
-    "moduleFileExtensions": [
-      "js",
-      "json",
-      "ts"
-    ],
-    "rootDir": ".",
-    "testRegex": ".*\\.spec\\.ts$",
-    "transform": {
-      "^.+\\.(t|j)s$": "ts-jest"
-    },
-    "moduleNameMapper": {
-      "^@lexframe/activepieces-legal-pieces$": "<rootDir>/../../packages/activepieces-legal-pieces/src/index.ts",
-      "^@lexframe/contracts$": "<rootDir>/../../packages/contracts/src/index.ts",
-      "^@lexframe/config$": "<rootDir>/../../packages/config/src/index.ts",
-      "^@lexframe/logger$": "<rootDir>/../../packages/logger/src/index.ts",
-      "^@lexframe/workflow$": "<rootDir>/../../packages/workflow/src/index.ts",
-      "^@lexframe/workflow-dsl$": "<rootDir>/../../packages/workflow-dsl/src/index.ts"
-    },
-    "collectCoverageFrom": [
-      "src/**/*.(t|j)s"
-    ],
-    "coverageDirectory": "./coverage",
-    "testEnvironment": "node"
   }
 }

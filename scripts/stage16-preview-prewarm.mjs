@@ -19,7 +19,7 @@ if (process.env.STAGE16_PREWARM_CANVAS_ROUTE) {
 }
 
 async function main() {
-  const preflight = runSchemaPreflight();
+  const runtimeHealth = runRuntimeHealth();
   const results = [];
   for (const route of routes) {
     const url = `${webBaseUrl}${route}`;
@@ -44,11 +44,11 @@ async function main() {
   console.log(
     JSON.stringify(
       {
-        status: preflight.status === "READY" && results.every((item) => item.status !== "FETCH_FAILED")
+        status: runtimeHealth.status === "READY" && results.every((item) => item.status !== "FETCH_FAILED")
           ? "READY"
           : "DEGRADED",
         webBaseUrl,
-        preflight,
+        runtimeHealth,
         results,
       },
       null,
@@ -57,51 +57,35 @@ async function main() {
   );
 }
 
-function runSchemaPreflight() {
-  if (process.env.STAGE16_PREWARM_SKIP_PREFLIGHT === "1") {
+function runRuntimeHealth() {
+  if (process.env.STAGE16_PREWARM_SKIP_RUNTIME_HEALTH === "1") {
     return {
       status: "SKIPPED",
-      reason: "STAGE16_PREWARM_SKIP_PREFLIGHT=1",
+      reason: "STAGE16_PREWARM_SKIP_RUNTIME_HEALTH=1",
     };
   }
 
   const result = spawnSync(
     process.execPath,
-    [
-      "scripts/stage16-e2e-preflight.mjs",
-      "--scope=automation",
-      "--json",
-      "--fail-on-required",
-      "--allow-reuse-runtime",
-    ],
+    ["scripts/stage16-runtime-health.mjs"],
     {
       cwd: process.cwd(),
       encoding: "utf8",
       shell: false,
-      env: process.env,
+      env: {
+        ...process.env,
+        STAGE16_REQUIRE_APP_HEALTH: "1",
+      },
       maxBuffer: 20 * 1024 * 1024,
     },
   );
 
-  try {
-    const report = JSON.parse(result.stdout || "{}");
-    return {
-      status: report.status ?? "UNKNOWN",
-      blockers: Array.isArray(report.blockers)
-        ? report.blockers.map((item) => ({
-            name: item.name,
-            status: item.status,
-            details: item.details,
-          }))
-        : [],
-    };
-  } catch {
-    return {
-      status: "PREFLIGHT_FAILED",
-      exitStatus: result.status,
-      stderr: sanitize(result.stderr ?? ""),
-    };
-  }
+  return {
+    status: result.status === 0 ? "READY" : "RUNTIME_HEALTH_FAILED",
+    exitStatus: result.status,
+    stdout: sanitize(result.stdout ?? "").slice(-4000),
+    stderr: sanitize(result.stderr ?? "").slice(-4000),
+  };
 }
 
 function sanitize(value) {

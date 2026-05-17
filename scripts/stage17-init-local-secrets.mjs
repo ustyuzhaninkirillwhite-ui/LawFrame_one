@@ -99,7 +99,6 @@ await writeIfMissing(
     "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=demo_publishable_key",
     "NEXT_PUBLIC_POSTHOG_KEY=phc_stage_local",
     "NEXT_PUBLIC_CONTRACTS_VERSION=stage17",
-    "NEXT_PUBLIC_ENABLE_MSW=0",
     "AI_PROVIDER_MODE=mock",
     "",
   ].join("\n"),

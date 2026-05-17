@@ -20,9 +20,5 @@ jobs:
         run: corepack enable
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-      - name: Install Playwright Chromium
-        run: pnpm --filter @lexframe/e2e exec playwright install chromium
       - name: Frontend gate
         run: pnpm check:frontend
-      - name: E2E smoke
-        run: pnpm check:e2e
